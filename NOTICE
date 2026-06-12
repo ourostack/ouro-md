@@ -26,3 +26,10 @@ swift-markdown
 
   Used for the headless `--render` command and the HTML/PDF export pipeline.
 -------------------------------------------------------------------------------
+Source Code Pro
+  https://github.com/adobe-fonts/source-code-pro
+  License: SIL Open Font License 1.1
+  Copyright 2010-2019 Adobe (http://www.adobe.com/)
+
+  Bundled under Sources/OuroMD/web/fonts/ as the editor's monospace code font.
+-------------------------------------------------------------------------------

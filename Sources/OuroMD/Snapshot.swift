@@ -47,7 +47,7 @@ final class Snapshotter: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let body = message.body as? [String: Any], body["type"] as? String == "ready" else { return }
-        let codeTheme = theme.uiMode == "dark" ? "github-dark" : "github"
+        let codeTheme = theme.uiMode == "dark" ? "github-dark" : "atom-one-light"
         webView.evaluateJavaScript("window.ouro.setTheme(\(jsLiteral(theme.uiMode)),\(jsLiteral(theme.editorCSS)),\(jsLiteral(codeTheme)))", completionHandler: nil)
         webView.evaluateJavaScript("window.ouro.setValue(\(jsLiteral(markdown)))", completionHandler: nil)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) { self.capture() }

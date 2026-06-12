@@ -131,8 +131,8 @@ private func readerCSS(_ p: Palette) -> String {
     .markdown-body{max-width:\(p.maxWidth);padding:30px 30px 120px;}
     .markdown-body>:first-child{margin-top:0;}
     h1,h2,h3,h4,h5,h6{color:\(p.fg);font-weight:700;line-height:1.3;margin:1.4em 0 .8em;}
-    h1{font-size:1.9em;}
-    h2{font-size:1.5em;}
+    h1{font-size:1.85em;border-bottom:1px solid \(p.border);padding-bottom:.3em;}
+    h2{font-size:1.45em;border-bottom:1px solid \(p.border);padding-bottom:.3em;}
     h3{font-size:1.25em;}
     h4{font-size:1.05em;}
     h5{font-size:.95em;}
@@ -154,9 +154,10 @@ private func readerCSS(_ p: Palette) -> String {
     li::marker{color:\(p.faint);}
     .task-list-item{list-style:none;}
     .task-list-item input{margin:0 .5em 0 -1.5em;vertical-align:middle;}
-    table{border-collapse:collapse;margin:1em 0;font-size:.95em;}
-    th,td{border:1px solid \(p.border);padding:6px 13px;text-align:left;}
-    thead th{background:transparent;font-weight:600;}
+    table{border-collapse:collapse;margin:1em 0;font-size:.95em;width:100%;}
+    th,td{border:1px solid \(p.border);padding:8px 13px;text-align:left;}
+    thead th{background:\(p.surface);font-weight:600;}
+    tbody tr:nth-child(even){background:\(p.surface);}
     img{max-width:100%;height:auto;border-radius:6px;}
     """
 }
@@ -172,8 +173,8 @@ private func editorCSS(_ p: Palette) -> String {
     .vditor-ir .vditor-reset>h1:before,.vditor-ir .vditor-reset>h2:before,.vditor-ir .vditor-reset>h3:before,.vditor-ir .vditor-reset>h4:before,.vditor-ir .vditor-reset>h5:before,.vditor-ir .vditor-reset>h6:before,.vditor-wysiwyg .vditor-reset>h1:before,.vditor-wysiwyg .vditor-reset>h2:before,.vditor-wysiwyg .vditor-reset>h3:before,.vditor-wysiwyg .vditor-reset>h4:before,.vditor-wysiwyg .vditor-reset>h5:before,.vditor-wysiwyg .vditor-reset>h6:before,.vditor-ir div[data-type="footnotes-block"]:before,.vditor-ir div[data-type="link-ref-defs-block"]:before,.vditor-wysiwyg div[data-type="footnotes-block"]:before,.vditor-wysiwyg div[data-type="link-ref-defs-block"]:before{content:none!important;margin:0!important;padding:0!important;}
     .vditor-ir__node,.vditor-reset h1,.vditor-reset h2,.vditor-reset h3,.vditor-reset h4,.vditor-reset h5,.vditor-reset h6,.vditor-reset p,.vditor-reset li,.vditor-reset ul,.vditor-reset ol,.vditor-reset blockquote,.vditor-reset table{background:transparent!important;}
     .vditor-reset h1,.vditor-reset h2,.vditor-reset h3,.vditor-reset h4,.vditor-reset h5,.vditor-reset h6{color:\(p.fg)!important;font-weight:700;line-height:1.3;border:none!important;padding:0!important;margin:1.4em 0 .8em!important;}
-    .vditor-reset h1{font-size:1.9em;}
-    .vditor-reset h2{font-size:1.5em;}
+    .vditor-reset h1{font-size:1.85em;border-bottom:1px solid \(p.border)!important;padding-bottom:.3em!important;}
+    .vditor-reset h2{font-size:1.45em;border-bottom:1px solid \(p.border)!important;padding-bottom:.3em!important;}
     .vditor-reset h3{font-size:1.25em;}
     .vditor-reset h4{font-size:1.05em;}
     .vditor-reset h5{font-size:.95em;}
@@ -189,8 +190,10 @@ private func editorCSS(_ p: Palette) -> String {
     .vditor-reset blockquote{border-left:4px solid \(p.quoteBar)!important;color:\(p.faint)!important;padding:0 0 0 1em!important;margin:1em 0!important;}
     .vditor-reset hr{background:\(p.border);height:1px;border:none;margin:1.8em 0;}
     .vditor-reset table{border-collapse:collapse;margin:1em 0;}
-    .vditor-reset table td,.vditor-reset table th{border:1px solid \(p.border)!important;padding:6px 13px!important;color:\(p.fg)!important;}
-    .vditor-reset thead th{background:transparent!important;font-weight:600;}
+    .vditor-reset table{border-collapse:collapse;margin:1em 0;width:100%!important;display:table!important;table-layout:auto;}
+    .vditor-reset table td,.vditor-reset table th{border:1px solid \(p.border)!important;padding:8px 13px!important;color:\(p.fg)!important;}
+    .vditor-reset thead th{background:\(p.surface)!important;font-weight:600;}
+    .vditor-reset tbody tr:nth-child(even){background:\(p.surface)!important;}
     .vditor-reset img{border-radius:6px;}
     .vditor-reset ul,.vditor-reset ol{padding-left:1.6em;}
     .vditor-reset li{margin:.25em 0;}

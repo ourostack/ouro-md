@@ -243,7 +243,7 @@ final class AppModel: ObservableObject {
     }
 
     private func applyThemeToEditor() {
-        let codeTheme = theme.uiMode == "dark" ? "github-dark" : "github"
+        let codeTheme = theme.uiMode == "dark" ? "github-dark" : "atom-one-light"
         bridge?.applyTheme(uiMode: theme.uiMode, css: theme.editorCSS, codeTheme: codeTheme)
     }
 
