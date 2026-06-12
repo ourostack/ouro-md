@@ -13,7 +13,7 @@ enum MenuBuilder {
         let mainMenu = NSMenu()
         mainMenu.addItem(appMenu())
         mainMenu.addItem(fileMenu(target: target))
-        mainMenu.addItem(editMenu())
+        mainMenu.addItem(editMenu(target: target))
         mainMenu.addItem(paragraphMenu(target: target))
         mainMenu.addItem(formatMenu(target: target))
         mainMenu.addItem(viewMenu(target: target))
@@ -103,7 +103,7 @@ enum MenuBuilder {
 
     // MARK: - Edit menu (standard responder-chain actions)
 
-    private static func editMenu() -> NSMenuItem {
+    private static func editMenu(target: AppDelegate) -> NSMenuItem {
         let item = NSMenuItem()
         let menu = NSMenu(title: "Edit")
         item.submenu = menu
@@ -115,7 +115,18 @@ enum MenuBuilder {
         standard(menu, "Cut", #selector(NSText.cut(_:)), "x")
         standard(menu, "Copy", #selector(NSText.copy(_:)), "c")
         standard(menu, "Paste", #selector(NSText.paste(_:)), "v")
+        let pastePlain = add(menu, "Paste as Plain Text", #selector(AppDelegate.pasteAsPlainText(_:)), "v", target)
+        pastePlain.keyEquivalentModifierMask = [.command, .shift]
         standard(menu, "Select All", #selector(NSText.selectAll(_:)), "a")
+
+        menu.addItem(.separator())
+        let find = menu.addItem(withTitle: "Find", action: nil, keyEquivalent: "")
+        let findMenu = NSMenu(title: "Find")
+        add(findMenu, "Find…", #selector(AppDelegate.performFind(_:)), "f", target)
+        add(findMenu, "Replace…", #selector(AppDelegate.performReplace(_:)), "f", target).keyEquivalentModifierMask = [.command, .option]
+        add(findMenu, "Find Next", #selector(AppDelegate.findNextCommand(_:)), "g", target)
+        add(findMenu, "Find Previous", #selector(AppDelegate.findPrevCommand(_:)), "g", target).keyEquivalentModifierMask = [.command, .shift]
+        find.submenu = findMenu
         return item
     }
 

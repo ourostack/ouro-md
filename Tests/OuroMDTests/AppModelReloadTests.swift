@@ -17,9 +17,11 @@ private final class MockBridge: EditorBridge {
     func setFocusMode(_ on: Bool) {}
     func setTypewriter(_ on: Bool) {}
     func scrollToHeading(_ index: Int) {}
-    func find(_ query: String, forward: Bool) {}
+    func find(_ query: String, backward: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool) {}
+    func replace(_ query: String, with replacement: String, all: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool, completion: @escaping (Int) -> Void) { completion(0) }
     func clearFind() {}
     func execCommand(_ command: String) {}
+    func insertText(_ text: String) {}
     func markSaved() {}
     func focusEditor() {}
     func setZoom(_ factor: Double) {}

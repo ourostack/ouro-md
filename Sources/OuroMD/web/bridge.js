@@ -260,16 +260,52 @@
     },
     markSaved: function () { dirty = false; },
     focus: function () { if (vditor) { try { vditor.focus(); } catch (e) { /* ignore */ } } },
+    insertText: function (text) { if (text) { insertAtCursor(text); } },
     scrollToHeading: function (index) {
       var hs = document.querySelectorAll(".vditor-reset h1, .vditor-reset h2, .vditor-reset h3, .vditor-reset h4, .vditor-reset h5, .vditor-reset h6");
       if (hs[index]) { hs[index].scrollIntoView({ behavior: "smooth", block: "start" }); }
     },
-    find: function (query, forward) {
+    find: function (query, opts) {
       if (!query) { return; }
-      try { window.find(query, false, !forward, true, false, true, false); } catch (e) { /* ignore */ }
+      opts = opts || {};
+      try {
+        window.find(query, !!opts.caseSensitive, !!opts.backward, true, !!opts.wholeWord, false, false);
+      } catch (e) { /* ignore */ }
     },
+    replaceNext: function (query, replacement, opts) { return doReplace(query, replacement, opts, false); },
+    replaceAll: function (query, replacement, opts) { return doReplace(query, replacement, opts, true); },
     clearFind: function () { try { window.getSelection().removeAllRanges(); } catch (e) { /* ignore */ } }
   };
+
+  function buildSearchRegex(query, opts, global) {
+    opts = opts || {};
+    var pattern = opts.regexp ? query : query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (opts.wholeWord) { pattern = "\\b" + pattern + "\\b"; }
+    var flags = global ? "g" : "";
+    if (!opts.caseSensitive) { flags += "i"; }
+    try { return new RegExp(pattern, flags); } catch (e) { return null; }
+  }
+
+  // Replace on the markdown source (correct for a markdown editor), preserving
+  // scroll and marking the buffer dirty so auto-save picks it up. Returns count.
+  function doReplace(query, replacement, opts, all) {
+    if (!query || !vditor) { return 0; }
+    var re = buildSearchRegex(query, opts, all);
+    if (!re) { return 0; }
+    var md = vditor.getValue();
+    var count = 0;
+    var out = md.replace(re, function () { count++; return replacement; });
+    if (count > 0 && out !== md) {
+      var scroller = document.scrollingElement || document.documentElement;
+      var y = scroller ? scroller.scrollTop : 0;
+      state.value = out;
+      if (ready) { vditor.setValue(out, true); }
+      setDirty(true);
+      postCount(out);
+      requestAnimationFrame(function () { if (scroller) { scroller.scrollTop = y; } });
+    }
+    return count;
+  }
 
   document.addEventListener("selectionchange", function () {
     if (state.focus) { updateActiveBlock(); }

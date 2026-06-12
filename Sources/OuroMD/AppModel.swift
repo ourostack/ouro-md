@@ -15,9 +15,11 @@ protocol EditorBridge: AnyObject {
     func setFocusMode(_ on: Bool)
     func setTypewriter(_ on: Bool)
     func scrollToHeading(_ index: Int)
-    func find(_ query: String, forward: Bool)
+    func find(_ query: String, backward: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool)
+    func replace(_ query: String, with replacement: String, all: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool, completion: @escaping (Int) -> Void)
     func clearFind()
     func execCommand(_ command: String)
+    func insertText(_ text: String)
     func markSaved()
     func focusEditor()
     func setZoom(_ factor: Double)
@@ -50,6 +52,19 @@ final class AppModel: ObservableObject {
     @Published var folderFilter = ""
     @Published var findVisible = false
     @Published var findQuery = ""
+    @Published var replaceVisible = false
+    @Published var replaceText = ""
+    @Published var findCaseSensitive = false
+    @Published var findWholeWord = false
+    @Published var findRegexp = false
+    @Published var findStatus = ""
+    // Folder content search (Search tab).
+    @Published var searchQuery = ""
+    @Published private(set) var searchResults: [SearchResult] = []
+    @Published private(set) var searching = false
+    @Published var searchCaseSensitive = false
+    @Published var searchWholeWord = false
+    @Published var searchRegexp = false
 
     weak var bridge: EditorBridge?
     /// Invoked whenever window-chrome-relevant state changes.
@@ -64,6 +79,7 @@ final class AppModel: ObservableObject {
     private var fileWatcher: FileWatcher?
     private var folderWatcher: FolderWatcher?
     private let folderScanQueue = DispatchQueue(label: "md.ouro.folderscan", qos: .userInitiated)
+    private let contentSearcher = ContentSearcher()
 
     init() {
         themeID = UserDefaults.standard.string(forKey: "ouro.theme") ?? "quartz"
@@ -500,23 +516,75 @@ final class AppModel: ObservableObject {
         if let url = currentURL { ensureFolderMounted(for: url) }
     }
 
-    // MARK: - Find
+    // MARK: - Find & Replace
 
     func setFindQuery(_ query: String) {
         findQuery = query
-        bridge?.find(query, forward: true)
+        findCurrent()
     }
 
-    func findNext() { bridge?.find(findQuery, forward: true) }
-    func findPrev() { bridge?.find(findQuery, forward: false) }
-    func showFind() { findVisible = true }
-    func closeFind() { findVisible = false; bridge?.clearFind() }
-    func toggleFind() { findVisible.toggle(); if !findVisible { bridge?.clearFind() } }
+    private func findCurrent() { bridge?.find(findQuery, backward: false, caseSensitive: findCaseSensitive, wholeWord: findWholeWord, regexp: findRegexp) }
+    func findNext() { bridge?.find(findQuery, backward: false, caseSensitive: findCaseSensitive, wholeWord: findWholeWord, regexp: findRegexp) }
+    func findPrev() { bridge?.find(findQuery, backward: true, caseSensitive: findCaseSensitive, wholeWord: findWholeWord, regexp: findRegexp) }
+
+    func showFind() { findVisible = true; replaceVisible = false }
+    func showReplace() { findVisible = true; replaceVisible = true }
+    func closeFind() { findVisible = false; replaceVisible = false; findStatus = ""; bridge?.clearFind() }
+    func toggleFind() { findVisible.toggle(); if !findVisible { closeFind() } }
+
+    func replaceNext() {
+        guard !findQuery.isEmpty else { return }
+        bridge?.replace(findQuery, with: replaceText, all: false, caseSensitive: findCaseSensitive, wholeWord: findWholeWord, regexp: findRegexp) { [weak self] n in
+            self?.findStatus = n > 0 ? "Replaced 1" : "Not found"
+        }
+    }
+
+    func replaceAll() {
+        guard !findQuery.isEmpty else { return }
+        bridge?.replace(findQuery, with: replaceText, all: true, caseSensitive: findCaseSensitive, wholeWord: findWholeWord, regexp: findRegexp) { [weak self] n in
+            self?.findStatus = "Replaced \(n) occurrence\(n == 1 ? "" : "s")"
+        }
+    }
 
     func zoomIn() { zoom = min(zoom + 0.1, 3.0); bridge?.setZoom(zoom) }
     func zoomOut() { zoom = max(zoom - 0.1, 0.5); bridge?.setZoom(zoom) }
     func actualSize() { zoom = 1.0; bridge?.setZoom(zoom) }
     func format(_ command: String) { bridge?.execCommand(command) }
+
+    func pasteAsPlainText() {
+        guard let text = NSPasteboard.general.string(forType: .string) else { return }
+        bridge?.insertText(text)
+    }
+
+    // MARK: - Folder content search (Search tab)
+
+    func runFolderSearch() {
+        let query = searchQuery
+        searchResults = []
+        guard let folder = mountedFolder ?? currentURL?.deletingLastPathComponent(),
+              !query.trimmingCharacters(in: .whitespaces).isEmpty else {
+            searching = false
+            contentSearcher.cancel()
+            return
+        }
+        if mountedFolder == nil { mountedFolder = folder }
+        searching = true
+        contentSearcher.search(query, in: folder,
+                               caseSensitive: searchCaseSensitive, wholeWord: searchWholeWord, regexp: searchRegexp,
+                               onResult: { [weak self] result in self?.appendSearchResult(result) },
+                               onComplete: { [weak self] in self?.searching = false })
+    }
+
+    private func appendSearchResult(_ result: SearchResult) {
+        searchResults.append(result)
+        searchResults.sort { a, b in
+            if a.nameMatched != b.nameMatched { return a.nameMatched }
+            if a.count != b.count { return a.count > b.count }
+            return a.name.localizedStandardCompare(b.name) == .orderedAscending
+        }
+    }
+
+    func openSearchResult(_ url: URL) { openFile(url) }
 
     // MARK: - Helpers
 

@@ -199,6 +199,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         syncChrome()
     }
     @objc func performFind(_ sender: Any?) { model.showFind() }
+    @objc func performReplace(_ sender: Any?) { model.showReplace() }
+    @objc func findNextCommand(_ sender: Any?) { model.findNext() }
+    @objc func findPrevCommand(_ sender: Any?) { model.findPrev() }
 
     @objc func applyParagraph(_ sender: NSMenuItem) {
         if let command = sender.representedObject as? String { model.format(command) }
@@ -212,6 +215,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc func formatStrikethrough(_ sender: Any?) { model.format("strike") }
     @objc func formatInlineCode(_ sender: Any?) { model.format("code") }
     @objc func insertLink(_ sender: Any?) { model.format("link") }
+    @objc func pasteAsPlainText(_ sender: Any?) { model.pasteAsPlainText() }
 
     @objc func openProjectPage(_ sender: Any?) {
         if let url = URL(string: "https://github.com/ourostack/ouro-md") {

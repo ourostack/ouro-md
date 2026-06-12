@@ -126,8 +126,18 @@ struct EditorWebView: NSViewRepresentable {
             eval("window.ouro && window.ouro.scrollToHeading(\(index))")
         }
 
-        func find(_ query: String, forward: Bool) {
-            eval("window.ouro && window.ouro.find(\(Coordinator.jsString(query)),\(forward ? "true" : "false"))")
+        func find(_ query: String, backward: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool) {
+            let opts = "{backward:\(backward),caseSensitive:\(caseSensitive),wholeWord:\(wholeWord),regexp:\(regexp)}"
+            eval("window.ouro && window.ouro.find(\(Coordinator.jsString(query)),\(opts))")
+        }
+
+        func replace(_ query: String, with replacement: String, all: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool, completion: @escaping (Int) -> Void) {
+            let opts = "{caseSensitive:\(caseSensitive),wholeWord:\(wholeWord),regexp:\(regexp)}"
+            let fn = all ? "replaceAll" : "replaceNext"
+            let js = "window.ouro ? window.ouro.\(fn)(\(Coordinator.jsString(query)),\(Coordinator.jsString(replacement)),\(opts)) : 0"
+            webView?.evaluateJavaScript(js) { result, _ in
+                completion((result as? NSNumber)?.intValue ?? 0)
+            }
         }
 
         func clearFind() {
@@ -136,6 +146,10 @@ struct EditorWebView: NSViewRepresentable {
 
         func execCommand(_ command: String) {
             eval("window.ouro && window.ouro.exec(\(Coordinator.jsString(command)))")
+        }
+
+        func insertText(_ text: String) {
+            eval("window.ouro && window.ouro.insertText(\(Coordinator.jsString(text)))")
         }
 
         func markSaved() { eval("window.ouro && window.ouro.markSaved()") }
