@@ -70,7 +70,9 @@ final class DocumentWindowController: NSObject, NSWindowDelegate {
     }
 
     func syncChrome() {
-        window.title = model.windowTitle
+        // The centered label owns the filename; keep the system title empty so it
+        // doesn't render a second (left-aligned) copy next to the traffic lights.
+        window.title = ""
         window.isDocumentEdited = model.isDirty
         window.appearance = NSAppearance(named: model.theme.uiMode == "dark" ? .darkAqua : .aqua)
         if let background = NSColor(hex: model.theme.backgroundHex) { window.backgroundColor = background }
