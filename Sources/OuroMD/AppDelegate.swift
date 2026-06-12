@@ -5,19 +5,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var initialFilePath: String?
     let model = AppModel()
     private var window: NSWindow!
+    private var titleLabel: NSTextField?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let hosting = NSHostingController(rootView: ContentView(model: model))
         let window = NSWindow(contentViewController: hosting)
         window.setContentSize(NSSize(width: 1040, height: 800))
-        window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
+        window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
         window.titlebarAppearsTransparent = true
-        window.titleVisibility = .visible
+        window.titleVisibility = .hidden
         window.tabbingMode = .disallowed
         window.delegate = self
         window.setFrameAutosaveName("OuroMainWindow")
         window.center()
         self.window = window
+        installCenteredTitle(in: window)
 
         model.onChromeUpdate = { [weak self] in self?.syncChrome() }
 
@@ -38,9 +40,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         guard let window else { return }
         window.title = model.windowTitle
         window.isDocumentEdited = model.isDirty
-        window.representedURL = model.currentURL
         window.appearance = NSAppearance(named: model.theme.uiMode == "dark" ? .darkAqua : .aqua)
+        if let background = NSColor(hex: model.theme.backgroundHex) { window.backgroundColor = background }
+        titleLabel?.stringValue = model.windowTitle + (model.isDirty ? " — Edited" : "")
         MenuBuilder.refreshDynamicState(model: model)
+    }
+
+    /// macOS 13+ left-aligns the window title; this centers a Typora-style
+    /// filename label in the titlebar instead.
+    private func installCenteredTitle(in window: NSWindow) {
+        guard let titlebar = window.standardWindowButton(.closeButton)?.superview else { return }
+        let label = NSTextField(labelWithString: "")
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 13, weight: .medium)
+        label.textColor = .secondaryLabelColor
+        label.alignment = .center
+        label.lineBreakMode = .byTruncatingTail
+        titlebar.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: titlebar.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: titlebar.centerYAnchor),
+            label.widthAnchor.constraint(lessThanOrEqualTo: titlebar.widthAnchor, multiplier: 0.6)
+        ])
+        titleLabel = label
     }
 
     // MARK: - Unsaved-changes handling
@@ -135,5 +157,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if let url = URL(string: "https://github.com/ourostack/ouro-md") {
             NSWorkspace.shared.open(url)
         }
+    }
+}
+
+private extension NSColor {
+    convenience init?(hex: String) {
+        var s = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        if s.hasPrefix("#") { s.removeFirst() }
+        guard s.count == 6, let value = Int(s, radix: 16) else { return nil }
+        self.init(srgbRed: CGFloat((value >> 16) & 0xff) / 255.0,
+                  green: CGFloat((value >> 8) & 0xff) / 255.0,
+                  blue: CGFloat(value & 0xff) / 255.0,
+                  alpha: 1.0)
     }
 }

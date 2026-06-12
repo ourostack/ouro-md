@@ -8,6 +8,8 @@ struct Theme: Identifiable {
     let displayName: String
     /// Web-editor UI mode: "classic" (light) or "dark".
     let uiMode: String
+    /// Page background hex, for matching the native window chrome.
+    let backgroundHex: String
     /// CSS for standalone HTML documents (targets `.markdown-body`).
     let css: String
     /// CSS injected into the live editor (targets the editor's content nodes).
@@ -35,9 +37,9 @@ private struct Palette {
 }
 
 private enum Fonts {
-    static let sans = #"-apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif"#
+    static let sans = #""Helvetica Neue", Helvetica, Arial, "Segoe UI", sans-serif"#
     static let serif = #""New York", "Iowan Old Style", Palatino, Georgia, Cambria, "Times New Roman", serif"#
-    static let mono = #"ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Monaco, Consolas, "Courier New", monospace"#
+    static let mono = #""Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"#
 }
 
 /// Loads and serves built-in + user themes.
@@ -93,7 +95,7 @@ final class ThemeStore {
         ]
         return palettes.map {
             Theme(id: $0.id, displayName: $0.displayName, uiMode: $0.uiMode,
-                  css: readerCSS($0), editorCSS: editorCSS($0))
+                  backgroundHex: $0.bg, css: readerCSS($0), editorCSS: editorCSS($0))
         }
     }
 
@@ -112,7 +114,9 @@ final class ThemeStore {
                 let id = url.deletingPathExtension().lastPathComponent
                 let name = id.replacingOccurrences(of: "-", with: " ").replacingOccurrences(of: "_", with: " ").capitalized
                 let uiMode = id.lowercased().contains("dark") || id.lowercased().contains("night") ? "dark" : "classic"
-                return Theme(id: id, displayName: name, uiMode: uiMode, css: css, editorCSS: css)
+                return Theme(id: id, displayName: name, uiMode: uiMode,
+                             backgroundHex: uiMode == "dark" ? "#1e1e1e" : "#ffffff",
+                             css: css, editorCSS: css)
             }
     }
 }
@@ -162,9 +166,9 @@ private func editorCSS(_ p: Palette) -> String {
     html,body{background:\(p.bg);margin:0;height:100%;}
     .vditor{border:none!important;background:\(p.bg)!important;height:auto!important;min-height:100vh;}
     .vditor-toolbar{display:none!important;}
-    .vditor-content{background:\(p.bg)!important;height:auto!important;overflow:visible!important;}
-    .vditor-ir,.vditor-wysiwyg,.vditor-sv{height:auto!important;overflow:visible!important;}
-    .vditor-reset{color:\(p.fg)!important;font-family:\(p.font)!important;font-size:\(p.fontSize)!important;line-height:1.6;max-width:\(p.maxWidth);margin:0 auto;padding:34px 30px 160px!important;-webkit-font-smoothing:antialiased;caret-color:\(p.accent);}
+    .vditor-content{background:\(p.bg)!important;height:auto!important;overflow:visible!important;width:100%!important;}
+    .vditor-ir,.vditor-wysiwyg,.vditor-sv{height:auto!important;overflow:visible!important;width:100%!important;padding:0!important;box-sizing:border-box;}
+    .vditor-reset{color:\(p.fg)!important;font-family:\(p.font)!important;font-size:\(p.fontSize)!important;line-height:1.6;max-width:\(p.maxWidth)!important;margin:0 auto!important;padding:34px 44px 160px!important;-webkit-font-smoothing:antialiased;caret-color:\(p.accent);box-sizing:border-box;}
     .vditor-ir .vditor-reset>h1:before,.vditor-ir .vditor-reset>h2:before,.vditor-ir .vditor-reset>h3:before,.vditor-ir .vditor-reset>h4:before,.vditor-ir .vditor-reset>h5:before,.vditor-ir .vditor-reset>h6:before,.vditor-wysiwyg .vditor-reset>h1:before,.vditor-wysiwyg .vditor-reset>h2:before,.vditor-wysiwyg .vditor-reset>h3:before,.vditor-wysiwyg .vditor-reset>h4:before,.vditor-wysiwyg .vditor-reset>h5:before,.vditor-wysiwyg .vditor-reset>h6:before,.vditor-ir div[data-type="footnotes-block"]:before,.vditor-ir div[data-type="link-ref-defs-block"]:before,.vditor-wysiwyg div[data-type="footnotes-block"]:before,.vditor-wysiwyg div[data-type="link-ref-defs-block"]:before{content:none!important;margin:0!important;padding:0!important;}
     .vditor-ir__node,.vditor-reset h1,.vditor-reset h2,.vditor-reset h3,.vditor-reset h4,.vditor-reset h5,.vditor-reset h6,.vditor-reset p,.vditor-reset li,.vditor-reset ul,.vditor-reset ol,.vditor-reset blockquote,.vditor-reset table{background:transparent!important;}
     .vditor-reset h1,.vditor-reset h2,.vditor-reset h3,.vditor-reset h4,.vditor-reset h5,.vditor-reset h6{color:\(p.fg)!important;font-weight:700;line-height:1.3;border:none!important;padding:0!important;margin:1.4em 0 .8em!important;}
