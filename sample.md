@@ -1,11 +1,11 @@
-# Welcome to ouro-md
+# Welcome to Ouro MD
 
 A minimalist, themable, **native macOS** Markdown editor — write on the left of
 your mind, read on the right. This document is here so you can *feel* the themes.
 
 ## Why it feels calm
 
-ouro-md keeps the chrome out of your way. There's no toolbar shouting at you —
+Ouro MD keeps the chrome out of your way. There's no toolbar shouting at you —
 just your words, set in careful typography, on a centered page.
 
 > Good tools disappear. You should notice the writing, not the window.
@@ -17,6 +17,7 @@ You get the whole vocabulary:
 - **Bold**, *italic*, ~~strikethrough~~, and `inline code`
 - [Links](https://github.com/ourostack/ouro-md) that open in your browser
 - Task lists:
+
   - [X]  Render Markdown beautifully
   - [X]  Switch themes live
   - [ ]  Win a design award

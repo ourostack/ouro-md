@@ -40,8 +40,8 @@ cat > "${APP}/Contents/Info.plist" <<PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleName</key><string>ouro-md</string>
-    <key>CFBundleDisplayName</key><string>ouro-md</string>
+    <key>CFBundleName</key><string>Ouro MD</string>
+    <key>CFBundleDisplayName</key><string>Ouro MD</string>
     <key>CFBundleIdentifier</key><string>${BUNDLE_ID}</string>
     <key>CFBundleVersion</key><string>${VERSION}</string>
     <key>CFBundleShortVersionString</key><string>${VERSION}</string>

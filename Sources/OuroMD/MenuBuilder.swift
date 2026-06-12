@@ -46,14 +46,14 @@ enum MenuBuilder {
         let menu = NSMenu()
         item.submenu = menu
 
-        menu.addItem(withTitle: "About ouro-md",
+        menu.addItem(withTitle: "About Ouro MD",
                      action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         menu.addItem(.separator())
         let settings = add(menu, "Settings…", #selector(AppDelegate.showPreferences(_:)), ",", target)
         settings.keyEquivalentModifierMask = [.command]
         menu.addItem(.separator())
 
-        let hide = menu.addItem(withTitle: "Hide ouro-md",
+        let hide = menu.addItem(withTitle: "Hide Ouro MD",
                                 action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         hide.target = nil
         let hideOthers = menu.addItem(withTitle: "Hide Others",
@@ -62,7 +62,7 @@ enum MenuBuilder {
         menu.addItem(withTitle: "Show All",
                      action: #selector(NSApplication.unhideAllApplications(_:)), keyEquivalent: "")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Quit ouro-md",
+        menu.addItem(withTitle: "Quit Ouro MD",
                      action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         return item
     }
@@ -273,7 +273,7 @@ enum MenuBuilder {
         let item = NSMenuItem()
         let menu = NSMenu(title: "Help")
         item.submenu = menu
-        add(menu, "ouro-md on GitHub", #selector(AppDelegate.openProjectPage(_:)), "", target)
+        add(menu, "Ouro MD on GitHub", #selector(AppDelegate.openProjectPage(_:)), "", target)
         return item
     }
 

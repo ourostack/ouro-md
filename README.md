@@ -35,17 +35,23 @@ place — switch themes live, and read the same document four different ways.
 - **Headless render.** `ouro-md --render file.md` prints a styled HTML document
   to stdout for scripting and previews.
 
-## First launch
-
-The app is currently **unsigned** (ad-hoc signed). On first launch macOS
-Gatekeeper will warn you. Either right-click the app and choose **Open**, or:
+## Install
 
 ```sh
-xattr -dr com.apple.quarantine OuroMD.app
-open OuroMD.app
+./install.sh            # build + install to /Applications/Ouro MD.app
+./install.sh --update   # git pull, then rebuild + reinstall (use this to update)
 ```
 
-Developer-ID signing + notarization are planned.
+- **Where it lives:** `/Applications/Ouro MD.app`
+- **How to launch:** double-click in Finder · `open -a "Ouro MD"` · or the `md`
+  shell alias (`alias md='open -a "Ouro MD"'`) → `md notes.md`
+- **How to update:** re-run `./install.sh --update` any time. (Once the app is
+  Developer-ID signed, this becomes a signed/notarized build and Sparkle
+  auto-update can replace the manual step.)
+
+The app is currently **unsigned** (ad-hoc), so `install.sh` clears the
+quarantine flag and re-registers it with Launch Services. A fresh manual copy
+into `/Applications` would otherwise trip Gatekeeper on first launch.
 
 ## Build
 
