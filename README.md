@@ -21,8 +21,14 @@ place — switch themes live, and read the same document four different ways.
   (crisp editorial). Drop your own CSS to add more.
 - **Full Markdown.** CommonMark + GFM: tables, task lists, strikethrough,
   fenced code with highlighting, math (KaTeX), footnotes, and diagrams.
-- **Native macOS.** A real `.app` with a transparent full-height titlebar, the
-  standard menu bar, Open Recent, unsaved-changes prompts, and drag-to-open.
+- **Native macOS.** A real `.app` with a transparent titlebar + centered
+  filename, the standard menu bar, Open Recent, unsaved-changes prompts,
+  drag-to-open, and **auto-save** for titled files.
+- **Sidebar.** A collapsible sidebar (**⇧⌘L**) with a live document **Outline**
+  (**⌃⌘1**) and a **File Tree** (**⌃⌘3**) of the current folder.
+- **Modes & tools.** **Source Code Mode** (**⌘/**), **Focus** (**F8**) and
+  **Typewriter** (**F9**) modes, **Find** (**⇧⌘F**), and a word-count popover
+  (**View ▸ Toggle Word Count**).
 - **Export.** Save to themed, self-contained **HTML** or **PDF**.
 - **Images that just work.** Pasted or dropped images are embedded inline (as
   data URIs) — no upload server, no broken links.
@@ -63,20 +69,24 @@ open OuroMD.app
 ### As an app
 
 Open a file with **⌘O**, start a new document with **⌘N**, save with **⌘S**.
-Switch themes from **View ▸ Theme** and editing modes from
-**View ▸ Editing Mode**. Export from **File ▸ Export**.
+Pick a theme from the **Themes** menu, toggle the sidebar with **⇧⌘L**, and
+export from **File ▸ Export**. Auto-save keeps a titled file written as you type.
 
 ### Keyboard shortcuts
 
-| Shortcut          | Action            |
-|:------------------|:------------------|
-| ⌘N / ⌘O / ⌘S / ⇧⌘S | New / Open / Save / Save As |
-| ⌘B / ⌘I           | Bold / Italic     |
-| ⌃⌘S / ⌘E          | Strikethrough / Inline code |
-| ⌘K                | Insert link       |
-| ⌥⌘O               | Toggle outline    |
-| ⌘0 / ⌘+ / ⌘-      | Actual size / Zoom in / out |
-| ⌃⌘F               | Full screen       |
+| Shortcut            | Action |
+|:--------------------|:-------|
+| ⌘N / ⌘O / ⌘S / ⇧⌘S  | New / Open / Save / Save As |
+| ⇧⌘L                 | Toggle sidebar |
+| ⌃⌘1 / ⌃⌘3           | Sidebar: Outline / File Tree |
+| ⇧⌘F                 | Find |
+| ⌘/                  | Source Code Mode |
+| F8 / F9             | Focus / Typewriter mode |
+| ⌘B / ⌘I / ⌃⌘S       | Bold / Italic / Strikethrough |
+| ⌘E / ⌘K             | Inline code / Insert link |
+| ⌘1…⌘6 / ⌘0          | Heading 1–6 / Paragraph |
+| ⇧⌘0 / ⇧⌘= / ⇧⌘-     | Actual size / Zoom in / out |
+| ⌃⌘F                 | Full screen |
 
 ### From the command line
 
@@ -96,10 +106,10 @@ Drop a `.css` file into:
 ~/Library/Application Support/ouro-md/Themes/
 ```
 
-It appears in **View ▸ Theme** by file name (a file containing `dark` in its
-name is treated as a dark theme). Built-in themes style the standalone export
-(`.markdown-body`) and the live editor (`.vditor-reset`) from a shared palette;
-custom CSS is applied to both.
+It appears in the **Themes** menu by file name (a file containing `dark` or
+`night` in its name is treated as a dark theme). Built-in themes style the
+standalone export (`.markdown-body`) and the live editor (`.vditor-reset`) from
+a shared palette; custom CSS is applied to both.
 
 ## Architecture
 
@@ -117,9 +127,9 @@ the same architecture Typora-style editors use, made to feel like a Mac app.
 ## Roadmap
 
 - Developer-ID signing + notarization
-- Find & replace
-- Local relative-image display in the editor (paste/drop already inlines)
-- File-tree sidebar and multi-tab documents
+- Smart typography (curly quotes, dashes) and clickable task checkboxes
+- Editor display of pre-existing relative-path local images (paste/drop already inlines)
+- Higher-contrast tables in the dark theme
 - Paginated PDF export and print
 
 ## License
