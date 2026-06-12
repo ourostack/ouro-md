@@ -5,6 +5,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var initialFilePath: String?
     private var controllers: [DocumentWindowController] = []
     private lazy var fallbackModel = AppModel()
+    private let defaults = UserDefaults.standard
 
     private var isSelfTest: Bool { ProcessInfo.processInfo.environment["OURO_SELFTEST"] == "1" }
 
@@ -20,16 +21,67 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func syncChrome() { frontController?.syncChrome() }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let controller = DocumentWindowController(filePath: initialFilePath, selfTest: isSelfTest, useAutosave: true)
-        controllers.append(controller)
         if isSelfTest {
+            let controller = DocumentWindowController(filePath: initialFilePath, selfTest: true, useAutosave: true)
+            controllers.append(controller)
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { exit(0) }
             return
         }
+        if let path = initialFilePath {
+            openInitial(path)
+        } else if !restoreSession() {
+            openInitial(nil)
+        }
+    }
+
+    private func openInitial(_ path: String?) {
+        let controller = DocumentWindowController(filePath: path, selfTest: false, useAutosave: true)
+        controllers.append(controller)
         controller.show(cascadeFrom: nil)
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
+
+    func applicationWillTerminate(_ notification: Notification) { saveSession() }
+
+    // MARK: - Session restoration
+
+    /// Persists the open documents + mounted folder so a relaunch reopens them.
+    private func saveSession() {
+        let docs = controllers.compactMap { $0.model.currentURL?.path }
+        defaults.set(docs, forKey: "ouro.session.docs")
+        defaults.set(frontController?.model.mountedFolder?.path, forKey: "ouro.session.folder")
+    }
+
+    /// Reopens the previously-open documents (one window each) and folder.
+    /// Returns false if there was nothing to restore.
+    @discardableResult
+    private func restoreSession() -> Bool {
+        let fm = FileManager.default
+        let docs = (defaults.array(forKey: "ouro.session.docs") as? [String] ?? []).filter { fm.fileExists(atPath: $0) }
+        let folderPath = defaults.string(forKey: "ouro.session.folder")
+        let folder = folderPath.flatMap { fm.fileExists(atPath: $0) ? URL(fileURLWithPath: $0) : nil }
+        guard !docs.isEmpty || folder != nil else { return false }
+
+        var previous: NSWindow?
+        for path in docs {
+            let controller = DocumentWindowController(filePath: path, selfTest: false, useAutosave: previous == nil)
+            controllers.append(controller)
+            controller.show(cascadeFrom: previous)
+            previous = controller.window
+        }
+        if let folder {
+            if let first = controllers.first {
+                first.model.openFolder(folder)
+            } else {
+                let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: true)
+                controllers.append(controller)
+                controller.model.openFolder(folder)
+                controller.show(cascadeFrom: nil)
+            }
+        }
+        return true
+    }
 
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls {

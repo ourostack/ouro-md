@@ -19,6 +19,19 @@
   /* Brief pulse when the open file is reloaded from an external (agent) edit. */
   @keyframes ouroFlash { 0% { background-color: rgba(255, 221, 87, 0.40); } 100% { background-color: transparent; } }
   .vditor-reset.ouro-flash { animation: ouroFlash 0.9s ease-out; }
+  /* GitHub-style alert callouts (> [!NOTE] …). */
+  .vditor-reset blockquote.ouro-alert { border-left-width: 4px !important; }
+  .vditor-reset blockquote.ouro-alert > p:first-child { font-weight: 600; }
+  .vditor-reset blockquote.ouro-alert-note { border-left-color: #0969da !important; }
+  .vditor-reset blockquote.ouro-alert-note > p:first-child { color: #0969da; }
+  .vditor-reset blockquote.ouro-alert-tip { border-left-color: #1a7f37 !important; }
+  .vditor-reset blockquote.ouro-alert-tip > p:first-child { color: #1a7f37; }
+  .vditor-reset blockquote.ouro-alert-important { border-left-color: #8250df !important; }
+  .vditor-reset blockquote.ouro-alert-important > p:first-child { color: #8250df; }
+  .vditor-reset blockquote.ouro-alert-warning { border-left-color: #9a6700 !important; }
+  .vditor-reset blockquote.ouro-alert-warning > p:first-child { color: #9a6700; }
+  .vditor-reset blockquote.ouro-alert-caution { border-left-color: #cf222e !important; }
+  .vditor-reset blockquote.ouro-alert-caution > p:first-child { color: #cf222e; }
 </style>
 <!-- Swapped at runtime by the native app to apply the active theme. -->
 <style id="ouro-theme"></style>

@@ -104,9 +104,9 @@
     el.addEventListener("paste", onTransfer, true);
     el.addEventListener("drop", onTransfer, true);
     // Resolve relative image paths against the open document's folder so
-    // images an agent referenced relatively actually display.
-    rewriteRelativeImages();
-    var observer = new MutationObserver(function () { rewriteRelativeImages(); });
+    // images an agent referenced relatively actually display; style alerts.
+    postRender();
+    var observer = new MutationObserver(function () { postRender(); });
     observer.observe(el, { childList: true, subtree: true });
   }
 
@@ -119,6 +119,29 @@
     void el.offsetWidth;
     el.classList.add("ouro-flash");
     setTimeout(function () { el.classList.remove("ouro-flash"); }, 900);
+  }
+
+  // GitHub-style alerts (> [!NOTE] …). Vditor has no native support, so we
+  // detect the marker and tag the blockquote with a class (attribute-only, safe
+  // for IR editing); CSS colors it. The raw marker stays visible because
+  // removing it would corrupt the editable source.
+  var ALERT_TYPES = { NOTE: "note", TIP: "tip", IMPORTANT: "important", WARNING: "warning", CAUTION: "caution" };
+  function styleAlerts() {
+    var bqs = document.querySelectorAll(".vditor-reset blockquote");
+    for (var i = 0; i < bqs.length; i++) {
+      var bq = bqs[i];
+      bq.className = bq.className.replace(/\bouro-alert(-\w+)?\b/g, "").replace(/\s+/g, " ").trim();
+      var m = (bq.textContent || "").replace(/^\s+/, "").match(/^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]/i);
+      if (m) {
+        bq.classList.add("ouro-alert");
+        bq.classList.add("ouro-alert-" + ALERT_TYPES[m[1].toUpperCase()]);
+      }
+    }
+  }
+
+  function postRender() {
+    rewriteRelativeImages();
+    styleAlerts();
   }
   function rewriteRelativeImages() {
     if (!docBase) { return; }
