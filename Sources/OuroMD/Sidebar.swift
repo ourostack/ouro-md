@@ -109,6 +109,8 @@ struct SidebarView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
             .onTapGesture { model.selectHeading(index: item.index) }
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { model.selectHeading(index: item.index) }
     }
 
     private func placeholder(_ text: String) -> some View {
@@ -137,6 +139,7 @@ struct FolderBrowserView: View {
                 if !model.folderFilter.isEmpty {
                     Button { model.folderFilter = "" } label: { Image(systemName: "xmark.circle.fill") }
                         .buttonStyle(.plain).foregroundStyle(.tertiary)
+                        .accessibilityLabel("Clear filter")
                 }
             }
             .padding(.horizontal, 8).padding(.vertical, 6)
@@ -191,6 +194,10 @@ struct FolderBrowserView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
         .onTapGesture { model.openFile(node.url) }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityLabel(node.name)
+        .accessibilityAction { model.openFile(node.url) }
     }
 
     private var footer: some View {
@@ -200,6 +207,7 @@ struct FolderBrowserView: View {
             }
             .buttonStyle(.plain)
             .help(model.useTreeView ? "Switch to File List view" : "Switch to File Tree view")
+            .accessibilityLabel(model.useTreeView ? "Switch to File List view" : "Switch to File Tree view")
 
             Spacer(minLength: 0)
             Button { model.openFolderPanel() } label: {
@@ -207,6 +215,8 @@ struct FolderBrowserView: View {
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Open Folder")
+            .accessibilityValue(model.mountedFolderName)
             Spacer(minLength: 0)
 
             Menu {
@@ -218,9 +228,11 @@ struct FolderBrowserView: View {
             } label: { Image(systemName: "arrow.up.arrow.down") }
             .menuStyle(.borderlessButton).frame(width: 22)
             .help("Sort")
+            .accessibilityLabel("Sort files")
 
             Button { model.newFileInMountedFolder() } label: { Image(systemName: "plus") }
                 .buttonStyle(.plain).help("New File")
+                .accessibilityLabel("New File")
         }
         .font(.system(size: 12))
         .padding(.horizontal, 10).padding(.vertical, 6)
@@ -332,6 +344,8 @@ struct SearchPanelView: View {
                 .background(isOn ? Color.accentColor.opacity(0.3) : Color.clear, in: RoundedRectangle(cornerRadius: 4))
         }
         .buttonStyle(.plain).help(help)
+        .accessibilityLabel(help)
+        .accessibilityValue(isOn ? "on" : "off")
     }
 }
 
@@ -365,10 +379,14 @@ private struct FindBar: View {
                 optionButton("Aa", isOn: model.findCaseSensitive, help: "Case Sensitive") { model.findCaseSensitive.toggle(); model.findNext() }
                 optionButton("⠿", isOn: model.findWholeWord, help: "Whole Word") { model.findWholeWord.toggle(); model.findNext() }
                 Button { model.findPrev() } label: { Image(systemName: "chevron.up") }.buttonStyle(.plain)
+                    .accessibilityLabel("Previous match")
                 Button { model.findNext() } label: { Image(systemName: "chevron.down") }.buttonStyle(.plain)
+                    .accessibilityLabel("Next match")
                 Button { model.replaceVisible.toggle() } label: { Image(systemName: "arrow.2.squarepath") }
                     .buttonStyle(.plain).help("Toggle Replace")
+                    .accessibilityLabel("Toggle Replace")
                 Button { model.closeFind() } label: { Image(systemName: "xmark") }.buttonStyle(.plain)
+                    .accessibilityLabel("Close Find")
             }
             if model.replaceVisible {
                 HStack(spacing: 6) {
@@ -397,5 +415,7 @@ private struct FindBar: View {
                 .background(isOn ? Color.accentColor.opacity(0.3) : Color.clear, in: RoundedRectangle(cornerRadius: 4))
         }
         .buttonStyle(.plain).help(help)
+        .accessibilityLabel(help)
+        .accessibilityValue(isOn ? "on" : "off")
     }
 }
