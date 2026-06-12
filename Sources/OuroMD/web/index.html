@@ -16,6 +16,9 @@
   /* The native window owns the chrome; keep the editor toolbar hidden for a
      distraction-free, content-first surface. */
   .vditor-toolbar { display: none !important; }
+  /* Brief pulse when the open file is reloaded from an external (agent) edit. */
+  @keyframes ouroFlash { 0% { background-color: rgba(255, 221, 87, 0.40); } 100% { background-color: transparent; } }
+  .vditor-reset.ouro-flash { animation: ouroFlash 0.9s ease-out; }
 </style>
 <!-- Swapped at runtime by the native app to apply the active theme. -->
 <style id="ouro-theme"></style>

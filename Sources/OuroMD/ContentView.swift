@@ -22,3 +22,37 @@ struct WordCountView: View {
         .font(.system(size: 12))
     }
 }
+
+/// Minimal preferences sheet: default theme, auto-save, text size.
+struct PreferencesView: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("Preferences").font(.system(size: 15, weight: .semibold))
+
+            HStack {
+                Text("Theme").frame(width: 90, alignment: .leading)
+                Picker("", selection: Binding(get: { model.themeID }, set: { model.setTheme(id: $0) })) {
+                    ForEach(ThemeStore.shared.themes) { Text($0.displayName).tag($0.id) }
+                }
+                .labelsHidden()
+            }
+
+            HStack {
+                Text("Auto-save").frame(width: 90, alignment: .leading)
+                Toggle("Save changes automatically", isOn: Binding(get: { model.autoSaveEnabled }, set: { model.setAutoSave($0) }))
+                Spacer()
+            }
+
+            HStack {
+                Text("Text size").frame(width: 90, alignment: .leading)
+                Slider(value: Binding(get: { model.zoom }, set: { model.setTextScale($0) }), in: 0.7...2.0, step: 0.1)
+                Text("\(Int((model.zoom * 100).rounded()))%").monospacedDigit().frame(width: 44, alignment: .trailing)
+            }
+        }
+        .padding(24)
+        .frame(width: 380)
+    }
+}
+

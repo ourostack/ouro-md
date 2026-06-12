@@ -38,7 +38,8 @@ final class AppModel: ObservableObject {
     private(set) var showOutline = false
     private(set) var focusMode = false
     private(set) var typewriter = false
-    private var zoom = 1.0
+    @Published private(set) var zoom = 1.0
+    @Published var autoSaveEnabled = true
     @Published private(set) var wordCount = 0
     @Published private(set) var charCount = 0
     @Published var sidebarVisible: Bool
@@ -88,6 +89,8 @@ final class AppModel: ObservableObject {
     init() {
         themeID = UserDefaults.standard.string(forKey: "ouro.theme") ?? "quartz"
         sidebarVisible = UserDefaults.standard.bool(forKey: "ouro.sidebar")
+        autoSaveEnabled = UserDefaults.standard.object(forKey: "ouro.autosave") as? Bool ?? true
+        zoom = UserDefaults.standard.object(forKey: "ouro.zoom") as? Double ?? 1.0
         if let raw = UserDefaults.standard.string(forKey: "ouro.sidebarMode"), let mode = SidebarMode(rawValue: raw) {
             sidebarMode = mode
         }
@@ -136,7 +139,7 @@ final class AppModel: ObservableObject {
     /// Typora-style auto-save: silently persists a titled document a moment
     /// after the last edit, so the user never has to press ⌘S.
     private func scheduleAutosave() {
-        guard currentURL != nil else { return }
+        guard autoSaveEnabled, currentURL != nil else { return }
         autosaveItem?.cancel()
         let item = DispatchWorkItem { [weak self] in
             guard let self, self.isDirty, self.currentURL != nil else { return }
@@ -144,6 +147,18 @@ final class AppModel: ObservableObject {
         }
         autosaveItem = item
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5, execute: item)
+    }
+
+    func setAutoSave(_ enabled: Bool) {
+        autoSaveEnabled = enabled
+        defaults.set(enabled, forKey: "ouro.autosave")
+        if enabled, isDirty { scheduleAutosave() }
+    }
+
+    func setTextScale(_ value: Double) {
+        zoom = min(max(value, 0.7), 2.0)
+        defaults.set(zoom, forKey: "ouro.zoom")
+        bridge?.setZoom(zoom)
     }
 
     // MARK: - File operations
@@ -346,6 +361,7 @@ final class AppModel: ObservableObject {
         themeID = id
         defaults.set(id, forKey: "ouro.theme")
         applyThemeToEditor()
+        onChromeUpdate?()
     }
 
     private func applyThemeToEditor() {
@@ -566,9 +582,9 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func zoomIn() { zoom = min(zoom + 0.1, 3.0); bridge?.setZoom(zoom) }
-    func zoomOut() { zoom = max(zoom - 0.1, 0.5); bridge?.setZoom(zoom) }
-    func actualSize() { zoom = 1.0; bridge?.setZoom(zoom) }
+    func zoomIn() { setTextScale(zoom + 0.1) }
+    func zoomOut() { setTextScale(zoom - 0.1) }
+    func actualSize() { setTextScale(1.0) }
     func format(_ command: String) { bridge?.execCommand(command) }
 
     func printDocument() { bridge?.printDocument() }

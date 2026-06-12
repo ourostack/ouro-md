@@ -51,6 +51,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func openInNewWindow(_ url: URL) {
+        if let existing = controllers.first(where: { $0.model.currentURL == url }) {
+            existing.window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
         let prev = frontController?.window
         let controller = DocumentWindowController(filePath: url.path, selfTest: false, useAutosave: false)
         controllers.append(controller)
@@ -58,6 +63,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func printDocument(_ sender: Any?) { frontController?.printDocument() }
+
+    private var prefsWindow: NSWindow?
+    @objc func showPreferences(_ sender: Any?) {
+        if prefsWindow == nil {
+            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 380, height: 240),
+                             styleMask: [.titled, .closable], backing: .buffered, defer: false)
+            w.title = "Preferences"
+            w.isReleasedWhenClosed = false
+            w.center()
+            prefsWindow = w
+        }
+        // Re-bind to the active window's model each time it opens.
+        prefsWindow?.contentViewController = NSHostingController(rootView: PreferencesView(model: model))
+        prefsWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         let dirty = controllers.filter { $0.model.isDirty }

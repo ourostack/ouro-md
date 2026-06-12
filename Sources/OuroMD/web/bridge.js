@@ -111,6 +111,15 @@
   }
 
   var docBase = "";
+  function flashReloaded() {
+    var el = document.querySelector(".vditor-reset");
+    if (!el) { return; }
+    el.classList.remove("ouro-flash");
+    // reflow so the animation restarts on rapid successive reloads
+    void el.offsetWidth;
+    el.classList.add("ouro-flash");
+    setTimeout(function () { el.classList.remove("ouro-flash"); }, 900);
+  }
   function rewriteRelativeImages() {
     if (!docBase) { return; }
     var imgs = document.querySelectorAll(".vditor-reset img");
@@ -217,6 +226,7 @@
         if (scroller) { scroller.scrollTop = prevY; } else { window.scrollTo(0, prevY); }
       };
       requestAnimationFrame(function () { restore(); requestAnimationFrame(restore); });
+      flashReloaded();
     },
     getValue: function () {
       try { return vditor ? vditor.getValue() : state.value; } catch (e) { return state.value; }

@@ -11,7 +11,7 @@ enum MenuBuilder {
 
     static func install(into app: NSApplication, target: AppDelegate) {
         let mainMenu = NSMenu()
-        mainMenu.addItem(appMenu())
+        mainMenu.addItem(appMenu(target: target))
         mainMenu.addItem(fileMenu(target: target))
         mainMenu.addItem(editMenu(target: target))
         mainMenu.addItem(paragraphMenu(target: target))
@@ -41,13 +41,16 @@ enum MenuBuilder {
 
     // MARK: - App menu
 
-    private static func appMenu() -> NSMenuItem {
+    private static func appMenu(target: AppDelegate) -> NSMenuItem {
         let item = NSMenuItem()
         let menu = NSMenu()
         item.submenu = menu
 
         menu.addItem(withTitle: "About ouro-md",
                      action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        menu.addItem(.separator())
+        let settings = add(menu, "Settings…", #selector(AppDelegate.showPreferences(_:)), ",", target)
+        settings.keyEquivalentModifierMask = [.command]
         menu.addItem(.separator())
 
         let hide = menu.addItem(withTitle: "Hide ouro-md",
