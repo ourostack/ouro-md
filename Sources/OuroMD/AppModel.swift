@@ -290,6 +290,42 @@ final class AppModel: ObservableObject {
         onChromeUpdate?()
     }
 
+    /// Renames the open file on disk to `rawName` (a bare filename in the same
+    /// folder). Returns `nil` on success, or a human-readable message on failure.
+    /// Untitled documents have no file to rename — the caller should run Save As.
+    @discardableResult
+    func renameCurrentFile(to rawName: String) -> String? {
+        guard let url = currentURL else { return "This document hasn’t been saved yet." }
+        var name = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return "Please enter a name." }
+        guard !name.contains("/"), !name.contains(":") else {
+            return "A file name can’t contain “/” or “:”."
+        }
+        // Keep the original extension when the user doesn't type one, so the
+        // document stays a recognised Markdown file.
+        if (name as NSString).pathExtension.isEmpty, !url.pathExtension.isEmpty {
+            name += "." + url.pathExtension
+        }
+        let dest = url.deletingLastPathComponent().appendingPathComponent(name)
+        if dest.standardizedFileURL == url.standardizedFileURL { return nil }
+        if FileManager.default.fileExists(atPath: dest.path) {
+            return "“\(name)” already exists in this folder."
+        }
+        stopWatching()
+        do {
+            try FileManager.default.moveItem(at: url, to: dest)
+            currentURL = dest
+            NSDocumentController.shared.noteNewRecentDocumentURL(dest)
+            refreshFolder()
+            startWatching()
+            onChromeUpdate?()
+            return nil
+        } catch {
+            startWatching()
+            return error.localizedDescription
+        }
+    }
+
     func save() { performSave { _ in } }
 
     func saveAs() {

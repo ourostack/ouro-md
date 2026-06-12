@@ -92,6 +92,7 @@ enum MenuBuilder {
         add(menu, "Save", #selector(AppDelegate.saveDocument(_:)), "s", target)
         let saveAs = add(menu, "Save As…", #selector(AppDelegate.saveDocumentAs(_:)), "s", target)
         saveAs.keyEquivalentModifierMask = [.command, .shift]
+        add(menu, "Rename…", #selector(AppDelegate.renameDocument(_:)), "", target)
 
         menu.addItem(.separator())
         let export = menu.addItem(withTitle: "Export", action: nil, keyEquivalent: "")

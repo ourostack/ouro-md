@@ -103,4 +103,67 @@ final class AppModelReloadTests: XCTestCase {
                        "# Important content the user must not lose",
                        "save before the editor is ready must not clobber the file")
     }
+
+    /// Click-to-rename renames the file on disk and re-points the model at it.
+    func testRenameMovesFileAndRetargetsModel() {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-rename-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let url = dir.appendingPathComponent("before.md")
+        try? "# Hi\n".write(to: url, atomically: true, encoding: .utf8)
+
+        let model = AppModel()
+        model.bridge = MockBridge()
+        model.editorDidBecomeReady()
+        model.loadInitialFile(url.path)
+
+        let error = model.renameCurrentFile(to: "after.md")
+        XCTAssertNil(error, "rename should succeed")
+        let renamed = dir.appendingPathComponent("after.md")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: renamed.path), "new file should exist")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path), "old file should be gone")
+        XCTAssertEqual(model.currentURL?.lastPathComponent, "after.md", "model should track the new URL")
+        XCTAssertEqual(model.windowTitle, "after.md", "title should follow the rename")
+    }
+
+    /// A bare new name keeps the original extension, like Finder.
+    func testRenameWithoutExtensionKeepsOriginal() {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-rename-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let url = dir.appendingPathComponent("notes.md")
+        try? "x".write(to: url, atomically: true, encoding: .utf8)
+
+        let model = AppModel()
+        model.bridge = MockBridge()
+        model.editorDidBecomeReady()
+        model.loadInitialFile(url.path)
+
+        XCTAssertNil(model.renameCurrentFile(to: "journal"))
+        XCTAssertEqual(model.currentURL?.lastPathComponent, "journal.md",
+                       "a name without an extension should keep the original .md")
+    }
+
+    /// Renaming onto an existing file must refuse rather than clobber it.
+    func testRenameRefusesCollision() {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-rename-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let url = dir.appendingPathComponent("a.md")
+        try? "a".write(to: url, atomically: true, encoding: .utf8)
+        let other = dir.appendingPathComponent("b.md")
+        try? "b".write(to: other, atomically: true, encoding: .utf8)
+
+        let model = AppModel()
+        model.bridge = MockBridge()
+        model.editorDidBecomeReady()
+        model.loadInitialFile(url.path)
+
+        XCTAssertNotNil(model.renameCurrentFile(to: "b.md"), "collision should be refused")
+        XCTAssertEqual(try? String(contentsOf: other, encoding: .utf8), "b", "existing file must be untouched")
+        XCTAssertEqual(model.currentURL?.lastPathComponent, "a.md", "model should keep the original URL")
+    }
 }

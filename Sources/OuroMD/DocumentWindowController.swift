@@ -4,12 +4,13 @@ import SwiftUI
 /// Owns one document window: its `AppModel`, the sidebar+editor split, the
 /// centered title, chrome sync, the word-count popover, and unsaved-close
 /// handling. Multiple instances give independent windows.
-final class DocumentWindowController: NSObject, NSWindowDelegate {
+final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate {
     let model = AppModel()
     let window: NSWindow
-    private var titleLabel: NSTextField?
     private var sidebarItem: NSSplitViewItem?
     private var wordCountPopover: NSPopover?
+    private var renamePopover: NSPopover?
+    private var renameField: NSTextField?
 
     /// `onBecomeKey` lets the app re-point menu state at the active window.
     var onBecomeKey: ((DocumentWindowController) -> Void)?
@@ -30,12 +31,11 @@ final class DocumentWindowController: NSObject, NSWindowDelegate {
         split.addSplitViewItem(NSSplitViewItem(viewController: editorVC))
         self.sidebarItem = sidebar
 
-        let window = NSWindow(contentViewController: split)
+        let window = DocumentWindow(contentViewController: split)
         window.setContentSize(NSSize(width: 1080, height: 800))
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .visible
-        window.title = ""
         window.isMovableByWindowBackground = true
         window.tabbingMode = .disallowed
         window.isReleasedWhenClosed = false
@@ -43,7 +43,10 @@ final class DocumentWindowController: NSObject, NSWindowDelegate {
         super.init()
 
         window.delegate = self
-        installCenteredTitle()
+        // Click the title (or its proxy icon) to rename, like a native document
+        // window. The window subclass discriminates a click from a title drag.
+        window.onTitleClicked = { [weak self] in self?.presentRename() }
+        window.titleHitView = { [weak self] in self?.nativeTitleField() }
         model.onChromeUpdate = { [weak self] in self?.syncChrome() }
 
         if useAutosave {
@@ -70,31 +73,99 @@ final class DocumentWindowController: NSObject, NSWindowDelegate {
     }
 
     func syncChrome() {
-        // The centered label owns the filename; keep the system title empty so it
-        // doesn't render a second (left-aligned) copy next to the traffic lights.
-        window.title = ""
+        // Native document chrome: the system draws the title (and, when the file
+        // exists on disk, a draggable proxy icon). Left-aligned in windowed mode
+        // and full screen, matching every other macOS document app.
+        window.title = model.windowTitle
+        window.representedURL = model.currentURL
         window.isDocumentEdited = model.isDirty
         window.appearance = NSAppearance(named: model.theme.uiMode == "dark" ? .darkAqua : .aqua)
         if let background = NSColor(hex: model.theme.backgroundHex) { window.backgroundColor = background }
-        titleLabel?.stringValue = model.windowTitle + (model.isDirty ? " — Edited" : "")
         MenuBuilder.refreshDynamicState(model: model)
     }
 
-    private func installCenteredTitle() {
-        guard let titlebar = window.standardWindowButton(.closeButton)?.superview else { return }
-        let label = PassthroughTextField(labelWithString: "")
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: 13, weight: .medium)
-        label.textColor = .secondaryLabelColor
-        label.alignment = .center
-        label.lineBreakMode = .byTruncatingTail
-        titlebar.addSubview(label)
-        NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: titlebar.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: titlebar.centerYAnchor),
-            label.widthAnchor.constraint(lessThanOrEqualTo: titlebar.widthAnchor, multiplier: 0.6)
-        ])
-        titleLabel = label
+    // MARK: - Click-to-rename
+
+    /// Presents an inline rename popover anchored on the title. Untitled
+    /// documents have no file yet, so we route to Save As — that panel is the
+    /// "name this document" affordance for an unsaved buffer.
+    func presentRename() {
+        guard model.currentURL != nil else { model.saveAs(); return }
+        if let existing = renamePopover { existing.close(); return }
+
+        let field = NSTextField(string: model.windowTitle)
+        field.frame = NSRect(x: 12, y: 11, width: 256, height: 22)
+        field.lineBreakMode = .byTruncatingMiddle
+        field.usesSingleLineMode = true
+        field.bezelStyle = .roundedBezel
+        field.target = self
+        field.action = #selector(renameFieldCommitted(_:))
+
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 280, height: 44))
+        container.addSubview(field)
+        let vc = NSViewController()
+        vc.view = container
+
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.contentViewController = vc
+        popover.delegate = self
+        renamePopover = popover
+        renameField = field
+
+        let anchor = nativeTitleField() ?? window.standardWindowButton(.closeButton)?.superview ?? window.contentView!
+        popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .maxY)
+
+        window.makeFirstResponder(field)
+        // Pre-select the base name (without the extension), like Finder's rename.
+        if let editor = field.currentEditor() {
+            let full = field.stringValue as NSString
+            let ext = full.pathExtension as NSString
+            let baseLength = full.length - (ext.length == 0 ? 0 : ext.length + 1)
+            editor.selectedRange = NSRange(location: 0, length: max(0, baseLength))
+        }
+    }
+
+    @objc private func renameFieldCommitted(_ sender: NSTextField) {
+        applyRename(sender.stringValue)
+    }
+
+    private func applyRename(_ newName: String) {
+        guard renameField != nil else { return }
+        let popover = renamePopover
+        renameField = nil
+        renamePopover = nil
+        popover?.delegate = nil
+        popover?.close()
+        guard newName != model.windowTitle else { return }
+        if let message = model.renameCurrentFile(to: newName) {
+            let alert = NSAlert()
+            alert.messageText = "Couldn’t rename the file"
+            alert.informativeText = message
+            alert.beginSheetModal(for: window) { _ in }
+        }
+    }
+
+    func popoverDidClose(_ notification: Notification) {
+        // Committing on click-away mirrors Finder, where dismissing the rename
+        // field keeps the typed name. (Commit via Return clears the field first,
+        // so this no-ops in that path.)
+        if let field = renameField { applyRename(field.stringValue) }
+    }
+
+    /// Finds the AppKit-drawn title text field so the popover (and the window's
+    /// click hit-test) can anchor exactly on the title.
+    private func nativeTitleField() -> NSTextField? {
+        guard !window.title.isEmpty,
+              let titlebar = window.standardWindowButton(.closeButton)?.superview else { return nil }
+        func search(_ view: NSView) -> NSTextField? {
+            for sub in view.subviews {
+                if let label = sub as? NSTextField, label.stringValue == window.title { return label }
+                if let found = search(sub) { return found }
+            }
+            return nil
+        }
+        return search(titlebar)
     }
 
     func toggleSidebar() {
@@ -159,5 +230,49 @@ final class DocumentWindowController: NSObject, NSWindowDelegate {
         default:
             return false
         }
+    }
+}
+
+/// A document window whose title is click-to-rename. AppKit only provides the
+/// editable title popover to `NSDocument`-based windows, so we detect a click on
+/// the title text ourselves — while preserving the ability to drag the window by
+/// its title bar (a drag past a small threshold moves the window instead).
+final class DocumentWindow: NSWindow {
+    var onTitleClicked: (() -> Void)?
+    var titleHitView: (() -> NSView?)?
+
+    override func mouseDown(with event: NSEvent) {
+        guard event.clickCount == 1,
+              let titleView = titleHitView?() else {
+            super.mouseDown(with: event)
+            return
+        }
+        let titleRect = titleView.convert(titleView.bounds, to: nil)
+        guard titleRect.contains(event.locationInWindow) else {
+            super.mouseDown(with: event)
+            return
+        }
+
+        // Distinguish a click (rename) from a drag (move the window). Track the
+        // mouse until it is released; treat motion past a few points as a drag.
+        let startMouse = NSEvent.mouseLocation
+        let startOrigin = frame.origin
+        var didDrag = false
+        trackingLoop: while let next = nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
+            switch next.type {
+            case .leftMouseUp:
+                break trackingLoop
+            case .leftMouseDragged:
+                let now = NSEvent.mouseLocation
+                let dx = now.x - startMouse.x
+                let dy = now.y - startMouse.y
+                if !didDrag && (dx * dx + dy * dy) < 9 { continue }
+                didDrag = true
+                setFrameOrigin(NSPoint(x: startOrigin.x + dx, y: startOrigin.y + dy))
+            default:
+                break
+            }
+        }
+        if !didDrag { onTitleClicked?() }
     }
 }

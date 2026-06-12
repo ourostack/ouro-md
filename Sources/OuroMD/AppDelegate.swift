@@ -191,6 +191,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     @objc func saveDocument(_ sender: Any?) { model.save() }
     @objc func saveDocumentAs(_ sender: Any?) { model.saveAs() }
+    @objc func renameDocument(_ sender: Any?) { frontController?.presentRename() }
     @objc func exportHTML(_ sender: Any?) { model.exportHTML() }
     @objc func exportPDF(_ sender: Any?) { model.exportPDF() }
 
@@ -250,13 +251,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSWorkspace.shared.open(url)
         }
     }
-}
-
-/// A title label that never intercepts mouse events, so the titlebar it sits in
-/// stays draggable (the click falls through to the window background).
-final class PassthroughTextField: NSTextField {
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }
-    override var mouseDownCanMoveWindow: Bool { true }
 }
 
 extension NSColor {
