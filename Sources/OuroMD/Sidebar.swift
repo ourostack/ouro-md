@@ -13,6 +13,29 @@ struct OutlineItem: Identifiable {
     let text: String
 }
 
+/// Headings nested into a tree by level, for a collapsible outline.
+struct OutlineNode: Identifiable {
+    let id = UUID()
+    let item: OutlineItem
+    var children: [OutlineNode]?
+
+    static func build(from items: [OutlineItem]) -> [OutlineNode] {
+        var index = 0
+        func parse(minLevel: Int) -> [OutlineNode] {
+            var nodes: [OutlineNode] = []
+            while index < items.count {
+                let item = items[index]
+                if item.level < minLevel { break }
+                index += 1
+                let children = parse(minLevel: item.level + 1)
+                nodes.append(OutlineNode(item: item, children: children.isEmpty ? nil : children))
+            }
+            return nodes
+        }
+        return parse(minLevel: 1)
+    }
+}
+
 struct FolderItem: Identifiable {
     let id = UUID()
     let name: String
@@ -45,20 +68,47 @@ struct SidebarView: View {
     }
 
     @ViewBuilder private var outlineList: some View {
-        if model.outlineItems.isEmpty {
-            placeholder("No headings")
-        } else {
-            List(model.outlineItems) { item in
-                Text(item.text.isEmpty ? "Untitled" : item.text)
-                    .font(.system(size: 12))
-                    .lineLimit(1)
-                    .padding(.leading, CGFloat(max(0, item.level - 1)) * 12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                    .onTapGesture { model.selectHeading(index: item.index) }
+        VStack(spacing: 0) {
+            if !model.outlineItems.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "line.3.horizontal.decrease").font(.system(size: 11)).foregroundStyle(.secondary)
+                    TextField("Filter", text: Binding(get: { model.outlineFilter }, set: { model.outlineFilter = $0 }))
+                        .textFieldStyle(.plain).font(.system(size: 12))
+                }
+                .padding(.horizontal, 8).padding(.vertical, 6)
+                Divider()
             }
-            .listStyle(.sidebar)
+            if model.outlineItems.isEmpty {
+                placeholder("No headings")
+            } else if !model.outlineFilter.isEmpty {
+                if model.filteredOutline.isEmpty {
+                    placeholder("No matches")
+                } else {
+                    List(model.filteredOutline) { item in
+                        outlineRow(item, indent: true)
+                    }
+                    .listStyle(.sidebar)
+                }
+            } else {
+                List(model.outlineTree, children: \.children) { node in
+                    outlineRow(node.item, indent: false)
+                }
+                .listStyle(.sidebar)
+            }
         }
+    }
+
+    private func outlineRow(_ item: OutlineItem, indent: Bool) -> some View {
+        let isActive = item.index == model.activeHeadingIndex
+        return Text(item.text.isEmpty ? "Untitled" : item.text)
+            .font(.system(size: 12))
+            .fontWeight(isActive ? .semibold : .regular)
+            .foregroundStyle(isActive ? Color.accentColor : Color.primary)
+            .lineLimit(1)
+            .padding(.leading, indent ? CGFloat(max(0, item.level - 1)) * 12 : 0)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .onTapGesture { model.selectHeading(index: item.index) }
     }
 
     private func placeholder(_ text: String) -> some View {

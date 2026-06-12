@@ -311,6 +311,23 @@
     if (state.focus) { updateActiveBlock(); }
   });
 
+  // Track the heading nearest the top of the viewport so the outline can
+  // highlight the section you're reading.
+  var activeHeadingIndex = -1;
+  function updateActiveHeading() {
+    var hs = document.querySelectorAll(".vditor-reset h1, .vditor-reset h2, .vditor-reset h3, .vditor-reset h4, .vditor-reset h5, .vditor-reset h6");
+    var idx = hs.length ? 0 : -1;
+    for (var i = 0; i < hs.length; i++) {
+      if (hs[i].getBoundingClientRect().top <= 90) { idx = i; } else { break; }
+    }
+    if (idx !== activeHeadingIndex) { activeHeadingIndex = idx; post("activeHeading", { index: idx }); }
+  }
+  var headingScrollTimer = null;
+  window.addEventListener("scroll", function () {
+    if (headingScrollTimer) { return; }
+    headingScrollTimer = setTimeout(function () { headingScrollTimer = null; updateActiveHeading(); }, 120);
+  }, true);
+
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", create);
   } else {

@@ -61,6 +61,8 @@ struct EditorWebView: NSViewRepresentable {
                     }
                     model.updateOutline(parsed)
                 }
+            case "activeHeading":
+                if let index = body["index"] as? Int { model.setActiveHeading(index) }
             default:
                 break
             }

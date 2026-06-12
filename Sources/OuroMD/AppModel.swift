@@ -42,6 +42,8 @@ final class AppModel: ObservableObject {
     @Published var sidebarVisible: Bool
     @Published var sidebarMode: SidebarMode = .outline
     @Published private(set) var outlineItems: [OutlineItem] = []
+    @Published private(set) var activeHeadingIndex = -1
+    @Published var outlineFilter = ""
     @Published private(set) var folderItems: [FolderItem] = []
     // Mounted-folder browser (Open Folder).
     @Published private(set) var mountedFolder: URL?
@@ -388,6 +390,21 @@ final class AppModel: ObservableObject {
 
     func selectHeading(index: Int) {
         bridge?.scrollToHeading(index)
+    }
+
+    func setActiveHeading(_ index: Int) { activeHeadingIndex = index }
+
+    /// Flat heading list nested into a tree by heading level (for a collapsible
+    /// outline). Stack-based: each heading attaches under the nearest shallower one.
+    var outlineTree: [OutlineNode] {
+        OutlineNode.build(from: outlineItems)
+    }
+
+    /// Headings matching the outline filter (case-insensitive substring).
+    var filteredOutline: [OutlineItem] {
+        let q = outlineFilter.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !q.isEmpty else { return outlineItems }
+        return outlineItems.filter { $0.text.lowercased().contains(q) }
     }
 
     func openFolderItem(_ item: FolderItem) {
