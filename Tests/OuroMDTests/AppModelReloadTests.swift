@@ -9,8 +9,8 @@ private final class MockBridge: EditorBridge {
 
     func setMarkdown(_ markdown: String) { current = markdown }
     func reloadMarkdown(_ markdown: String) { current = markdown; reloads.append(markdown); onReload?(markdown) }
-    func getMarkdown(_ completion: @escaping (String) -> Void) { completion(current) }
-    func getHTML(_ completion: @escaping (String) -> Void) { completion("") }
+    func getMarkdown(_ completion: @escaping (String?) -> Void) { completion(current) }
+    func getHTML(_ completion: @escaping (String?) -> Void) { completion("") }
     func applyTheme(uiMode: String, css: String, codeTheme: String) {}
     func setMode(_ mode: String) {}
     func setOutline(_ on: Bool) {}
@@ -81,5 +81,24 @@ final class AppModelReloadTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { done.fulfill() }
         wait(for: [done], timeout: 3)
         XCTAssertTrue(bridge.reloads.isEmpty, "saving our own content should not trigger a reload")
+    }
+
+    /// Saving before the editor has loaded must NOT overwrite the file with "".
+    func testSaveBeforeEditorReadyDoesNotEmptyFile() {
+        let url = tempFile()
+        try? "# Important content the user must not lose".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let model = AppModel()
+        model.bridge = MockBridge()          // bridge present...
+        model.loadInitialFile(url.path)      // ...but editorDidBecomeReady NOT called → not ready
+        model.save()
+
+        let done = expectation(description: "settled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { done.fulfill() }
+        wait(for: [done], timeout: 2)
+        XCTAssertEqual(try? String(contentsOf: url, encoding: .utf8),
+                       "# Important content the user must not lose",
+                       "save before the editor is ready must not clobber the file")
     }
 }

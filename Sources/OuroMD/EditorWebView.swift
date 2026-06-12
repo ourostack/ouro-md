@@ -84,6 +84,17 @@ struct EditorWebView: NSViewRepresentable {
             decisionHandler(.allow)
         }
 
+        // Recover if the web content process is terminated (crash / jetsam):
+        // restore content and reload rather than leaving a blank editor.
+        func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+            model.editorCrashed()
+            if let indexURL = Bundle.module.url(forResource: "index", withExtension: "html", subdirectory: "web") {
+                webView.loadFileURL(indexURL, allowingReadAccessTo: URL(fileURLWithPath: "/"))
+            } else {
+                webView.reload()
+            }
+        }
+
         // MARK: native -> JS (EditorBridge)
 
         func setMarkdown(_ markdown: String) {
@@ -93,15 +104,17 @@ struct EditorWebView: NSViewRepresentable {
             eval("window.ouro && window.ouro.reloadValue(\(Coordinator.jsString(markdown)))")
         }
 
-        func getMarkdown(_ completion: @escaping (String) -> Void) {
-            webView?.evaluateJavaScript("window.ouro ? window.ouro.getValue() : ''") { result, _ in
-                completion(result as? String ?? "")
+        func getMarkdown(_ completion: @escaping (String?) -> Void) {
+            guard let webView else { completion(nil); return }
+            webView.evaluateJavaScript("window.ouro ? window.ouro.getValue() : null") { result, _ in
+                completion(result as? String)
             }
         }
 
-        func getHTML(_ completion: @escaping (String) -> Void) {
-            webView?.evaluateJavaScript("window.ouro ? window.ouro.getHTML() : ''") { result, _ in
-                completion(result as? String ?? "")
+        func getHTML(_ completion: @escaping (String?) -> Void) {
+            guard let webView else { completion(nil); return }
+            webView.evaluateJavaScript("window.ouro ? window.ouro.getHTML() : null") { result, _ in
+                completion(result as? String)
             }
         }
 

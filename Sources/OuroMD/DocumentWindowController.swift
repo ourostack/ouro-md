@@ -13,6 +13,8 @@ final class DocumentWindowController: NSObject, NSWindowDelegate {
 
     /// `onBecomeKey` lets the app re-point menu state at the active window.
     var onBecomeKey: ((DocumentWindowController) -> Void)?
+    /// `onClose` lets the app drop this controller so it isn't leaked.
+    var onClose: ((DocumentWindowController) -> Void)?
 
     init(filePath: String?, selfTest: Bool, useAutosave: Bool) {
         let sidebarVC = NSHostingController(rootView: SidebarView(model: model))
@@ -130,6 +132,11 @@ final class DocumentWindowController: NSObject, NSWindowDelegate {
     func windowDidBecomeKey(_ notification: Notification) {
         MenuBuilder.refreshDynamicState(model: model)
         onBecomeKey?(self)
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        model.teardown()
+        onClose?(self)
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {

@@ -20,10 +20,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var window: NSWindow! { frontController?.window }
     func syncChrome() { frontController?.syncChrome() }
 
+    /// Registers a window controller and ensures it's dropped when its window
+    /// closes, so closed windows (and their watchers) don't leak.
+    private func track(_ controller: DocumentWindowController) {
+        controller.onClose = { [weak self] closed in
+            self?.controllers.removeAll { $0 === closed }
+        }
+        controllers.append(controller)
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         if isSelfTest {
             let controller = DocumentWindowController(filePath: initialFilePath, selfTest: true, useAutosave: true)
-            controllers.append(controller)
+            track(controller)
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { exit(0) }
             return
         }
@@ -36,7 +45,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func openInitial(_ path: String?) {
         let controller = DocumentWindowController(filePath: path, selfTest: false, useAutosave: true)
-        controllers.append(controller)
+        track(controller)
         controller.show(cascadeFrom: nil)
     }
 
@@ -66,7 +75,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         var previous: NSWindow?
         for path in docs {
             let controller = DocumentWindowController(filePath: path, selfTest: false, useAutosave: previous == nil)
-            controllers.append(controller)
+            track(controller)
             controller.show(cascadeFrom: previous)
             previous = controller.window
         }
@@ -75,7 +84,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 first.model.openFolder(folder)
             } else {
                 let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: true)
-                controllers.append(controller)
+                track(controller)
                 controller.model.openFolder(folder)
                 controller.show(cascadeFrom: nil)
             }
@@ -98,7 +107,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func newWindow(_ sender: Any?) {
         let prev = frontController?.window
         let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
-        controllers.append(controller)
+        track(controller)
         controller.show(cascadeFrom: prev)
     }
 
@@ -110,7 +119,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         let prev = frontController?.window
         let controller = DocumentWindowController(filePath: url.path, selfTest: false, useAutosave: false)
-        controllers.append(controller)
+        track(controller)
         controller.show(cascadeFrom: prev)
     }
 
@@ -145,7 +154,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .alertFirstButtonReturn:
             let group = DispatchGroup()
             for c in dirty { group.enter(); c.model.performSave { _ in group.leave() } }
-            group.notify(queue: .main) { NSApp.reply(toApplicationShouldTerminate: true) }
+            var replied = false
+            let reply: (Bool) -> Void = { ok in
+                guard !replied else { return }
+                replied = true
+                NSApp.reply(toApplicationShouldTerminate: ok)
+            }
+            group.notify(queue: .main) { reply(true) }
+            // Safety net: never hang the quit if a save completion is lost.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4) { reply(true) }
             return .terminateLater
         case .alertSecondButtonReturn:
             return .terminateNow

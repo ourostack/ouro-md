@@ -53,28 +53,35 @@ enum FolderScanner {
     static func flatList(at folder: URL, sort: FolderSort) -> [FolderNode] {
         var out: [FolderNode] = []
         var budget = maxFiles
-        collect(folder, into: &out, budget: &budget)
+        collect(folder, into: &out, budget: &budget, depth: 0)
         return sortNodes(out, sort: sort, groupDirs: false)
     }
 
     // MARK: - internals
 
-    private static func scan(_ dir: URL, sort: FolderSort, budget: inout Int) -> [FolderNode] {
-        guard budget > 0 else { return [] }
+    /// Recursion depth cap — a second guard (alongside skipping symlinks)
+    /// against pathological trees / symlink cycles.
+    private static let maxDepth = 24
+    private static let scanKeys: [URLResourceKey] = [
+        .isDirectoryKey, .isSymbolicLinkKey, .contentModificationDateKey, .creationDateKey, .fileSizeKey
+    ]
+
+    private static func scan(_ dir: URL, sort: FolderSort, budget: inout Int, depth: Int = 0) -> [FolderNode] {
+        guard budget > 0, depth < maxDepth else { return [] }
         let fm = FileManager.default
-        let keys: [URLResourceKey] = [.isDirectoryKey, .contentModificationDateKey, .creationDateKey, .fileSizeKey]
-        guard let entries = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: keys,
+        guard let entries = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: scanKeys,
                                                         options: [.skipsHiddenFiles]) else { return [] }
         var nodes: [FolderNode] = []
         for url in entries {
             let name = url.lastPathComponent
             if name == "node_modules" { continue }
-            let values = try? url.resourceValues(forKeys: Set(keys))
+            let values = try? url.resourceValues(forKeys: Set(scanKeys))
+            if values?.isSymbolicLink ?? false { continue }   // don't follow symlinks (cycle-safe)
             let isDir = values?.isDirectory ?? false
             let mtime = values?.contentModificationDate ?? .distantPast
             let ctime = values?.creationDate ?? .distantPast
             if isDir {
-                let children = scan(url, sort: sort, budget: &budget)
+                let children = scan(url, sort: sort, budget: &budget, depth: depth + 1)
                 if !children.isEmpty {
                     nodes.append(FolderNode(url: url, name: name, isDirectory: true,
                                             modified: mtime, created: ctime, children: children))
@@ -89,17 +96,17 @@ enum FolderScanner {
         return sortNodes(nodes, sort: sort, groupDirs: true)
     }
 
-    private static func collect(_ dir: URL, into out: inout [FolderNode], budget: inout Int) {
-        guard budget > 0 else { return }
+    private static func collect(_ dir: URL, into out: inout [FolderNode], budget: inout Int, depth: Int) {
+        guard budget > 0, depth < maxDepth else { return }
         let fm = FileManager.default
-        let keys: [URLResourceKey] = [.isDirectoryKey, .contentModificationDateKey, .creationDateKey, .fileSizeKey]
-        guard let entries = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: keys,
+        guard let entries = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: scanKeys,
                                                         options: [.skipsHiddenFiles]) else { return }
         for url in entries {
             if url.lastPathComponent == "node_modules" { continue }
-            let values = try? url.resourceValues(forKeys: Set(keys))
+            let values = try? url.resourceValues(forKeys: Set(scanKeys))
+            if values?.isSymbolicLink ?? false { continue }
             if values?.isDirectory ?? false {
-                collect(url, into: &out, budget: &budget)
+                collect(url, into: &out, budget: &budget, depth: depth + 1)
             } else if canOpen(url), (values?.fileSize ?? 0) <= maxFileBytes {
                 budget -= 1
                 out.append(FolderNode(url: url, name: url.lastPathComponent, isDirectory: false,

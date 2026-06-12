@@ -46,23 +46,25 @@ final class ContentSearcher {
             onComplete(); return
         }
         let nameQuery = trimmed.lowercased()
+        var workItem: DispatchWorkItem!
         let work = DispatchWorkItem { [weak self] in
-            guard let self else { return }
+            guard self != nil else { return }
             let files = FolderScanner.flatList(at: folder, sort: .name)
             for node in files {
-                if self.current?.isCancelled ?? true { return }
+                if workItem.isCancelled { return }
                 let nameMatched = node.name.lowercased().contains(nameQuery)
                 var snippets: [SearchSnippet] = []
-                if let text = try? String(contentsOf: node.url, encoding: .utf8), text.utf8.count <= Self.maxFileBytes {
+                if let text = AppModel.readText(at: node.url), text.utf8.count <= Self.maxFileBytes {
                     snippets = Self.matches(in: text, regex: regex)
                 }
                 guard nameMatched || !snippets.isEmpty else { continue }
                 let result = SearchResult(id: node.url, url: node.url, name: node.name,
                                           nameMatched: nameMatched, snippets: snippets)
-                DispatchQueue.main.async { onResult(result) }
+                DispatchQueue.main.async { if !workItem.isCancelled { onResult(result) } }
             }
-            DispatchQueue.main.async { onComplete() }
+            DispatchQueue.main.async { if !workItem.isCancelled { onComplete() } }
         }
+        workItem = work
         current = work
         queue.async(execute: work)
     }

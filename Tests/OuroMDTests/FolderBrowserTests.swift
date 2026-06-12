@@ -44,6 +44,25 @@ final class FolderBrowserTests: XCTestCase {
         XCTAssertEqual(names, ["alpha.md", "beta.md", "gamma.md", "notes.txt"])
     }
 
+    func testSymlinkCycleDoesNotCrashOrRecurse() {
+        // A symlink loop (cyc/loop -> cyc) must not be followed (no stack overflow).
+        let fm = FileManager.default
+        let cyc = root.appendingPathComponent("cyc")
+        try? fm.createDirectory(at: cyc, withIntermediateDirectories: true)
+        try? "# x".write(to: cyc.appendingPathComponent("x.md"), atomically: true, encoding: .utf8)
+        try? fm.createSymbolicLink(at: cyc.appendingPathComponent("loop"), withDestinationURL: cyc)
+
+        let tree = FolderScanner.tree(at: cyc, sort: .name)   // must return, not crash
+        XCTAssertTrue(tree.contains { $0.name == "x.md" })
+        XCTAssertFalse(tree.contains { $0.name == "loop" }, "symlinks must be skipped")
+    }
+
+    func testReadsNonUTF8File() {
+        let url = root.appendingPathComponent("utf16.md")
+        try? "# café — résumé".data(using: .utf16)!.write(to: url)
+        XCTAssertEqual(AppModel.readText(at: url), "# café — résumé")
+    }
+
     func testOpenFolderPopulatesModelAndFilter() {
         let model = AppModel()
         model.openFolder(root)

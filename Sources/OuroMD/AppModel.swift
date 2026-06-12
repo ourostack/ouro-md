@@ -7,8 +7,8 @@ protocol EditorBridge: AnyObject {
     func setMarkdown(_ markdown: String)
     /// Replace content while preserving the reader's scroll position (external reload).
     func reloadMarkdown(_ markdown: String)
-    func getMarkdown(_ completion: @escaping (String) -> Void)
-    func getHTML(_ completion: @escaping (String) -> Void)
+    func getMarkdown(_ completion: @escaping (String?) -> Void)
+    func getHTML(_ completion: @escaping (String?) -> Void)
     func applyTheme(uiMode: String, css: String, codeTheme: String)
     func setMode(_ mode: String)
     func setOutline(_ on: Bool)
@@ -99,6 +99,19 @@ final class AppModel: ObservableObject {
     var theme: Theme { ThemeStore.shared.theme(id: themeID) }
     var windowTitle: String { currentURL?.lastPathComponent ?? "Untitled" }
 
+    /// Reads a text file tolerantly: UTF-8 first, then system detection, then
+    /// common legacy encodings — so a non-UTF-8 document still opens instead of
+    /// failing. (Saves are always written as UTF-8.)
+    static func readText(at url: URL) -> String? {
+        if let s = try? String(contentsOf: url, encoding: .utf8) { return s }
+        var used: String.Encoding = .utf8
+        if let s = try? String(contentsOf: url, usedEncoding: &used) { return s }
+        for encoding: String.Encoding in [.utf16, .isoLatin1, .windowsCP1252, .macOSRoman] {
+            if let s = try? String(contentsOf: url, encoding: encoding) { return s }
+        }
+        return nil
+    }
+
     static let mdTypes: [UTType] = {
         var types: [UTType] = []
         for ext in ["md", "markdown", "mdown", "mkd", "mdtext"] {
@@ -187,25 +200,25 @@ final class AppModel: ObservableObject {
     func open(url: URL) {
         confirmDiscard { [weak self] in
             guard let self else { return }
-            do {
-                let text = try String(contentsOf: url, encoding: .utf8)
-                self.currentURL = url
-                self.lastLoadedContent = text
-                self.pushMarkdown(text)
-                self.isDirty = false
-                NSDocumentController.shared.noteNewRecentDocumentURL(url)
-                self.refreshFolder()
-                self.startWatching()
-                self.onChromeUpdate?()
-            } catch {
-                self.presentError("Could not open \(url.lastPathComponent)", error)
+            guard let text = AppModel.readText(at: url) else {
+                self.presentError("Could not open \(url.lastPathComponent)",
+                                  NSError(domain: "ouro-md", code: 2, userInfo: [NSLocalizedDescriptionKey: "The file isn't a readable text document, or its encoding isn't supported."]))
+                return
             }
+            self.currentURL = url
+            self.lastLoadedContent = text
+            self.pushMarkdown(text)
+            self.isDirty = false
+            NSDocumentController.shared.noteNewRecentDocumentURL(url)
+            self.refreshFolder()
+            self.startWatching()
+            self.onChromeUpdate?()
         }
     }
 
     func loadInitialFile(_ path: String) {
         let url = URL(fileURLWithPath: path)
-        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return }
+        guard let text = AppModel.readText(at: url) else { return }
         currentURL = url
         lastLoadedContent = text
         pushMarkdown(text)
@@ -242,14 +255,19 @@ final class AppModel: ObservableObject {
     }
 
     private func writeMarkdown(to url: URL, completion: @escaping (Bool) -> Void) {
-        guard let bridge else { completion(false); return }
+        // Never save before the editor has loaded its content, and never write
+        // when the editor can't hand back its text — either would clobber the
+        // file with an empty string.
+        guard isReady, let bridge else { completion(false); return }
         bridge.getMarkdown { [weak self] markdown in
             guard let self else { completion(false); return }
+            guard let markdown else { completion(false); return }
+            // Resolve symlinks so an atomic write updates the real file rather
+            // than replacing the link with a regular file.
+            let target = url.resolvingSymlinksInPath()
             do {
-                // Record what we're about to put on disk before writing, so the
-                // file watcher recognizes the resulting change as our own.
                 self.lastLoadedContent = markdown
-                try markdown.write(to: url, atomically: true, encoding: .utf8)
+                try markdown.write(to: target, atomically: true, encoding: .utf8)
                 self.bridge?.markSaved()
                 self.isDirty = false
                 self.startWatching()
@@ -284,7 +302,7 @@ final class AppModel: ObservableObject {
     /// Called on the main queue when the open file changes on disk.
     private func handleExternalChange() {
         guard let url = currentURL else { return }
-        guard let disk = try? String(contentsOf: url, encoding: .utf8) else {
+        guard let disk = AppModel.readText(at: url) else {
             // File was deleted or moved out from under us — keep the buffer as
             // an unsaved copy rather than blanking the reader's view.
             isDirty = true
@@ -328,6 +346,7 @@ final class AppModel: ObservableObject {
         runSavePanel(defaultName: exportBaseName() + ".html", types: [.html]) { [weak self] url in
             guard let self, let url else { return }
             self.bridge?.getHTML { body in
+                guard let body else { return }
                 let doc = HTMLDocument.wrap(body: body, css: self.theme.css, title: url.lastPathComponent)
                 do { try doc.write(to: url, atomically: true, encoding: .utf8) }
                 catch { self.presentError("Could not export HTML", error) }
@@ -339,6 +358,7 @@ final class AppModel: ObservableObject {
         runSavePanel(defaultName: exportBaseName() + ".pdf", types: [.pdf]) { [weak self] url in
             guard let self, let url else { return }
             self.bridge?.getHTML { body in
+                guard let body else { return }
                 let doc = HTMLDocument.wrap(body: body, css: self.theme.css, title: url.lastPathComponent)
                 PDFExporter().export(html: doc, to: url) { ok in
                     if !ok {
@@ -412,6 +432,16 @@ final class AppModel: ObservableObject {
     }
 
     func setActiveHeading(_ index: Int) { activeHeadingIndex = index }
+
+    /// The web content process crashed. Recover the document content (from disk,
+    /// which auto-save keeps current, falling back to the last loaded text) so
+    /// the reloaded editor isn't left blank and work isn't lost.
+    func editorCrashed() {
+        isReady = false
+        let recovered = currentURL.flatMap { AppModel.readText(at: $0) }
+            ?? lastLoadedContent
+        pendingMarkdown = recovered
+    }
 
     /// Flat heading list nested into a tree by heading level (for a collapsible
     /// outline). Stack-based: each heading attaches under the nearest shallower one.
@@ -589,8 +619,20 @@ final class AppModel: ObservableObject {
 
     func printDocument() { bridge?.printDocument() }
 
+    /// Releases the document's background resources when its window closes, so
+    /// nothing keeps watching the filesystem after the window is gone.
+    func teardown() {
+        autosaveItem?.cancel()
+        fileWatcher?.stop()
+        fileWatcher = nil
+        folderWatcher?.stop()
+        folderWatcher = nil
+        contentSearcher.cancel()
+    }
+
     func copyAsMarkdown() {
         bridge?.getMarkdown { md in
+            guard let md else { return }
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(md, forType: .string)
         }
@@ -598,6 +640,7 @@ final class AppModel: ObservableObject {
 
     func copyAsHTML() {
         bridge?.getHTML { html in
+            guard let html else { return }
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(html, forType: .string)
         }

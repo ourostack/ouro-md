@@ -364,7 +364,6 @@ private struct FindBar: View {
                     .onSubmit { model.findNext() }
                 optionButton("Aa", isOn: model.findCaseSensitive, help: "Case Sensitive") { model.findCaseSensitive.toggle(); model.findNext() }
                 optionButton("⠿", isOn: model.findWholeWord, help: "Whole Word") { model.findWholeWord.toggle(); model.findNext() }
-                optionButton(".*", isOn: model.findRegexp, help: "Regular Expression") { model.findRegexp.toggle(); model.findNext() }
                 Button { model.findPrev() } label: { Image(systemName: "chevron.up") }.buttonStyle(.plain)
                 Button { model.findNext() } label: { Image(systemName: "chevron.down") }.buttonStyle(.plain)
                 Button { model.replaceVisible.toggle() } label: { Image(systemName: "arrow.2.squarepath") }

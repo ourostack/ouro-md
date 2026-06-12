@@ -12,7 +12,7 @@ APP="${APP_NAME}.app"
 CONFIG="release"
 BIN_NAME="ouro-md"
 BUNDLE_ID="org.ourostack.ouro-md"
-VERSION="0.1.0"
+VERSION="0.9.0"
 
 echo "==> Building (${CONFIG})…"
 swift build -c "${CONFIG}"
@@ -31,6 +31,9 @@ mkdir -p "${APP}/Contents/MacOS" "${APP}/Contents/Resources"
 
 cp "${BIN_DIR}/${BIN_NAME}" "${APP}/Contents/MacOS/${BIN_NAME}"
 cp -R "${RES_BUNDLE}" "${APP}/Contents/Resources/"
+if [[ -f "Resources/AppIcon.icns" ]]; then
+  cp "Resources/AppIcon.icns" "${APP}/Contents/Resources/AppIcon.icns"
+fi
 
 cat > "${APP}/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -43,8 +46,11 @@ cat > "${APP}/Contents/Info.plist" <<PLIST
     <key>CFBundleVersion</key><string>${VERSION}</string>
     <key>CFBundleShortVersionString</key><string>${VERSION}</string>
     <key>CFBundleExecutable</key><string>${BIN_NAME}</string>
+    <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>LSMinimumSystemVersion</key><string>13.0</string>
+    <key>LSApplicationCategoryType</key><string>public.app-category.productivity</string>
+    <key>NSHumanReadableCopyright</key><string>Copyright © 2026 Ari Mendelow. Independent software; not affiliated with Typora.</string>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSPrincipalClass</key><string>NSApplication</string>
     <key>CFBundleDocumentTypes</key>
