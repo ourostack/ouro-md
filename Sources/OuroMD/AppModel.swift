@@ -41,6 +41,13 @@ final class AppModel: ObservableObject {
     @Published var sidebarMode: SidebarMode = .outline
     @Published private(set) var outlineItems: [OutlineItem] = []
     @Published private(set) var folderItems: [FolderItem] = []
+    // Mounted-folder browser (Open Folder).
+    @Published private(set) var mountedFolder: URL?
+    @Published private(set) var folderTree: [FolderNode] = []
+    @Published private(set) var folderFlat: [FolderNode] = []
+    @Published var folderSort: FolderSort = .natural
+    @Published var useTreeView = false
+    @Published var folderFilter = ""
     @Published var findVisible = false
     @Published var findQuery = ""
 
@@ -55,6 +62,8 @@ final class AppModel: ObservableObject {
     /// watcher distinguish a genuine external edit from our own save echo.
     private var lastLoadedContent: String?
     private var fileWatcher: FileWatcher?
+    private var folderWatcher: FolderWatcher?
+    private let folderScanQueue = DispatchQueue(label: "md.ouro.folderscan", qos: .userInitiated)
 
     init() {
         themeID = UserDefaults.standard.string(forKey: "ouro.theme") ?? "quartz"
@@ -370,15 +379,125 @@ final class AppModel: ObservableObject {
         open(url: item.url)
     }
 
+    /// Opens a file from the folder browser (keeps the mounted folder intact).
+    func openFile(_ url: URL) {
+        guard url != currentURL else { return }
+        open(url: url)
+    }
+
+    /// Creates a new empty markdown file in the mounted folder and opens it.
+    func newFileInMountedFolder() {
+        guard let folder = mountedFolder else { newDocument(); return }
+        var name = "Untitled.md"
+        var counter = 1
+        var url = folder.appendingPathComponent(name)
+        while FileManager.default.fileExists(atPath: url.path) {
+            counter += 1
+            name = "Untitled \(counter).md"
+            url = folder.appendingPathComponent(name)
+        }
+        do {
+            try "".write(to: url, atomically: true, encoding: .utf8)
+            open(url: url)
+        } catch {
+            presentError("Could not create \(name)", error)
+        }
+    }
+
+    // MARK: - Folder browser (Open Folder)
+
+    func openFolderPanel() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        if panel.runModal() == .OK, let url = panel.url { openFolder(url) }
+    }
+
+    func openFolder(_ url: URL) {
+        mountedFolder = url
+        sidebarMode = .files
+        sidebarVisible = true
+        defaults.set(true, forKey: "ouro.sidebar")
+        NSDocumentController.shared.noteNewRecentDocumentURL(url)
+        startFolderWatching()
+        rescanFolder()
+        onChromeUpdate?()
+    }
+
+    func closeFolder() {
+        mountedFolder = nil
+        folderTree = []
+        folderFlat = []
+        folderWatcher?.stop()
+        folderWatcher = nil
+        onChromeUpdate?()
+    }
+
+    /// Auto-mounts a file's parent folder the first time a file is opened, so
+    /// the sidebar is populated without an explicit Open Folder.
+    private func ensureFolderMounted(for fileURL: URL) {
+        guard mountedFolder == nil else { rescanFolder(); return }
+        let parent = fileURL.deletingLastPathComponent()
+        mountedFolder = parent
+        startFolderWatching()
+        rescanFolder()
+    }
+
+    func setFolderSort(_ sort: FolderSort) {
+        guard sort != folderSort else { return }
+        folderSort = sort
+        rescanFolder()
+    }
+
+    func toggleFolderView() { useTreeView.toggle() }
+
+    private func startFolderWatching() {
+        folderWatcher?.stop()
+        guard let folder = mountedFolder else { return }
+        let watcher = FolderWatcher(url: folder) { [weak self] in self?.rescanFolder() }
+        folderWatcher = watcher
+        watcher.start()
+    }
+
+    /// Re-scans the mounted folder off the main thread, then publishes.
+    func rescanFolder() {
+        guard let folder = mountedFolder else { folderTree = []; folderFlat = []; return }
+        let sort = folderSort
+        folderScanQueue.async { [weak self] in
+            let tree = FolderScanner.tree(at: folder, sort: sort)
+            let flat = FolderScanner.flatList(at: folder, sort: sort)
+            DispatchQueue.main.async {
+                guard let self, self.mountedFolder == folder else { return }
+                self.folderTree = tree
+                self.folderFlat = flat
+            }
+        }
+    }
+
+    /// Files matching the current filename filter (fuzzy: space-separated terms
+    /// matched as an ordered subsequence — Typora's quick-find behavior).
+    var filteredFolderFiles: [FolderNode] {
+        let query = folderFilter.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else { return folderFlat }
+        let terms = query.lowercased().split(separator: " ").map(String.init)
+        return folderFlat.filter { node in
+            let name = node.name.lowercased()
+            var idx = name.startIndex
+            for term in terms {
+                guard let r = name.range(of: term, range: idx..<name.endIndex) else { return false }
+                idx = r.upperBound
+            }
+            return true
+        }
+    }
+
+    var mountedFolderName: String { mountedFolder?.lastPathComponent ?? "Open Folder…" }
+
     func refreshFolder() {
-        guard let url = currentURL else { folderItems = []; return }
-        let directory = url.deletingLastPathComponent()
-        let extensions: Set<String> = ["md", "markdown", "mdown", "mkd", "mdtext", "txt"]
-        let entries = (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? []
-        folderItems = entries
-            .filter { extensions.contains($0.pathExtension.lowercased()) }
-            .sorted { $0.lastPathComponent.localizedCaseInsensitiveCompare($1.lastPathComponent) == .orderedAscending }
-            .map { FolderItem(name: $0.lastPathComponent, url: $0, isCurrent: $0 == url) }
+        // Folder browser now tracks an explicitly-mounted folder; opening a file
+        // auto-mounts its parent the first time so the sidebar isn't empty.
+        if let url = currentURL { ensureFolderMounted(for: url) }
     }
 
     // MARK: - Find

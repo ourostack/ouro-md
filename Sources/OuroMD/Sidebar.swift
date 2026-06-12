@@ -19,7 +19,7 @@ struct FolderItem: Identifiable {
     let isCurrent: Bool
 }
 
-/// Left sidebar: document outline (from rendered headings) or the file's folder.
+/// Left sidebar: document outline (from rendered headings) or the mounted folder.
 struct SidebarView: View {
     @ObservedObject var model: AppModel
 
@@ -36,7 +36,7 @@ struct SidebarView: View {
             if model.sidebarMode == .outline {
                 outlineList
             } else {
-                fileList
+                FolderBrowserView(model: model)
             }
         }
         .frame(minWidth: 190)
@@ -59,29 +59,134 @@ struct SidebarView: View {
         }
     }
 
-    @ViewBuilder private var fileList: some View {
-        if model.folderItems.isEmpty {
-            placeholder("No folder")
-        } else {
-            List(model.folderItems) { item in
-                HStack(spacing: 6) {
-                    Image(systemName: "doc.text")
-                        .foregroundStyle(.secondary)
-                    Text(item.name).lineLimit(1)
-                }
-                .fontWeight(item.isCurrent ? .semibold : .regular)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-                .onTapGesture { model.openFolderItem(item) }
-            }
-            .listStyle(.sidebar)
-        }
-    }
-
     private func placeholder(_ text: String) -> some View {
         VStack {
             Spacer()
             Text(text).font(.system(size: 12)).foregroundStyle(.tertiary)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+/// Typora-style file browser for the mounted folder: filename filter, tree or
+/// list view, and a footer showing the folder name + new-file + view toggle.
+struct FolderBrowserView: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass").font(.system(size: 11)).foregroundStyle(.secondary)
+                TextField("Search by file name", text: Binding(
+                    get: { model.folderFilter }, set: { model.folderFilter = $0 }))
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 12))
+                if !model.folderFilter.isEmpty {
+                    Button { model.folderFilter = "" } label: { Image(systemName: "xmark.circle.fill") }
+                        .buttonStyle(.plain).foregroundStyle(.tertiary)
+                }
+            }
+            .padding(.horizontal, 8).padding(.vertical, 6)
+            Divider()
+
+            content
+
+            Divider()
+            footer
+        }
+    }
+
+    @ViewBuilder private var content: some View {
+        if model.mountedFolder == nil {
+            centered("No folder open", action: "Open Folder…") { model.openFolderPanel() }
+        } else if !model.folderFilter.isEmpty {
+            if model.filteredFolderFiles.isEmpty {
+                centered("No matching files", action: nil, perform: nil)
+            } else {
+                List(model.filteredFolderFiles) { fileRow($0, showParent: true) }.listStyle(.sidebar)
+            }
+        } else if model.useTreeView {
+            List(model.folderTree, children: \.children) { node in nodeRow(node) }.listStyle(.sidebar)
+        } else if model.folderFlat.isEmpty {
+            centered("No markdown files here", action: nil, perform: nil)
+        } else {
+            List(model.folderFlat) { fileRow($0, showParent: false) }.listStyle(.sidebar)
+        }
+    }
+
+    @ViewBuilder private func nodeRow(_ node: FolderNode) -> some View {
+        if node.isDirectory {
+            Label(node.name, systemImage: "folder").font(.system(size: 12)).lineLimit(1)
+        } else {
+            fileRow(node, showParent: false)
+        }
+    }
+
+    private func fileRow(_ node: FolderNode, showParent: Bool) -> some View {
+        let isCurrent = node.url == model.currentURL
+        return HStack(spacing: 6) {
+            Image(systemName: "doc.text").foregroundStyle(isCurrent ? Color.accentColor : .secondary)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(node.name).font(.system(size: 12)).lineLimit(1)
+                if showParent, let folder = model.mountedFolder {
+                    Text(parentHint(node.url, under: folder))
+                        .font(.system(size: 10)).foregroundStyle(.tertiary).lineLimit(1)
+                }
+            }
+        }
+        .fontWeight(isCurrent ? .semibold : .regular)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .onTapGesture { model.openFile(node.url) }
+    }
+
+    private var footer: some View {
+        HStack(spacing: 8) {
+            Button { model.toggleFolderView() } label: {
+                Image(systemName: model.useTreeView ? "list.bullet" : "list.bullet.indent")
+            }
+            .buttonStyle(.plain)
+            .help(model.useTreeView ? "Switch to File List view" : "Switch to File Tree view")
+
+            Spacer(minLength: 0)
+            Button { model.openFolderPanel() } label: {
+                Text(model.mountedFolderName).font(.system(size: 11)).lineLimit(1).truncationMode(.middle)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            Spacer(minLength: 0)
+
+            Menu {
+                ForEach(FolderSort.allCases, id: \.self) { sort in
+                    Button { model.setFolderSort(sort) } label: {
+                        Label(sort.label, systemImage: model.folderSort == sort ? "checkmark" : "")
+                    }
+                }
+            } label: { Image(systemName: "arrow.up.arrow.down") }
+            .menuStyle(.borderlessButton).frame(width: 22)
+            .help("Sort")
+
+            Button { model.newFileInMountedFolder() } label: { Image(systemName: "plus") }
+                .buttonStyle(.plain).help("New File")
+        }
+        .font(.system(size: 12))
+        .padding(.horizontal, 10).padding(.vertical, 6)
+    }
+
+    private func parentHint(_ url: URL, under folder: URL) -> String {
+        let rel = url.deletingLastPathComponent().path.replacingOccurrences(of: folder.path, with: "")
+        let trimmed = rel.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        return trimmed.isEmpty ? folder.lastPathComponent : trimmed
+    }
+
+    @ViewBuilder private func centered(_ text: String, action: String?, perform: (() -> Void)?) -> some View {
+        VStack(spacing: 8) {
+            Spacer()
+            Text(text).font(.system(size: 12)).foregroundStyle(.tertiary)
+            if let action, let perform {
+                Button(action, action: perform).buttonStyle(.link).font(.system(size: 12))
+            }
             Spacer()
         }
         .frame(maxWidth: .infinity)

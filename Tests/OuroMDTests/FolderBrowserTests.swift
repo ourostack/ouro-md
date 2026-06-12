@@ -1,0 +1,63 @@
+import XCTest
+@testable import OuroMD
+
+final class FolderBrowserTests: XCTestCase {
+    private var root: URL!
+
+    override func setUpWithError() throws {
+        root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-folder-\(UUID().uuidString)")
+        let fm = FileManager.default
+        try fm.createDirectory(at: root.appendingPathComponent("sub"), withIntermediateDirectories: true)
+        try fm.createDirectory(at: root.appendingPathComponent("node_modules"), withIntermediateDirectories: true)
+        try "# A".write(to: root.appendingPathComponent("alpha.md"), atomically: true, encoding: .utf8)
+        try "# B".write(to: root.appendingPathComponent("beta.md"), atomically: true, encoding: .utf8)
+        try "notes".write(to: root.appendingPathComponent("notes.txt"), atomically: true, encoding: .utf8)
+        try "# C".write(to: root.appendingPathComponent("sub/gamma.md"), atomically: true, encoding: .utf8)
+        try "# hidden".write(to: root.appendingPathComponent(".secret.md"), atomically: true, encoding: .utf8)
+        try "# dep".write(to: root.appendingPathComponent("node_modules/dep.md"), atomically: true, encoding: .utf8)
+        try Data().write(to: root.appendingPathComponent("pic.png"))
+    }
+
+    override func tearDownWithError() throws {
+        try? FileManager.default.removeItem(at: root)
+    }
+
+    func testFlatListIncludesOnlyOpenableFiles() {
+        let names = Set(FolderScanner.flatList(at: root, sort: .name).map(\.name))
+        XCTAssertEqual(names, ["alpha.md", "beta.md", "gamma.md", "notes.txt"])
+        XCTAssertFalse(names.contains(".secret.md"))   // dotfiles skipped
+        XCTAssertFalse(names.contains("dep.md"))         // node_modules skipped
+        XCTAssertFalse(names.contains("pic.png"))        // unsupported ext skipped
+    }
+
+    func testTreeGroupsDirsFirstAndPrunesEmpties() {
+        let tree = FolderScanner.tree(at: root, sort: .name)
+        XCTAssertEqual(tree.first?.name, "sub")          // dirs grouped before files
+        XCTAssertTrue(tree.first?.isDirectory ?? false)
+        XCTAssertEqual(tree.first?.children?.map(\.name), ["gamma.md"])
+        XCTAssertFalse(tree.contains { $0.name == "node_modules" })  // empty-of-md dir pruned
+    }
+
+    func testNameSortIsNatural() {
+        let names = FolderScanner.flatList(at: root, sort: .name).map(\.name)
+        XCTAssertEqual(names, ["alpha.md", "beta.md", "gamma.md", "notes.txt"])
+    }
+
+    func testOpenFolderPopulatesModelAndFilter() {
+        let model = AppModel()
+        model.openFolder(root)
+        let populated = expectation(description: "folder scanned")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            if !model.folderFlat.isEmpty { populated.fulfill() }
+        }
+        wait(for: [populated], timeout: 3)
+        XCTAssertEqual(model.mountedFolderName, root.lastPathComponent)
+        XCTAssertEqual(model.folderFlat.count, 4)
+
+        model.folderFilter = "gam"
+        XCTAssertEqual(model.filteredFolderFiles.map(\.name), ["gamma.md"])
+        model.folderFilter = "a md"   // fuzzy ordered-subsequence
+        XCTAssertTrue(model.filteredFolderFiles.contains { $0.name == "alpha.md" })
+    }
+}

@@ -136,6 +136,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     @objc func newDocument(_ sender: Any?) { model.newDocument() }
     @objc func openDocument(_ sender: Any?) { model.openPanel() }
+    @objc func openFolder(_ sender: Any?) { model.openFolderPanel() }
     @objc func openRecent(_ sender: NSMenuItem) {
         if let url = sender.representedObject as? URL { model.open(url: url) }
     }

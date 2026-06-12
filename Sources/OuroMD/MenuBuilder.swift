@@ -73,6 +73,8 @@ enum MenuBuilder {
 
         add(menu, "New", #selector(AppDelegate.newDocument(_:)), "n", target)
         add(menu, "Open…", #selector(AppDelegate.openDocument(_:)), "o", target)
+        let openFolder = add(menu, "Open Folder…", #selector(AppDelegate.openFolder(_:)), "o", target)
+        openFolder.keyEquivalentModifierMask = [.command, .shift]
 
         let openRecent = menu.addItem(withTitle: "Open Recent", action: nil, keyEquivalent: "")
         let recentMenu = NSMenu(title: "Open Recent")
