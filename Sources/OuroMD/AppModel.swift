@@ -112,6 +112,57 @@ final class AppModel: ObservableObject {
         return nil
     }
 
+    /// Undo the only two things the editor normalizes on a markdown round-trip
+    /// (verified: everything else is byte-identical) so saving doesn't churn the
+    /// diff: re-expand collapsed table separators (`| - |` → `| --- |`) and
+    /// collapse runs of blank lines that the table renderer introduces. Content
+    /// inside fenced code blocks is left untouched.
+    static func tidyMarkdown(_ markdown: String) -> String {
+        let lines = markdown.components(separatedBy: "\n")
+        var out: [String] = []
+        var inFence = false
+        var prevBlank = false
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") {
+                inFence.toggle()
+                out.append(line)
+                prevBlank = false
+                continue
+            }
+            if inFence {
+                out.append(line)
+                continue
+            }
+            if trimmed.isEmpty {
+                if prevBlank { continue }   // collapse consecutive blank lines
+                prevBlank = true
+                out.append(line)
+                continue
+            }
+            prevBlank = false
+            out.append(isTableSeparator(trimmed) ? expandTableSeparator(line) : line)
+        }
+        return out.joined(separator: "\n")
+    }
+
+    private static func isTableSeparator(_ trimmed: String) -> Bool {
+        trimmed.contains("|") && trimmed.contains("-") && trimmed.allSatisfy { "|:- \t".contains($0) }
+    }
+
+    private static func expandTableSeparator(_ line: String) -> String {
+        let leading = String(line.prefix(while: { $0 == " " || $0 == "\t" }))
+        var cells = line.trimmingCharacters(in: .whitespaces)
+            .split(separator: "|", omittingEmptySubsequences: false)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+        if cells.first == "" { cells.removeFirst() }
+        if cells.last == "" { cells.removeLast() }
+        let cols = cells.map { cell -> String in
+            (cell.hasPrefix(":") ? ":" : "") + "---" + (cell.hasSuffix(":") ? ":" : "")
+        }
+        return leading + "| " + cols.joined(separator: " | ") + " |"
+    }
+
     static let mdTypes: [UTType] = {
         var types: [UTType] = []
         for ext in ["md", "markdown", "mdown", "mkd", "mdtext"] {
@@ -262,12 +313,13 @@ final class AppModel: ObservableObject {
         bridge.getMarkdown { [weak self] markdown in
             guard let self else { completion(false); return }
             guard let markdown else { completion(false); return }
+            let tidied = AppModel.tidyMarkdown(markdown)
             // Resolve symlinks so an atomic write updates the real file rather
             // than replacing the link with a regular file.
             let target = url.resolvingSymlinksInPath()
             do {
-                self.lastLoadedContent = markdown
-                try markdown.write(to: target, atomically: true, encoding: .utf8)
+                self.lastLoadedContent = tidied
+                try tidied.write(to: target, atomically: true, encoding: .utf8)
                 self.bridge?.markSaved()
                 self.isDirty = false
                 self.startWatching()

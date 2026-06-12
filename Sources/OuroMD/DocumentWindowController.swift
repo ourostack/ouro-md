@@ -34,7 +34,8 @@ final class DocumentWindowController: NSObject, NSWindowDelegate {
         window.setContentSize(NSSize(width: 1080, height: 800))
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
         window.titlebarAppearsTransparent = true
-        window.titleVisibility = .hidden
+        window.titleVisibility = .visible
+        window.title = ""
         window.isMovableByWindowBackground = true
         window.tabbingMode = .disallowed
         window.isReleasedWhenClosed = false

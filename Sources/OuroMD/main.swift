@@ -37,6 +37,15 @@ if hasFlag("--render") {
     OuroCLI.render(path: path, themeId: argValue("--theme") ?? ThemeStore.shared.defaultTheme.id)
 }
 
+if hasFlag("--roundtrip") {
+    guard let path = argValue("--roundtrip") else {
+        FileHandle.standardError.write(Data("ouro-md: --roundtrip requires a FILE path\n".utf8))
+        exit(2)
+    }
+    let out = argValue("--out").map { URL(fileURLWithPath: $0) }
+    RoundTripper(fileURL: URL(fileURLWithPath: path), outURL: out).run()
+}
+
 if hasFlag("--shoot") {
     guard let path = argValue("--shoot") else {
         FileHandle.standardError.write(Data("ouro-md: --shoot requires a FILE path\n".utf8))
