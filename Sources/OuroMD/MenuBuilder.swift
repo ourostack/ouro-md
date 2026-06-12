@@ -4,7 +4,7 @@ import AppKit
 /// in sync with the current document state.
 enum MenuBuilder {
     private static weak var themeMenu: NSMenu?
-    private static weak var modeMenu: NSMenu?
+    private static weak var sourceModeItem: NSMenuItem?
     private static weak var focusModeItem: NSMenuItem?
     private static weak var typewriterItem: NSMenuItem?
     private static var recentDelegate: RecentMenuDelegate?
@@ -34,9 +34,7 @@ enum MenuBuilder {
         themeMenu?.items.forEach {
             $0.state = ($0.representedObject as? String == model.themeID) ? .on : .off
         }
-        modeMenu?.items.forEach {
-            $0.state = ($0.representedObject as? String == model.mode) ? .on : .off
-        }
+        sourceModeItem?.state = (model.mode == "sv") ? .on : .off
         focusModeItem?.state = model.focusMode ? .on : .off
         typewriterItem?.state = model.typewriter ? .on : .off
     }
@@ -143,19 +141,23 @@ enum MenuBuilder {
         let menu = NSMenu(title: "View")
         item.submenu = menu
 
-        let modeItem = menu.addItem(withTitle: "Editing Mode", action: nil, keyEquivalent: "")
-        let modeSub = NSMenu(title: "Editing Mode")
-        addRadio(modeSub, "Instant (Live Preview)", mode: "ir", target)
-        addRadio(modeSub, "WYSIWYG", mode: "wysiwyg", target)
-        addRadio(modeSub, "Split (Source + Preview)", mode: "sv", target)
-        modeItem.submenu = modeSub
-        modeMenu = modeSub
+        sourceModeItem = add(menu, "Source Code Mode", #selector(AppDelegate.toggleSourceMode(_:)), "/", target)
 
         menu.addItem(.separator())
-        let outline = add(menu, "Toggle Outline", #selector(AppDelegate.toggleOutline(_:)), "o", target)
-        outline.keyEquivalentModifierMask = [.command, .option]
-        focusModeItem = add(menu, "Focus Mode", #selector(AppDelegate.toggleFocusMode(_:)), "", target)
-        typewriterItem = add(menu, "Typewriter Mode", #selector(AppDelegate.toggleTypewriter(_:)), "", target)
+        focusModeItem = add(menu, "Focus Mode", #selector(AppDelegate.toggleFocusMode(_:)), funcKey(NSF8FunctionKey), target)
+        focusModeItem?.keyEquivalentModifierMask = []
+        typewriterItem = add(menu, "Typewriter Mode", #selector(AppDelegate.toggleTypewriter(_:)), funcKey(NSF9FunctionKey), target)
+        typewriterItem?.keyEquivalentModifierMask = []
+
+        menu.addItem(.separator())
+        let sidebarMI = add(menu, "Toggle Sidebar", #selector(AppDelegate.toggleSidebar(_:)), "l", target)
+        sidebarMI.keyEquivalentModifierMask = [.command, .shift]
+        let outlineMI = add(menu, "Outline", #selector(AppDelegate.showOutlineSidebar(_:)), "1", target)
+        outlineMI.keyEquivalentModifierMask = [.command, .control]
+        let fileTreeMI = add(menu, "File Tree", #selector(AppDelegate.showFileTreeSidebar(_:)), "3", target)
+        fileTreeMI.keyEquivalentModifierMask = [.command, .control]
+        let searchMI = add(menu, "Search", #selector(AppDelegate.performFind(_:)), "f", target)
+        searchMI.keyEquivalentModifierMask = [.command, .shift]
 
         menu.addItem(.separator())
         add(menu, "Toggle Word Count", #selector(AppDelegate.toggleWordCount(_:)), "", target)
@@ -267,6 +269,10 @@ enum MenuBuilder {
         let item = menu.addItem(withTitle: title, action: action, keyEquivalent: key)
         item.target = nil
         return item
+    }
+
+    private static func funcKey(_ code: Int) -> String {
+        String(utf16CodeUnits: [unichar(code)], count: 1)
     }
 
     private static func addRadio(_ menu: NSMenu, _ title: String, mode: String, _ target: AppDelegate) {

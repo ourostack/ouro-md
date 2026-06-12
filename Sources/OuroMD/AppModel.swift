@@ -12,6 +12,9 @@ protocol EditorBridge: AnyObject {
     func setOutline(_ on: Bool)
     func setFocusMode(_ on: Bool)
     func setTypewriter(_ on: Bool)
+    func scrollToHeading(_ index: Int)
+    func find(_ query: String, forward: Bool)
+    func clearFind()
     func execCommand(_ command: String)
     func markSaved()
     func focusEditor()
@@ -32,6 +35,12 @@ final class AppModel: ObservableObject {
     private var zoom = 1.0
     @Published private(set) var wordCount = 0
     @Published private(set) var charCount = 0
+    @Published var sidebarVisible: Bool
+    @Published var sidebarMode: SidebarMode = .outline
+    @Published private(set) var outlineItems: [OutlineItem] = []
+    @Published private(set) var folderItems: [FolderItem] = []
+    @Published var findVisible = false
+    @Published var findQuery = ""
 
     weak var bridge: EditorBridge?
     /// Invoked whenever window-chrome-relevant state changes.
@@ -43,6 +52,10 @@ final class AppModel: ObservableObject {
 
     init() {
         themeID = UserDefaults.standard.string(forKey: "ouro.theme") ?? "quartz"
+        sidebarVisible = UserDefaults.standard.bool(forKey: "ouro.sidebar")
+        if let raw = UserDefaults.standard.string(forKey: "ouro.sidebarMode"), let mode = SidebarMode(rawValue: raw) {
+            sidebarMode = mode
+        }
     }
 
     var theme: Theme { ThemeStore.shared.theme(id: themeID) }
@@ -127,6 +140,7 @@ final class AppModel: ObservableObject {
                 self.pushMarkdown(text)
                 self.isDirty = false
                 NSDocumentController.shared.noteNewRecentDocumentURL(url)
+                self.refreshFolder()
                 self.onChromeUpdate?()
             } catch {
                 self.presentError("Could not open \(url.lastPathComponent)", error)
@@ -141,6 +155,7 @@ final class AppModel: ObservableObject {
         pushMarkdown(text)
         isDirty = false
         NSDocumentController.shared.noteNewRecentDocumentURL(url)
+        refreshFolder()
         onChromeUpdate?()
     }
 
@@ -251,6 +266,55 @@ final class AppModel: ObservableObject {
         typewriter.toggle()
         bridge?.setTypewriter(typewriter)
     }
+
+    // MARK: - Sidebar
+
+    func setSidebarMode(_ mode: SidebarMode) {
+        sidebarMode = mode
+        defaults.set(mode.rawValue, forKey: "ouro.sidebarMode")
+    }
+
+    func setSidebarVisible(_ visible: Bool) {
+        sidebarVisible = visible
+        defaults.set(visible, forKey: "ouro.sidebar")
+    }
+
+    func updateOutline(_ items: [OutlineItem]) {
+        outlineItems = items
+    }
+
+    func selectHeading(index: Int) {
+        bridge?.scrollToHeading(index)
+    }
+
+    func openFolderItem(_ item: FolderItem) {
+        guard item.url != currentURL else { return }
+        open(url: item.url)
+    }
+
+    func refreshFolder() {
+        guard let url = currentURL else { folderItems = []; return }
+        let directory = url.deletingLastPathComponent()
+        let extensions: Set<String> = ["md", "markdown", "mdown", "mkd", "mdtext", "txt"]
+        let entries = (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? []
+        folderItems = entries
+            .filter { extensions.contains($0.pathExtension.lowercased()) }
+            .sorted { $0.lastPathComponent.localizedCaseInsensitiveCompare($1.lastPathComponent) == .orderedAscending }
+            .map { FolderItem(name: $0.lastPathComponent, url: $0, isCurrent: $0 == url) }
+    }
+
+    // MARK: - Find
+
+    func setFindQuery(_ query: String) {
+        findQuery = query
+        bridge?.find(query, forward: true)
+    }
+
+    func findNext() { bridge?.find(findQuery, forward: true) }
+    func findPrev() { bridge?.find(findQuery, forward: false) }
+    func showFind() { findVisible = true }
+    func closeFind() { findVisible = false; bridge?.clearFind() }
+    func toggleFind() { findVisible.toggle(); if !findVisible { bridge?.clearFind() } }
 
     func zoomIn() { zoom = min(zoom + 0.1, 3.0); bridge?.setZoom(zoom) }
     func zoomOut() { zoom = max(zoom - 0.1, 0.5); bridge?.setZoom(zoom) }

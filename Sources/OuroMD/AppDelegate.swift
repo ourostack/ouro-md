@@ -6,11 +6,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     let model = AppModel()
     private var window: NSWindow!
     private var titleLabel: NSTextField?
+    private var sidebarItem: NSSplitViewItem?
+
+    private var isSelfTest: Bool { ProcessInfo.processInfo.environment["OURO_SELFTEST"] == "1" }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let hosting = NSHostingController(rootView: ContentView(model: model))
-        let window = NSWindow(contentViewController: hosting)
-        window.setContentSize(NSSize(width: 1040, height: 800))
+        let sidebarVC = NSHostingController(rootView: SidebarView(model: model))
+        let editorVC = NSHostingController(rootView: EditorPane(model: model))
+
+        let split = NSSplitViewController()
+        let sidebar = NSSplitViewItem(sidebarWithViewController: sidebarVC)
+        sidebar.minimumThickness = 190
+        sidebar.maximumThickness = 380
+        sidebar.canCollapse = true
+        sidebar.isCollapsed = !model.sidebarVisible
+        split.addSplitViewItem(sidebar)
+        split.addSplitViewItem(NSSplitViewItem(viewController: editorVC))
+        self.sidebarItem = sidebar
+
+        let window = NSWindow(contentViewController: split)
+        window.setContentSize(NSSize(width: 1080, height: 800))
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
@@ -20,12 +35,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.center()
         self.window = window
         installCenteredTitle(in: window)
-
         model.onChromeUpdate = { [weak self] in self?.syncChrome() }
+
+        if isSelfTest {
+            window.setFrameOrigin(NSPoint(x: -30000, y: -30000))
+            window.orderFront(nil)
+            if let path = initialFilePath { model.loadInitialFile(path) }
+            syncChrome()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { exit(0) }
+            return
+        }
 
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-
         if let path = initialFilePath { model.loadInitialFile(path) }
         syncChrome()
     }
@@ -154,6 +176,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         popover.show(relativeTo: anchor, of: contentView, preferredEdge: .maxY)
         wordCountPopover = popover
     }
+
+    @objc func toggleSidebar(_ sender: Any?) {
+        guard let sidebarItem else { return }
+        let willShow = sidebarItem.isCollapsed
+        sidebarItem.animator().isCollapsed = !willShow
+        model.setSidebarVisible(willShow)
+    }
+    @objc func showOutlineSidebar(_ sender: Any?) { revealSidebar(mode: .outline) }
+    @objc func showFileTreeSidebar(_ sender: Any?) { revealSidebar(mode: .files) }
+    private func revealSidebar(mode: SidebarMode) {
+        model.setSidebarMode(mode)
+        if let sidebarItem, sidebarItem.isCollapsed {
+            sidebarItem.animator().isCollapsed = false
+            model.setSidebarVisible(true)
+        }
+    }
+    @objc func toggleSourceMode(_ sender: Any?) {
+        model.setMode(model.mode == "sv" ? "ir" : "sv")
+        syncChrome()
+    }
+    @objc func performFind(_ sender: Any?) { model.showFind() }
 
     @objc func applyParagraph(_ sender: NSMenuItem) {
         if let command = sender.representedObject as? String { model.format(command) }

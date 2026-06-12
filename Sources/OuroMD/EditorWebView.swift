@@ -51,6 +51,16 @@ struct EditorWebView: NSViewRepresentable {
                 if let words = body["words"] as? Int {
                     model.setCounts(words: words, chars: body["chars"] as? Int ?? 0)
                 }
+            case "outline":
+                if let items = body["items"] as? [[String: Any]] {
+                    let parsed = items.compactMap { dict -> OutlineItem? in
+                        guard let index = dict["index"] as? Int,
+                              let level = dict["level"] as? Int,
+                              let text = dict["text"] as? String else { return nil }
+                        return OutlineItem(index: index, level: level, text: text)
+                    }
+                    model.updateOutline(parsed)
+                }
             default:
                 break
             }
@@ -107,6 +117,18 @@ struct EditorWebView: NSViewRepresentable {
 
         func setTypewriter(_ on: Bool) {
             eval("window.ouro && window.ouro.setTypewriter(\(on ? "true" : "false"))")
+        }
+
+        func scrollToHeading(_ index: Int) {
+            eval("window.ouro && window.ouro.scrollToHeading(\(index))")
+        }
+
+        func find(_ query: String, forward: Bool) {
+            eval("window.ouro && window.ouro.find(\(Coordinator.jsString(query)),\(forward ? "true" : "false"))")
+        }
+
+        func clearFind() {
+            eval("window.ouro && window.ouro.clearFind()")
         }
 
         func execCommand(_ command: String) {
