@@ -37,6 +37,21 @@ if hasFlag("--render") {
     OuroCLI.render(path: path, themeId: argValue("--theme") ?? ThemeStore.shared.defaultTheme.id)
 }
 
+if hasFlag("--shoot") {
+    guard let path = argValue("--shoot") else {
+        FileHandle.standardError.write(Data("ouro-md: --shoot requires a FILE path\n".utf8))
+        exit(2)
+    }
+    let out = argValue("--out") ?? "/tmp/ouro-shot.png"
+    let themeID = argValue("--theme") ?? ThemeStore.shared.defaultTheme.id
+    let width = Double(argValue("--width") ?? "") ?? 1000
+    let height = Double(argValue("--height") ?? "") ?? 1300
+    Snapshotter(fileURL: URL(fileURLWithPath: path),
+                outURL: URL(fileURLWithPath: out),
+                themeID: themeID,
+                size: NSSize(width: width, height: height)).run()
+}
+
 // GUI launch.
 let appDelegate = AppDelegate()
 if let firstFile = rawArgs.first(where: { !$0.hasPrefix("-") }) {
