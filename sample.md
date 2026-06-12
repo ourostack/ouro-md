@@ -17,9 +17,9 @@ You get the whole vocabulary:
 - **Bold**, *italic*, ~~strikethrough~~, and `inline code`
 - [Links](https://github.com/ourostack/ouro-md) that open in your browser
 - Task lists:
-  - [x] Render Markdown beautifully
-  - [x] Switch themes live
-  - [ ] Win a design award
+  - [X]  Render Markdown beautifully
+  - [X]  Switch themes live
+  - [ ]  Win a design award
 
 1. Ordered lists
 2. ...with real numbers
@@ -36,12 +36,13 @@ struct Idea {
 
 ### Tables line up
 
-| Theme       | Mood             | Type    |
-|:------------|:-----------------|:--------|
-| Quartz      | calm daylight    | sans    |
-| Graphite    | focused night    | sans    |
-| Manuscript  | warm, literary   | serif   |
-| Newsprint   | crisp, editorial | serif   |
+
+| Theme      | Mood             | Type  |
+| :--------- | :--------------- | :---- |
+| Quartz     | calm daylight    | sans  |
+| Graphite   | focused night    | sans  |
+| Manuscript | warm, literary   | serif |
+| Newsprint  | crisp, editorial | serif |
 
 ### Math, when you need it
 

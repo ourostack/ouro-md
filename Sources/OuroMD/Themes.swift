@@ -43,9 +43,6 @@ private struct Palette {
     let sidebarBg: String     // sidebar / outline background
     let font: String          // body font stack
     let mono: String          // code font stack
-    let maxWidth: String       // base content column width
-    let maxWidthWide: String   // ≥1400px
-    let maxWidthXWide: String  // ≥1800px
     let fontSize: String       // root font size
     /// Apply the CodeMirror `cm-s-inner` light syntax palette (Typora's code
     /// colors). Dark themes keep Vditor's bundled dark hljs theme instead.
@@ -100,7 +97,6 @@ final class ThemeStore {
                     inlineCodeBg: "#f3f4f4", codeBorder: "#e7eaed", marker: "#a7a7a7",
                     selection: "#b5d6fc", sidebarBg: "#fafafa",
                     font: Fonts.sans, mono: Fonts.mono,
-                    maxWidth: "860px", maxWidthWide: "1024px", maxWidthXWide: "1200px",
                     fontSize: "16px", lightCodeSyntax: true),
             // Graphite — ouro-original dark theme.
             Palette(id: "graphite", displayName: "Graphite", uiMode: "dark",
@@ -110,7 +106,6 @@ final class ThemeStore {
                     inlineCodeBg: "#3a3a3c", codeBorder: "#3f3f41", marker: "#7a7a7e",
                     selection: "rgba(108,179,255,0.24)", sidebarBg: "#262628",
                     font: Fonts.sans, mono: Fonts.mono,
-                    maxWidth: "860px", maxWidthWide: "1024px", maxWidthXWide: "1200px",
                     fontSize: "16px", lightCodeSyntax: false),
             // Manuscript — ouro-original warm serif theme.
             Palette(id: "manuscript", displayName: "Manuscript", uiMode: "classic",
@@ -120,7 +115,6 @@ final class ThemeStore {
                     inlineCodeBg: "#ece2cd", codeBorder: "#ddd0b8", marker: "#b5a585",
                     selection: "rgba(154,91,52,0.16)", sidebarBg: "#efe7d5",
                     font: Fonts.serif, mono: Fonts.mono,
-                    maxWidth: "740px", maxWidthWide: "740px", maxWidthXWide: "740px",
                     fontSize: "17px", lightCodeSyntax: true),
             // Newsprint — ouro-original cool serif theme.
             Palette(id: "newsprint", displayName: "Newsprint", uiMode: "classic",
@@ -130,7 +124,6 @@ final class ThemeStore {
                     inlineCodeBg: "#efefec", codeBorder: "#e3e3df", marker: "#9a9a9a",
                     selection: "rgba(0,0,0,0.10)", sidebarBg: "#f3f3f0",
                     font: Fonts.serif, mono: Fonts.mono,
-                    maxWidth: "760px", maxWidthWide: "760px", maxWidthXWide: "760px",
                     fontSize: "17px", lightCodeSyntax: true)
         ]
         return palettes.map {
@@ -199,9 +192,9 @@ private func readerCSS(_ p: Palette) -> String {
     html{font-size:\(p.fontSize);}
     body{background:\(p.bg);color:\(p.fg);font-family:\(p.font);line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;margin:0;}
     ::selection{background:\(p.selection);}
-    .markdown-body{max-width:\(p.maxWidth);margin:0 auto;padding:30px 30px 100px;}
-    @media (min-width:1400px){.markdown-body{max-width:\(p.maxWidthWide);}}
-    @media (min-width:1800px){.markdown-body{max-width:\(p.maxWidthXWide);}}
+    .markdown-body{max-width:860px;margin:0 auto;padding:30px 30px 100px;}
+    @media (min-width:1400px){.markdown-body{max-width:1024px;}}
+    @media (min-width:1800px){.markdown-body{max-width:1200px;}}
     .markdown-body>:first-child{margin-top:0;}
     h1,h2,h3,h4,h5,h6{color:\(p.fg);font-weight:bold;line-height:1.4;margin:1rem 0;}
     h1{font-size:2.25em;line-height:1.2;border-bottom:1px solid \(p.headingRule);}
@@ -244,10 +237,11 @@ private func editorCSS(_ p: Palette) -> String {
     .vditor-content{background:\(p.bg)!important;height:auto!important;overflow:visible!important;width:100%!important;}
     .vditor-ir,.vditor-wysiwyg,.vditor-sv{height:auto!important;overflow:visible!important;width:100%!important;padding:0!important;box-sizing:border-box;}
 
-    /* Content column — centered, responsive max-width (Github theme). */
-    .vditor-reset{color:\(p.fg)!important;font-family:\(p.font)!important;font-size:\(p.fontSize)!important;line-height:1.6!important;max-width:\(p.maxWidth)!important;margin:0 auto!important;padding:30px 30px 100px!important;-webkit-font-smoothing:antialiased;caret-color:\(p.accent);box-sizing:border-box;}
-    @media (min-width:1400px){.vditor-reset{max-width:\(p.maxWidthWide)!important;}}
-    @media (min-width:1800px){.vditor-reset{max-width:\(p.maxWidthXWide)!important;}}
+    /* Content column — centered, responsive max-width (Github theme). Width is
+       global across themes; a theme changes type + color, never the measure. */
+    .vditor-reset{color:\(p.fg)!important;font-family:\(p.font)!important;font-size:\(p.fontSize)!important;line-height:1.6!important;max-width:860px!important;margin:0 auto!important;padding:30px 30px 100px!important;-webkit-font-smoothing:antialiased;caret-color:\(p.accent);box-sizing:border-box;}
+    @media (min-width:1400px){.vditor-reset{max-width:1024px!important;}}
+    @media (min-width:1800px){.vditor-reset{max-width:1200px!important;}}
 
     /* Strip Vditor's H1–H6 gutter badges + block labels. */
     .vditor-ir .vditor-reset>h1:before,.vditor-ir .vditor-reset>h2:before,.vditor-ir .vditor-reset>h3:before,.vditor-ir .vditor-reset>h4:before,.vditor-ir .vditor-reset>h5:before,.vditor-ir .vditor-reset>h6:before,.vditor-wysiwyg .vditor-reset>h1:before,.vditor-wysiwyg .vditor-reset>h2:before,.vditor-wysiwyg .vditor-reset>h3:before,.vditor-wysiwyg .vditor-reset>h4:before,.vditor-wysiwyg .vditor-reset>h5:before,.vditor-wysiwyg .vditor-reset>h6:before,.vditor-ir div[data-type="footnotes-block"]:before,.vditor-ir div[data-type="link-ref-defs-block"]:before,.vditor-wysiwyg div[data-type="footnotes-block"]:before,.vditor-wysiwyg div[data-type="link-ref-defs-block"]:before{content:none!important;margin:0!important;padding:0!important;}
