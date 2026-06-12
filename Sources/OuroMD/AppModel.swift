@@ -227,6 +227,14 @@ final class AppModel: ObservableObject {
 
     // MARK: - File operations
 
+    func loadWelcome() {
+        currentURL = nil
+        lastLoadedContent = nil
+        pushMarkdown(Welcome.markdown)
+        isDirty = false
+        onChromeUpdate?()
+    }
+
     func newDocument() {
         confirmDiscard { [weak self] in
             guard let self else { return }

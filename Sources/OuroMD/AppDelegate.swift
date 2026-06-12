@@ -39,7 +39,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let path = initialFilePath {
             openInitial(path)
         } else if !restoreSession() {
-            openInitial(nil)
+            let firstRun = !defaults.bool(forKey: "ouro.hasLaunched")
+            defaults.set(true, forKey: "ouro.hasLaunched")
+            let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: true)
+            track(controller)
+            if firstRun { controller.model.loadWelcome() }
+            controller.show(cascadeFrom: nil)
         }
     }
 
@@ -235,6 +240,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func openProjectPage(_ sender: Any?) {
         if let url = URL(string: "https://github.com/ourostack/ouro-md") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+    @objc func reportIssue(_ sender: Any?) {
+        if let url = URL(string: "https://github.com/ourostack/ouro-md/issues/new") {
             NSWorkspace.shared.open(url)
         }
     }

@@ -274,6 +274,7 @@ enum MenuBuilder {
         let menu = NSMenu(title: "Help")
         item.submenu = menu
         add(menu, "Ouro MD on GitHub", #selector(AppDelegate.openProjectPage(_:)), "", target)
+        add(menu, "Report an Issue", #selector(AppDelegate.reportIssue(_:)), "", target)
         return item
     }
 
