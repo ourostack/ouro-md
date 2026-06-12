@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="stylesheet" href="vditor/dist/index.css">
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #ffffff; overflow: hidden; }
+  #editor { height: 100vh; }
+  /* The native window owns the chrome; keep the editor toolbar hidden for a
+     distraction-free, content-first surface. */
+  .vditor-toolbar { display: none !important; }
+</style>
+<!-- Swapped at runtime by the native app to apply the active theme. -->
+<style id="ouro-theme"></style>
+</head>
+<body>
+  <div id="editor"></div>
+  <script src="vditor/dist/index.min.js"></script>
+  <script src="bridge.js"></script>
+</body>
+</html>

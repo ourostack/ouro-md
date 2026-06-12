@@ -1,0 +1,28 @@
+ouro-md
+Copyright (c) 2026 Ari Mendelow
+
+This product is original software. It is an independent implementation of a
+Markdown editor and is not affiliated with, derived from, or endorsed by
+Typora or its authors. No third-party application's source code, themes,
+icons, or trademarks are included.
+
+This product bundles or depends on the following third-party components:
+
+-------------------------------------------------------------------------------
+Vditor
+  https://github.com/Vanessa219/vditor
+  License: MIT
+  Copyright (c) 2019-present B3log
+
+  The Markdown editing engine is vendored under Sources/OuroMD/web/vditor/.
+  Vditor itself bundles additional open-source components in its dist (e.g.
+  KaTeX, highlight.js, mermaid, Lute), each under its own permissive license
+  (MIT / BSD / Apache-2.0). See the upstream project for details.
+-------------------------------------------------------------------------------
+swift-markdown
+  https://github.com/apple/swift-markdown
+  License: Apache License 2.0
+  Copyright (c) Apple Inc. and the Swift project authors
+
+  Used for the headless `--render` command and the HTML/PDF export pipeline.
+-------------------------------------------------------------------------------

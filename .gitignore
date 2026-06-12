@@ -1,0 +1,11 @@
+# Build output
+.build/
+.swiftpm/
+DerivedData/
+*.xcodeproj
+
+# Packaged app (produced by make-app.sh)
+OuroMD.app/
+
+# macOS
+.DS_Store
