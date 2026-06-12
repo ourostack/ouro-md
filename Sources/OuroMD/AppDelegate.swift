@@ -9,10 +9,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         let hosting = NSHostingController(rootView: ContentView(model: model))
         let window = NSWindow(contentViewController: hosting)
-        window.setContentSize(NSSize(width: 960, height: 720))
+        window.setContentSize(NSSize(width: 1040, height: 800))
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
         window.titlebarAppearsTransparent = true
-        window.titleVisibility = .hidden
+        window.titleVisibility = .visible
         window.tabbingMode = .disallowed
         window.delegate = self
         window.setFrameAutosaveName("OuroMainWindow")
@@ -39,6 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.title = model.windowTitle
         window.isDocumentEdited = model.isDirty
         window.representedURL = model.currentURL
+        window.appearance = NSAppearance(named: model.theme.uiMode == "dark" ? .darkAqua : .aqua)
         MenuBuilder.refreshDynamicState(model: model)
     }
 
@@ -114,6 +115,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
     }
     @objc func toggleOutline(_ sender: Any?) { model.toggleOutline(); syncChrome() }
+    @objc func toggleFocusMode(_ sender: Any?) { model.toggleFocusMode(); syncChrome() }
+    @objc func toggleTypewriter(_ sender: Any?) { model.toggleTypewriter(); syncChrome() }
+
+    @objc func applyParagraph(_ sender: NSMenuItem) {
+        if let command = sender.representedObject as? String { model.format(command) }
+    }
     @objc func zoomIn(_ sender: Any?) { model.zoomIn() }
     @objc func zoomOut(_ sender: Any?) { model.zoomOut() }
     @objc func actualSize(_ sender: Any?) { model.actualSize() }

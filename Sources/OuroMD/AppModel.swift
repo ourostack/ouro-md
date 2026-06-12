@@ -9,6 +9,8 @@ protocol EditorBridge: AnyObject {
     func applyTheme(uiMode: String, css: String)
     func setMode(_ mode: String)
     func setOutline(_ on: Bool)
+    func setFocusMode(_ on: Bool)
+    func setTypewriter(_ on: Bool)
     func execCommand(_ command: String)
     func markSaved()
     func focusEditor()
@@ -24,6 +26,8 @@ final class AppModel {
     private(set) var themeID: String
     private(set) var mode = "ir"
     private(set) var showOutline = false
+    private(set) var focusMode = false
+    private(set) var typewriter = false
     private var zoom = 1.0
 
     weak var bridge: EditorBridge?
@@ -32,6 +36,7 @@ final class AppModel {
 
     private let defaults = UserDefaults.standard
     private var pendingMarkdown: String?
+    private var autosaveItem: DispatchWorkItem?
 
     init() {
         themeID = UserDefaults.standard.string(forKey: "ouro.theme") ?? "quartz"
@@ -68,6 +73,20 @@ final class AppModel {
         guard dirty != isDirty else { return }
         isDirty = dirty
         onChromeUpdate?()
+        if dirty { scheduleAutosave() }
+    }
+
+    /// Typora-style auto-save: silently persists a titled document a moment
+    /// after the last edit, so the user never has to press ⌘S.
+    private func scheduleAutosave() {
+        guard currentURL != nil else { return }
+        autosaveItem?.cancel()
+        let item = DispatchWorkItem { [weak self] in
+            guard let self, self.isDirty, self.currentURL != nil else { return }
+            self.performSave { _ in }
+        }
+        autosaveItem = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5, execute: item)
     }
 
     // MARK: - File operations
@@ -212,6 +231,16 @@ final class AppModel {
     func toggleOutline() {
         showOutline.toggle()
         bridge?.setOutline(showOutline)
+    }
+
+    func toggleFocusMode() {
+        focusMode.toggle()
+        bridge?.setFocusMode(focusMode)
+    }
+
+    func toggleTypewriter() {
+        typewriter.toggle()
+        bridge?.setTypewriter(typewriter)
     }
 
     func zoomIn() { zoom = min(zoom + 0.1, 3.0); bridge?.setZoom(zoom) }

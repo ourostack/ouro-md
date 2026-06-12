@@ -5,6 +5,8 @@ import AppKit
 enum MenuBuilder {
     private static weak var themeMenu: NSMenu?
     private static weak var modeMenu: NSMenu?
+    private static weak var focusModeItem: NSMenuItem?
+    private static weak var typewriterItem: NSMenuItem?
     private static var recentDelegate: RecentMenuDelegate?
 
     static func install(into app: NSApplication, target: AppDelegate) {
@@ -12,8 +14,10 @@ enum MenuBuilder {
         mainMenu.addItem(appMenu())
         mainMenu.addItem(fileMenu(target: target))
         mainMenu.addItem(editMenu())
+        mainMenu.addItem(paragraphMenu(target: target))
         mainMenu.addItem(formatMenu(target: target))
         mainMenu.addItem(viewMenu(target: target))
+        mainMenu.addItem(themesMenu(target: target))
         let windowMenuItem = windowMenu()
         mainMenu.addItem(windowMenuItem)
         let helpMenuItem = helpMenu(target: target)
@@ -33,6 +37,8 @@ enum MenuBuilder {
         modeMenu?.items.forEach {
             $0.state = ($0.representedObject as? String == model.mode) ? .on : .off
         }
+        focusModeItem?.state = model.focusMode ? .on : .off
+        typewriterItem?.state = model.typewriter ? .on : .off
     }
 
     // MARK: - App menu
@@ -146,23 +152,14 @@ enum MenuBuilder {
         modeMenu = modeSub
 
         menu.addItem(.separator())
-        let themeItem = menu.addItem(withTitle: "Theme", action: nil, keyEquivalent: "")
-        let themeSub = NSMenu(title: "Theme")
-        for theme in ThemeStore.shared.themes {
-            let entry = themeSub.addItem(withTitle: theme.displayName,
-                                         action: #selector(AppDelegate.selectTheme(_:)), keyEquivalent: "")
-            entry.target = target
-            entry.representedObject = theme.id
-        }
-        themeItem.submenu = themeSub
-        themeMenu = themeSub
-
-        menu.addItem(.separator())
         let outline = add(menu, "Toggle Outline", #selector(AppDelegate.toggleOutline(_:)), "o", target)
         outline.keyEquivalentModifierMask = [.command, .option]
+        focusModeItem = add(menu, "Focus Mode", #selector(AppDelegate.toggleFocusMode(_:)), "", target)
+        typewriterItem = add(menu, "Typewriter Mode", #selector(AppDelegate.toggleTypewriter(_:)), "", target)
 
         menu.addItem(.separator())
-        add(menu, "Actual Size", #selector(AppDelegate.actualSize(_:)), "0", target)
+        let actual = add(menu, "Actual Size", #selector(AppDelegate.actualSize(_:)), "0", target)
+        actual.keyEquivalentModifierMask = [.command, .control]
         add(menu, "Zoom In", #selector(AppDelegate.zoomIn(_:)), "+", target)
         add(menu, "Zoom Out", #selector(AppDelegate.zoomOut(_:)), "-", target)
 
@@ -171,6 +168,58 @@ enum MenuBuilder {
                                       action: #selector(NSWindow.toggleFullScreen(_:)), keyEquivalent: "f")
         fullScreen.keyEquivalentModifierMask = [.command, .control]
         fullScreen.target = nil
+        return item
+    }
+
+    // MARK: - Paragraph menu
+
+    private static func paragraphMenu(target: AppDelegate) -> NSMenuItem {
+        let item = NSMenuItem()
+        let menu = NSMenu(title: "Paragraph")
+        item.submenu = menu
+
+        for level in 1...6 {
+            let heading = para(menu, "Heading \(level)", cmd: "h\(level)", key: "\(level)", target)
+            heading.keyEquivalentModifierMask = [.command]
+        }
+        let body = para(menu, "Paragraph", cmd: "paragraph", key: "0", target)
+        body.keyEquivalentModifierMask = [.command]
+
+        menu.addItem(.separator())
+        para(menu, "Ordered List", cmd: "ol", key: "", target)
+        para(menu, "Unordered List", cmd: "ul", key: "", target)
+        para(menu, "Task List", cmd: "task", key: "", target)
+        para(menu, "Quote", cmd: "quote", key: "", target)
+
+        menu.addItem(.separator())
+        para(menu, "Code Fences", cmd: "codeblock", key: "", target)
+        para(menu, "Table", cmd: "table", key: "", target)
+        para(menu, "Math Block", cmd: "math", key: "", target)
+        para(menu, "Horizontal Rule", cmd: "hr", key: "", target)
+        return item
+    }
+
+    @discardableResult
+    private static func para(_ menu: NSMenu, _ title: String, cmd: String, key: String, _ target: AppDelegate) -> NSMenuItem {
+        let item = menu.addItem(withTitle: title, action: #selector(AppDelegate.applyParagraph(_:)), keyEquivalent: key)
+        item.target = target
+        item.representedObject = cmd
+        return item
+    }
+
+    // MARK: - Themes menu
+
+    private static func themesMenu(target: AppDelegate) -> NSMenuItem {
+        let item = NSMenuItem()
+        let menu = NSMenu(title: "Themes")
+        item.submenu = menu
+        for theme in ThemeStore.shared.themes {
+            let entry = menu.addItem(withTitle: theme.displayName,
+                                     action: #selector(AppDelegate.selectTheme(_:)), keyEquivalent: "")
+            entry.target = target
+            entry.representedObject = theme.id
+        }
+        themeMenu = menu
         return item
     }
 

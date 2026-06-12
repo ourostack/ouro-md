@@ -7,7 +7,7 @@
   var vditor = null;
   var ready = false;
   var dirty = false;
-  var state = { mode: "ir", value: "", outline: false, uiTheme: "classic" };
+  var state = { mode: "ir", value: "", outline: false, uiTheme: "classic", focus: false, typewriter: false };
 
   function post(type, extra) {
     try {
@@ -34,9 +34,10 @@
       toolbar: [],
       counter: { enable: true, type: "markdown" },
       outline: { enable: state.outline, position: "left" },
+      typewriterMode: state.typewriter,
       preview: {
         delay: 80,
-        hljs: { enable: true, lineNumber: false },
+        hljs: { enable: true, lineNumber: false, style: "github" },
         math: { engine: "KaTeX", inlineDigit: true }
       },
       input: function (value) {
@@ -75,7 +76,19 @@
 
   function onTransfer(e) {
     var dt = e.clipboardData || e.dataTransfer;
-    if (!dt || !dt.files || dt.files.length === 0) { return; }
+    if (!dt) { return; }
+    // Smart link: pasting a URL over a selection wraps it as a Markdown link.
+    if (e.type === "paste" && dt.getData) {
+      var text = dt.getData("text/plain");
+      var sel = window.getSelection();
+      if (text && /^https?:\/\/\S+$/.test(text.trim()) && sel && sel.toString().length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        insertAtCursor("[" + sel.toString() + "](" + text.trim() + ")");
+        return;
+      }
+    }
+    if (!dt.files || dt.files.length === 0) { return; }
     var imgs = [];
     for (var i = 0; i < dt.files.length; i++) {
       var f = dt.files[i];
@@ -99,6 +112,41 @@
     var sel = window.getSelection();
     var selected = sel ? sel.toString() : "";
     document.execCommand("insertText", false, prefix + selected + suffix);
+  }
+
+  function insertAtCursor(text) {
+    document.execCommand("insertText", false, text);
+  }
+
+  // Replaces the current line's text via fn(oldLine) -> newLine.
+  function transformLine(fn) {
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) { return; }
+    sel.modify("move", "backward", "lineboundary");
+    sel.modify("extend", "forward", "lineboundary");
+    var line = sel.toString();
+    insertAtCursor(fn(line));
+  }
+
+  function stripBlockMarkers(t) {
+    return t.replace(/^\s*#{1,6}\s+/, "")
+            .replace(/^\s*>\s?/, "")
+            .replace(/^\s*- \[[ xX]\]\s+/, "")
+            .replace(/^\s*[-*+]\s+/, "")
+            .replace(/^\s*\d+\.\s+/, "");
+  }
+
+  // Focus mode: mark the top-level block containing the caret as .ouro-active.
+  function updateActiveBlock() {
+    var reset = document.querySelector(".vditor-reset");
+    if (!reset) { return; }
+    var sel = window.getSelection();
+    if (!sel || !sel.anchorNode) { return; }
+    var node = sel.anchorNode;
+    while (node && node.parentNode !== reset) { node = node.parentNode; }
+    var prev = reset.querySelector(".ouro-active");
+    if (prev && prev !== node) { prev.classList.remove("ouro-active"); }
+    if (node && node.nodeType === 1) { node.classList.add("ouro-active"); }
   }
 
   window.ouro = {
@@ -130,20 +178,55 @@
       state.outline = on;
       rebuild();
     },
+    setFocusMode: function (on) {
+      state.focus = !!on;
+      document.body.classList.toggle("ouro-focus", state.focus);
+      if (state.focus) { updateActiveBlock(); }
+    },
+    setTypewriter: function (on) {
+      on = !!on;
+      if (on === state.typewriter) { return; }
+      state.typewriter = on;
+      rebuild();
+    },
     exec: function (cmd) {
-      if (cmd === "bold") { wrapSelection("**", "**"); }
-      else if (cmd === "italic") { wrapSelection("*", "*"); }
-      else if (cmd === "strike") { wrapSelection("~~", "~~"); }
-      else if (cmd === "code") { wrapSelection("`", "`"); }
-      else if (cmd === "link") {
-        var sel = window.getSelection();
-        var t = sel ? sel.toString() : "";
-        document.execCommand("insertText", false, "[" + (t || "text") + "](url)");
+      switch (cmd) {
+        case "bold": wrapSelection("**", "**"); break;
+        case "italic": wrapSelection("*", "*"); break;
+        case "strike": wrapSelection("~~", "~~"); break;
+        case "code": wrapSelection("`", "`"); break;
+        case "link": {
+          var sel = window.getSelection();
+          var t = sel ? sel.toString() : "";
+          insertAtCursor("[" + (t || "text") + "](url)");
+          break;
+        }
+        case "h1": case "h2": case "h3": case "h4": case "h5": case "h6": {
+          var n = parseInt(cmd.slice(1), 10);
+          transformLine(function (line) {
+            return new Array(n + 1).join("#") + " " + stripBlockMarkers(line);
+          });
+          break;
+        }
+        case "paragraph": transformLine(stripBlockMarkers); break;
+        case "quote": transformLine(function (l) { return "> " + stripBlockMarkers(l); }); break;
+        case "ul": transformLine(function (l) { return "- " + stripBlockMarkers(l); }); break;
+        case "ol": transformLine(function (l) { return "1. " + stripBlockMarkers(l); }); break;
+        case "task": transformLine(function (l) { return "- [ ] " + stripBlockMarkers(l); }); break;
+        case "codeblock": insertAtCursor("\n```\n\n```\n"); break;
+        case "table": insertAtCursor("\n| Column | Column |\n| --- | --- |\n| Cell | Cell |\n"); break;
+        case "math": insertAtCursor("\n$$\n\n$$\n"); break;
+        case "hr": insertAtCursor("\n\n---\n\n"); break;
+        default: break;
       }
     },
     markSaved: function () { dirty = false; },
     focus: function () { if (vditor) { try { vditor.focus(); } catch (e) { /* ignore */ } } }
   };
+
+  document.addEventListener("selectionchange", function () {
+    if (state.focus) { updateActiveBlock(); }
+  });
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", create);

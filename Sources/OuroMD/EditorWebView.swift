@@ -97,6 +97,14 @@ struct EditorWebView: NSViewRepresentable {
             eval("window.ouro && window.ouro.setOutline(\(on ? "true" : "false"))")
         }
 
+        func setFocusMode(_ on: Bool) {
+            eval("window.ouro && window.ouro.setFocusMode(\(on ? "true" : "false"))")
+        }
+
+        func setTypewriter(_ on: Bool) {
+            eval("window.ouro && window.ouro.setTypewriter(\(on ? "true" : "false"))")
+        }
+
         func execCommand(_ command: String) {
             eval("window.ouro && window.ouro.exec(\(Coordinator.jsString(command)))")
         }
