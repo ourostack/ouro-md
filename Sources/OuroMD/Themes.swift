@@ -41,22 +41,21 @@ private struct Palette {
     let marker: String        // IR syntax markers / md-tag
     let selection: String     // text selection background
     let sidebarBg: String     // sidebar / outline background
-    let font: String          // body font stack
-    let mono: String          // code font stack
-    let fontSize: String       // root font size
     /// Apply the CodeMirror `cm-s-inner` light syntax palette (Typora's code
     /// colors). Dark themes keep Vditor's bundled dark hljs theme instead.
     let lightCodeSyntax: Bool
 }
 
 private enum Fonts {
-    /// Typora Github-theme body stack. "Open Sans" is bundled (Apache-2.0).
+    /// Global body font (Typora Github-theme stack). "Open Sans" is bundled (Apache-2.0).
     static let sans = #""Open Sans", "Clear Sans", "Helvetica Neue", Helvetica, Arial, "Segoe UI Emoji", sans-serif"#
-    static let serif = #""New York", "Iowan Old Style", Palatino, Georgia, Cambria, "Times New Roman", serif"#
-    /// Typora's `--monospace` (base.css). Resolves to Consolas where present
-    /// (e.g. machines with MS Office), else Courier / the system monospace —
-    /// matching Typora's own resolution on the same machine.
-    static let mono = #""Lucida Console", Consolas, "Courier New", Courier, monospace"#
+    /// Global code font. Typora's stack leads with Windows faces (Consolas where
+    /// present); on macOS those are absent, so we lead the fallback with Menlo —
+    /// a medium-weight system mono that matches Typora's rendered weight and
+    /// avoids the thin "Courier New".
+    static let mono = #""Lucida Console", Consolas, Menlo, Monaco, monospace"#
+    /// Global root font size.
+    static let size = "16px"
 }
 
 /// Loads and serves built-in + user themes.
@@ -96,8 +95,7 @@ final class ThemeStore {
                     cellBorder: "#dfe2e5", tableFill: "#f8f8f8", codeBlockBg: "#f8f8f8",
                     inlineCodeBg: "#f3f4f4", codeBorder: "#e7eaed", marker: "#a7a7a7",
                     selection: "#b5d6fc", sidebarBg: "#fafafa",
-                    font: Fonts.sans, mono: Fonts.mono,
-                    fontSize: "16px", lightCodeSyntax: true),
+                    lightCodeSyntax: true),
             // Graphite — ouro-original dark theme.
             Palette(id: "graphite", displayName: "Graphite", uiMode: "dark",
                     bg: "#2c2c2e", fg: "#e4e4e6", faint: "#9a9a9e", accent: "#6cb3ff",
@@ -105,8 +103,7 @@ final class ThemeStore {
                     cellBorder: "#3f3f41", tableFill: "#3a3a3c", codeBlockBg: "#1f1f21",
                     inlineCodeBg: "#3a3a3c", codeBorder: "#3f3f41", marker: "#7a7a7e",
                     selection: "rgba(108,179,255,0.24)", sidebarBg: "#262628",
-                    font: Fonts.sans, mono: Fonts.mono,
-                    fontSize: "16px", lightCodeSyntax: false),
+                    lightCodeSyntax: false),
             // Manuscript — ouro-original warm serif theme.
             Palette(id: "manuscript", displayName: "Manuscript", uiMode: "classic",
                     bg: "#f5efe3", fg: "#43392c", faint: "#9a8a6c", accent: "#9a5b34",
@@ -114,8 +111,7 @@ final class ThemeStore {
                     cellBorder: "#ddd0b8", tableFill: "#ece2cd", codeBlockBg: "#ece2cd",
                     inlineCodeBg: "#ece2cd", codeBorder: "#ddd0b8", marker: "#b5a585",
                     selection: "rgba(154,91,52,0.16)", sidebarBg: "#efe7d5",
-                    font: Fonts.serif, mono: Fonts.mono,
-                    fontSize: "17px", lightCodeSyntax: true),
+                    lightCodeSyntax: true),
             // Newsprint — ouro-original cool serif theme.
             Palette(id: "newsprint", displayName: "Newsprint", uiMode: "classic",
                     bg: "#fbfbf9", fg: "#2b2b2b", faint: "#777777", accent: "#1a1a1a",
@@ -123,8 +119,7 @@ final class ThemeStore {
                     cellBorder: "#e3e3df", tableFill: "#efefec", codeBlockBg: "#efefec",
                     inlineCodeBg: "#efefec", codeBorder: "#e3e3df", marker: "#9a9a9a",
                     selection: "rgba(0,0,0,0.10)", sidebarBg: "#f3f3f0",
-                    font: Fonts.serif, mono: Fonts.mono,
-                    fontSize: "17px", lightCodeSyntax: true)
+                    lightCodeSyntax: true)
         ]
         return palettes.map {
             Theme(id: $0.id, displayName: $0.displayName, uiMode: $0.uiMode,
@@ -189,8 +184,8 @@ private func codeSyntaxCSS(_ p: Palette) -> String {
 private func readerCSS(_ p: Palette) -> String {
     """
     :root{color-scheme:\(p.uiMode == "dark" ? "dark" : "light");}
-    html{font-size:\(p.fontSize);}
-    body{background:\(p.bg);color:\(p.fg);font-family:\(p.font);line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;margin:0;}
+    html{font-size:\(Fonts.size);}
+    body{background:\(p.bg);color:\(p.fg);font-family:\(Fonts.sans);line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;margin:0;}
     ::selection{background:\(p.selection);}
     .markdown-body{max-width:860px;margin:0 auto;padding:30px 30px 100px;}
     @media (min-width:1400px){.markdown-body{max-width:1024px;}}
@@ -209,7 +204,7 @@ private func readerCSS(_ p: Palette) -> String {
     strong{font-weight:bold;}
     em{font-style:italic;}
     del{color:\(p.faint);}
-    code{font-family:\(p.mono);font-size:0.9em;background:\(p.inlineCodeBg);border:1px solid \(p.codeBorder);border-radius:3px;padding:0 2px;}
+    code{font-family:\(Fonts.mono);font-size:0.9em;background:\(p.inlineCodeBg);border:1px solid \(p.codeBorder);border-radius:3px;padding:0 2px;}
     pre{background:\(p.codeBlockBg);border:1px solid \(p.codeBorder);border-radius:3px;padding:8px 10px;overflow:auto;line-height:1.5;margin:15px 0;}
     pre code{background:none;border:none;padding:0;font-size:0.9em;}
     blockquote{padding:0 15px;border-left:4px solid \(p.quoteBar);color:\(p.faint);}
@@ -239,7 +234,7 @@ private func editorCSS(_ p: Palette) -> String {
 
     /* Content column — centered, responsive max-width (Github theme). Width is
        global across themes; a theme changes type + color, never the measure. */
-    .vditor-reset{color:\(p.fg)!important;font-family:\(p.font)!important;font-size:\(p.fontSize)!important;line-height:1.6!important;max-width:860px!important;margin:0 auto!important;padding:30px 30px 100px!important;-webkit-font-smoothing:antialiased;caret-color:\(p.accent);box-sizing:border-box;}
+    .vditor-reset{color:\(p.fg)!important;font-family:\(Fonts.sans)!important;font-size:\(Fonts.size)!important;line-height:1.6!important;max-width:860px!important;margin:0 auto!important;padding:30px 30px 100px!important;-webkit-font-smoothing:antialiased;caret-color:\(p.accent);box-sizing:border-box;}
     @media (min-width:1400px){.vditor-reset{max-width:1024px!important;}}
     @media (min-width:1800px){.vditor-reset{max-width:1200px!important;}}
 
@@ -266,9 +261,9 @@ private func editorCSS(_ p: Palette) -> String {
     .vditor-reset del{color:\(p.faint)!important;}
 
     /* Inline code + fenced code (Github exact). */
-    .vditor-reset code:not(.hljs):not([class*="vditor-ir__marker"]){font-family:\(p.mono)!important;background:\(p.inlineCodeBg)!important;border:1px solid \(p.codeBorder)!important;border-radius:3px;padding:0 2px;font-size:0.9em;color:\(p.fg);}
+    .vditor-reset code:not(.hljs):not([class*="vditor-ir__marker"]){font-family:\(Fonts.mono)!important;background:\(p.inlineCodeBg)!important;border:1px solid \(p.codeBorder)!important;border-radius:3px;padding:0 2px;font-size:0.9em;color:\(p.fg);}
     .vditor-reset pre{background:\(p.codeBlockBg)!important;border:1px solid \(p.codeBorder)!important;border-radius:3px!important;margin:15px 0!important;padding:0!important;}
-    .vditor-reset pre>code,.vditor-reset pre code.hljs{background:\(p.codeBlockBg)!important;font-family:\(p.mono)!important;font-size:0.9em!important;padding:8px 10px!important;border:none!important;border-radius:3px;display:block;line-height:1.5;color:\(p.fg);}
+    .vditor-reset pre>code,.vditor-reset pre code.hljs{background:\(p.codeBlockBg)!important;font-family:\(Fonts.mono)!important;font-size:0.9em!important;padding:8px 10px!important;border:none!important;border-radius:3px;display:block;line-height:1.5;color:\(p.fg);}
 
     /* IR blocks: show only the rendered preview; hide raw source + fence
        markers until the block is focused for editing (Typora-like reading view). */

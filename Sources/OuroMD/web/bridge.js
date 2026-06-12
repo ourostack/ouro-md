@@ -178,6 +178,20 @@
       dirty = false;
       postCount(state.value);
     },
+    reloadValue: function (md) {
+      // Like setValue, but preserves the reader's scroll position — used when
+      // the open file is rewritten externally (agent edit) and we live-reload.
+      var scroller = document.scrollingElement || document.documentElement;
+      var prevY = scroller ? scroller.scrollTop : window.scrollY;
+      state.value = (md == null) ? "" : md;
+      if (vditor && ready) { vditor.setValue(state.value, true); }
+      dirty = false;
+      postCount(state.value);
+      var restore = function () {
+        if (scroller) { scroller.scrollTop = prevY; } else { window.scrollTo(0, prevY); }
+      };
+      requestAnimationFrame(function () { restore(); requestAnimationFrame(restore); });
+    },
     getValue: function () {
       try { return vditor ? vditor.getValue() : state.value; } catch (e) { return state.value; }
     },

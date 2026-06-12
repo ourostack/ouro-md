@@ -5,6 +5,8 @@ import UniformTypeIdentifiers
 /// Imperative bridge to the live web editor, implemented by the web view's coordinator.
 protocol EditorBridge: AnyObject {
     func setMarkdown(_ markdown: String)
+    /// Replace content while preserving the reader's scroll position (external reload).
+    func reloadMarkdown(_ markdown: String)
     func getMarkdown(_ completion: @escaping (String) -> Void)
     func getHTML(_ completion: @escaping (String) -> Void)
     func applyTheme(uiMode: String, css: String, codeTheme: String)
@@ -49,6 +51,10 @@ final class AppModel: ObservableObject {
     private let defaults = UserDefaults.standard
     private var pendingMarkdown: String?
     private var autosaveItem: DispatchWorkItem?
+    /// The content currently on disk (last loaded or saved). Lets the file
+    /// watcher distinguish a genuine external edit from our own save echo.
+    private var lastLoadedContent: String?
+    private var fileWatcher: FileWatcher?
 
     init() {
         themeID = UserDefaults.standard.string(forKey: "ouro.theme") ?? "quartz"
@@ -116,6 +122,8 @@ final class AppModel: ObservableObject {
         confirmDiscard { [weak self] in
             guard let self else { return }
             self.currentURL = nil
+            self.lastLoadedContent = nil
+            self.stopWatching()
             self.pushMarkdown("")
             self.isDirty = false
             self.onChromeUpdate?()
@@ -137,10 +145,12 @@ final class AppModel: ObservableObject {
             do {
                 let text = try String(contentsOf: url, encoding: .utf8)
                 self.currentURL = url
+                self.lastLoadedContent = text
                 self.pushMarkdown(text)
                 self.isDirty = false
                 NSDocumentController.shared.noteNewRecentDocumentURL(url)
                 self.refreshFolder()
+                self.startWatching()
                 self.onChromeUpdate?()
             } catch {
                 self.presentError("Could not open \(url.lastPathComponent)", error)
@@ -152,10 +162,12 @@ final class AppModel: ObservableObject {
         let url = URL(fileURLWithPath: path)
         guard let text = try? String(contentsOf: url, encoding: .utf8) else { return }
         currentURL = url
+        lastLoadedContent = text
         pushMarkdown(text)
         isDirty = false
         NSDocumentController.shared.noteNewRecentDocumentURL(url)
         refreshFolder()
+        startWatching()
         onChromeUpdate?()
     }
 
@@ -189,9 +201,13 @@ final class AppModel: ObservableObject {
         bridge.getMarkdown { [weak self] markdown in
             guard let self else { completion(false); return }
             do {
+                // Record what we're about to put on disk before writing, so the
+                // file watcher recognizes the resulting change as our own.
+                self.lastLoadedContent = markdown
                 try markdown.write(to: url, atomically: true, encoding: .utf8)
                 self.bridge?.markSaved()
                 self.isDirty = false
+                self.startWatching()
                 self.onChromeUpdate?()
                 completion(true)
             } catch {
@@ -199,6 +215,66 @@ final class AppModel: ObservableObject {
                 completion(false)
             }
         }
+    }
+
+    // MARK: - Live external reload
+
+    /// Begin watching the current file for external edits (e.g. an agent
+    /// rewriting it). Safe to call repeatedly; re-targets the current URL.
+    private func startWatching() {
+        stopWatching()
+        guard let url = currentURL else { return }
+        let watcher = FileWatcher(url: url) { [weak self] in
+            self?.handleExternalChange()
+        }
+        fileWatcher = watcher
+        watcher.start()
+    }
+
+    private func stopWatching() {
+        fileWatcher?.stop()
+        fileWatcher = nil
+    }
+
+    /// Called on the main queue when the open file changes on disk.
+    private func handleExternalChange() {
+        guard let url = currentURL else { return }
+        guard let disk = try? String(contentsOf: url, encoding: .utf8) else {
+            // File was deleted or moved out from under us — keep the buffer as
+            // an unsaved copy rather than blanking the reader's view.
+            isDirty = true
+            onChromeUpdate?()
+            return
+        }
+        // Our own save (or no real change) — nothing to do.
+        guard disk != lastLoadedContent else { return }
+
+        if isDirty {
+            presentExternalChangeConflict(diskContent: disk, url: url)
+        } else {
+            lastLoadedContent = disk
+            bridge?.reloadMarkdown(disk)   // preserves scroll position
+        }
+    }
+
+    /// The file changed on disk while the reader had unsaved edits — never
+    /// clobber silently; let them choose.
+    private func presentExternalChangeConflict(diskContent: String, url: URL) {
+        let alert = NSAlert()
+        alert.messageText = "\(url.lastPathComponent) changed on disk"
+        alert.informativeText = "This file was modified by another program while you had unsaved changes. Reload the new version (discarding your edits), or keep your edits?"
+        alert.addButton(withTitle: "Reload from Disk")
+        alert.addButton(withTitle: "Keep My Edits")
+        let response = alert.runModal()
+        // Either way, treat the on-disk content as the new baseline so we don't
+        // re-prompt for the same external change.
+        lastLoadedContent = diskContent
+        if response == .alertFirstButtonReturn {
+            bridge?.reloadMarkdown(diskContent)
+            isDirty = false
+            onChromeUpdate?()
+        }
+        // "Keep My Edits": leave the dirty buffer untouched; a later save wins.
     }
 
     // MARK: - Export
