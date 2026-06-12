@@ -7,7 +7,7 @@
   var vditor = null;
   var ready = false;
   var dirty = false;
-  var state = { mode: "ir", value: "", outline: false, uiTheme: "classic", focus: false, typewriter: false };
+  var state = { mode: "ir", value: "", outline: false, uiTheme: "classic", focus: false, typewriter: false, codeTheme: "github" };
 
   function post(type, extra) {
     try {
@@ -37,7 +37,7 @@
       typewriterMode: state.typewriter,
       preview: {
         delay: 80,
-        hljs: { enable: true, lineNumber: false, style: "github" },
+        hljs: { enable: true, lineNumber: false, style: state.codeTheme },
         math: { engine: "KaTeX", inlineDigit: true }
       },
       input: function (value) {
@@ -161,11 +161,12 @@
     getHTML: function () {
       try { return vditor ? vditor.getHTML() : ""; } catch (e) { return ""; }
     },
-    setTheme: function (uiMode, css) {
+    setTheme: function (uiMode, css, codeTheme) {
       if (uiMode) { state.uiTheme = uiMode; }
+      if (codeTheme) { state.codeTheme = codeTheme; }
       var tag = document.getElementById("ouro-theme");
       if (tag) { tag.textContent = css || ""; }
-      if (vditor && uiMode) { try { vditor.setTheme(uiMode); } catch (e) { /* ignore */ } }
+      if (vditor) { try { vditor.setTheme(state.uiTheme, undefined, state.codeTheme); } catch (e) { /* ignore */ } }
     },
     setMode: function (mode) {
       if (!mode || mode === state.mode) { return; }

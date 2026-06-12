@@ -78,7 +78,7 @@ final class ThemeStore {
                     selection: "rgba(65,131,196,0.16)", font: Fonts.sans, mono: Fonts.mono,
                     maxWidth: "800px", fontSize: "16px"),
             Palette(id: "graphite", displayName: "Graphite", uiMode: "dark",
-                    bg: "#2c2c2e", surface: "#3a3a3c", fg: "#d4d4d6", faint: "#8e8e92",
+                    bg: "#2c2c2e", surface: "#3a3a3c", fg: "#e4e4e6", faint: "#9a9a9e",
                     accent: "#6cb3ff", border: "#3f3f41", quoteBar: "#4c4c4e",
                     selection: "rgba(108,179,255,0.24)", font: Fonts.sans, mono: Fonts.mono,
                     maxWidth: "800px", fontSize: "16px"),
@@ -189,7 +189,7 @@ private func editorCSS(_ p: Palette) -> String {
     .vditor-reset blockquote{border-left:4px solid \(p.quoteBar)!important;color:\(p.faint)!important;padding:0 0 0 1em!important;margin:1em 0!important;}
     .vditor-reset hr{background:\(p.border);height:1px;border:none;margin:1.8em 0;}
     .vditor-reset table{border-collapse:collapse;margin:1em 0;}
-    .vditor-reset table td,.vditor-reset table th{border:1px solid \(p.border)!important;padding:6px 13px!important;}
+    .vditor-reset table td,.vditor-reset table th{border:1px solid \(p.border)!important;padding:6px 13px!important;color:\(p.fg)!important;}
     .vditor-reset thead th{background:transparent!important;font-weight:600;}
     .vditor-reset img{border-radius:6px;}
     .vditor-reset ul,.vditor-reset ol{padding-left:1.6em;}

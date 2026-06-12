@@ -85,8 +85,8 @@ struct EditorWebView: NSViewRepresentable {
             }
         }
 
-        func applyTheme(uiMode: String, css: String) {
-            eval("window.ouro && window.ouro.setTheme(\(Coordinator.jsString(uiMode)),\(Coordinator.jsString(css)))")
+        func applyTheme(uiMode: String, css: String, codeTheme: String) {
+            eval("window.ouro && window.ouro.setTheme(\(Coordinator.jsString(uiMode)),\(Coordinator.jsString(css)),\(Coordinator.jsString(codeTheme)))")
         }
 
         func setMode(_ mode: String) {

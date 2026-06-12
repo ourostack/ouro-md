@@ -6,7 +6,7 @@ protocol EditorBridge: AnyObject {
     func setMarkdown(_ markdown: String)
     func getMarkdown(_ completion: @escaping (String) -> Void)
     func getHTML(_ completion: @escaping (String) -> Void)
-    func applyTheme(uiMode: String, css: String)
+    func applyTheme(uiMode: String, css: String, codeTheme: String)
     func setMode(_ mode: String)
     func setOutline(_ on: Bool)
     func setFocusMode(_ on: Bool)
@@ -220,7 +220,8 @@ final class AppModel {
     }
 
     private func applyThemeToEditor() {
-        bridge?.applyTheme(uiMode: theme.uiMode, css: theme.editorCSS)
+        let codeTheme = theme.uiMode == "dark" ? "github-dark" : "github"
+        bridge?.applyTheme(uiMode: theme.uiMode, css: theme.editorCSS, codeTheme: codeTheme)
     }
 
     func setMode(_ newMode: String) {
