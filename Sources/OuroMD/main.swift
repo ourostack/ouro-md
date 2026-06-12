@@ -37,6 +37,10 @@ if hasFlag("--render") {
     OuroCLI.render(path: path, themeId: argValue("--theme") ?? ThemeStore.shared.defaultTheme.id)
 }
 
+if hasFlag("--undotest") {
+    UndoTester().run()
+}
+
 if hasFlag("--roundtrip") {
     guard let path = argValue("--roundtrip") else {
         FileHandle.standardError.write(Data("ouro-md: --roundtrip requires a FILE path\n".utf8))

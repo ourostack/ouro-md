@@ -115,8 +115,9 @@ enum MenuBuilder {
         let menu = NSMenu(title: "Edit")
         item.submenu = menu
 
-        standard(menu, "Undo", Selector(("undo:")), "z")
-        let redo = standard(menu, "Redo", Selector(("redo:")), "z")
+        let undo = add(menu, "Undo", #selector(AppDelegate.undoEdit(_:)), "z", target)
+        _ = undo
+        let redo = add(menu, "Redo", #selector(AppDelegate.redoEdit(_:)), "z", target)
         redo.keyEquivalentModifierMask = [.command, .shift]
         menu.addItem(.separator())
         standard(menu, "Cut", #selector(NSText.cut(_:)), "x")

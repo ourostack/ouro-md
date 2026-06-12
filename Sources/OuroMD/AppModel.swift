@@ -22,6 +22,8 @@ protocol EditorBridge: AnyObject {
     func insertText(_ text: String)
     func setDocBase(_ directory: String?)
     func markSaved()
+    func undo()
+    func redo()
     func focusEditor()
     func printDocument()
     func setZoom(_ factor: Double)
@@ -678,6 +680,8 @@ final class AppModel: ObservableObject {
     func format(_ command: String) { bridge?.execCommand(command) }
 
     func printDocument() { bridge?.printDocument() }
+    func undo() { bridge?.undo() }
+    func redo() { bridge?.redo() }
 
     /// Releases the document's background resources when its window closes, so
     /// nothing keeps watching the filesystem after the window is gone.

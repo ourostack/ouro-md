@@ -173,6 +173,8 @@ struct EditorWebView: NSViewRepresentable {
         }
 
         func markSaved() { eval("window.ouro && window.ouro.markSaved()") }
+        func undo() { eval("window.ouro && window.ouro.undo()") }
+        func redo() { eval("window.ouro && window.ouro.redo()") }
 
         func focusEditor() { eval("window.ouro && window.ouro.focus()") }
 

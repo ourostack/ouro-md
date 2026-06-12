@@ -129,6 +129,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func printDocument(_ sender: Any?) { frontController?.printDocument() }
+    @objc func undoEdit(_ sender: Any?) { model.undo() }
+    @objc func redoEdit(_ sender: Any?) { model.redo() }
 
     private var prefsWindow: NSWindow?
     @objc func showPreferences(_ sender: Any?) {

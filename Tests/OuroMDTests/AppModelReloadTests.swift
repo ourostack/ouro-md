@@ -24,6 +24,8 @@ private final class MockBridge: EditorBridge {
     func insertText(_ text: String) {}
     func setDocBase(_ directory: String?) {}
     func markSaved() {}
+    func undo() {}
+    func redo() {}
     func focusEditor() {}
     func printDocument() {}
     func setZoom(_ factor: Double) {}

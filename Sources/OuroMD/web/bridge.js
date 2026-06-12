@@ -78,6 +78,7 @@
         ready = true;
         attachImageHandlers();
         postCount(state.value);
+        window.__ouroEditor = vditor;   // exposed for headless undo/redo verification
         post("ready", {});
       }
     });
@@ -308,6 +309,24 @@
       }
     },
     markSaved: function () { dirty = false; },
+    undo: function () {
+      if (!vditor || !vditor.vditor || !vditor.vditor.undo) { return; }
+      try {
+        vditor.vditor.undo.undo(vditor.vditor);
+        state.value = vditor.getValue();
+        setDirty(true);
+        postCount(state.value);
+      } catch (e) { /* ignore */ }
+    },
+    redo: function () {
+      if (!vditor || !vditor.vditor || !vditor.vditor.undo) { return; }
+      try {
+        vditor.vditor.undo.redo(vditor.vditor);
+        state.value = vditor.getValue();
+        setDirty(true);
+        postCount(state.value);
+      } catch (e) { /* ignore */ }
+    },
     focus: function () { if (vditor) { try { vditor.focus(); } catch (e) { /* ignore */ } } },
     insertText: function (text) { if (text) { insertAtCursor(text); } },
     setDocBase: function (dir) { docBase = dir || ""; rewriteRelativeImages(); },
