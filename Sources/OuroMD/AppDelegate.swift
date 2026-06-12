@@ -140,6 +140,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc func toggleFocusMode(_ sender: Any?) { model.toggleFocusMode(); syncChrome() }
     @objc func toggleTypewriter(_ sender: Any?) { model.toggleTypewriter(); syncChrome() }
 
+    private var wordCountPopover: NSPopover?
+    @objc func toggleWordCount(_ sender: Any?) {
+        if let popover = wordCountPopover, popover.isShown {
+            popover.performClose(sender)
+            return
+        }
+        guard let contentView = window.contentView else { return }
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.contentViewController = NSHostingController(rootView: WordCountView(model: model))
+        let anchor = NSRect(x: contentView.bounds.maxX - 80, y: 0, width: 1, height: 1)
+        popover.show(relativeTo: anchor, of: contentView, preferredEdge: .maxY)
+        wordCountPopover = popover
+    }
+
     @objc func applyParagraph(_ sender: NSMenuItem) {
         if let command = sender.representedObject as? String { model.format(command) }
     }

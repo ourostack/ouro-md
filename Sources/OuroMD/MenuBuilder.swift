@@ -158,10 +158,15 @@ enum MenuBuilder {
         typewriterItem = add(menu, "Typewriter Mode", #selector(AppDelegate.toggleTypewriter(_:)), "", target)
 
         menu.addItem(.separator())
+        add(menu, "Toggle Word Count", #selector(AppDelegate.toggleWordCount(_:)), "", target)
+
+        menu.addItem(.separator())
         let actual = add(menu, "Actual Size", #selector(AppDelegate.actualSize(_:)), "0", target)
-        actual.keyEquivalentModifierMask = [.command, .control]
-        add(menu, "Zoom In", #selector(AppDelegate.zoomIn(_:)), "+", target)
-        add(menu, "Zoom Out", #selector(AppDelegate.zoomOut(_:)), "-", target)
+        actual.keyEquivalentModifierMask = [.command, .shift]
+        let zoomIn = add(menu, "Zoom In", #selector(AppDelegate.zoomIn(_:)), "=", target)
+        zoomIn.keyEquivalentModifierMask = [.command, .shift]
+        let zoomOut = add(menu, "Zoom Out", #selector(AppDelegate.zoomOut(_:)), "-", target)
+        zoomOut.keyEquivalentModifierMask = [.command, .shift]
 
         menu.addItem(.separator())
         let fullScreen = menu.addItem(withTitle: "Enter Full Screen",

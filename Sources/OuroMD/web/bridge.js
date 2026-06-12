@@ -23,6 +23,16 @@
     post("dirty", { dirty: d });
   }
 
+  var countTimer = null;
+  function postCount(value) {
+    if (countTimer) { clearTimeout(countTimer); }
+    countTimer = setTimeout(function () {
+      var text = (value || "").trim();
+      var words = text ? text.split(/\s+/).length : 0;
+      post("count", { words: words, chars: (value || "").length });
+    }, 250);
+  }
+
   function create() {
     ready = false;
     vditor = new Vditor("editor", {
@@ -32,7 +42,7 @@
       theme: state.uiTheme,
       cache: { enable: false },
       toolbar: [],
-      counter: { enable: true, type: "markdown" },
+      counter: { enable: false },
       outline: { enable: state.outline, position: "left" },
       typewriterMode: state.typewriter,
       preview: {
@@ -43,10 +53,12 @@
       input: function (value) {
         state.value = value;
         setDirty(true);
+        postCount(value);
       },
       after: function () {
         ready = true;
         attachImageHandlers();
+        postCount(state.value);
         post("ready", {});
       }
     });
@@ -154,6 +166,7 @@
       state.value = (md == null) ? "" : md;
       if (vditor && ready) { vditor.setValue(state.value, true); }
       dirty = false;
+      postCount(state.value);
     },
     getValue: function () {
       try { return vditor ? vditor.getValue() : state.value; } catch (e) { return state.value; }

@@ -47,6 +47,10 @@ struct EditorWebView: NSViewRepresentable {
                 model.editorDidBecomeReady()
             case "dirty":
                 if let dirty = body["dirty"] as? Bool { model.setDirty(dirty) }
+            case "count":
+                if let words = body["words"] as? Int {
+                    model.setCounts(words: words, chars: body["chars"] as? Int ?? 0)
+                }
             default:
                 break
             }

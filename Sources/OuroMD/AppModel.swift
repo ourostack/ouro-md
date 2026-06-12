@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import UniformTypeIdentifiers
 
 /// Imperative bridge to the live web editor, implemented by the web view's coordinator.
@@ -19,7 +20,7 @@ protocol EditorBridge: AnyObject {
 
 /// Owns document state (current file, dirty flag, theme/mode) and orchestrates
 /// file, theme, and export operations against the web editor.
-final class AppModel {
+final class AppModel: ObservableObject {
     private(set) var currentURL: URL?
     private(set) var isDirty = false
     private(set) var isReady = false
@@ -29,6 +30,8 @@ final class AppModel {
     private(set) var focusMode = false
     private(set) var typewriter = false
     private var zoom = 1.0
+    @Published private(set) var wordCount = 0
+    @Published private(set) var charCount = 0
 
     weak var bridge: EditorBridge?
     /// Invoked whenever window-chrome-relevant state changes.
@@ -74,6 +77,11 @@ final class AppModel {
         isDirty = dirty
         onChromeUpdate?()
         if dirty { scheduleAutosave() }
+    }
+
+    func setCounts(words: Int, chars: Int) {
+        wordCount = words
+        charCount = chars
     }
 
     /// Typora-style auto-save: silently persists a titled document a moment
