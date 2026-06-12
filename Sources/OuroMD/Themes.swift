@@ -164,7 +164,7 @@ private func readerCSS(_ p: Palette) -> String {
 private func editorCSS(_ p: Palette) -> String {
     """
     html,body{background:\(p.bg);margin:0;height:100%;}
-    .vditor{border:none!important;background:\(p.bg)!important;height:auto!important;min-height:100vh;}
+    .vditor{border:none!important;background:\(p.bg)!important;height:auto!important;min-height:100vh;--panel-background-color:\(p.bg)!important;--textarea-background-color:\(p.bg)!important;--toolbar-background-color:\(p.bg)!important;--resize-background-color:\(p.bg)!important;}
     .vditor-toolbar{display:none!important;}
     .vditor-content{background:\(p.bg)!important;height:auto!important;overflow:visible!important;width:100%!important;}
     .vditor-ir,.vditor-wysiwyg,.vditor-sv{height:auto!important;overflow:visible!important;width:100%!important;padding:0!important;box-sizing:border-box;}
