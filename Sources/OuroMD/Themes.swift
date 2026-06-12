@@ -280,6 +280,13 @@ private func editorCSS(_ p: Palette) -> String {
     .vditor-reset .vditor-ir__node[data-type="math-block"]{margin:1em 0!important;}
     .vditor-reset .katex-display{margin:0.5em 0!important;}
 
+    /* Code blocks: tidy spacing — drop Vditor's node pseudo-labels and the
+       stacked margins so the fence sits snug under its heading/paragraph. */
+    .vditor-reset .vditor-ir__node[data-type="code-block"]:before,
+    .vditor-reset .vditor-ir__node[data-type="code-block"]:after{content:none!important;}
+    .vditor-reset .vditor-ir__node[data-type="code-block"]{margin:0.8em 0!important;}
+    .vditor-reset .vditor-ir__node[data-type="code-block"] pre.vditor-ir__preview{margin:0!important;}
+
     /* Blockquote, hr, lists (Github exact). */
     .vditor-reset blockquote{border-left:4px solid \(p.quoteBar)!important;color:\(p.faint)!important;padding:0 15px!important;margin:0.8em 0!important;}
     .vditor-reset hr{background:\(p.hrColor);height:2px;border:none;margin:16px 0;padding:0;}

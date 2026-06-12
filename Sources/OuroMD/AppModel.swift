@@ -20,6 +20,7 @@ protocol EditorBridge: AnyObject {
     func clearFind()
     func execCommand(_ command: String)
     func insertText(_ text: String)
+    func setDocBase(_ directory: String?)
     func markSaved()
     func focusEditor()
     func printDocument()
@@ -110,6 +111,7 @@ final class AppModel: ObservableObject {
         isReady = true
         applyThemeToEditor()
         if let pending = pendingMarkdown {
+            bridge?.setDocBase(currentURL?.deletingLastPathComponent().path)
             bridge?.setMarkdown(pending)
             pendingMarkdown = nil
         }
@@ -624,6 +626,7 @@ final class AppModel: ObservableObject {
 
     private func pushMarkdown(_ markdown: String) {
         if isReady {
+            bridge?.setDocBase(currentURL?.deletingLastPathComponent().path)
             bridge?.setMarkdown(markdown)
         } else {
             pendingMarkdown = markdown

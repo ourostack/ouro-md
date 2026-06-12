@@ -58,7 +58,16 @@
       preview: {
         delay: 80,
         hljs: { enable: true, lineNumber: false, style: state.codeTheme },
-        math: { engine: "KaTeX", inlineDigit: true }
+        math: { engine: "KaTeX", inlineDigit: true },
+        markdown: {
+          footnotes: true,
+          gfmAutoLink: true,
+          toc: false,
+          autoSpace: false,
+          fixTermTypo: false,
+          listStyle: false,
+          sanitize: false
+        }
       },
       input: function (value) {
         state.value = value;
@@ -94,6 +103,23 @@
     el.__ouroImg = true;
     el.addEventListener("paste", onTransfer, true);
     el.addEventListener("drop", onTransfer, true);
+    // Resolve relative image paths against the open document's folder so
+    // images an agent referenced relatively actually display.
+    rewriteRelativeImages();
+    var observer = new MutationObserver(function () { rewriteRelativeImages(); });
+    observer.observe(el, { childList: true, subtree: true });
+  }
+
+  var docBase = "";
+  function rewriteRelativeImages() {
+    if (!docBase) { return; }
+    var imgs = document.querySelectorAll(".vditor-reset img");
+    for (var i = 0; i < imgs.length; i++) {
+      var src = imgs[i].getAttribute("src") || "";
+      if (!src || /^(https?:|data:|file:|blob:)/i.test(src)) { continue; }
+      var resolved = (src.charAt(0) === "/") ? ("file://" + src) : ("file://" + docBase + "/" + src);
+      if (imgs[i].src !== resolved) { imgs[i].src = resolved; }
+    }
   }
 
   function onTransfer(e) {
@@ -261,6 +287,7 @@
     markSaved: function () { dirty = false; },
     focus: function () { if (vditor) { try { vditor.focus(); } catch (e) { /* ignore */ } } },
     insertText: function (text) { if (text) { insertAtCursor(text); } },
+    setDocBase: function (dir) { docBase = dir || ""; rewriteRelativeImages(); },
     scrollToHeading: function (index) {
       var hs = document.querySelectorAll(".vditor-reset h1, .vditor-reset h2, .vditor-reset h3, .vditor-reset h4, .vditor-reset h5, .vditor-reset h6");
       if (hs[index]) { hs[index].scrollIntoView({ behavior: "smooth", block: "start" }); }

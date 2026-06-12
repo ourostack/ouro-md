@@ -22,6 +22,7 @@ private final class MockBridge: EditorBridge {
     func clearFind() {}
     func execCommand(_ command: String) {}
     func insertText(_ text: String) {}
+    func setDocBase(_ directory: String?) {}
     func markSaved() {}
     func focusEditor() {}
     func printDocument() {}

@@ -23,8 +23,9 @@ struct EditorWebView: NSViewRepresentable {
         model.bridge = context.coordinator
 
         if let indexURL = Bundle.module.url(forResource: "index", withExtension: "html", subdirectory: "web") {
-            let webDirectory = indexURL.deletingLastPathComponent()
-            webView.loadFileURL(indexURL, allowingReadAccessTo: webDirectory)
+            // Read access at root lets the editor display images a document
+            // references by absolute or (resolved) relative file paths.
+            webView.loadFileURL(indexURL, allowingReadAccessTo: URL(fileURLWithPath: "/"))
         }
         return webView
     }
@@ -152,6 +153,10 @@ struct EditorWebView: NSViewRepresentable {
 
         func insertText(_ text: String) {
             eval("window.ouro && window.ouro.insertText(\(Coordinator.jsString(text)))")
+        }
+
+        func setDocBase(_ directory: String?) {
+            eval("window.ouro && window.ouro.setDocBase(\(Coordinator.jsString(directory ?? "")))")
         }
 
         func markSaved() { eval("window.ouro && window.ouro.markSaved()") }
