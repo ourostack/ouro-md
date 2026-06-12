@@ -243,7 +243,9 @@ final class AppModel: ObservableObject {
     }
 
     private func applyThemeToEditor() {
-        let codeTheme = theme.uiMode == "dark" ? "github-dark" : "atom-one-light"
+        // Light themes use the bundled "github" hljs base; the editor CSS then
+        // overrides token colors to Typora's CodeMirror (cm-s-inner) palette.
+        let codeTheme = theme.uiMode == "dark" ? "github-dark" : "github"
         bridge?.applyTheme(uiMode: theme.uiMode, css: theme.editorCSS, codeTheme: codeTheme)
     }
 

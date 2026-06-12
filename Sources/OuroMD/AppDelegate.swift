@@ -29,6 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
+        window.isMovableByWindowBackground = true
         window.tabbingMode = .disallowed
         window.delegate = self
         window.setFrameAutosaveName("OuroMainWindow")
@@ -72,7 +73,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     /// filename label in the titlebar instead.
     private func installCenteredTitle(in window: NSWindow) {
         guard let titlebar = window.standardWindowButton(.closeButton)?.superview else { return }
-        let label = NSTextField(labelWithString: "")
+        let label = PassthroughTextField(labelWithString: "")
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = .systemFont(ofSize: 13, weight: .medium)
         label.textColor = .secondaryLabelColor
@@ -216,6 +217,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             NSWorkspace.shared.open(url)
         }
     }
+}
+
+/// A title label that never intercepts mouse events, so the titlebar it sits in
+/// stays draggable (the click falls through to the window background).
+private final class PassthroughTextField: NSTextField {
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+    override var mouseDownCanMoveWindow: Bool { true }
 }
 
 private extension NSColor {
