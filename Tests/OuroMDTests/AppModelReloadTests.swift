@@ -24,6 +24,7 @@ private final class MockBridge: EditorBridge {
     func insertText(_ text: String) {}
     func markSaved() {}
     func focusEditor() {}
+    func printDocument() {}
     func setZoom(_ factor: Double) {}
 }
 

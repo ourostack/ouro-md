@@ -72,6 +72,8 @@ enum MenuBuilder {
         item.submenu = menu
 
         add(menu, "New", #selector(AppDelegate.newDocument(_:)), "n", target)
+        let newWindow = add(menu, "New Window", #selector(AppDelegate.newWindow(_:)), "n", target)
+        newWindow.keyEquivalentModifierMask = [.command, .shift]
         add(menu, "Open…", #selector(AppDelegate.openDocument(_:)), "o", target)
         let openFolder = add(menu, "Open Folder…", #selector(AppDelegate.openFolder(_:)), "o", target)
         openFolder.keyEquivalentModifierMask = [.command, .shift]
@@ -94,6 +96,8 @@ enum MenuBuilder {
         add(exportMenu, "HTML…", #selector(AppDelegate.exportHTML(_:)), "", target)
         add(exportMenu, "PDF…", #selector(AppDelegate.exportPDF(_:)), "", target)
         export.submenu = exportMenu
+
+        add(menu, "Print…", #selector(AppDelegate.printDocument(_:)), "p", target)
 
         menu.addItem(.separator())
         let close = menu.addItem(withTitle: "Close", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
@@ -118,6 +122,9 @@ enum MenuBuilder {
         let pastePlain = add(menu, "Paste as Plain Text", #selector(AppDelegate.pasteAsPlainText(_:)), "v", target)
         pastePlain.keyEquivalentModifierMask = [.command, .shift]
         standard(menu, "Select All", #selector(NSText.selectAll(_:)), "a")
+        menu.addItem(.separator())
+        add(menu, "Copy as Markdown", #selector(AppDelegate.copyAsMarkdown(_:)), "", target)
+        add(menu, "Copy as HTML", #selector(AppDelegate.copyAsHTML(_:)), "", target)
 
         menu.addItem(.separator())
         let find = menu.addItem(withTitle: "Find", action: nil, keyEquivalent: "")

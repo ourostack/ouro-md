@@ -22,6 +22,7 @@ protocol EditorBridge: AnyObject {
     func insertText(_ text: String)
     func markSaved()
     func focusEditor()
+    func printDocument()
     func setZoom(_ factor: Double)
 }
 
@@ -567,6 +568,22 @@ final class AppModel: ObservableObject {
     func zoomOut() { zoom = max(zoom - 0.1, 0.5); bridge?.setZoom(zoom) }
     func actualSize() { zoom = 1.0; bridge?.setZoom(zoom) }
     func format(_ command: String) { bridge?.execCommand(command) }
+
+    func printDocument() { bridge?.printDocument() }
+
+    func copyAsMarkdown() {
+        bridge?.getMarkdown { md in
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(md, forType: .string)
+        }
+    }
+
+    func copyAsHTML() {
+        bridge?.getHTML { html in
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(html, forType: .string)
+        }
+    }
 
     func pasteAsPlainText() {
         guard let text = NSPasteboard.general.string(forType: .string) else { return }

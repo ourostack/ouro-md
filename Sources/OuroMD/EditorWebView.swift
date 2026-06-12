@@ -158,6 +158,13 @@ struct EditorWebView: NSViewRepresentable {
 
         func focusEditor() { eval("window.ouro && window.ouro.focus()") }
 
+        func printDocument() {
+            guard let webView, let window = webView.window else { return }
+            let operation = webView.printOperation(with: NSPrintInfo.shared)
+            operation.view?.frame = webView.bounds
+            operation.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
+        }
+
         func setZoom(_ factor: Double) { webView?.magnification = CGFloat(factor) }
 
         private func eval(_ js: String) {
