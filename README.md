@@ -37,21 +37,45 @@ place — switch themes live, and read the same document four different ways.
 
 ## Install
 
+**One line (recommended) — no checkout needed:**
+
 ```sh
-./install.sh            # build + install to /Applications/Ouro MD.app
-./install.sh --update   # git pull, then rebuild + reinstall (use this to update)
+curl -fsSL https://raw.githubusercontent.com/ourostack/ouro-md/main/web/ouro-md-install.sh | bash
 ```
 
-- **Where it lives:** `/Applications/Ouro MD.app`
+Downloads the latest [release](https://github.com/ourostack/ouro-md/releases),
+verifies its checksum against the published manifest, installs **Ouro MD.app** to
+`/Applications` (falls back to `~/Applications`), clears the download quarantine,
+and opens it. macOS-only; needs just `curl`, `ditto`, `shasum`. Re-run it any
+time to update to the latest release.
+
+**From source (for development):**
+
+```sh
+./install.sh            # build + install to /Applications/Ouro MD.app
+./install.sh --update   # git pull, then rebuild + reinstall
+```
+
+- **Where it lives:** `/Applications/Ouro MD.app` (or `~/Applications`)
 - **How to launch:** double-click in Finder · `open -a "Ouro MD"` · or the `md`
   shell alias (`alias md='open -a "Ouro MD"'`) → `md notes.md`
-- **How to update:** re-run `./install.sh --update` any time. (Once the app is
-  Developer-ID signed, this becomes a signed/notarized build and Sparkle
-  auto-update can replace the manual step.)
 
-The app is currently **unsigned** (ad-hoc), so `install.sh` clears the
-quarantine flag and re-registers it with Launch Services. A fresh manual copy
-into `/Applications` would otherwise trip Gatekeeper on first launch.
+The app is currently **unsigned** (ad-hoc), so the installer clears the
+quarantine flag and re-registers it with Launch Services — a plain copy into
+`/Applications` would otherwise trip Gatekeeper on first launch. Once it's
+Developer-ID signed/notarized, the download installs without that step and an
+in-app auto-updater can replace re-running the installer.
+
+### Cutting a release (maintainers)
+
+```sh
+./scripts/package-release.sh    # build → dist/Ouro-MD-<version>.zip + .manifest.json
+gh release create v<version> dist/Ouro-MD-<version>.zip dist/Ouro-MD-<version>.manifest.json \
+  --repo ourostack/ouro-md --title "Ouro MD <version>"
+```
+
+The installer always pulls whatever the newest release is, so publishing a new
+version is how users (and a future in-app updater) get the update.
 
 ## Build
 
