@@ -308,7 +308,7 @@ final class AppModel: ObservableObject {
         }
         let dest = url.deletingLastPathComponent().appendingPathComponent(name)
         if dest.standardizedFileURL == url.standardizedFileURL { return nil }
-        if FileManager.default.fileExists(atPath: dest.path) {
+        if FileManager.default.fileExists(atPath: dest.path), !isSameFile(dest, url) {
             return "“\(name)” already exists in this folder."
         }
         stopWatching()
@@ -327,6 +327,16 @@ final class AppModel: ObservableObject {
     }
 
     func save() { performSave { _ in } }
+
+    /// Whether two paths resolve to the same file on disk. On a case-insensitive
+    /// volume this lets a case-only rename (notes.md → Notes.md) through instead
+    /// of mistaking the existing file for a collision.
+    private func isSameFile(_ a: URL, _ b: URL) -> Bool {
+        let ida = try? a.resourceValues(forKeys: [.fileResourceIdentifierKey]).fileResourceIdentifier
+        let idb = try? b.resourceValues(forKeys: [.fileResourceIdentifierKey]).fileResourceIdentifier
+        if let ida, let idb { return ida.isEqual(idb) }
+        return a.standardizedFileURL == b.standardizedFileURL
+    }
 
     func saveAs() {
         runSavePanel(defaultName: currentURL?.lastPathComponent ?? "Untitled.md") { [weak self] url in

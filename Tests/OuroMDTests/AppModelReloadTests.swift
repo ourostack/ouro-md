@@ -166,4 +166,23 @@ final class AppModelReloadTests: XCTestCase {
         XCTAssertEqual(try? String(contentsOf: other, encoding: .utf8), "b", "existing file must be untouched")
         XCTAssertEqual(model.currentURL?.lastPathComponent, "a.md", "model should keep the original URL")
     }
+
+    /// A case-only rename (notes.md → Notes.md) must not be mistaken for a
+    /// collision with itself on a case-insensitive volume.
+    func testRenameCaseOnlyIsAllowed() {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-rename-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let url = dir.appendingPathComponent("notes.md")
+        try? "x".write(to: url, atomically: true, encoding: .utf8)
+
+        let model = AppModel()
+        model.bridge = MockBridge()
+        model.editorDidBecomeReady()
+        model.loadInitialFile(url.path)
+
+        XCTAssertNil(model.renameCurrentFile(to: "Notes.md"), "a case-only rename should be allowed")
+        XCTAssertEqual(model.currentURL?.lastPathComponent, "Notes.md", "model should track the new case")
+    }
 }

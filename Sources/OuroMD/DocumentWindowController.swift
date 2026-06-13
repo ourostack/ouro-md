@@ -132,11 +132,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
 
     private func applyRename(_ newName: String) {
         guard renameField != nil else { return }
-        let popover = renamePopover
-        renameField = nil
-        renamePopover = nil
-        popover?.delegate = nil
-        popover?.close()
+        cancelRename()
         guard newName != model.windowTitle else { return }
         if let message = model.renameCurrentFile(to: newName) {
             let alert = NSAlert()
@@ -146,11 +142,20 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         }
     }
 
+    /// Tears down the rename popover without renaming. Used for Escape, clicking
+    /// away, or the app deactivating — only Return (renameFieldCommitted) renames,
+    /// so an unfinished edit can never silently rename the user's file.
+    private func cancelRename() {
+        let popover = renamePopover
+        renameField = nil
+        renamePopover = nil
+        popover?.delegate = nil
+        popover?.close()
+    }
+
     func popoverDidClose(_ notification: Notification) {
-        // Committing on click-away mirrors Finder, where dismissing the rename
-        // field keeps the typed name. (Commit via Return clears the field first,
-        // so this no-ops in that path.)
-        if let field = renameField { applyRename(field.stringValue) }
+        // Any dismissal that wasn't Return is a cancel.
+        if renameField != nil { cancelRename() }
     }
 
     /// Finds the AppKit-drawn title text field so the popover (and the window's
