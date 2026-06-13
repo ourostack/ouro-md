@@ -138,6 +138,10 @@ struct EditorWebView: NSViewRepresentable {
             eval("window.ouro && window.ouro.setTypewriter(\(on ? "true" : "false"))")
         }
 
+        func setAutoPair(_ on: Bool) {
+            eval("window.ouro && window.ouro.setAutoPair(\(on ? "true" : "false"))")
+        }
+
         func scrollToHeading(_ index: Int) {
             eval("window.ouro && window.ouro.scrollToHeading(\(index))")
         }

@@ -46,6 +46,12 @@ struct PreferencesView: View {
             }
 
             HStack {
+                Text("Auto-pair").frame(width: 90, alignment: .leading)
+                Toggle("Close brackets and quotes automatically", isOn: Binding(get: { model.autoPairEnabled }, set: { model.setAutoPair($0) }))
+                Spacer()
+            }
+
+            HStack {
                 Text("Text size").frame(width: 90, alignment: .leading)
                 Slider(value: Binding(get: { model.zoom }, set: { model.setTextScale($0) }), in: 0.7...2.0, step: 0.1)
                 Text("\(Int((model.zoom * 100).rounded()))%").monospacedDigit().frame(width: 44, alignment: .trailing)

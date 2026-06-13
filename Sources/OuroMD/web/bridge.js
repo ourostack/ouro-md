@@ -50,6 +50,13 @@
 
   var WRAP_PAIRS = { '"': '"', "'": "'", "`": "`", "(": ")", "[": "]", "{": "}", "*": "*", "_": "_" };
 
+  // Auto-pair on an empty caret is a narrower, opt-out set: brackets and double
+  // quotes only. ' and ` are excluded (apostrophes / inline-code collide), and
+  // emphasis markers shouldn't silently self-close.
+  var autoPair = true;
+  var AUTO_OPEN = { "(": ")", "[": "]", "{": "}", '"': '"' };
+  var AUTO_CLOSE = { ")": true, "]": true, "}": true, '"': true };
+
   // True only when the caret/selection lives inside the Vditor editable area, so
   // we never hijack typing in the find bar, rename popover, or other fields.
   function selectionInEditor() {
@@ -96,6 +103,58 @@
     } catch (e) { /* leave the caret where the insert left it */ }
   }
 
+  // Caret neighbours for auto-pairing. Null unless the caret is a collapsed
+  // selection sitting in a text node.
+  function caretContext() {
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !sel.isCollapsed) { return null; }
+    var range = sel.getRangeAt(0);
+    var node = range.startContainer;
+    if (node.nodeType !== 3) { return null; }
+    var text = node.nodeValue || "";
+    return {
+      sel: sel, node: node, offset: range.startOffset,
+      before: range.startOffset > 0 ? text.charAt(range.startOffset - 1) : "",
+      after: range.startOffset < text.length ? text.charAt(range.startOffset) : ""
+    };
+  }
+
+  // Returns true if it handled the key (caller should stop). Implements
+  // auto-close, skip-over a just-typed closer, and delete-the-empty-pair.
+  function handleAutoPair(e) {
+    if (!autoPair) { return false; }
+    var ctx = caretContext();
+    if (!ctx) { return false; }
+
+    if (e.key === "Backspace") {
+      if (ctx.before && AUTO_OPEN[ctx.before] === ctx.after) {
+        var del = document.createRange();
+        del.setStart(ctx.node, ctx.offset - 1);
+        del.setEnd(ctx.node, ctx.offset + 1);
+        ctx.sel.removeAllRanges();
+        ctx.sel.addRange(del);
+        document.execCommand("insertText", false, "");
+        return true;
+      }
+      return false;
+    }
+
+    if (AUTO_CLOSE[e.key] && ctx.after === e.key) {
+      ctx.sel.modify("move", "forward", "character");
+      return true;
+    }
+
+    var close = AUTO_OPEN[e.key];
+    if (close !== undefined) {
+      // Don't auto-close a quote that's hugging a word (closing quote, not opening).
+      if (e.key === '"' && /\w/.test(ctx.before)) { return false; }
+      document.execCommand("insertText", false, e.key + close);
+      ctx.sel.modify("move", "backward", "character");
+      return true;
+    }
+    return false;
+  }
+
   function installEditorQOL() {
     if (qolInstalled) { return; }
     qolInstalled = true;
@@ -104,13 +163,21 @@
     // selection with the typed character.
     document.addEventListener("keydown", function (e) {
       if (e.metaKey || e.ctrlKey || e.altKey || e.isComposing) { return; }
-      var close = WRAP_PAIRS[e.key];
-      if (close === undefined || !selectionInEditor()) { return; }
+      if (!selectionInEditor()) { return; }
       var selected = selectedText();
-      if (!selected) { return; }
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      wrapSelection(e.key, close, selected);
+      if (selected) {
+        var close = WRAP_PAIRS[e.key];
+        if (close === undefined) { return; }
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        wrapSelection(e.key, close, selected);
+        return;
+      }
+      // No selection: auto-pairing on the empty caret.
+      if (handleAutoPair(e)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
     }, true);
 
     // Paste a URL onto a selection -> [selection](url), like Typora.
@@ -363,6 +430,7 @@
       state.typewriter = on;
       rebuild();
     },
+    setAutoPair: function (on) { autoPair = !!on; },
     exec: function (cmd) {
       switch (cmd) {
         case "bold": wrapSelection("**", "**"); break;

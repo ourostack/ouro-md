@@ -14,6 +14,7 @@ protocol EditorBridge: AnyObject {
     func setOutline(_ on: Bool)
     func setFocusMode(_ on: Bool)
     func setTypewriter(_ on: Bool)
+    func setAutoPair(_ on: Bool)
     func scrollToHeading(_ index: Int)
     func find(_ query: String, backward: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool)
     func replace(_ query: String, with replacement: String, all: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool, completion: @escaping (Int) -> Void)
@@ -42,6 +43,7 @@ final class AppModel: ObservableObject {
     private(set) var typewriter = false
     @Published private(set) var zoom = 1.0
     @Published var autoSaveEnabled = true
+    @Published var autoPairEnabled = true
     @Published private(set) var wordCount = 0
     @Published private(set) var charCount = 0
     @Published var sidebarVisible: Bool
@@ -92,6 +94,7 @@ final class AppModel: ObservableObject {
         themeID = UserDefaults.standard.string(forKey: "ouro.theme") ?? "quartz"
         sidebarVisible = UserDefaults.standard.bool(forKey: "ouro.sidebar")
         autoSaveEnabled = UserDefaults.standard.object(forKey: "ouro.autosave") as? Bool ?? true
+        autoPairEnabled = UserDefaults.standard.object(forKey: "ouro.autopair") as? Bool ?? true
         zoom = UserDefaults.standard.object(forKey: "ouro.zoom") as? Double ?? 1.0
         if let raw = UserDefaults.standard.string(forKey: "ouro.sidebarMode"), let mode = SidebarMode(rawValue: raw) {
             sidebarMode = mode
@@ -186,6 +189,7 @@ final class AppModel: ObservableObject {
         }
         bridge?.setMode(mode)
         bridge?.setOutline(showOutline)
+        bridge?.setAutoPair(autoPairEnabled)
         bridge?.setZoom(zoom)
         onChromeUpdate?()
     }
@@ -219,6 +223,12 @@ final class AppModel: ObservableObject {
         autoSaveEnabled = enabled
         defaults.set(enabled, forKey: "ouro.autosave")
         if enabled, isDirty { scheduleAutosave() }
+    }
+
+    func setAutoPair(_ enabled: Bool) {
+        autoPairEnabled = enabled
+        defaults.set(enabled, forKey: "ouro.autopair")
+        bridge?.setAutoPair(enabled)
     }
 
     func setTextScale(_ value: Double) {

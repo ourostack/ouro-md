@@ -45,13 +45,23 @@ final class WrapTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
             let quote = body["quote"] as? String ?? "?"
             let paren = body["paren"] as? String ?? "?"
             let link = body["link"] as? String ?? "?"
-            let quoteOK = quote.contains("\"world\"")
-            let parenOK = paren.contains("(world)")
-            let linkOK = link.contains("[world](https://x.com)")
-            print("type \" over selection: \(quote)   \(quoteOK ? "WRAP OK ✓" : "WRAP FAIL ✗")")
-            print("type ( over selection: \(paren)   \(parenOK ? "WRAP OK ✓" : "WRAP FAIL ✗")")
-            print("paste url over selection: \(link)   \(linkOK ? "LINK OK ✓" : "LINK FAIL ✗")")
-            exit(quoteOK && parenOK && linkOK ? 0 : 1)
+            let pairInsert = body["pairInsert"] as? String ?? "?"
+            let skipOver = body["skipOver"] as? String ?? "?"
+            let deletePair = body["deletePair"] as? String ?? "?"
+            let checks: [(String, String, Bool)] = [
+                ("type \" over selection", quote, quote.contains("\"world\"")),
+                ("type ( over selection", paren, paren.contains("(world)")),
+                ("paste url over selection", link, link.contains("[world](https://x.com)")),
+                ("auto-pair ( then x", pairInsert, pairInsert.contains("hello(x)")),
+                ("skip over typed )", skipOver, skipOver.replacingOccurrences(of: "\n", with: "").contains("()x")),
+                ("backspace deletes pair", deletePair, deletePair.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            ]
+            var allOK = true
+            for (label, value, ok) in checks {
+                if !ok { allOK = false }
+                print("\(label): \(value.replacingOccurrences(of: "\n", with: "\\n"))   \(ok ? "OK ✓" : "FAIL ✗")")
+            }
+            exit(allOK ? 0 : 1)
         }
     }
 
@@ -74,27 +84,37 @@ final class WrapTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
         return true;
       }
+      function caretInNode(needle, pos) {
+        var n = findText(needle);
+        if (!n) { return false; }
+        var at = n.nodeValue.indexOf(needle) + pos;
+        var r = document.createRange();
+        r.setStart(n, at); r.collapse(true);
+        var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+        return true;
+      }
       function typeKey(key) {
         document.dispatchEvent(new KeyboardEvent('keydown', { key: key, bubbles: true, cancelable: true }));
       }
       function pasteURL(url) {
         var dt = new DataTransfer();
         dt.setData('text/plain', url);
-        var ev = new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true });
-        document.dispatchEvent(ev);
+        document.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
       }
-      function trial(setup, cb) {
-        window.ouro.setValue("hello world");
-        setTimeout(function () { window.ouro.focus(); selectWord("world"); setup(); setTimeout(function () { cb(gv()); }, 300); }, 200);
+      function trial(content, setup, cb) {
+        window.ouro.setValue(content);
+        setTimeout(function () { window.ouro.focus(); setup(); setTimeout(function () { cb(gv()); }, 300); }, 200);
       }
       setTimeout(function () {
-        trial(function () { typeKey('"'); }, function (quote) {
-          trial(function () { typeKey('('); }, function (paren) {
-            trial(function () { pasteURL('https://x.com'); }, function (link) {
-              window.webkit.messageHandlers.ouro.postMessage({ type: "wraptest", quote: quote, paren: paren, link: link });
-            });
-          });
-        });
+        var out = {};
+        trial("hello world", function () { selectWord("world"); typeKey('"'); }, function (v) { out.quote = v;
+        trial("hello world", function () { selectWord("world"); typeKey('('); }, function (v) { out.paren = v;
+        trial("hello world", function () { selectWord("world"); pasteURL('https://x.com'); }, function (v) { out.link = v;
+        trial("hello", function () { caretInNode("hello", 5); typeKey('('); document.execCommand('insertText', false, 'x'); }, function (v) { out.pairInsert = v;
+        trial("()", function () { caretInNode("()", 1); typeKey(')'); document.execCommand('insertText', false, 'x'); }, function (v) { out.skipOver = v;
+        trial("()", function () { caretInNode("()", 1); typeKey('Backspace'); }, function (v) { out.deletePair = v;
+          window.webkit.messageHandlers.ouro.postMessage({ type: "wraptest", quote: out.quote, paren: out.paren, link: out.link, pairInsert: out.pairInsert, skipOver: out.skipOver, deletePair: out.deletePair });
+        }); }); }); }); }); });
       }, 500);
     })();
     """

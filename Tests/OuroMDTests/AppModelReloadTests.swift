@@ -16,6 +16,7 @@ private final class MockBridge: EditorBridge {
     func setOutline(_ on: Bool) {}
     func setFocusMode(_ on: Bool) {}
     func setTypewriter(_ on: Bool) {}
+    func setAutoPair(_ on: Bool) {}
     func scrollToHeading(_ index: Int) {}
     func find(_ query: String, backward: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool) {}
     func replace(_ query: String, with replacement: String, all: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool, completion: @escaping (Int) -> Void) { completion(0) }
