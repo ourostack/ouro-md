@@ -38,8 +38,17 @@ manifest_path="$OUT_DIR/$manifest_name"
 mkdir -p "$OUT_DIR"
 rm -f "$archive_path" "$manifest_path"
 
-echo "==> Archiving $APP -> $archive_path"
-ditto -c -k --keepParent "$APP" "$archive_path"
+# Ship the bundle under its branded, spaced name ("Ouro MD.app") so a release
+# install matches the from-source install (/Applications/Ouro MD.app) and the
+# `md` alias — no second, differently-named copy.
+stage="$OUT_DIR/.stage"
+rm -rf "$stage"
+mkdir -p "$stage"
+ditto "$APP" "$stage/Ouro MD.app"
+
+echo "==> Archiving Ouro MD.app -> $archive_path"
+ditto -c -k --keepParent "$stage/Ouro MD.app" "$archive_path"
+rm -rf "$stage"
 
 sha256="$(shasum -a 256 "$archive_path" | awk '{print $1}')"
 bytes="$(stat -f %z "$archive_path")"
