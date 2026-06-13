@@ -7,6 +7,7 @@
   var vditor = null;
   var ready = false;
   var dirty = false;
+  var qolInstalled = false;
   var state = { mode: "ir", value: "", outline: false, uiTheme: "classic", focus: false, typewriter: false, codeTheme: "github" };
 
   function post(type, extra) {
@@ -43,6 +44,90 @@
     post("outline", { items: items });
   }
 
+  // --- Editor quality-of-life: wrap-the-selection behaviours --------------
+  // Typing a paired character (or pasting a URL) while text is selected should
+  // *wrap* the selection rather than replace it, like Typora / code editors.
+
+  var WRAP_PAIRS = { '"': '"', "'": "'", "`": "`", "(": ")", "[": "]", "{": "}", "*": "*", "_": "_" };
+
+  // True only when the caret/selection lives inside the Vditor editable area, so
+  // we never hijack typing in the find bar, rename popover, or other fields.
+  function selectionInEditor() {
+    var sel = window.getSelection();
+    if (!sel || !sel.anchorNode) { return false; }
+    var node = sel.anchorNode;
+    var el = node.nodeType === 1 ? node : node.parentElement;
+    return !!(el && el.closest && el.closest("#editor"));
+  }
+
+  function selectedText() {
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) { return ""; }
+    return sel.toString();
+  }
+
+  // A bare, single-token URL (or mailto target) — the thing you'd paste onto a
+  // word to linkify it. Multi-word clipboard text pastes normally.
+  function looksLikeURL(text) {
+    var t = (text || "").trim();
+    if (!t || /\s/.test(t)) { return false; }
+    return /^(https?|ftp|mailto):/i.test(t) || /^www\.[^\s]+\.[^\s]+$/i.test(t);
+  }
+
+  function wrapSelection(open, close, selected) {
+    document.execCommand("insertText", false, open + selected + close);
+    // Re-select the inner text so the selection survives the wrap (lets you
+    // stack wraps, e.g. * then * for bold). Best-effort: only the literal pairs
+    // stay in one text node; emphasis markers re-render, so we bail gracefully.
+    try {
+      var sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) { return; }
+      var range = sel.getRangeAt(0);
+      var node = range.endContainer;
+      if (node.nodeType !== 3) { return; }
+      var innerEnd = range.endOffset - close.length;
+      var innerStart = innerEnd - selected.length;
+      if (innerStart < 0 || innerEnd > node.length) { return; }
+      var inner = document.createRange();
+      inner.setStart(node, innerStart);
+      inner.setEnd(node, innerEnd);
+      sel.removeAllRanges();
+      sel.addRange(inner);
+    } catch (e) { /* leave the caret where the insert left it */ }
+  }
+
+  function installEditorQOL() {
+    if (qolInstalled) { return; }
+    qolInstalled = true;
+
+    // Capture phase so we decide before Vditor's own key handling replaces the
+    // selection with the typed character.
+    document.addEventListener("keydown", function (e) {
+      if (e.metaKey || e.ctrlKey || e.altKey || e.isComposing) { return; }
+      var close = WRAP_PAIRS[e.key];
+      if (close === undefined || !selectionInEditor()) { return; }
+      var selected = selectedText();
+      if (!selected) { return; }
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      wrapSelection(e.key, close, selected);
+    }, true);
+
+    // Paste a URL onto a selection -> [selection](url), like Typora.
+    document.addEventListener("paste", function (e) {
+      if (!selectionInEditor()) { return; }
+      var selected = selectedText();
+      if (!selected) { return; }
+      var clip = e.clipboardData || window.clipboardData;
+      if (!clip) { return; }
+      var text = clip.getData("text/plain");
+      if (!looksLikeURL(text)) { return; }
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      document.execCommand("insertText", false, "[" + selected + "](" + text.trim() + ")");
+    }, true);
+  }
+
   function create() {
     ready = false;
     vditor = new Vditor("editor", {
@@ -77,6 +162,7 @@
       after: function () {
         ready = true;
         attachImageHandlers();
+        installEditorQOL();
         postCount(state.value);
         window.__ouroEditor = vditor;   // exposed for headless undo/redo verification
         post("ready", {});
