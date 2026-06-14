@@ -1,0 +1,520 @@
+[0/1] Planning build
+Building for debugging...
+[0/7] Write sources
+[1/7] Write swift-version--58304C5D6DBC2206.txt
+[3/71] Compiling Markdown DoxygenNote.swift
+[4/71] Compiling Markdown DoxygenParameter.swift
+[5/71] Compiling Markdown DoxygenReturns.swift
+[6/71] Compiling Markdown ListItem.swift
+[7/71] Compiling Markdown OrderedList.swift
+[8/71] Compiling Markdown UnorderedList.swift
+[9/71] Compiling Markdown Paragraph.swift
+[10/71] Compiling Markdown InlineAttributes.swift
+[11/71] Compiling Markdown Link.swift
+[12/71] Compiling Markdown Strikethrough.swift
+[13/71] Compiling Markdown Strong.swift
+[14/71] Compiling Markdown CustomInline.swift
+[15/71] Compiling Markdown InlineCode.swift
+[16/71] Compiling Markdown InlineHTML.swift
+[17/71] Compiling Markdown TableCellContainer.swift
+[18/71] Compiling Markdown TableHead.swift
+[19/71] Compiling Markdown TableRow.swift
+[20/71] Compiling Markdown Replacement.swift
+[21/71] Compiling Markdown SourceLocation.swift
+[22/71] Compiling Markdown Emphasis.swift
+[23/71] Compiling Markdown Image.swift
+[24/78] Compiling Markdown CodeBlock.swift
+[25/78] Compiling Markdown HTMLBlock.swift
+[26/78] Compiling Markdown Heading.swift
+[27/78] Compiling Markdown ThematicBreak.swift
+[28/78] Compiling Markdown Table.swift
+[29/78] Compiling Markdown TableBody.swift
+[30/78] Compiling Markdown TableCell.swift
+[31/78] Compiling Markdown BlockContainer.swift
+[32/78] Compiling Markdown BlockMarkup.swift
+[33/78] Compiling Markdown InlineContainer.swift
+[34/78] Compiling Markdown InlineMarkup.swift
+[35/78] Compiling Markdown ListItemContainer.swift
+[36/78] Compiling Markdown AtomicCounter.swift
+[37/78] Compiling Markdown CharacterExtensions.swift
+[38/78] Compiling Markdown LazySplitLines.swift
+[39/78] Compiling Markdown ParseOptions.swift
+[40/78] Compiling Markdown RangeAdjuster.swift
+[41/78] Compiling Markdown RangerTracker.swift
+[42/78] Compiling Markdown MarkupRewriter.swift
+[43/78] Compiling Markdown BasicBlockContainer.swift
+[44/78] Compiling Markdown BasicInlineContainer.swift
+[45/78] Compiling Markdown PlainTextConvertibleMarkup.swift
+[46/78] Compiling Markdown RawMarkup.swift
+[47/78] Compiling Markdown BlockDirective.swift
+[48/78] Compiling Markdown BlockQuote.swift
+[49/78] Compiling Markdown CustomBlock.swift
+[50/78] Compiling Markdown DoxygenAbstract.swift
+[51/78] Compiling Markdown DoxygenDiscussion.swift
+[52/78] Compiling Markdown ChildIndexPath.swift
+[53/78] Compiling Markdown DirectiveArgument.swift
+[54/78] Compiling Markdown Document.swift
+[55/78] Compiling Markdown LiteralMarkup.swift
+[56/78] Compiling Markdown Markup.swift
+[57/78] Compiling Markdown MarkupChildren.swift
+[58/78] Compiling Markdown MarkupData.swift
+[59/78] Emitting module Markdown
+[60/78] Compiling Markdown LineBreak.swift
+[61/78] Compiling Markdown SoftBreak.swift
+[62/78] Compiling Markdown SymbolLink.swift
+[63/78] Compiling Markdown Text.swift
+[64/78] Compiling Markdown Aside.swift
+[65/78] Compiling Markdown BlockDirectiveParser.swift
+[66/78] Compiling Markdown CommonMarkConverter.swift
+[67/78] Compiling Markdown CollectionExtensions.swift
+[68/78] Compiling Markdown StringExtensions.swift
+[69/78] Compiling Markdown MarkupVisitor.swift
+[70/78] Compiling Markdown MarkupWalker.swift
+[71/78] Compiling Markdown HTMLFormatter.swift
+[72/78] Compiling Markdown MarkupFormatter.swift
+[73/78] Compiling Markdown MarkupTreeDumper.swift
+[74/103] Compiling OuroMD Themes.swift
+[75/103] Compiling OuroMD UndoTest.swift
+[76/105] Compiling OuroMD main.swift
+[77/105] Compiling OuroMD resource_bundle_accessor.swift
+[78/105] Compiling OuroMD ReleaseUpdate.swift
+[79/105] Compiling OuroMD RenderProbe.swift
+[80/105] Compiling OuroMD RoundTrip.swift
+[81/105] Compiling OuroMD Welcome.swift
+[82/105] Compiling OuroMD WrapTest.swift
+[83/105] Compiling OuroMD MenuBuilder.swift
+[84/105] Compiling OuroMD OuroMDRelease.swift
+[85/105] Compiling OuroMD OuroMDUpdate.swift
+[86/105] Compiling OuroMD EditorWebView.swift
+[87/105] Compiling OuroMD Export.swift
+[88/105] Compiling OuroMD FileWatcher.swift
+[89/105] Compiling OuroMD ContentSearcher.swift
+[90/105] Compiling OuroMD ContentView.swift
+[91/105] Compiling OuroMD DocumentWindowController.swift
+[92/105] Compiling OuroMD AppDelegate.swift
+[93/105] Compiling OuroMD AppModel.swift
+[94/105] Compiling OuroMD CLI.swift
+[95/105] Compiling OuroMD FolderBrowser.swift
+[96/105] Compiling OuroMD HTMLDocument.swift
+[97/105] Compiling OuroMD MarkdownRenderer.swift
+[98/105] Compiling OuroMD Sidebar.swift
+[99/105] Compiling OuroMD Snapshot.swift
+[100/105] Emitting module OuroMD
+[100/105] Write Objects.LinkFileList
+[101/105] Linking ouro-md
+[102/105] Applying ouro-md
+[104/115] Compiling OuroMDTests OutlineTreeTests.swift
+error: emit-module command failed with exit code 1 (use -v to see invocation)
+[105/116] Compiling OuroMDTests FileWatcherTests.swift
+[106/116] Compiling OuroMDTests OuroMDUpdateTests.swift
+[107/116] Compiling OuroMDTests ContentSearcherTests.swift
+[108/116] Compiling OuroMDTests FolderBrowserTests.swift
+[109/116] Compiling OuroMDTests AppModelReloadTests.swift
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:96:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+ 94 | 
+ 95 |         let model = AppModel()
+ 96 |         model.bridge = MockBridge()          // bridge present...
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+ 97 |         model.loadInitialFile(url.path)      // ...but editorDidBecomeReady NOT called → not ready
+ 98 |         model.save()
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:118:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+116 | 
+117 |         let model = AppModel()
+118 |         model.bridge = MockBridge()
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+119 |         model.editorDidBecomeReady()
+120 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:141:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+139 | 
+140 |         let model = AppModel()
+141 |         model.bridge = MockBridge()
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+142 |         model.editorDidBecomeReady()
+143 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:162:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+160 | 
+161 |         let model = AppModel()
+162 |         model.bridge = MockBridge()
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+163 |         model.editorDidBecomeReady()
+164 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:182:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+180 | 
+181 |         let model = AppModel()
+182 |         model.bridge = MockBridge()
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+183 |         model.editorDidBecomeReady()
+184 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:96:22: warning: weak reference will always be nil because the referenced object is deallocated here
+ 94 | 
+ 95 |         let model = AppModel()
+ 96 |         model.bridge = MockBridge()          // bridge present...
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+ 97 |         model.loadInitialFile(url.path)      // ...but editorDidBecomeReady NOT called → not ready
+ 98 |         model.save()
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:118:22: warning: weak reference will always be nil because the referenced object is deallocated here
+116 | 
+117 |         let model = AppModel()
+118 |         model.bridge = MockBridge()
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+119 |         model.editorDidBecomeReady()
+120 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:141:22: warning: weak reference will always be nil because the referenced object is deallocated here
+139 | 
+140 |         let model = AppModel()
+141 |         model.bridge = MockBridge()
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+142 |         model.editorDidBecomeReady()
+143 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:162:22: warning: weak reference will always be nil because the referenced object is deallocated here
+160 | 
+161 |         let model = AppModel()
+162 |         model.bridge = MockBridge()
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+163 |         model.editorDidBecomeReady()
+164 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:182:22: warning: weak reference will always be nil because the referenced object is deallocated here
+180 | 
+181 |         let model = AppModel()
+182 |         model.bridge = MockBridge()
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+183 |         model.editorDidBecomeReady()
+184 |         model.loadInitialFile(url.path)
+[110/116] Compiling OuroMDTests MarkdownTidyTests.swift
+[111/116] Compiling OuroMDTests MarkdownRendererTests.swift
+[112/116] Emitting module OuroMDTests
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:266:19: error: cannot find type 'OuroMDUpdateInstaller' in scope
+264 |         line: UInt = #line,
+265 |         _ body: () async throws -> Void,
+266 |         inspect: (OuroMDUpdateInstaller.InstallError) -> Void = { _ in }
+    |                   `- error: cannot find type 'OuroMDUpdateInstaller' in scope
+267 |     ) async {
+268 |         do {
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:289:35: error: cannot find type 'OuroMDUpdateInstaller' in scope
+287 | 
+288 | private final class InstallerHarness {
+289 |     typealias ProcessInvocation = OuroMDUpdateInstaller.ProcessInvocation
+    |                                   `- error: cannot find type 'OuroMDUpdateInstaller' in scope
+290 |     typealias ProcessResult = OuroMDUpdateInstaller.ProcessResult
+291 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:290:31: error: cannot find type 'OuroMDUpdateInstaller' in scope
+288 | private final class InstallerHarness {
+289 |     typealias ProcessInvocation = OuroMDUpdateInstaller.ProcessInvocation
+290 |     typealias ProcessResult = OuroMDUpdateInstaller.ProcessResult
+    |                               `- error: cannot find type 'OuroMDUpdateInstaller' in scope
+291 | 
+292 |     private(set) var invocations: [ProcessInvocation] = []
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:298:10: error: cannot find type 'OuroMDUpdateInstaller' in scope
+296 |         archiveData: Data,
+297 |         processRunner: @escaping @Sendable (ProcessInvocation) async throws -> ProcessResult = { _ in .success }
+298 |     ) -> OuroMDUpdateInstaller {
+    |          `- error: cannot find type 'OuroMDUpdateInstaller' in scope
+299 |         OuroMDUpdateInstaller(
+300 |             bundleIdentifier: "org.ourostack.ouro-md",
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:297:24: error: '@escaping' only applies to function types
+295 |         manifestData: Data,
+296 |         archiveData: Data,
+297 |         processRunner: @escaping @Sendable (ProcessInvocation) async throws -> ProcessResult = { _ in .success }
+    |                        `- error: '@escaping' only applies to function types
+298 |     ) -> OuroMDUpdateInstaller {
+299 |         OuroMDUpdateInstaller(
+[113/116] Compiling OuroMDTests OuroMDUpdateInstallerTests.swift
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:266:19: error: cannot find type 'OuroMDUpdateInstaller' in scope
+264 |         line: UInt = #line,
+265 |         _ body: () async throws -> Void,
+266 |         inspect: (OuroMDUpdateInstaller.InstallError) -> Void = { _ in }
+    |                   `- error: cannot find type 'OuroMDUpdateInstaller' in scope
+267 |     ) async {
+268 |         do {
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:289:35: error: cannot find type 'OuroMDUpdateInstaller' in scope
+287 | 
+288 | private final class InstallerHarness {
+289 |     typealias ProcessInvocation = OuroMDUpdateInstaller.ProcessInvocation
+    |                                   `- error: cannot find type 'OuroMDUpdateInstaller' in scope
+290 |     typealias ProcessResult = OuroMDUpdateInstaller.ProcessResult
+291 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:290:31: error: cannot find type 'OuroMDUpdateInstaller' in scope
+288 | private final class InstallerHarness {
+289 |     typealias ProcessInvocation = OuroMDUpdateInstaller.ProcessInvocation
+290 |     typealias ProcessResult = OuroMDUpdateInstaller.ProcessResult
+    |                               `- error: cannot find type 'OuroMDUpdateInstaller' in scope
+291 | 
+292 |     private(set) var invocations: [ProcessInvocation] = []
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:298:10: error: cannot find type 'OuroMDUpdateInstaller' in scope
+296 |         archiveData: Data,
+297 |         processRunner: @escaping @Sendable (ProcessInvocation) async throws -> ProcessResult = { _ in .success }
+298 |     ) -> OuroMDUpdateInstaller {
+    |          `- error: cannot find type 'OuroMDUpdateInstaller' in scope
+299 |         OuroMDUpdateInstaller(
+300 |             bundleIdentifier: "org.ourostack.ouro-md",
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:297:24: error: '@escaping' only applies to function types
+295 |         manifestData: Data,
+296 |         archiveData: Data,
+297 |         processRunner: @escaping @Sendable (ProcessInvocation) async throws -> ProcessResult = { _ in .success }
+    |                        `- error: '@escaping' only applies to function types
+298 |     ) -> OuroMDUpdateInstaller {
+299 |         OuroMDUpdateInstaller(
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:28:48: error: cannot infer key path type from context; consider explicitly specifying a root type
+ 26 |         XCTAssertEqual(staged.appURL.lastPathComponent, "Ouro MD.app")
+ 27 |         XCTAssertTrue(FileManager.default.fileExists(atPath: staged.appURL.path))
+ 28 |         XCTAssertEqual(harness.invocations.map(\.executablePath), ["/usr/bin/ditto", "/usr/bin/codesign"])
+    |                                                `- error: cannot infer key path type from context; consider explicitly specifying a root type
+ 29 |         XCTAssertEqual(harness.invocations[0].arguments.prefix(2), ["-x", "-k"])
+ 30 |         XCTAssertEqual(harness.invocations[1].arguments.suffix(2), ["--strict", staged.appURL.path])
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:39:34: error: cannot infer contextual base in reference to member 'manifestDecode'
+ 37 |         )
+ 38 | 
+ 39 |         await assertStageThrows(.manifestDecode) {
+    |                                  `- error: cannot infer contextual base in reference to member 'manifestDecode'
+ 40 |             try await installer.stage(plan: updatePlan(), progress: { _ in })
+ 41 |         }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:50:34: error: cannot infer contextual base in reference to member 'verification'
+ 48 |         )
+ 49 | 
+ 50 |         await assertStageThrows(.verification) {
+    |                                  `- error: cannot infer contextual base in reference to member 'verification'
+ 51 |             try await installer.stage(plan: updatePlan(), progress: { _ in })
+ 52 |         } inspect: { error in
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:55:18: error: type 'Equatable' has no member 'verification'
+ 53 |             XCTAssertEqual(
+ 54 |                 error,
+ 55 |                 .verification(.sha256Mismatch(expected: "deadbeef", got: sha256Hex(self.archiveData)))
+    |                  `- error: type 'Equatable' has no member 'verification'
+ 56 |             )
+ 57 |         }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:55:32: error: cannot infer contextual base in reference to member 'sha256Mismatch'
+ 53 |             XCTAssertEqual(
+ 54 |                 error,
+ 55 |                 .verification(.sha256Mismatch(expected: "deadbeef", got: sha256Hex(self.archiveData)))
+    |                                `- error: cannot infer contextual base in reference to member 'sha256Mismatch'
+ 56 |             )
+ 57 |         }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:71:18: error: type 'Equatable' has no member 'verification'
+ 69 |             XCTAssertEqual(
+ 70 |                 error,
+ 71 |                 .verification(.byteCountMismatch(expected: self.archiveData.count + 1, got: self.archiveData.count))
+    |                  `- error: type 'Equatable' has no member 'verification'
+ 72 |             )
+ 73 |         }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:66:34: error: cannot infer contextual base in reference to member 'verification'
+ 64 |         )
+ 65 | 
+ 66 |         await assertStageThrows(.verification) {
+    |                                  `- error: cannot infer contextual base in reference to member 'verification'
+ 67 |             try await installer.stage(plan: updatePlan(), progress: { _ in })
+ 68 |         } inspect: { error in
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:71:32: error: cannot infer contextual base in reference to member 'byteCountMismatch'
+ 69 |             XCTAssertEqual(
+ 70 |                 error,
+ 71 |                 .verification(.byteCountMismatch(expected: self.archiveData.count + 1, got: self.archiveData.count))
+    |                                `- error: cannot infer contextual base in reference to member 'byteCountMismatch'
+ 72 |             )
+ 73 |         }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:86:34: error: cannot infer contextual base in reference to member 'verification'
+ 84 |         )
+ 85 | 
+ 86 |         await assertStageThrows(.verification) {
+    |                                  `- error: cannot infer contextual base in reference to member 'verification'
+ 87 |             try await installer.stage(plan: updatePlan(), progress: { _ in })
+ 88 |         } inspect: { error in
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:91:18: error: type 'Equatable' has no member 'verification'
+ 89 |             XCTAssertEqual(
+ 90 |                 error,
+ 91 |                 .verification(.archiveNameMismatch(expected: "Different.zip", got: "Ouro-MD-0.10.0.zip"))
+    |                  `- error: type 'Equatable' has no member 'verification'
+ 92 |             )
+ 93 |         }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:91:32: error: cannot infer contextual base in reference to member 'archiveNameMismatch'
+ 89 |             XCTAssertEqual(
+ 90 |                 error,
+ 91 |                 .verification(.archiveNameMismatch(expected: "Different.zip", got: "Ouro-MD-0.10.0.zip"))
+    |                                `- error: cannot infer contextual base in reference to member 'archiveNameMismatch'
+ 92 |             )
+ 93 |         }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:106:34: error: cannot infer contextual base in reference to member 'verification'
+104 |         )
+105 | 
+106 |         await assertStageThrows(.verification) {
+    |                                  `- error: cannot infer contextual base in reference to member 'verification'
+107 |             try await installer.stage(plan: updatePlan(), progress: { _ in })
+108 |         } inspect: { error in
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:111:18: error: type 'Equatable' has no member 'verification'
+109 |             XCTAssertEqual(
+110 |                 error,
+111 |                 .verification(.bundleIdentifierMismatch(expected: "org.ourostack.ouro-md", got: "com.example.bad"))
+    |                  `- error: type 'Equatable' has no member 'verification'
+112 |             )
+113 |         }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:111:32: error: cannot infer contextual base in reference to member 'bundleIdentifierMismatch'
+109 |             XCTAssertEqual(
+110 |                 error,
+111 |                 .verification(.bundleIdentifierMismatch(expected: "org.ourostack.ouro-md", got: "com.example.bad"))
+    |                                `- error: cannot infer contextual base in reference to member 'bundleIdentifierMismatch'
+112 |             )
+113 |         }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:126:34: error: cannot infer contextual base in reference to member 'verification'
+124 |         )
+125 | 
+126 |         await assertStageThrows(.verification) {
+    |                                  `- error: cannot infer contextual base in reference to member 'verification'
+127 |             try await installer.stage(plan: updatePlan(), progress: { _ in })
+128 |         } inspect: { error in
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:131:18: error: type 'Equatable' has no member 'verification'
+129 |             XCTAssertEqual(
+130 |                 error,
+131 |                 .verification(.notNewerThanCurrent(current: "0.9.0", candidate: "0.9.0"))
+    |                  `- error: type 'Equatable' has no member 'verification'
+132 |             )
+133 |         }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:131:32: error: cannot infer contextual base in reference to member 'notNewerThanCurrent'
+129 |             XCTAssertEqual(
+130 |                 error,
+131 |                 .verification(.notNewerThanCurrent(current: "0.9.0", candidate: "0.9.0"))
+    |                                `- error: cannot infer contextual base in reference to member 'notNewerThanCurrent'
+132 |             )
+133 |         }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:140:36: error: cannot infer contextual base in reference to member 'success'
+138 |             manifestData: manifestData(sha: sha256Hex(archiveData), bytes: archiveData.count),
+139 |             archiveData: archiveData,
+140 |             processRunner: { _ in .success }
+    |                                    `- error: cannot infer contextual base in reference to member 'success'
+141 |         )
+142 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:143:34: error: cannot infer contextual base in reference to member 'missingStagedApp'
+141 |         )
+142 | 
+143 |         await assertStageThrows(.missingStagedApp) {
+    |                                  `- error: cannot infer contextual base in reference to member 'missingStagedApp'
+144 |             try await installer.stage(plan: updatePlan(), progress: { _ in })
+145 |         }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:163:34: error: cannot infer contextual base in reference to member 'stagedIdentityMismatch'
+161 |         }
+162 | 
+163 |         await assertStageThrows(.stagedIdentityMismatch) {
+    |                                  `- error: cannot infer contextual base in reference to member 'stagedIdentityMismatch'
+164 |             try await installer.stage(plan: updatePlan(), progress: { _ in })
+165 |         }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:183:34: error: cannot infer contextual base in reference to member 'stagedIdentityMismatch'
+181 |         }
+182 | 
+183 |         await assertStageThrows(.stagedIdentityMismatch) {
+    |                                  `- error: cannot infer contextual base in reference to member 'stagedIdentityMismatch'
+184 |             try await installer.stage(plan: updatePlan(), progress: { _ in })
+185 |         }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:201:20: error: cannot find 'OuroMDUpdateInstaller' in scope
+199 |                 return .success
+200 |             }
+201 |             return OuroMDUpdateInstaller.ProcessResult(status: 1, stderr: "not signed")
+    |                    `- error: cannot find 'OuroMDUpdateInstaller' in scope
+202 |         }
+203 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:204:34: error: cannot infer contextual base in reference to member 'codesignFailed'
+202 |         }
+203 | 
+204 |         await assertStageThrows(.codesignFailed) {
+    |                                  `- error: cannot infer contextual base in reference to member 'codesignFailed'
+205 |             try await installer.stage(plan: updatePlan(), progress: { _ in })
+206 |         }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:271:30: error: cannot find type 'OuroMDUpdateInstaller' in scope
+269 |             try await body()
+270 |             XCTFail("Expected stage to throw.", file: file, line: line)
+271 |         } catch let error as OuroMDUpdateInstaller.InstallError {
+    |                              `- error: cannot find type 'OuroMDUpdateInstaller' in scope
+272 |             switch (expected, error) {
+273 |             case (.manifestDecode, .manifestDecode),
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:299:9: error: cannot find 'OuroMDUpdateInstaller' in scope
+297 |         processRunner: @escaping @Sendable (ProcessInvocation) async throws -> ProcessResult = { _ in .success }
+298 |     ) -> OuroMDUpdateInstaller {
+299 |         OuroMDUpdateInstaller(
+    |         `- error: cannot find 'OuroMDUpdateInstaller' in scope
+300 |             bundleIdentifier: "org.ourostack.ouro-md",
+301 |             currentVersion: "0.9.0",
+[114/116] Compiling OuroMDTests ReleaseUpdateTests.swift
+error: fatalError
