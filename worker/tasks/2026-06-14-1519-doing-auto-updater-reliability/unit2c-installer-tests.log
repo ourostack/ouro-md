@@ -1,0 +1,51 @@
+Another instance of SwiftPM (PID: 8141) is already running using '/Users/arimendelow/Projects/ouro-md/.build', waiting until that process has finished execution...Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.15s)
+Test Suite 'Selected tests' started at 2026-06-14 16:34:14.244.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 16:34:14.245.
+Test Suite 'OuroMDUpdateInstallerTests' started at 2026-06-14 16:34:14.245.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptDoesNotDeleteBackupBeforeDestinationShapeIsProven]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptDoesNotDeleteBackupBeforeDestinationShapeIsProven]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptFailsFastAroundBackupInstallAndRollback]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptFailsFastAroundBackupInstallAndRollback]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptRestoresStaleBackupBeforeTryingNewInstall]' started.
+ditto: Cannot get the real path for source '/var/folders/md/_fkq3wc92_z55cgtlrfrcfh40000gn/T/ouro-apply-stale-backup-C112DA39-5243-49B9-B2E1-6A6E703F9845/missing-staged/Ouro MD.app'
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptRestoresStaleBackupBeforeTryingNewInstall]' passed (0.076 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptRunsInTemporaryDirectoryWithoutNestingUpdatedApp]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptRunsInTemporaryDirectoryWithoutNestingUpdatedApp]' passed (0.072 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testInstallErrorDescriptionsAreUserReadable]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testInstallErrorDescriptionsAreUserReadable]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageSucceedsAfterManifestArchiveExtractedBundleAndCodesignVerify]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageSucceedsAfterManifestArchiveExtractedBundleAndCodesignVerify]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnArchiveNameMismatch]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnArchiveNameMismatch]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnBundleIdentifierMismatch]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnBundleIdentifierMismatch]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnByteCountMismatch]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnByteCountMismatch]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnCodesignFailure]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnCodesignFailure]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnManifestDecodeFailure]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnManifestDecodeFailure]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnMissingStagedApp]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnMissingStagedApp]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnNonNewerVersion]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnNonNewerVersion]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnSHAMismatch]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnSHAMismatch]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnStagedBundleIdentifierMismatch]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnStagedBundleIdentifierMismatch]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnStagedVersionMismatch]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnStagedVersionMismatch]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnUnzipFailureWithExitStatusFallback]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnUnzipFailureWithExitStatusFallback]' passed (0.001 seconds).
+Test Suite 'OuroMDUpdateInstallerTests' passed at 2026-06-14 16:34:14.405.
+	 Executed 17 tests, with 0 failures (0 unexpected) in 0.159 (0.160) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 16:34:14.405.
+	 Executed 17 tests, with 0 failures (0 unexpected) in 0.159 (0.160) seconds
+Test Suite 'Selected tests' passed at 2026-06-14 16:34:14.405.
+	 Executed 17 tests, with 0 failures (0 unexpected) in 0.159 (0.160) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

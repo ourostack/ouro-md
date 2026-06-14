@@ -145,6 +145,25 @@ final class OuroMDUpdateInstallerTests: XCTestCase {
         }
     }
 
+    func testStageThrowsOnUnzipFailureWithExitStatusFallback() async {
+        let installer = InstallerHarness().installer(
+            manifestData: manifestData(sha: sha256Hex(archiveData), bytes: archiveData.count),
+            archiveData: archiveData,
+            processRunner: { invocation in
+                if invocation.executablePath == "/usr/bin/ditto" {
+                    return OuroMDUpdateInstaller.ProcessResult(status: 12, stderr: "")
+                }
+                return .success
+            }
+        )
+
+        await assertStageThrows(.unzipFailed) {
+            try await installer.stage(plan: updatePlan(), progress: { _ in })
+        } inspect: { error in
+            XCTAssertEqual(error, .unzipFailed("ditto exited 12"))
+        }
+    }
+
     func testStageThrowsOnStagedBundleIdentifierMismatch() async {
         let installer = InstallerHarness().installer(
             manifestData: manifestData(sha: sha256Hex(archiveData), bytes: archiveData.count),
@@ -327,6 +346,28 @@ final class OuroMDUpdateInstallerTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("staged").path))
     }
 
+    func testInstallErrorDescriptionsAreUserReadable() {
+        let errors: [(OuroMDUpdateInstaller.InstallError, String)] = [
+            (.download("net down"), "Download failed: net down"),
+            (.manifestDecode("bad json"), "Could not read the release manifest: bad json"),
+            (
+                .verification(.sha256Mismatch(expected: "a", got: "b")),
+                "Downloaded archive failed its SHA-256 integrity check."
+            ),
+            (.unzipFailed("ditto exited 12"), "Could not expand the downloaded archive: ditto exited 12"),
+            (.missingStagedApp, "The downloaded archive did not contain Ouro MD.app."),
+            (
+                .stagedIdentityMismatch("bundle id bad"),
+                "The downloaded app failed its identity check: bundle id bad"
+            ),
+            (.codesignFailed("unsigned"), "The downloaded app failed its code-signature check: unsigned"),
+        ]
+
+        for (error, description) in errors {
+            XCTAssertEqual(error.errorDescription, description)
+        }
+    }
+
     private func updatePlan() -> OuroMDUpdatePlan {
         OuroMDUpdatePlan(
             version: "0.10.0",
@@ -374,6 +415,7 @@ final class OuroMDUpdateInstallerTests: XCTestCase {
     private enum ExpectedError {
         case manifestDecode
         case verification
+        case unzipFailed
         case missingStagedApp
         case stagedIdentityMismatch
         case codesignFailed
@@ -393,6 +435,7 @@ final class OuroMDUpdateInstallerTests: XCTestCase {
             switch (expected, error) {
             case (.manifestDecode, .manifestDecode),
                  (.verification, .verification),
+                 (.unzipFailed, .unzipFailed),
                  (.missingStagedApp, .missingStagedApp),
                  (.stagedIdentityMismatch, .stagedIdentityMismatch),
                  (.codesignFailed, .codesignFailed):
