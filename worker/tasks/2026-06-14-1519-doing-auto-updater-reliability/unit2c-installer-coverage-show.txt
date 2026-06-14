@@ -59,11 +59,11 @@
    59|       |        currentVersion: String = OuroMDRelease.version,
    60|       |        dataLoader: (@Sendable (URL) async throws -> Data)? = nil,
    61|       |        processRunner: @escaping @Sendable (ProcessInvocation) async throws -> ProcessResult = OuroMDUpdateInstaller.defaultProcessRunner
-   62|     12|    ) {
-   63|     12|        self.bundleIdentifier = bundleIdentifier
-   64|     12|        self.currentVersion = currentVersion
-   65|     12|        let userAgent = "OuroMD/\(currentVersion)"
-   66|     12|        self.dataLoader = dataLoader ?? { url in
+   62|     14|    ) {
+   63|     14|        self.bundleIdentifier = bundleIdentifier
+   64|     14|        self.currentVersion = currentVersion
+   65|     14|        let userAgent = "OuroMD/\(currentVersion)"
+   66|     14|        self.dataLoader = dataLoader ?? { url in
    67|      0|            try await Self.defaultData(from: url, userAgent: userAgent)
    68|      0|        }
   ------------------
@@ -71,23 +71,23 @@
   ------------------
   | Unexecuted instantiation: $s6OuroMD0A17MDUpdateInstallerV16bundleIdentifier14currentVersion10dataLoader13processRunnerACSS_SS10Foundation4DataVAH3URLVYaYbKcSgAC13ProcessResultVAC0P10InvocationVYaYbKctcfcAjLYaYbKcyKXEfu_AjLYaYbKcfU_
   ------------------
-   69|     12|        self.processRunner = processRunner
-   70|     12|    }
+   69|     14|        self.processRunner = processRunner
+   70|     14|    }
    71|       |
    72|       |    @discardableResult
    73|       |    func stage(
    74|       |        plan: OuroMDUpdatePlan,
    75|       |        progress: @Sendable (String) async -> Void
-   76|     12|    ) async throws -> Staged {
-   77|     12|        let fileManager = FileManager.default
-   78|     12|        let root = fileManager.temporaryDirectory
-   79|     12|            .appendingPathComponent("ouro-md-update-\(UUID().uuidString)", isDirectory: true)
-   80|     12|
-   81|     12|        do {
-   82|     12|            try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
-   83|     12|
-   84|     12|            await progress("Downloading release manifest...")
-   85|     12|            let manifestData = try await load(plan.manifestURL)
+   76|     14|    ) async throws -> Staged {
+   77|     14|        let fileManager = FileManager.default
+   78|     14|        let root = fileManager.temporaryDirectory
+   79|     14|            .appendingPathComponent("ouro-md-update-\(UUID().uuidString)", isDirectory: true)
+   80|     14|
+   81|     14|        do {
+   82|     14|            try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+   83|     14|
+   84|     14|            await progress("Downloading release manifest...")
+   85|     14|            let manifestData = try await load(plan.manifestURL)
    86|     12|            let manifest: OuroMDUpdateManifest
    87|     12|            do {
    88|     12|                manifest = try JSONDecoder().decode(OuroMDUpdateManifest.self, from: manifestData)
@@ -147,11 +147,11 @@
   142|      1|            }
   143|      1|
   144|      1|            return Staged(appURL: appURL, stagingRoot: root, version: manifest.version)
-  145|     12|        } catch {
-  146|     11|            try? fileManager.removeItem(at: root)
-  147|     11|            throw error
-  148|     11|        }
-  149|     12|    }
+  145|     14|        } catch {
+  146|     13|            try? fileManager.removeItem(at: root)
+  147|     13|            throw error
+  148|     13|        }
+  149|     14|    }
   150|       |
   151|      0|    static func applyAndRelaunch(staged: Staged, destinationBundle: URL, relaunch: Bool = true) {
   152|      0|        let script = applyScript(
@@ -236,15 +236,15 @@
   231|      4|        """
   232|      4|    }
   233|       |
-  234|     23|    private func load(_ url: URL) async throws -> Data {
-  235|     23|        do {
-  236|     23|            return try await dataLoader(url)
-  237|     23|        } catch let error as InstallError {
-  238|      0|            throw error
-  239|      0|        } catch {
-  240|      0|            throw InstallError.download("\(url.lastPathComponent): \(error.localizedDescription)")
-  241|      0|        }
-  242|     23|    }
+  234|     25|    private func load(_ url: URL) async throws -> Data {
+  235|     25|        do {
+  236|     25|            return try await dataLoader(url)
+  237|     25|        } catch let error as InstallError {
+  238|      1|            throw error
+  239|      1|        } catch {
+  240|      1|            throw InstallError.download("\(url.lastPathComponent): \(error.localizedDescription)")
+  241|      1|        }
+  242|     25|    }
   243|       |
   244|      4|    private func verifyStagedApp(_ appURL: URL, manifest: OuroMDUpdateManifest) throws {
   245|      4|        let infoURL = appURL.appendingPathComponent("Contents/Info.plist")

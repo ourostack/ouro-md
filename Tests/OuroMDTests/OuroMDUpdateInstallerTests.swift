@@ -41,6 +41,40 @@ final class OuroMDUpdateInstallerTests: XCTestCase {
         }
     }
 
+    func testStageWrapsGenericDataLoaderFailureAsDownloadError() async {
+        let installer = OuroMDUpdateInstaller(
+            bundleIdentifier: "org.ourostack.ouro-md",
+            currentVersion: "0.9.0",
+            dataLoader: { _ in throw NSError(domain: "loader", code: 7) },
+            processRunner: { _ in .success }
+        )
+
+        await assertStageThrows(.download) {
+            try await installer.stage(plan: updatePlan(), progress: { _ in })
+        } inspect: { error in
+            guard case let .download(message) = error else {
+                XCTFail("Expected download error, got \(error)")
+                return
+            }
+            XCTAssertTrue(message.contains("Ouro-MD-0.10.0.manifest.json"))
+        }
+    }
+
+    func testStagePreservesInstallerErrorFromDataLoader() async {
+        let installer = OuroMDUpdateInstaller(
+            bundleIdentifier: "org.ourostack.ouro-md",
+            currentVersion: "0.9.0",
+            dataLoader: { _ in throw OuroMDUpdateInstaller.InstallError.download("explicit") },
+            processRunner: { _ in .success }
+        )
+
+        await assertStageThrows(.download) {
+            try await installer.stage(plan: updatePlan(), progress: { _ in })
+        } inspect: { error in
+            XCTAssertEqual(error, .download("explicit"))
+        }
+    }
+
     func testStageThrowsOnSHAMismatch() async {
         let installer = InstallerHarness().installer(
             manifestData: manifestData(sha: "deadbeef", bytes: archiveData.count),
@@ -413,6 +447,7 @@ final class OuroMDUpdateInstallerTests: XCTestCase {
     }
 
     private enum ExpectedError {
+        case download
         case manifestDecode
         case verification
         case unzipFailed
@@ -433,7 +468,8 @@ final class OuroMDUpdateInstallerTests: XCTestCase {
             XCTFail("Expected stage to throw.", file: file, line: line)
         } catch let error as OuroMDUpdateInstaller.InstallError {
             switch (expected, error) {
-            case (.manifestDecode, .manifestDecode),
+            case (.download, .download),
+                 (.manifestDecode, .manifestDecode),
                  (.verification, .verification),
                  (.unzipFailed, .unzipFailed),
                  (.missingStagedApp, .missingStagedApp),
