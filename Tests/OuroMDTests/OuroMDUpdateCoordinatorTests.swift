@@ -172,6 +172,91 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.installStatus, "Installing 0.10.0 and relaunching...")
     }
 
+    func testManualInstallRestagesWhenCheckedReleaseIsNewerThanPendingStage() async {
+        var snapshots = [
+            updateSnapshot(version: "0.10.0"),
+            updateSnapshot(version: "0.11.0"),
+        ]
+        var stagedVersions: [String] = []
+        var relaunchVersions: [String] = []
+        let coordinator = makeCoordinator(
+            checker: { snapshots.removeFirst() },
+            stageUpdate: { plan, _ in
+                stagedVersions.append(plan.version)
+                return self.stagedUpdate(version: plan.version)
+            },
+            applyAndRelaunch: { staged, _ in relaunchVersions.append(staged.version) }
+        )
+
+        await coordinator.runAutoUpdateCheckIfDue()
+        await coordinator.checkForUpdatesAndPromptInstall()
+        XCTAssertEqual(coordinator.updatePrompt, .installable(version: "0.11.0"))
+        await coordinator.installReleaseUpdate(destinationBundle: URL(fileURLWithPath: "/tmp/Ouro MD.app"))
+
+        XCTAssertEqual(stagedVersions, ["0.10.0", "0.11.0"])
+        XCTAssertEqual(relaunchVersions, ["0.11.0"])
+    }
+
+    func testManualInstallOfPendingStageIsIdempotent() async {
+        let staged = stagedUpdate(version: "0.10.0")
+        var relaunchApplications: [OuroMDUpdateInstaller.Staged] = []
+        var terminateCount = 0
+        let coordinator = makeCoordinator(
+            checker: { self.updateSnapshot() },
+            stageUpdate: { _, _ in staged },
+            applyAndRelaunch: { staged, _ in relaunchApplications.append(staged) },
+            terminate: { terminateCount += 1 }
+        )
+        await coordinator.runAutoUpdateCheckIfDue()
+
+        await coordinator.installReleaseUpdate(destinationBundle: URL(fileURLWithPath: "/tmp/Ouro MD.app"))
+        await coordinator.installReleaseUpdate(destinationBundle: URL(fileURLWithPath: "/tmp/Ouro MD.app"))
+
+        XCTAssertEqual(relaunchApplications, [staged])
+        XCTAssertEqual(terminateCount, 1)
+        XCTAssertTrue(coordinator.isInstalling)
+    }
+
+    func testManualCheckAwaitsInFlightLaunchCheckBeforePrompting() async {
+        let started = expectation(description: "checker started")
+        var checkCount = 0
+        var continuation: CheckedContinuation<ReleaseUpdateSnapshot, Never>?
+        let coordinator = makeCoordinator(
+            checker: {
+                checkCount += 1
+                started.fulfill()
+                return await withCheckedContinuation { continuation = $0 }
+            }
+        )
+
+        let launchCheck = Task { await coordinator.runAutoUpdateCheckIfDue() }
+        await fulfillment(of: [started], timeout: 1)
+        let manualCheck = Task { await coordinator.checkForUpdatesAndPromptInstall() }
+        await Task.yield()
+
+        XCTAssertNil(coordinator.updatePrompt)
+
+        continuation?.resume(returning: updateSnapshot())
+        await launchCheck.value
+        await manualCheck.value
+
+        XCTAssertEqual(checkCount, 1)
+        XCTAssertEqual(coordinator.updatePrompt, .installable(version: "0.10.0"))
+    }
+
+    func testManualInstallFailureSetsFailedPromptForAppObserver() async {
+        let coordinator = makeCoordinator(
+            checker: { self.updateSnapshot() },
+            stageUpdate: { _, _ in throw OuroMDUpdateInstaller.InstallError.download("offline") }
+        )
+        await coordinator.checkForReleaseUpdate()
+
+        await coordinator.installReleaseUpdate(destinationBundle: URL(fileURLWithPath: "/tmp/Ouro MD.app"))
+
+        XCTAssertEqual(coordinator.installError, "Download failed: offline")
+        XCTAssertEqual(coordinator.updatePrompt, .failed(detail: "Download failed: offline"))
+    }
+
     private func makeCoordinator(
         checker: @escaping () async -> ReleaseUpdateSnapshot = { ReleaseUpdateSnapshot(
             status: .current,
@@ -201,26 +286,26 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
         )
     }
 
-    private func updateSnapshot(assets: [ReleaseUpdateAsset]? = nil) -> ReleaseUpdateSnapshot {
+    private func updateSnapshot(version: String = "0.10.0", assets: [ReleaseUpdateAsset]? = nil) -> ReleaseUpdateSnapshot {
         ReleaseUpdateSnapshot(
             status: .updateAvailable,
             currentVersion: "0.9.0",
-            latestVersion: "0.10.0",
-            tagName: "v0.10.0",
-            htmlURL: "https://github.com/ourostack/ouro-md/releases/tag/v0.10.0",
+            latestVersion: version,
+            tagName: "v\(version)",
+            htmlURL: "https://github.com/ourostack/ouro-md/releases/tag/v\(version)",
             assets: assets ?? [
                 ReleaseUpdateAsset(
-                    name: "Ouro-MD-0.10.0.zip",
-                    downloadURL: "https://example.test/Ouro-MD-0.10.0.zip",
+                    name: "Ouro-MD-\(version).zip",
+                    downloadURL: "https://example.test/Ouro-MD-\(version).zip",
                     size: 100
                 ),
                 ReleaseUpdateAsset(
-                    name: "Ouro-MD-0.10.0.manifest.json",
-                    downloadURL: "https://example.test/Ouro-MD-0.10.0.manifest.json",
+                    name: "Ouro-MD-\(version).manifest.json",
+                    downloadURL: "https://example.test/Ouro-MD-\(version).manifest.json",
                     size: 50
                 ),
             ],
-            detail: "Version 0.10.0 is available."
+            detail: "Version \(version) is available."
         )
     }
 

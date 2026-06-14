@@ -45,22 +45,33 @@ final class OuroMDUpdateCoordinator: ObservableObject {
 
     private let defaults: UserDefaults
     private let checker: @MainActor () async -> ReleaseUpdateSnapshot
-    private let stageUpdate: @MainActor (OuroMDUpdatePlan, @escaping @Sendable (String) async -> Void) async throws -> OuroMDUpdateInstaller.Staged
+    private let stageUpdate: (OuroMDUpdatePlan, @escaping @Sendable (String) async -> Void) async throws -> OuroMDUpdateInstaller.Staged
     private let applyAndRelaunch: @MainActor (OuroMDUpdateInstaller.Staged, URL) -> Void
     private let applyOnQuit: @MainActor (OuroMDUpdateInstaller.Staged, URL) -> Void
     private let terminate: @MainActor () -> Void
     private let now: @MainActor () -> Date
+    private var inFlightCheck: InFlightCheck?
     private var pendingStagedUpdate: OuroMDUpdateInstaller.Staged?
     private var isApplyingManualUpdate = false
     private var autoUpdateCheckStartedThisSession = false
+
+    private final class InFlightCheck {
+        let task: Task<ReleaseUpdateSnapshot, Never>
+
+        init(task: Task<ReleaseUpdateSnapshot, Never>) {
+            self.task = task
+        }
+    }
 
     init(
         defaults: UserDefaults = .standard,
         checker: @escaping @MainActor () async -> ReleaseUpdateSnapshot = {
             await ReleaseUpdateChecker().check()
         },
-        stageUpdate: @escaping @MainActor (OuroMDUpdatePlan, @escaping @Sendable (String) async -> Void) async throws -> OuroMDUpdateInstaller.Staged = { plan, progress in
-            try await OuroMDUpdateInstaller().stage(plan: plan, progress: progress)
+        stageUpdate: @escaping (OuroMDUpdatePlan, @escaping @Sendable (String) async -> Void) async throws -> OuroMDUpdateInstaller.Staged = { plan, progress in
+            try await Task.detached(priority: .utility) {
+                try await OuroMDUpdateInstaller().stage(plan: plan, progress: progress)
+            }.value
         },
         applyAndRelaunch: @escaping @MainActor (OuroMDUpdateInstaller.Staged, URL) -> Void = {
             OuroMDUpdateInstaller.applyAndRelaunch(staged: $0, destinationBundle: $1)
@@ -87,19 +98,32 @@ final class OuroMDUpdateCoordinator: ObservableObject {
         autoUpdateEnabled = enabled
     }
 
-    func checkForReleaseUpdate() async {
-        guard !isChecking else { return }
+    @discardableResult
+    func checkForReleaseUpdate() async -> ReleaseUpdateSnapshot {
+        if let existing = inFlightCheck {
+            let snapshot = await existing.task.value
+            if inFlightCheck == nil || inFlightCheck === existing {
+                releaseSnapshot = snapshot
+            }
+            return snapshot
+        }
         isChecking = true
-        defer { isChecking = false }
-        releaseSnapshot = await checker()
+        let check = InFlightCheck(task: Task { @MainActor in
+            await checker()
+        })
+        inFlightCheck = check
+        let snapshot = await check.task.value
+        if inFlightCheck === check {
+            releaseSnapshot = snapshot
+            inFlightCheck = nil
+            isChecking = false
+        }
+        return snapshot
     }
 
     func checkForUpdatesAndPromptInstall() async {
-        await checkForReleaseUpdate()
-        guard let snapshot = releaseSnapshot else {
-            updatePrompt = .failed(detail: "Could not check for updates right now.")
-            return
-        }
+        let snapshot = await checkForReleaseUpdate()
+        discardStagedUpdateIfMismatched(with: snapshot)
         switch snapshot.status {
         case .updateAvailable:
             if snapshot.hasInstallableAssets, let version = snapshot.latestVersion {
@@ -137,13 +161,26 @@ final class OuroMDUpdateCoordinator: ObservableObject {
     }
 
     func presentUpdatePrompt() {
-        if let version = stagedUpdateVersion {
+        if let snapshot = releaseSnapshot,
+           snapshot.status == .updateAvailable,
+           snapshot.hasInstallableAssets,
+           let version = snapshot.latestVersion {
             updatePrompt = .installable(version: version)
-        } else if let snapshot = releaseSnapshot,
-                  snapshot.status == .updateAvailable,
-                  snapshot.hasInstallableAssets,
-                  let version = snapshot.latestVersion {
+        } else if let version = stagedUpdateVersion {
             updatePrompt = .installable(version: version)
+        }
+    }
+
+    private func discardStagedUpdateIfMismatched(with snapshot: ReleaseUpdateSnapshot) {
+        guard let staged = pendingStagedUpdate else { return }
+        guard snapshot.status == .updateAvailable,
+              snapshot.hasInstallableAssets,
+              let version = snapshot.latestVersion else {
+            clearPendingStagedUpdate()
+            return
+        }
+        if staged.version != version {
+            clearPendingStagedUpdate()
         }
     }
 
@@ -161,9 +198,8 @@ final class OuroMDUpdateCoordinator: ObservableObject {
             return
         }
         defaults.set(currentDate, forKey: Self.lastUpdateCheckAtDefaultsKey)
-        await checkForReleaseUpdate()
+        let snapshot = await checkForReleaseUpdate()
         guard autoUpdateEnabled,
-              let snapshot = releaseSnapshot,
               snapshot.status == .updateAvailable,
               snapshot.hasInstallableAssets else {
             return
@@ -173,16 +209,8 @@ final class OuroMDUpdateCoordinator: ObservableObject {
 
     func installReleaseUpdate(destinationBundle: URL = Bundle.main.bundleURL) async {
         guard !isInstalling else { return }
-        if let staged = pendingStagedUpdate {
-            installStatus = "Installing \(staged.version) and relaunching..."
-            isApplyingManualUpdate = true
-            applyAndRelaunch(staged, destinationBundle)
-            terminate()
-            return
-        }
-
         guard let snapshot = releaseSnapshot else {
-            installError = "Check for an update first."
+            setInstallFailure("Check for an update first.")
             return
         }
         let plan: OuroMDUpdatePlan
@@ -190,25 +218,27 @@ final class OuroMDUpdateCoordinator: ObservableObject {
         case let .success(value):
             plan = value
         case let .failure(error):
-            installError = error.errorDescription
+            setInstallFailure(error.errorDescription ?? error.localizedDescription)
             return
+        }
+        if let staged = pendingStagedUpdate, staged.version == plan.version {
+            applyStagedUpdateManually(staged, destinationBundle: destinationBundle)
+            return
+        } else {
+            clearPendingStagedUpdate()
         }
 
         isInstalling = true
         installError = nil
+        updatePrompt = nil
         installStatus = "Starting..."
         do {
             let staged = try await stageUpdate(plan) { status in
                 await MainActor.run { self.installStatus = status }
             }
-            installStatus = "Installing \(staged.version) and relaunching..."
-            isApplyingManualUpdate = true
-            applyAndRelaunch(staged, destinationBundle)
-            terminate()
+            applyStagedUpdateManually(staged, destinationBundle: destinationBundle)
         } catch {
-            installError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-            installStatus = nil
-            isInstalling = false
+            setInstallFailure((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
         }
     }
 
@@ -222,8 +252,9 @@ final class OuroMDUpdateCoordinator: ObservableObject {
     }
 
     private func stagePendingUpdate(from snapshot: ReleaseUpdateSnapshot) async {
-        guard pendingStagedUpdate == nil else { return }
         guard case let .success(plan) = OuroMDUpdatePlanner.plan(from: snapshot) else { return }
+        if let staged = pendingStagedUpdate, staged.version == plan.version { return }
+        clearPendingStagedUpdate()
         do {
             let staged = try await stageUpdate(plan) { _ in }
             pendingStagedUpdate = staged
@@ -231,5 +262,31 @@ final class OuroMDUpdateCoordinator: ObservableObject {
         } catch {
             // Background update staging is quiet; manual check/install reports errors.
         }
+    }
+
+    private func applyStagedUpdateManually(
+        _ staged: OuroMDUpdateInstaller.Staged,
+        destinationBundle: URL
+    ) {
+        isInstalling = true
+        installError = nil
+        updatePrompt = nil
+        clearPendingStagedUpdate()
+        installStatus = "Installing \(staged.version) and relaunching..."
+        isApplyingManualUpdate = true
+        applyAndRelaunch(staged, destinationBundle)
+        terminate()
+    }
+
+    private func clearPendingStagedUpdate() {
+        pendingStagedUpdate = nil
+        stagedUpdateVersion = nil
+    }
+
+    private func setInstallFailure(_ detail: String) {
+        installError = detail
+        installStatus = nil
+        isInstalling = false
+        updatePrompt = .failed(detail: detail)
     }
 }
