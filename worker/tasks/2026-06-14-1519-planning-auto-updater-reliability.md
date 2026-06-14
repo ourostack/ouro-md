@@ -93,3 +93,4 @@ The delicate part is not release-feed parsing; it is swapping the running app sa
 
 ## Progress Log
 - 2026-06-14 15:21 Created
+- 2026-06-14 15:22 Tinfoil pass: verified referenced files, release assets, and undo/redo route; no scope changes needed
