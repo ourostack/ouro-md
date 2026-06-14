@@ -87,7 +87,7 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 **What**: Add an Ouro MD installer/stager adapted from Workbench, with side effects isolated from AppModel and with helper-process apply/relaunch logic using the verified staged app.
 **Acceptance**: Unit 2a tests pass; the swap helper is isolated and does not run during tests.
 
-### ⬜ Unit 2c: Update Installer/Stager - Coverage & Refactor
+### ✅ Unit 2c: Update Installer/Stager - Coverage & Refactor
 **What**: Add remaining tests for installer/stager error paths and document any external-process/AppKit boundary coverage no-op dispositions.
 **Acceptance**: Stager pure/seam logic has direct branch coverage; any no-op disposition is explicit in this doing doc.
 
@@ -163,3 +163,4 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - 2026-06-14 16:19 Unit 2b review fix complete: cold reviewer found unsafe apply-helper backup/install failure handling; added `applyScript` regression coverage and fail-fast backup/install/rollback shell flow, verified by `unit2b-review-fix-*.log`
 - 2026-06-14 16:24 Unit 2b Round 2 review fix complete: cold reviewer found backup cleanup/reopen still happened before final destination proof; added ordering and temp-dir execution tests, then gated backup deletion, reopen, and staging cleanup on safe destination shape with evidence in `unit2b-review2-fix-*.log`
 - 2026-06-14 16:29 Unit 2b Round 3 review fix complete: cold reviewer found initial cleanup still destroyed a stale rollback backup; added stale-backup restore regression coverage and changed apply script to remove only `.update-new` up front, restore existing backups when destination is missing/bad, and discard stale backups only after proving a live destination, with evidence in `unit2b-review3-fix-*.log`
+- 2026-06-14 16:35 Unit 2c complete: added installer error-description and unzip fallback coverage, saved coverage export/show/summary artifacts, and recorded explicit no-op disposition for real network/process/app-swap boundaries in `unit2c-no-op-disposition.md`; `swift test --filter OuroMDUpdateInstallerTests`, `swift test`, `swift build`, and `swift test --enable-code-coverage` passed
