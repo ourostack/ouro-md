@@ -62,7 +62,7 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 
 **CRITICAL: Every unit header MUST start with status emoji (⬜ for new units).**
 
-### ⬜ Unit 0: Setup/Research
+### ✅ Unit 0: Setup/Research
 **What**: Snapshot current verification state, save baseline logs to artifacts, and confirm Workbench updater references and current Ouro MD release metadata.
 **Output**: Baseline logs under `./2026-06-14-1519-doing-auto-updater-reliability/`.
 **Acceptance**: Artifacts include baseline `swift test`, `--undotest`, release metadata, and source-reference notes.
@@ -154,3 +154,4 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 
 ## Progress Log
 - 2026-06-14 15:34 Created from planning doc after Round 4 harsh reviewer convergence
+- 2026-06-14 15:56 Unit 0 complete: saved baseline release metadata and verification logs; baseline `swift test`, `--undotest`, `--wraptest`, `--renderprobe`, and `--roundtrip sample.md` all exited successfully
