@@ -223,9 +223,63 @@ final class OuroMDUpdateInstallerTests: XCTestCase {
         XCTAssertTrue(script.contains("if [ -e \"$DEST\" ] && ! /bin/mv \"$DEST\" \"$DEST.update-bak\"; then"))
         XCTAssertTrue(script.contains("exit 1"))
         XCTAssertTrue(script.contains("if /bin/mv \"$DEST.update-new\" \"$DEST\"; then"))
-        XCTAssertTrue(script.contains("elif [ -d \"$DEST.update-bak\" ]; then"))
-        XCTAssertTrue(script.contains("/bin/mv \"$DEST.update-bak\" \"$DEST\" 2>/dev/null || true"))
-        XCTAssertTrue(script.contains("[ -d \"$DEST\" ] || exit 1"))
+        XCTAssertTrue(script.contains("restore_backup()"))
+        XCTAssertTrue(script.contains("if ! /bin/mv \"$DEST.update-bak\" \"$DEST\"; then"))
+        XCTAssertTrue(script.contains("if [ ! -d \"$DEST\" ]; then"))
+    }
+
+    func testApplyScriptDoesNotDeleteBackupBeforeDestinationShapeIsProven() throws {
+        let script = OuroMDUpdateInstaller.applyScript(
+            staged: OuroMDUpdateInstaller.Staged(
+                appURL: URL(fileURLWithPath: "/tmp/staged/Ouro MD.app"),
+                stagingRoot: URL(fileURLWithPath: "/tmp/staged"),
+                version: "0.10.0"
+            ),
+            destinationBundle: URL(fileURLWithPath: "/Applications/Ouro MD.app"),
+            relaunch: false,
+            waitingForPID: 999_999
+        )
+
+        let destinationGuard = try XCTUnwrap(script.range(of: "if [ ! -d \"$DEST\" ]; then"))
+        let backupRemoval = try XCTUnwrap(script.range(of: "/bin/rm -rf \"$DEST.update-bak\""))
+
+        XCTAssertLessThan(destinationGuard.lowerBound, backupRemoval.lowerBound)
+        XCTAssertFalse(script.contains("/bin/mv \"$DEST.update-bak\" \"$DEST\" 2>/dev/null || true"))
+    }
+
+    func testApplyScriptRunsInTemporaryDirectoryWithoutNestingUpdatedApp() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-apply-script-\(UUID().uuidString)", isDirectory: true)
+        let stagedApp = root.appendingPathComponent("staged/Ouro MD.app", isDirectory: true)
+        let destApp = root.appendingPathComponent("installed/Ouro MD.app", isDirectory: true)
+        try FileManager.default.createDirectory(at: stagedApp, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: destApp, withIntermediateDirectories: true)
+        try Data("new".utf8).write(to: stagedApp.appendingPathComponent("new.txt"))
+        try Data("old".utf8).write(to: destApp.appendingPathComponent("old.txt"))
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let script = OuroMDUpdateInstaller.applyScript(
+            staged: OuroMDUpdateInstaller.Staged(
+                appURL: stagedApp,
+                stagingRoot: root.appendingPathComponent("staged", isDirectory: true),
+                version: "0.10.0"
+            ),
+            destinationBundle: destApp,
+            relaunch: false,
+            waitingForPID: 999_999
+        )
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/sh")
+        process.arguments = ["-c", script]
+        try process.run()
+        process.waitUntilExit()
+
+        XCTAssertEqual(process.terminationStatus, 0)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: destApp.appendingPathComponent("new.txt").path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: destApp.appendingPathComponent("Ouro MD.app").path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: destApp.path + ".update-bak"))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("staged").path))
     }
 
     private func updatePlan() -> OuroMDUpdatePlan {

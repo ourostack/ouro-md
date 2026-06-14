@@ -179,26 +179,46 @@ struct OuroMDUpdateInstaller: Sendable {
         DEST=\(shellQuoted(dest))
         STAGED=\(shellQuoted(staged.appURL.path))
         STAGING_ROOT=\(shellQuoted(staged.stagingRoot.path))
+        reopen_if_safe() {
+          [ -d "$DEST" ] && \(reopen.isEmpty ? ":" : "/usr/bin/open \"$DEST\"")
+        }
+        restore_backup() {
+          if [ -d "$DEST.update-bak" ]; then
+            /bin/rm -rf "$DEST"
+            if ! /bin/mv "$DEST.update-bak" "$DEST"; then
+              exit 1
+            fi
+            if [ ! -d "$DEST" ]; then
+              exit 1
+            fi
+          fi
+        }
         /bin/rm -rf "$DEST.update-new" "$DEST.update-bak"
         if ! /usr/bin/ditto "$STAGED" "$DEST.update-new"; then
-          \(reopen)exit 1
+          reopen_if_safe
+          exit 1
         fi
         if [ -e "$DEST" ] && ! /bin/mv "$DEST" "$DEST.update-bak"; then
           /bin/rm -rf "$DEST.update-new"
-          \(reopen)exit 1
+          reopen_if_safe
+          exit 1
         fi
         if /bin/mv "$DEST.update-new" "$DEST"; then
+          if [ ! -d "$DEST" ]; then
+            restore_backup
+            reopen_if_safe
+            exit 1
+          fi
           /bin/rm -rf "$DEST.update-bak"
-        elif [ -d "$DEST.update-bak" ]; then
-          /bin/mv "$DEST.update-bak" "$DEST" 2>/dev/null || true
-          \(reopen)exit 1
         else
-          \(reopen)exit 1
+          restore_backup
+          reopen_if_safe
+          exit 1
         fi
-        [ -d "$DEST" ] || exit 1
         /usr/bin/xattr -dr com.apple.quarantine "$DEST" 2>/dev/null || true
         \(shellQuoted(lsregister)) -f "$DEST" 2>/dev/null || true
-        \(reopen)/bin/rm -rf "$STAGING_ROOT" 2>/dev/null
+        reopen_if_safe
+        /bin/rm -rf "$STAGING_ROOT" 2>/dev/null
         """
     }
 
