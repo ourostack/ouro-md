@@ -23,7 +23,7 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - Add pure, unit-tested release snapshot, asset planning, manifest decoding, semantic version comparison, and archive verification logic.
 - Add an updater installer/stager adapted from Workbench for `Ouro MD.app` and bundle id `org.ourostack.ouro-md`, including sha256, byte count, bundle id, version, extracted app identity, and codesign verification before any swap.
 - Add a safe user-triggered update path, such as `Ouro MD -> Check for Updates...` or an equivalent native menu/prompt, that can install and relaunch only after successful staging.
-- Add throttled launch-time update checking and background staging. Default behavior: check at most once per configured interval, silently stage a verified update when one exists, expose a visible update prompt/menu action once staged, and apply the staged update on normal app quit without surprise relaunch. Manual `Check for Updates...` may install and relaunch immediately after confirmation.
+- Add throttled launch-time update checking and background staging. Default behavior: enabled by default, persisted opt-out, check at most once every 3600 seconds, silently stage a verified update when one exists, expose a visible update prompt/menu action once staged, and apply the staged update on normal app quit without surprise relaunch. Manual `Check for Updates...` may install and relaunch immediately after confirmation.
 - Keep updater logic in focused new files and only add thin lifecycle/menu hooks to existing app coordinator code.
 - Expand undo/redo verification beyond the existing single-edit `--undotest`: multi-step undo/redo, redo invalidation after a new edit, empty-stack no-op behavior, Vditor mode rebuild behavior, native menu selector forwarding to the editor when no native text field owns focus, and native text-field undo/redo preservation when a native `NSTextView` owns focus. If an AppKit focus case cannot be automated reliably in this repo, record an explicit no-op disposition in the doing doc with the attempted harness and the remaining manual smoke command.
 - Fix version truth drift so CLI/docs/release metadata agree on the current version and install URL.
@@ -43,7 +43,7 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - [ ] In-app update check can detect current, update-available, unavailable, missing asset, and malformed manifest cases.
 - [ ] Update installation refuses bad sha256, byte count, archive name, bundle id, non-newer version, missing app bundle, and failed codesign checks.
 - [ ] A safe manual update UI/action exists and does not swap the running app unless staging and verification succeeded.
-- [ ] Launch-time update checking is throttled, does not block document editing startup, stages verified updates in the background, and applies a staged update only on normal app quit or explicit manual install/relaunch.
+- [ ] Launch-time update checking is enabled by default, has a persisted opt-out, is throttled to 3600 seconds by default, does not block document editing startup, stages verified updates in the background, and applies a staged update only on normal app quit or explicit manual install/relaunch.
 - [ ] Updater implementation keeps pure logic and installer/stager code outside `AppModel.swift`; existing files get only focused lifecycle/menu hooks.
 - [ ] Undo/redo harness coverage proves multi-step undo/redo, redo invalidation after a new edit, empty-stack no-op safety, behavior across Vditor mode rebuilds, native menu selector forwarding, and native text-field focus preservation; any non-automated AppKit focus proof has an explicit no-op disposition plus a manual smoke command.
 - [ ] `swift run ouro-md --undotest` passes.
@@ -51,8 +51,8 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - [ ] `swift run ouro-md --renderprobe` passes.
 - [ ] Release/version truth is consistent across CLI, bundle metadata, README, and updater configuration.
 - [ ] `swift test` passes and emits no Swift compiler warnings for repo source or test files.
-- [ ] `swift test --enable-code-coverage` runs successfully; coverage output is saved in the doing artifacts, and every new pure Swift type/function added for release/update logic has direct unit coverage for success, boundary, and error paths.
-- [ ] All verification commands pass: `swift test`, `swift test --enable-code-coverage`, `swift run ouro-md --undotest`, `swift run ouro-md --wraptest`, `swift run ouro-md --renderprobe`, `swift run ouro-md --roundtrip sample.md`, `./scripts/package-release.sh`, and the live installer smoke for the newly published release.
+- [ ] `swift test --enable-code-coverage` runs successfully; `xcrun llvm-cov export` output is saved to the doing artifacts as `coverage.json`; a deterministic coverage check over changed/new non-harness Swift files reports 100% line coverage or the doing doc records an explicit no-op disposition for code that is not meaningfully coverable because it is an external-process/AppKit boundary already exercised by an E2E harness.
+- [ ] All verification commands pass: `swift test`, `swift test --enable-code-coverage`, the changed/new-file coverage check, `swift run ouro-md --undotest`, `swift run ouro-md --wraptest`, `swift run ouro-md --renderprobe`, `swift run ouro-md --roundtrip sample.md`, `./scripts/package-release.sh`, and the safe live installer smoke `OURO_MD_INSTALL_DIR="$(mktemp -d)" OURO_MD_NO_OPEN=1 curl -fsSL https://ouro.bot/ouro-md-install.sh | bash` after the release is published.
 - [ ] No warnings from Swift compilation or release packaging commands.
 
 ## Code Coverage Requirements
@@ -63,9 +63,9 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - Edge cases: null, empty, boundary values
 
 ## Open Questions
-- [x] Launch-time updater workflow: use throttled auto-check + background stage + apply-on-quit; manual check can install and relaunch immediately.
+- [x] Launch-time updater workflow: use default-on throttled auto-check every 3600 seconds + persisted opt-out + background stage + apply-on-quit; manual check can install and relaunch immediately.
 - [x] Undo/redo automation boundary: automate core stack and native routing cases where possible; any AppKit focus case that proves non-deterministic must be recorded as an explicit no-op disposition with a manual smoke command rather than left vague.
-- [x] Coverage/warning boundary: require `swift test`, `swift test --enable-code-coverage`, explicit coverage artifacts for new update pure logic, and no Swift compiler warnings in repo source/test output.
+- [x] Coverage/warning boundary: require `swift test`, `swift test --enable-code-coverage`, `xcrun llvm-cov export` artifact, deterministic changed/new-file coverage check, and no Swift compiler warnings in repo source/test output.
 
 ## Decisions Made
 - Use branch `worker/ouro-md-auto-updater`; `worker` is the agent path segment and task docs live under `worker/tasks/`.
@@ -76,6 +76,7 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - Defer folder scanner performance item A-006 until after the updater lands; it is real but not on the critical trust path.
 - Launch-time updater behavior mirrors Workbench's safest user experience: background staging plus install-on-quit, not an unexpected mid-session relaunch.
 - Documentation truth includes installer comments as well as README copy, because the live one-line script is itself user-facing.
+- Live installer smoke is constrained to a temporary install directory with `OURO_MD_NO_OPEN=1` so verification proves the published pretty URL works without mutating `/Applications` or launching the app.
 
 ## Context / References
 - Audit report: `worker/tasks/2026-06-14-1519-audit-ouro-md/audit-report.md`
@@ -99,3 +100,4 @@ The delicate part is not release-feed parsing; it is swapping the running app sa
 - 2026-06-14 15:21 Created
 - 2026-06-14 15:22 Tinfoil pass: verified referenced files, release assets, and undo/redo route; no scope changes needed
 - 2026-06-14 15:24 Reviewer Round 1 findings addressed: made launch-time workflow explicit, tightened undo/redo evidence, made verification commands measurable, and included installer comments in documentation scope
+- 2026-06-14 15:28 Reviewer Round 2 findings addressed: specified 3600-second/default-on updater policy, exact coverage artifact/check shape, and safe live installer smoke command
