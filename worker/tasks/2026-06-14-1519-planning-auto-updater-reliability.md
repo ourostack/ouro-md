@@ -23,12 +23,12 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - Add pure, unit-tested release snapshot, asset planning, manifest decoding, semantic version comparison, and archive verification logic.
 - Add an updater installer/stager adapted from Workbench for `Ouro MD.app` and bundle id `org.ourostack.ouro-md`, including sha256, byte count, bundle id, version, extracted app identity, and codesign verification before any swap.
 - Add a safe user-triggered update path, such as `Ouro MD -> Check for Updates...` or an equivalent native menu/prompt, that can install and relaunch only after successful staging.
-- Add throttled launch-time update checking/staging if it can be integrated cleanly without bloating `AppModel.swift`.
+- Add throttled launch-time update checking and background staging. Default behavior: check at most once per configured interval, silently stage a verified update when one exists, expose a visible update prompt/menu action once staged, and apply the staged update on normal app quit without surprise relaunch. Manual `Check for Updates...` may install and relaunch immediately after confirmation.
 - Keep updater logic in focused new files and only add thin lifecycle/menu hooks to existing app coordinator code.
-- Expand undo/redo verification beyond the existing single-edit `--undotest`, with emphasis on multi-step undo/redo, redo invalidation after a new edit, empty-stack no-op behavior, shortcut/menu routing, and focus interactions where feasible.
+- Expand undo/redo verification beyond the existing single-edit `--undotest`: multi-step undo/redo, redo invalidation after a new edit, empty-stack no-op behavior, Vditor mode rebuild behavior, native menu selector forwarding to the editor when no native text field owns focus, and native text-field undo/redo preservation when a native `NSTextView` owns focus. If an AppKit focus case cannot be automated reliably in this repo, record an explicit no-op disposition in the doing doc with the attempted harness and the remaining manual smoke command.
 - Fix version truth drift so CLI/docs/release metadata agree on the current version and install URL.
 - Remove existing Swift test warnings from weak `MockBridge` assignments.
-- Update README only where needed to match current release/update behavior and the live `https://ouro.bot/ouro-md-install.sh` installer route.
+- Update README and installer script comments only where needed to match current release/update behavior and the live `https://ouro.bot/ouro-md-install.sh` installer route.
 - Preserve existing distribution behavior: release zip plus manifest, one-line installer, ad-hoc signing until Developer ID signing exists.
 
 ### Out of Scope
@@ -43,17 +43,17 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - [ ] In-app update check can detect current, update-available, unavailable, missing asset, and malformed manifest cases.
 - [ ] Update installation refuses bad sha256, byte count, archive name, bundle id, non-newer version, missing app bundle, and failed codesign checks.
 - [ ] A safe manual update UI/action exists and does not swap the running app unless staging and verification succeeded.
-- [ ] Launch-time update checking is throttled and does not block document editing startup.
+- [ ] Launch-time update checking is throttled, does not block document editing startup, stages verified updates in the background, and applies a staged update only on normal app quit or explicit manual install/relaunch.
 - [ ] Updater implementation keeps pure logic and installer/stager code outside `AppModel.swift`; existing files get only focused lifecycle/menu hooks.
-- [ ] Undo/redo harness coverage proves more than the current single edit -> undo -> redo path, including redo invalidation and no-op safety where feasible.
+- [ ] Undo/redo harness coverage proves multi-step undo/redo, redo invalidation after a new edit, empty-stack no-op safety, behavior across Vditor mode rebuilds, native menu selector forwarding, and native text-field focus preservation; any non-automated AppKit focus proof has an explicit no-op disposition plus a manual smoke command.
 - [ ] `swift run ouro-md --undotest` passes.
 - [ ] `swift run ouro-md --wraptest` passes.
 - [ ] `swift run ouro-md --renderprobe` passes.
 - [ ] Release/version truth is consistent across CLI, bundle metadata, README, and updater configuration.
-- [ ] `swift test` passes without Swift warnings from the test suite.
-- [ ] 100% test coverage on all new code
-- [ ] All tests pass
-- [ ] No warnings
+- [ ] `swift test` passes and emits no Swift compiler warnings for repo source or test files.
+- [ ] `swift test --enable-code-coverage` runs successfully; coverage output is saved in the doing artifacts, and every new pure Swift type/function added for release/update logic has direct unit coverage for success, boundary, and error paths.
+- [ ] All verification commands pass: `swift test`, `swift test --enable-code-coverage`, `swift run ouro-md --undotest`, `swift run ouro-md --wraptest`, `swift run ouro-md --renderprobe`, `swift run ouro-md --roundtrip sample.md`, `./scripts/package-release.sh`, and the live installer smoke for the newly published release.
+- [ ] No warnings from Swift compilation or release packaging commands.
 
 ## Code Coverage Requirements
 **MANDATORY: 100% coverage on all new code.**
@@ -63,7 +63,9 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - Edge cases: null, empty, boundary values
 
 ## Open Questions
-- [ ] None. The first execution tranche is intentionally limited to updater, undo/redo, release truth, warning cleanup, and directly required docs.
+- [x] Launch-time updater workflow: use throttled auto-check + background stage + apply-on-quit; manual check can install and relaunch immediately.
+- [x] Undo/redo automation boundary: automate core stack and native routing cases where possible; any AppKit focus case that proves non-deterministic must be recorded as an explicit no-op disposition with a manual smoke command rather than left vague.
+- [x] Coverage/warning boundary: require `swift test`, `swift test --enable-code-coverage`, explicit coverage artifacts for new update pure logic, and no Swift compiler warnings in repo source/test output.
 
 ## Decisions Made
 - Use branch `worker/ouro-md-auto-updater`; `worker` is the agent path segment and task docs live under `worker/tasks/`.
@@ -72,6 +74,8 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - Keep Developer ID signing/notarization out of this code tranche. The updater should still verify the existing ad-hoc signed bundle with `codesign --verify --deep --strict`, matching the current release reality.
 - Treat undo/redo as a first-class reliability target, not a minor regression test.
 - Defer folder scanner performance item A-006 until after the updater lands; it is real but not on the critical trust path.
+- Launch-time updater behavior mirrors Workbench's safest user experience: background staging plus install-on-quit, not an unexpected mid-session relaunch.
+- Documentation truth includes installer comments as well as README copy, because the live one-line script is itself user-facing.
 
 ## Context / References
 - Audit report: `worker/tasks/2026-06-14-1519-audit-ouro-md/audit-report.md`
@@ -94,3 +98,4 @@ The delicate part is not release-feed parsing; it is swapping the running app sa
 ## Progress Log
 - 2026-06-14 15:21 Created
 - 2026-06-14 15:22 Tinfoil pass: verified referenced files, release assets, and undo/redo route; no scope changes needed
+- 2026-06-14 15:24 Reviewer Round 1 findings addressed: made launch-time workflow explicit, tightened undo/redo evidence, made verification commands measurable, and included installer comments in documentation scope
