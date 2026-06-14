@@ -75,7 +75,7 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 **What**: Add focused pure Swift updater types outside `AppModel.swift`, centralize version/bundle identity for CLI/updater use, and satisfy Unit 1a tests.
 **Acceptance**: Unit 1a tests pass; CLI version is sourced from the new release descriptor.
 
-### ⬜ Unit 1c: Release Truth And Pure Updater Logic - Coverage & Refactor
+### ✅ Unit 1c: Release Truth And Pure Updater Logic - Coverage & Refactor
 **What**: Refactor pure updater logic, add missing branch/error tests, and keep release descriptor naming clear.
 **Acceptance**: Pure updater tests cover success, boundary, and error paths; `swift test` passes for the targeted test set.
 
@@ -157,3 +157,4 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - 2026-06-14 15:56 Unit 0 complete: saved baseline release metadata and verification logs; baseline `swift test`, `--undotest`, `--wraptest`, `--renderprobe`, and `--roundtrip sample.md` all exited successfully
 - 2026-06-14 15:58 Unit 1a complete: added pure updater/release tests and saved the expected red `swift test` compile failure to `./2026-06-14-1519-doing-auto-updater-reliability/unit1a-red-swift-test.log`
 - 2026-06-14 16:01 Unit 1b complete: added `OuroMDRelease`, release snapshot parsing, update planning, manifest verification, and auto-update policy; `swift test`, `swift build`, and `swift run ouro-md --version` passed with evidence in `unit1b-*.log`
+- 2026-06-14 16:06 Unit 1c complete: added request-shape/status tests for the default GitHub loader, release configuration coverage, malformed-tag coverage, and prerelease filtering; `swift test --filter ReleaseUpdateTests`, `swift test`, `swift build`, and `swift test --enable-code-coverage` passed with evidence in `unit1c-*.log` (coverage log still shows the pre-existing weak `MockBridge` warnings routed to Unit 5)
