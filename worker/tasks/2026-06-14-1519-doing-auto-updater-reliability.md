@@ -67,7 +67,7 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 **Output**: Baseline logs under `./2026-06-14-1519-doing-auto-updater-reliability/`.
 **Acceptance**: Artifacts include baseline `swift test`, `--undotest`, release metadata, and source-reference notes.
 
-### ⬜ Unit 1a: Release Truth And Pure Updater Logic - Tests
+### ✅ Unit 1a: Release Truth And Pure Updater Logic - Tests
 **What**: Write failing tests for a new Ouro MD release descriptor, release update snapshot parsing, update planning, manifest decoding, semantic version comparison, auto-update policy, and archive verification failures.
 **Acceptance**: New tests fail before implementation because the new release/update types do not exist or return missing behavior.
 
@@ -155,3 +155,4 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 ## Progress Log
 - 2026-06-14 15:34 Created from planning doc after Round 4 harsh reviewer convergence
 - 2026-06-14 15:56 Unit 0 complete: saved baseline release metadata and verification logs; baseline `swift test`, `--undotest`, `--wraptest`, `--renderprobe`, and `--roundtrip sample.md` all exited successfully
+- 2026-06-14 15:58 Unit 1a complete: added pure updater/release tests and saved the expected red `swift test` compile failure to `./2026-06-14-1519-doing-auto-updater-reliability/unit1a-red-swift-test.log`
