@@ -51,8 +51,8 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - [ ] `swift run ouro-md --renderprobe` passes.
 - [ ] Release/version truth is consistent across CLI, bundle metadata, README, and updater configuration.
 - [ ] `swift test` passes and emits no Swift compiler warnings for repo source or test files.
-- [ ] `swift test --enable-code-coverage` runs successfully; `xcrun llvm-cov export` output is saved to the doing artifacts as `coverage.json`; a deterministic coverage check over changed/new non-harness Swift files reports 100% line coverage or the doing doc records an explicit no-op disposition for code that is not meaningfully coverable because it is an external-process/AppKit boundary already exercised by an E2E harness.
-- [ ] All verification commands pass: `swift test`, `swift test --enable-code-coverage`, the changed/new-file coverage check, `swift run ouro-md --undotest`, `swift run ouro-md --wraptest`, `swift run ouro-md --renderprobe`, `swift run ouro-md --roundtrip sample.md`, `./scripts/package-release.sh`, and the safe live installer smoke `OURO_MD_INSTALL_DIR="$(mktemp -d)" OURO_MD_NO_OPEN=1 curl -fsSL https://ouro.bot/ouro-md-install.sh | bash` after the release is published.
+- [ ] `swift test --enable-code-coverage` runs successfully; `xcrun llvm-cov export` output is saved to the doing artifacts as `coverage.json`; the doing artifacts include and run `check-changed-coverage.py` with `BASE_REF="$(git merge-base origin/main HEAD)"`, path filter `Sources/OuroMD/*.swift` excluding harness files (`UndoTest.swift`, `WrapTest.swift`, `RenderProbe.swift`, `RoundTrip.swift`, `Snapshot.swift`, `main.swift`), and it fails unless every executable line in changed/new non-harness Swift files is covered or the doing doc records an explicit no-op disposition for external-process/AppKit boundary code already exercised by an E2E harness.
+- [ ] All verification commands pass: `swift test`, `swift test --enable-code-coverage`, `python3 worker/tasks/2026-06-14-1519-doing-auto-updater-reliability/check-changed-coverage.py --base "$(git merge-base origin/main HEAD)" --coverage worker/tasks/2026-06-14-1519-doing-auto-updater-reliability/coverage.json`, `swift run ouro-md --undotest`, `swift run ouro-md --wraptest`, `swift run ouro-md --renderprobe`, `swift run ouro-md --roundtrip sample.md`, `./scripts/package-release.sh`, and the safe live installer smoke `tmp="$(mktemp -d)"; curl -fsSL https://ouro.bot/ouro-md-install.sh | OURO_MD_INSTALL_DIR="$tmp" OURO_MD_NO_OPEN=1 bash` after the release is published.
 - [ ] No warnings from Swift compilation or release packaging commands.
 
 ## Code Coverage Requirements
@@ -65,7 +65,7 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 ## Open Questions
 - [x] Launch-time updater workflow: use default-on throttled auto-check every 3600 seconds + persisted opt-out + background stage + apply-on-quit; manual check can install and relaunch immediately.
 - [x] Undo/redo automation boundary: automate core stack and native routing cases where possible; any AppKit focus case that proves non-deterministic must be recorded as an explicit no-op disposition with a manual smoke command rather than left vague.
-- [x] Coverage/warning boundary: require `swift test`, `swift test --enable-code-coverage`, `xcrun llvm-cov export` artifact, deterministic changed/new-file coverage check, and no Swift compiler warnings in repo source/test output.
+- [x] Coverage/warning boundary: require `swift test`, `swift test --enable-code-coverage`, `xcrun llvm-cov export` artifact, deterministic `check-changed-coverage.py` over changed/new non-harness Swift files relative to `git merge-base origin/main HEAD`, and no Swift compiler warnings in repo source/test output.
 
 ## Decisions Made
 - Use branch `worker/ouro-md-auto-updater`; `worker` is the agent path segment and task docs live under `worker/tasks/`.
@@ -76,7 +76,7 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - Defer folder scanner performance item A-006 until after the updater lands; it is real but not on the critical trust path.
 - Launch-time updater behavior mirrors Workbench's safest user experience: background staging plus install-on-quit, not an unexpected mid-session relaunch.
 - Documentation truth includes installer comments as well as README copy, because the live one-line script is itself user-facing.
-- Live installer smoke is constrained to a temporary install directory with `OURO_MD_NO_OPEN=1` so verification proves the published pretty URL works without mutating `/Applications` or launching the app.
+- Live installer smoke pipes the script into `bash` with `OURO_MD_INSTALL_DIR` and `OURO_MD_NO_OPEN=1` applied to the `bash` process, not `curl`, so verification proves the published pretty URL works without mutating `/Applications` or launching the app.
 
 ## Context / References
 - Audit report: `worker/tasks/2026-06-14-1519-audit-ouro-md/audit-report.md`
@@ -101,3 +101,4 @@ The delicate part is not release-feed parsing; it is swapping the running app sa
 - 2026-06-14 15:22 Tinfoil pass: verified referenced files, release assets, and undo/redo route; no scope changes needed
 - 2026-06-14 15:24 Reviewer Round 1 findings addressed: made launch-time workflow explicit, tightened undo/redo evidence, made verification commands measurable, and included installer comments in documentation scope
 - 2026-06-14 15:28 Reviewer Round 2 findings addressed: specified 3600-second/default-on updater policy, exact coverage artifact/check shape, and safe live installer smoke command
+- 2026-06-14 15:31 Reviewer Round 3 findings addressed: fixed installer-smoke env placement and specified the changed-file coverage checker path, diff base, path filter, and invocation
