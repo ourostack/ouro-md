@@ -1,0 +1,145 @@
+# Doing: Ouro MD Auto-Updater And Reliability Hardening
+
+**Status**: READY_FOR_EXECUTION
+**Execution Mode**: direct
+**Created**: 2026-06-14 15:34
+**Planning**: ./2026-06-14-1519-planning-auto-updater-reliability.md
+**Artifacts**: ./2026-06-14-1519-doing-auto-updater-reliability/
+
+## Execution Mode
+
+- **pending**: Awaiting user approval before each unit starts (non-autopilot interactive mode only; autopilot must convert this to `spawn` or `direct` unless a hard exception is present)
+- **spawn**: Spawn sub-agent for each unit (parallel/autonomous)
+- **direct**: Execute units sequentially in current session (default)
+
+## Objective
+Add the in-app auto-updater and use the full-system audit to harden the release, shortcut, warning, and documentation surfaces that most affect day-to-day trust in Ouro MD.
+
+## Upstream Work Items
+- A-001 - Add in-app auto-updater
+- A-002 - Bulletproof undo/redo shortcuts and stack behavior
+- A-003 - Centralize and correct version/release truth
+- A-004 - Remove Swift test warnings
+- A-005 - Keep updater state out of AppModel god-object growth
+- A-007 - Refresh README after pretty URL and updater work
+
+## Completion Criteria
+- [ ] In-app update check can detect current, update-available, unavailable, missing asset, and malformed manifest cases.
+- [ ] Update installation refuses bad sha256, byte count, archive name, bundle id, non-newer version, missing app bundle, and failed codesign checks.
+- [ ] A safe manual update UI/action exists and does not swap the running app unless staging and verification succeeded.
+- [ ] Launch-time update checking is enabled by default, has a persisted opt-out, is throttled to 3600 seconds by default, does not block document editing startup, stages verified updates in the background, and applies a staged update only on normal app quit or explicit manual install/relaunch.
+- [ ] Updater implementation keeps pure logic and installer/stager code outside `AppModel.swift`; existing files get only focused lifecycle/menu hooks.
+- [ ] Undo/redo harness coverage proves multi-step undo/redo, redo invalidation after a new edit, empty-stack no-op safety, behavior across Vditor mode rebuilds, native menu selector forwarding, and native text-field focus preservation; any non-automated AppKit focus proof has an explicit no-op disposition plus a manual smoke command.
+- [ ] `swift run ouro-md --undotest` passes.
+- [ ] `swift run ouro-md --wraptest` passes.
+- [ ] `swift run ouro-md --renderprobe` passes.
+- [ ] Release/version truth is consistent across CLI, bundle metadata, README, and updater configuration.
+- [ ] `swift test` passes and emits no Swift compiler warnings for repo source or test files.
+- [ ] `swift test --enable-code-coverage` runs successfully; `xcrun llvm-cov export` output is saved to the doing artifacts as `coverage.json`; the doing artifacts include and run `check-changed-coverage.py` with `BASE_REF="$(git merge-base origin/main HEAD)"`, path filter `Sources/OuroMD/*.swift` excluding harness files (`UndoTest.swift`, `WrapTest.swift`, `RenderProbe.swift`, `RoundTrip.swift`, `Snapshot.swift`, `main.swift`), and it fails unless every executable line in changed/new non-harness Swift files is covered or the doing doc records an explicit no-op disposition for external-process/AppKit boundary code already exercised by an E2E harness.
+- [ ] All verification commands pass: `swift test`, `swift test --enable-code-coverage`, `python3 worker/tasks/2026-06-14-1519-doing-auto-updater-reliability/check-changed-coverage.py --base "$(git merge-base origin/main HEAD)" --coverage worker/tasks/2026-06-14-1519-doing-auto-updater-reliability/coverage.json`, `swift run ouro-md --undotest`, `swift run ouro-md --wraptest`, `swift run ouro-md --renderprobe`, `swift run ouro-md --roundtrip sample.md`, `./scripts/package-release.sh`, and the safe live installer smoke `tmp="$(mktemp -d)"; curl -fsSL https://ouro.bot/ouro-md-install.sh | OURO_MD_INSTALL_DIR="$tmp" OURO_MD_NO_OPEN=1 bash` after the release is published.
+- [ ] No warnings from Swift compilation or release packaging commands.
+
+## Code Coverage Requirements
+**MANDATORY: 100% coverage on all new code.**
+- No `[ExcludeFromCodeCoverage]` or equivalent on new code
+- All branches covered (if/else, switch, try/catch)
+- All error paths tested
+- Edge cases: null, empty, boundary values
+
+## TDD Requirements
+**Strict TDD - no exceptions:**
+1. **Tests first**: Write failing tests BEFORE any implementation
+2. **Verify failure**: Run tests, confirm they FAIL (red)
+3. **Minimal implementation**: Write just enough code to pass
+4. **Verify pass**: Run tests, confirm they PASS (green)
+5. **Refactor**: Clean up, keep tests green
+6. **No skipping**: Never write implementation without failing test first
+
+## Work Units
+
+### Legend
+⬜ Not started · 🔄 In progress · ✅ Done · ❌ Blocked
+
+**CRITICAL: Every unit header MUST start with status emoji (⬜ for new units).**
+
+### ⬜ Unit 0: Setup/Research
+**What**: Snapshot current verification state, save baseline logs to artifacts, and confirm Workbench updater references and current Ouro MD release metadata.
+**Output**: Baseline logs under `./2026-06-14-1519-doing-auto-updater-reliability/`.
+**Acceptance**: Artifacts include baseline `swift test`, `--undotest`, release metadata, and source-reference notes.
+
+### ⬜ Unit 1a: Release Truth And Pure Updater Logic - Tests
+**What**: Write failing tests for a new Ouro MD release descriptor, release update snapshot parsing, update planning, manifest decoding, semantic version comparison, auto-update policy, and archive verification failures.
+**Acceptance**: New tests fail before implementation because the new release/update types do not exist or return missing behavior.
+
+### ⬜ Unit 1b: Release Truth And Pure Updater Logic - Implementation
+**What**: Add focused pure Swift updater types outside `AppModel.swift`, centralize version/bundle identity for CLI/updater use, and satisfy Unit 1a tests.
+**Acceptance**: Unit 1a tests pass; CLI version is sourced from the new release descriptor.
+
+### ⬜ Unit 1c: Release Truth And Pure Updater Logic - Coverage & Refactor
+**What**: Refactor pure updater logic, add missing branch/error tests, and keep release descriptor naming clear.
+**Acceptance**: Pure updater tests cover success, boundary, and error paths; `swift test` passes for the targeted test set.
+
+### ⬜ Unit 2a: Update Installer/Stager - Tests
+**What**: Write failing tests or a testable seam for download/stage/verify/extract behavior: manifest decode failure, sha mismatch, byte mismatch, archive-name mismatch, bundle-id mismatch, non-newer version, missing staged app, and staged Info.plist mismatch.
+**Acceptance**: Tests fail before implementation because installer/stager seams and errors are missing.
+
+### ⬜ Unit 2b: Update Installer/Stager - Implementation
+**What**: Add an Ouro MD installer/stager adapted from Workbench, with side effects isolated from AppModel and with helper-process apply/relaunch logic using the verified staged app.
+**Acceptance**: Unit 2a tests pass; the swap helper is isolated and does not run during tests.
+
+### ⬜ Unit 2c: Update Installer/Stager - Coverage & Refactor
+**What**: Add remaining tests for installer/stager error paths and document any external-process/AppKit boundary coverage no-op dispositions.
+**Acceptance**: Stager pure/seam logic has direct branch coverage; any no-op disposition is explicit in this doing doc.
+
+### ⬜ Unit 3a: App Integration And Update UI - Tests
+**What**: Write failing tests for auto-update policy/defaults, persisted opt-out, 3600-second throttling, manual update prompt state, and thin app coordinator behavior where testable.
+**Acceptance**: Tests fail before implementation because app integration/update state does not exist.
+
+### ⬜ Unit 3b: App Integration And Update UI - Implementation
+**What**: Add `Check for Updates...`, update prompt/status state, launch-time background staging, install-on-quit, persisted opt-out, and preferences/menu hooks while keeping existing files thin.
+**Acceptance**: Unit 3a tests pass; updater logic remains outside `AppModel.swift` except for minimal UI/lifecycle hooks if unavoidable.
+
+### ⬜ Unit 3c: App Integration And Update UI - Coverage & Refactor
+**What**: Refactor app integration for clarity and add missing tests for defaults/throttle/prompt transitions.
+**Acceptance**: Integration tests cover policy and state transitions; UI hooks are documented and narrow.
+
+### ⬜ Unit 4a: Undo/Redo Bulletproofing - Tests
+**What**: Expand the headless undo harness and/or add native unit seams to fail on multi-step undo/redo, redo invalidation after a new edit, empty-stack no-op safety, behavior across Vditor mode rebuilds, native menu selector forwarding, and native text-field focus preservation.
+**Acceptance**: Expanded tests fail before implementation or harness changes because current proof does not cover the new cases.
+
+### ⬜ Unit 4b: Undo/Redo Bulletproofing - Implementation
+**What**: Adjust undo/redo bridge/menu behavior only as required by Unit 4a; otherwise make the harness prove the existing implementation is correct.
+**Acceptance**: Expanded undo/redo tests pass and existing `--undotest` remains green.
+
+### ⬜ Unit 4c: Undo/Redo Bulletproofing - Coverage & Refactor
+**What**: Refactor undo test output for clear pass/fail evidence and record any native AppKit focus no-op disposition if automation is not reliable.
+**Acceptance**: `swift run ouro-md --undotest` proves all required undo/redo cases or the doing doc records an explicit no-op disposition with manual smoke command.
+
+### ⬜ Unit 5a: Warning Cleanup And Documentation Truth - Tests
+**What**: Write failing or currently-warning verification for weak `MockBridge` assignments and add doc/install truth checks if practical.
+**Acceptance**: Baseline verification shows the current warnings or stale text before fixes.
+
+### ⬜ Unit 5b: Warning Cleanup And Documentation Truth - Implementation
+**What**: Fix weak mock bridge warning patterns, update README and `web/ouro-md-install.sh` comments for v0.9.0, pretty URL, and updater behavior, and keep package/install behavior unchanged.
+**Acceptance**: `swift test` emits no weak `MockBridge` warnings; docs and installer comments no longer claim the pretty URL is unwired or the app is v0.1.0.
+
+### ⬜ Unit 5c: Warning Cleanup And Documentation Truth - Coverage & Refactor
+**What**: Run warning-clean verification, ensure docs are accurate after updater behavior is known, and update audit backlog statuses for fixed/deferred items.
+**Acceptance**: Warning output is clean; A-001/A-002/A-003/A-004/A-005/A-007 statuses are updated with linked work or dispositions.
+
+### ⬜ Unit 6: Full Verification, Package, Release, Install Smoke, And Merge
+**What**: Run the full verification matrix, save coverage artifacts, package release, create/publish GitHub release, smoke the live pretty URL installer into a temp dir, open PR, run CI, merge, clean branches, and verify live E2E.
+**Output**: Verification logs, coverage artifacts, release URL, PR URL, live installer smoke output, and final desk/task updates.
+**Acceptance**: Branch is merged, release is published, `https://ouro.bot/ouro-md-install.sh` installs the new release into a temp directory with `OURO_MD_NO_OPEN=1`, and no dirty worktree/PR/branch residue remains.
+
+## Execution
+- **TDD strictly enforced**: tests → red → implement → green → refactor
+- Commit after each phase (1a, 1b, 1c)
+- Push after each unit complete
+- Run full test suite before marking unit done
+- **All artifacts**: Save outputs, logs, data to `./2026-06-14-1519-doing-auto-updater-reliability/`
+- **Fixes/blockers**: Spawn sub-agent immediately - don't ask, just do it
+- **Decisions made**: Update docs immediately, commit right away
+
+## Progress Log
+- 2026-06-14 15:34 Created from planning doc after Round 4 harsh reviewer convergence
