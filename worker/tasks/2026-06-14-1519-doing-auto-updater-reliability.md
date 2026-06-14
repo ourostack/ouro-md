@@ -79,7 +79,7 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 **What**: Refactor pure updater logic, add missing branch/error tests, and keep release descriptor naming clear.
 **Acceptance**: Pure updater tests cover success, boundary, and error paths; `swift test` passes for the targeted test set.
 
-### ⬜ Unit 2a: Update Installer/Stager - Tests
+### ✅ Unit 2a: Update Installer/Stager - Tests
 **What**: Write failing tests or a testable seam for download/stage/verify/extract behavior: manifest decode failure, sha mismatch, byte mismatch, archive-name mismatch, bundle-id mismatch, non-newer version, missing staged app, and staged Info.plist mismatch.
 **Acceptance**: Tests fail before implementation because installer/stager seams and errors are missing.
 
@@ -158,3 +158,4 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - 2026-06-14 15:58 Unit 1a complete: added pure updater/release tests and saved the expected red `swift test` compile failure to `./2026-06-14-1519-doing-auto-updater-reliability/unit1a-red-swift-test.log`
 - 2026-06-14 16:01 Unit 1b complete: added `OuroMDRelease`, release snapshot parsing, update planning, manifest verification, and auto-update policy; `swift test`, `swift build`, and `swift run ouro-md --version` passed with evidence in `unit1b-*.log`
 - 2026-06-14 16:06 Unit 1c complete: added request-shape/status tests for the default GitHub loader, release configuration coverage, malformed-tag coverage, and prerelease filtering; `swift test --filter ReleaseUpdateTests`, `swift test`, `swift build`, and `swift test --enable-code-coverage` passed with evidence in `unit1c-*.log` (coverage log still shows the pre-existing weak `MockBridge` warnings routed to Unit 5)
+- 2026-06-14 16:10 Unit 2a complete: added installer/stager seam tests for manifest decode, archive verification, extraction, staged Info.plist identity/version, and codesign failures; saved expected red compile failure to `./2026-06-14-1519-doing-auto-updater-reliability/unit2a-red-installer-tests.log`
