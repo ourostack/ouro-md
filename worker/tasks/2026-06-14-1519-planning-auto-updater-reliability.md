@@ -1,6 +1,6 @@
 # Planning: Ouro MD Auto-Updater And Reliability Hardening
 
-**Status**: NEEDS_REVIEW
+**Status**: approved
 **Created**: 2026-06-14 15:21
 
 ## Goal
@@ -102,3 +102,4 @@ The delicate part is not release-feed parsing; it is swapping the running app sa
 - 2026-06-14 15:24 Reviewer Round 1 findings addressed: made launch-time workflow explicit, tightened undo/redo evidence, made verification commands measurable, and included installer comments in documentation scope
 - 2026-06-14 15:28 Reviewer Round 2 findings addressed: specified 3600-second/default-on updater policy, exact coverage artifact/check shape, and safe live installer smoke command
 - 2026-06-14 15:31 Reviewer Round 3 findings addressed: fixed installer-smoke env placement and specified the changed-file coverage checker path, diff base, path filter, and invocation
+- 2026-06-14 15:33 Approved after Round 4 harsh reviewer convergence
