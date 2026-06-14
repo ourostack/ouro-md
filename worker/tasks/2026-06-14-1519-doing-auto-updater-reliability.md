@@ -91,7 +91,7 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 **What**: Add remaining tests for installer/stager error paths and document any external-process/AppKit boundary coverage no-op dispositions.
 **Acceptance**: Stager pure/seam logic has direct branch coverage; any no-op disposition is explicit in this doing doc.
 
-### ⬜ Unit 3a: App Integration And Update UI - Tests
+### ✅ Unit 3a: App Integration And Update UI - Tests
 **What**: Write failing tests for auto-update policy/defaults, persisted opt-out, 3600-second throttling, manual update prompt state, and thin app coordinator behavior where testable.
 **Acceptance**: Tests fail before implementation because app integration/update state does not exist.
 
@@ -165,3 +165,4 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - 2026-06-14 16:29 Unit 2b Round 3 review fix complete: cold reviewer found initial cleanup still destroyed a stale rollback backup; added stale-backup restore regression coverage and changed apply script to remove only `.update-new` up front, restore existing backups when destination is missing/bad, and discard stale backups only after proving a live destination, with evidence in `unit2b-review3-fix-*.log`
 - 2026-06-14 16:35 Unit 2c complete: added installer error-description and unzip fallback coverage, saved coverage export/show/summary artifacts, and recorded explicit no-op disposition for real network/process/app-swap boundaries in `unit2c-no-op-disposition.md`; `swift test --filter OuroMDUpdateInstallerTests`, `swift test`, `swift build`, and `swift test --enable-code-coverage` passed
 - 2026-06-14 16:38 Unit 2c review fix complete: cold reviewer found injected `dataLoader` failure handling was testable but uncovered; added generic failure wrapping and `InstallError` pass-through tests, regenerated coverage artifacts, and corrected `unit2c-no-op-disposition.md`, with evidence in `unit2c-review-fix-*.log`
+- 2026-06-14 16:41 Unit 3a complete: added app-update coordinator tests for persisted opt-out, manual prompt states, launch throttling, background staging, install-on-quit, and manual staged install behavior; saved expected red compile failure to `unit3a-red-coordinator-tests.log`
