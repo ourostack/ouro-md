@@ -71,7 +71,7 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 **What**: Write failing tests for a new Ouro MD release descriptor, release update snapshot parsing, update planning, manifest decoding, semantic version comparison, auto-update policy, and archive verification failures.
 **Acceptance**: New tests fail before implementation because the new release/update types do not exist or return missing behavior.
 
-### ⬜ Unit 1b: Release Truth And Pure Updater Logic - Implementation
+### ✅ Unit 1b: Release Truth And Pure Updater Logic - Implementation
 **What**: Add focused pure Swift updater types outside `AppModel.swift`, centralize version/bundle identity for CLI/updater use, and satisfy Unit 1a tests.
 **Acceptance**: Unit 1a tests pass; CLI version is sourced from the new release descriptor.
 
@@ -156,3 +156,4 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - 2026-06-14 15:34 Created from planning doc after Round 4 harsh reviewer convergence
 - 2026-06-14 15:56 Unit 0 complete: saved baseline release metadata and verification logs; baseline `swift test`, `--undotest`, `--wraptest`, `--renderprobe`, and `--roundtrip sample.md` all exited successfully
 - 2026-06-14 15:58 Unit 1a complete: added pure updater/release tests and saved the expected red `swift test` compile failure to `./2026-06-14-1519-doing-auto-updater-reliability/unit1a-red-swift-test.log`
+- 2026-06-14 16:01 Unit 1b complete: added `OuroMDRelease`, release snapshot parsing, update planning, manifest verification, and auto-update policy; `swift test`, `swift build`, and `swift run ouro-md --version` passed with evidence in `unit1b-*.log`
