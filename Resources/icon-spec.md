@@ -1,52 +1,48 @@
 # Ouro MD app icon — spec
 
-Goal: the Typora app icon's structure, but with a serif **MD** instead of **T**.
-Reference: Typora's icon (white rounded card, big black serif letter sitting on a
-full field of gray "document text" lines that wrap around the letter).
+The icon is a lowercase serif **.md** wordmark sitting on a field of "document
+text" lines, on a white macOS squircle — the Typora structure, made unmistakably
+a markdown file by using the `.md` extension itself.
 
-Generator: `scripts/make-icon.swift` (parametric, reproducible). Render to a temp
-PNG, **view it**, compare against the reference, tune params, repeat. Never ship
-the icon without viewing the rendered result at both full and dock size.
+## Source of truth
 
-## Hard requirements (from the reference + operator feedback)
+`Resources/AppIcon.svg` — a hand-tuned, layered vector (editable in Sketch/Figma).
+Layers:
+- **Card** — white rounded-rect (the squircle body).
+- **Lines** — gray capsule rects; solid, fully-justified rows that break only to
+  wrap around the wordmark.
+- **Wordmark** — the `.md` as separate `dot` / `m` / `d` vector paths, with a soft
+  drop-shadow filter.
 
-1. **Card** — full-bleed rounded square (squircle). FLAT white, no gradient, no
-   vignette, no bezel. iOS-style corner radius (~22% of side). Small even margin.
+The artwork is authored on its own 1024 artboard and placed into the macOS icon
+grid by the `AppIcon` group's transform: `translate(100,100) scale(0.8046875)` —
+an **824×824 body in a 1024 canvas, 100px padding all round**, so the icon sits
+correctly beside other dock icons and the system drop shadow has room.
 
-2. **Letters "MD"** — serif (Georgia Bold), near-black `#1A1A1A`.
-   - **LARGE but width-constrained**: total ink width ≈ **74%** of inner width.
-     (MD is two wide letters — sizing by *height* like Typora's single narrow T
-     overflows the card horizontally; size by width instead. Cap height lands
-     around 30% of inner height, which reads as substantial because it's wide.)
-   - Horizontally + vertically centered (optical center, nudged up slightly).
-   - Soft, subtle drop shadow: small downward offset, soft blur, low alpha — a
-     gentle lift off the page, NOT a hard/muddy shadow.
+## Build
 
-3. **Document text-lines** — gray capsules `#D3D6DA`, the KEY structural element:
-   - Fill the **ENTIRE card** as a full field of evenly spaced horizontal rows,
-     top to bottom — NOT two small clusters on the left/right edges.
-   - Each row spans the full inner width, broken into 2–4 segments with small
-     gaps (like words on a line). Deterministic per-row so it's reproducible.
-   - The letters **punch through** the field: lines are masked out wherever a
-     letter is, leaving a clean white **gap (halo)** around each letter stroke so
-     the lines appear to wrap around the letters (as in the reference).
+`scripts/build-icon.sh`:
+1. Rasterizes `AppIcon.svg` → `AppIcon.png` (1024) via `scripts/rasterize-svg.swift`.
+2. `sips` → iconset → `AppIcon.icns` (all sizes).
 
-## Render order (how the wrap-around is achieved)
+**Rasterizer note (important):** macOS's built-in `qlmanage` silently drops `rx`
+corner rounding and mis-renders SVG filters — do NOT use it. `rasterize-svg.swift`
+uses WebKit (transparent web view) for faithful rendering of the rounded card +
+shadow. This was the root cause of earlier "the corners are sharp" confusion.
 
-1. White squircle card (clip everything below to it).
-2. Full field of gray line-segments across every row.
-3. White **halo**: the MD glyph path stroked thickly + filled white — erases the
-   lines in a padded region around the letters (this creates the wrap gap).
-4. Black MD glyphs with the soft shadow on top.
+## Editing flow
 
-## Tunables (in make-icon.swift)
+1. Open `Resources/AppIcon.svg` in Sketch; tweak the `Card` / `Lines` / `Wordmark`
+   layers. Keep the artwork on the 1024 artboard (the `AppIcon` group transform
+   handles the macOS padding).
+2. Export / save back over `Resources/AppIcon.svg` (preserve the layer ids).
+3. `./scripts/build-icon.sh` → rebuild app (`./make-app.sh` or `./install.sh`).
+4. **Always view the render at full + dock size before shipping** — render →
+   view → compare, never assume.
 
-- `capHeightFraction` (letter size) · `haloPad` (wrap gap width)
-- `rowCount`, `lineThickness`, `rowGap`, `lineColor`
-- `shadowAlpha/Blur/Offset` · `cornerFraction`, `inset`
+## History
 
-## Acceptance
-
-Side-by-side with Typora at 1024px and at dock size (~64px): same visual weight
-and structure — big serif letters on a full field of wrapped text-lines, flat
-white card, soft lift. Verified by viewing the render, not by assumption.
+An earlier algorithmic generator (`scripts/make-icon.swift`) produced the icon
+parametrically. It's retained for reference, but the **SVG is now the source of
+truth** — the shipped design is the operator's hand-tuned `.md` artwork, not the
+generated one.
