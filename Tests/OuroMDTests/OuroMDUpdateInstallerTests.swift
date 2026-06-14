@@ -206,6 +206,28 @@ final class OuroMDUpdateInstallerTests: XCTestCase {
         }
     }
 
+    func testApplyScriptFailsFastAroundBackupInstallAndRollback() {
+        let staged = OuroMDUpdateInstaller.Staged(
+            appURL: URL(fileURLWithPath: "/tmp/staged/Ouro MD.app"),
+            stagingRoot: URL(fileURLWithPath: "/tmp/staged"),
+            version: "0.10.0"
+        )
+
+        let script = OuroMDUpdateInstaller.applyScript(
+            staged: staged,
+            destinationBundle: URL(fileURLWithPath: "/Applications/Ouro MD.app"),
+            relaunch: true,
+            waitingForPID: 1234
+        )
+
+        XCTAssertTrue(script.contains("if [ -e \"$DEST\" ] && ! /bin/mv \"$DEST\" \"$DEST.update-bak\"; then"))
+        XCTAssertTrue(script.contains("exit 1"))
+        XCTAssertTrue(script.contains("if /bin/mv \"$DEST.update-new\" \"$DEST\"; then"))
+        XCTAssertTrue(script.contains("elif [ -d \"$DEST.update-bak\" ]; then"))
+        XCTAssertTrue(script.contains("/bin/mv \"$DEST.update-bak\" \"$DEST\" 2>/dev/null || true"))
+        XCTAssertTrue(script.contains("[ -d \"$DEST\" ] || exit 1"))
+    }
+
     private func updatePlan() -> OuroMDUpdatePlan {
         OuroMDUpdatePlan(
             version: "0.10.0",

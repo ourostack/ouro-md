@@ -149,30 +149,12 @@ struct OuroMDUpdateInstaller: Sendable {
     }
 
     static func applyAndRelaunch(staged: Staged, destinationBundle: URL, relaunch: Bool = true) {
-        let pid = ProcessInfo.processInfo.processIdentifier
-        let dest = destinationBundle.path
-        let lsregister = "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister"
-        let reopenOnFailure = relaunch ? "/usr/bin/open \"$DEST\"\n" : ""
-        let reopenOnSuccess = relaunch ? "/usr/bin/open \"$DEST\"\n" : ""
-        let script = """
-        while kill -0 \(pid) 2>/dev/null; do sleep 0.2; done
-        DEST=\(shellQuoted(dest))
-        STAGED=\(shellQuoted(staged.appURL.path))
-        STAGING_ROOT=\(shellQuoted(staged.stagingRoot.path))
-        /bin/rm -rf "$DEST.update-new" "$DEST.update-bak"
-        if ! /usr/bin/ditto "$STAGED" "$DEST.update-new"; then
-          \(reopenOnFailure)exit 1
-        fi
-        /bin/mv "$DEST" "$DEST.update-bak" 2>/dev/null
-        if /bin/mv "$DEST.update-new" "$DEST"; then
-          /bin/rm -rf "$DEST.update-bak"
-        else
-          /bin/mv "$DEST.update-bak" "$DEST" 2>/dev/null
-        fi
-        /usr/bin/xattr -dr com.apple.quarantine "$DEST" 2>/dev/null
-        \(shellQuoted(lsregister)) -f "$DEST" 2>/dev/null
-        \(reopenOnSuccess)/bin/rm -rf "$STAGING_ROOT" 2>/dev/null
-        """
+        let script = applyScript(
+            staged: staged,
+            destinationBundle: destinationBundle,
+            relaunch: relaunch,
+            waitingForPID: ProcessInfo.processInfo.processIdentifier
+        )
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/bin/sh")
         task.arguments = ["-c", script]
@@ -181,6 +163,43 @@ struct OuroMDUpdateInstaller: Sendable {
 
     static func applyOnQuit(staged: Staged, destinationBundle: URL) {
         applyAndRelaunch(staged: staged, destinationBundle: destinationBundle, relaunch: false)
+    }
+
+    static func applyScript(
+        staged: Staged,
+        destinationBundle: URL,
+        relaunch: Bool,
+        waitingForPID pid: Int32
+    ) -> String {
+        let dest = destinationBundle.path
+        let lsregister = "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister"
+        let reopen = relaunch ? "/usr/bin/open \"$DEST\"\n" : ""
+        return """
+        while kill -0 \(pid) 2>/dev/null; do sleep 0.2; done
+        DEST=\(shellQuoted(dest))
+        STAGED=\(shellQuoted(staged.appURL.path))
+        STAGING_ROOT=\(shellQuoted(staged.stagingRoot.path))
+        /bin/rm -rf "$DEST.update-new" "$DEST.update-bak"
+        if ! /usr/bin/ditto "$STAGED" "$DEST.update-new"; then
+          \(reopen)exit 1
+        fi
+        if [ -e "$DEST" ] && ! /bin/mv "$DEST" "$DEST.update-bak"; then
+          /bin/rm -rf "$DEST.update-new"
+          \(reopen)exit 1
+        fi
+        if /bin/mv "$DEST.update-new" "$DEST"; then
+          /bin/rm -rf "$DEST.update-bak"
+        elif [ -d "$DEST.update-bak" ]; then
+          /bin/mv "$DEST.update-bak" "$DEST" 2>/dev/null || true
+          \(reopen)exit 1
+        else
+          \(reopen)exit 1
+        fi
+        [ -d "$DEST" ] || exit 1
+        /usr/bin/xattr -dr com.apple.quarantine "$DEST" 2>/dev/null || true
+        \(shellQuoted(lsregister)) -f "$DEST" 2>/dev/null || true
+        \(reopen)/bin/rm -rf "$STAGING_ROOT" 2>/dev/null
+        """
     }
 
     private func load(_ url: URL) async throws -> Data {
