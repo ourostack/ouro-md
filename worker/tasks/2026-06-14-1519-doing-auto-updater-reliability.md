@@ -124,16 +124,27 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 **Acceptance**: `swift test` emits no weak `MockBridge` warnings; docs and installer comments no longer claim the pretty URL is unwired or the app is v0.1.0.
 
 ### ⬜ Unit 5c: Warning Cleanup And Documentation Truth - Coverage & Refactor
-**What**: Run warning-clean verification, ensure docs are accurate after updater behavior is known, and update audit backlog statuses for fixed/deferred items.
-**Acceptance**: Warning output is clean; A-001/A-002/A-003/A-004/A-005/A-007 statuses are updated with linked work or dispositions.
+**What**: Run warning-clean verification, ensure docs are accurate after updater behavior is known, and update audit backlog items with in-progress linked work/progress notes only.
+**Acceptance**: Warning output is clean; A-001/A-002/A-003/A-004/A-005/A-007 point at this doing doc/branch without terminal fixed dispositions before merge, release, and live smoke are complete.
 
-### ⬜ Unit 6: Full Verification, Package, Release, Install Smoke, And Merge
-**What**: Run the full verification matrix, save coverage artifacts, package release, create/publish GitHub release, smoke the live pretty URL installer into a temp dir, open PR, run CI, merge, clean branches, and verify live E2E.
-**Output**: Verification logs, coverage artifacts, release URL, PR URL, live installer smoke output, and final desk/task updates.
-**Acceptance**: Branch is merged, release is published, `https://ouro.bot/ouro-md-install.sh` installs the new release into a temp directory with `OURO_MD_NO_OPEN=1`, and no dirty worktree/PR/branch residue remains.
+### ⬜ Unit 6a: Pre-Merge Full Verification And Package Dry Run
+**What**: Run the full verification matrix on the feature branch, save coverage artifacts, and run `./scripts/package-release.sh` as a dry-run packaging verification only.
+**Output**: Verification logs, coverage artifacts, `coverage.json`, coverage-check output, and package dry-run output under artifacts.
+**Acceptance**: All local verification commands pass on the feature branch; package dry run succeeds but no GitHub release is created from the branch SHA.
+
+### ⬜ Unit 6b: PR, Review, Merge, And Cleanup
+**What**: Open a PR, run/record GitHub checks; if no `.github/workflows` or required external CI exists, record a no-CI disposition and rely on the complete local verification matrix; merge through GitHub; fetch `origin/main`; clean local/remote feature branch safely.
+**Output**: PR URL, merge commit, GitHub check/no-CI evidence, cleanup evidence.
+**Acceptance**: PR is merged to `main`; no dirty worktree; no unpushed commits; no stale local or remote feature branch if safe to delete. The merged PR remains as project history and is not considered residue.
+
+### ⬜ Unit 6c: Publish From Merged Main And Live E2E Smoke
+**What**: From merged `origin/main`, package the final release so the manifest embeds the merged main SHA, publish the GitHub release, smoke `https://ouro.bot/ouro-md-install.sh` into a temp directory with `OURO_MD_NO_OPEN=1`, verify installed bundle version/bundle id, update audit backlog terminal statuses, desk task, and final artifacts.
+**Output**: Release URL, final manifest/zip names, live installer smoke output, installed bundle identity/version, final backlog/task updates.
+**Acceptance**: Release is published from merged main; `https://ouro.bot/ouro-md-install.sh` installs the new release into a temp directory without opening the app; installed bundle id/version match expectations; no dirty worktree, unpushed commits, open PR from this run, or unsafe branch residue remains.
 
 ## Execution
 - **TDD strictly enforced**: tests → red → implement → green → refactor
+- TDD applies to code-changing units. Evidence/release units (`Unit 0`, `Unit 6a`, `Unit 6b`, `Unit 6c`) must produce and verify artifacts, but do not need artificial red tests.
 - Commit after each phase (1a, 1b, 1c)
 - Push after each unit complete
 - Run full test suite before marking unit done
