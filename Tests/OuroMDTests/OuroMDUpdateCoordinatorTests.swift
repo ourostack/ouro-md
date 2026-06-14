@@ -182,7 +182,7 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
             assets: [],
             detail: "Version 0.9.0 is current."
         ) },
-        stageUpdate: @escaping (OuroMDUpdatePlan, @escaping (String) async -> Void) async throws -> OuroMDUpdateInstaller.Staged = { _, _ in
+        stageUpdate: @escaping (OuroMDUpdatePlan, @escaping @Sendable (String) async -> Void) async throws -> OuroMDUpdateInstaller.Staged = { _, _ in
             throw OuroMDUpdateInstaller.InstallError.download("not stubbed")
         },
         applyAndRelaunch: @escaping (OuroMDUpdateInstaller.Staged, URL) -> Void = { _, _ in },

@@ -9,6 +9,7 @@ enum MenuBuilder {
     private static weak var typewriterItem: NSMenuItem?
     private static var recentDelegate: RecentMenuDelegate?
 
+    @MainActor
     static func install(into app: NSApplication, target: AppDelegate) {
         let mainMenu = NSMenu()
         mainMenu.addItem(appMenu(target: target))
@@ -30,6 +31,7 @@ enum MenuBuilder {
         refreshDynamicState(model: target.model)
     }
 
+    @MainActor
     static func refreshDynamicState(model: AppModel) {
         themeMenu?.items.forEach {
             $0.state = ($0.representedObject as? String == model.themeID) ? .on : .off
@@ -51,6 +53,7 @@ enum MenuBuilder {
         menu.addItem(.separator())
         let settings = add(menu, "Settings…", #selector(AppDelegate.showPreferences(_:)), ",", target)
         settings.keyEquivalentModifierMask = [.command]
+        add(menu, "Check for Updates…", #selector(AppDelegate.checkForUpdates(_:)), "", target)
         menu.addItem(.separator())
 
         let hide = menu.addItem(withTitle: "Hide Ouro MD",

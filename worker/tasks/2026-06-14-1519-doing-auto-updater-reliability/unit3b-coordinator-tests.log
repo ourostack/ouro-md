@@ -1,0 +1,303 @@
+[0/1] Planning build
+Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/7] Compiling OuroMD DocumentWindowController.swift
+[4/7] Emitting module OuroMD
+[5/9] Compiling OuroMD main.swift
+[6/9] Compiling OuroMD AppDelegate.swift
+[6/11] Write Objects.LinkFileList
+[7/11] Linking ouro-md
+[8/11] Applying ouro-md
+[10/22] Compiling OuroMDTests OutlineTreeTests.swift
+[11/22] Compiling OuroMDTests MarkdownTidyTests.swift
+[12/22] Compiling OuroMDTests OuroMDUpdateTests.swift
+[13/23] Compiling OuroMDTests MarkdownRendererTests.swift
+[14/23] Compiling OuroMDTests AppModelReloadTests.swift
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:96:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+ 94 | 
+ 95 |         let model = AppModel()
+ 96 |         model.bridge = MockBridge()          // bridge present...
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+ 97 |         model.loadInitialFile(url.path)      // ...but editorDidBecomeReady NOT called → not ready
+ 98 |         model.save()
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:118:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+116 | 
+117 |         let model = AppModel()
+118 |         model.bridge = MockBridge()
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+119 |         model.editorDidBecomeReady()
+120 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:141:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+139 | 
+140 |         let model = AppModel()
+141 |         model.bridge = MockBridge()
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+142 |         model.editorDidBecomeReady()
+143 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:162:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+160 | 
+161 |         let model = AppModel()
+162 |         model.bridge = MockBridge()
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+163 |         model.editorDidBecomeReady()
+164 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:182:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+180 | 
+181 |         let model = AppModel()
+182 |         model.bridge = MockBridge()
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+183 |         model.editorDidBecomeReady()
+184 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:96:22: warning: weak reference will always be nil because the referenced object is deallocated here
+ 94 | 
+ 95 |         let model = AppModel()
+ 96 |         model.bridge = MockBridge()          // bridge present...
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+ 97 |         model.loadInitialFile(url.path)      // ...but editorDidBecomeReady NOT called → not ready
+ 98 |         model.save()
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:118:22: warning: weak reference will always be nil because the referenced object is deallocated here
+116 | 
+117 |         let model = AppModel()
+118 |         model.bridge = MockBridge()
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+119 |         model.editorDidBecomeReady()
+120 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:141:22: warning: weak reference will always be nil because the referenced object is deallocated here
+139 | 
+140 |         let model = AppModel()
+141 |         model.bridge = MockBridge()
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+142 |         model.editorDidBecomeReady()
+143 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:162:22: warning: weak reference will always be nil because the referenced object is deallocated here
+160 | 
+161 |         let model = AppModel()
+162 |         model.bridge = MockBridge()
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+163 |         model.editorDidBecomeReady()
+164 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:182:22: warning: weak reference will always be nil because the referenced object is deallocated here
+180 | 
+181 |         let model = AppModel()
+182 |         model.bridge = MockBridge()
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+183 |         model.editorDidBecomeReady()
+184 |         model.loadInitialFile(url.path)
+[15/23] Compiling OuroMDTests ContentSearcherTests.swift
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:96:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+ 94 | 
+ 95 |         let model = AppModel()
+ 96 |         model.bridge = MockBridge()          // bridge present...
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+ 97 |         model.loadInitialFile(url.path)      // ...but editorDidBecomeReady NOT called → not ready
+ 98 |         model.save()
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:118:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+116 | 
+117 |         let model = AppModel()
+118 |         model.bridge = MockBridge()
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+119 |         model.editorDidBecomeReady()
+120 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:141:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+139 | 
+140 |         let model = AppModel()
+141 |         model.bridge = MockBridge()
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+142 |         model.editorDidBecomeReady()
+143 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:162:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+160 | 
+161 |         let model = AppModel()
+162 |         model.bridge = MockBridge()
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+163 |         model.editorDidBecomeReady()
+164 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:182:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+180 | 
+181 |         let model = AppModel()
+182 |         model.bridge = MockBridge()
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+183 |         model.editorDidBecomeReady()
+184 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:96:22: warning: weak reference will always be nil because the referenced object is deallocated here
+ 94 | 
+ 95 |         let model = AppModel()
+ 96 |         model.bridge = MockBridge()          // bridge present...
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+ 97 |         model.loadInitialFile(url.path)      // ...but editorDidBecomeReady NOT called → not ready
+ 98 |         model.save()
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:118:22: warning: weak reference will always be nil because the referenced object is deallocated here
+116 | 
+117 |         let model = AppModel()
+118 |         model.bridge = MockBridge()
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+119 |         model.editorDidBecomeReady()
+120 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:141:22: warning: weak reference will always be nil because the referenced object is deallocated here
+139 | 
+140 |         let model = AppModel()
+141 |         model.bridge = MockBridge()
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+142 |         model.editorDidBecomeReady()
+143 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:162:22: warning: weak reference will always be nil because the referenced object is deallocated here
+160 | 
+161 |         let model = AppModel()
+162 |         model.bridge = MockBridge()
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+163 |         model.editorDidBecomeReady()
+164 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:182:22: warning: weak reference will always be nil because the referenced object is deallocated here
+180 | 
+181 |         let model = AppModel()
+182 |         model.bridge = MockBridge()
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+183 |         model.editorDidBecomeReady()
+184 |         model.loadInitialFile(url.path)
+[16/23] Compiling OuroMDTests OuroMDUpdateCoordinatorTests.swift
+[17/23] Compiling OuroMDTests FileWatcherTests.swift
+[18/23] Compiling OuroMDTests FolderBrowserTests.swift
+[19/23] Emitting module OuroMDTests
+[20/23] Compiling OuroMDTests OuroMDUpdateInstallerTests.swift
+[21/23] Compiling OuroMDTests ReleaseUpdateTests.swift
+[21/23] Write Objects.LinkFileList
+[22/23] Linking ouro-mdPackageTests
+Build complete! (3.78s)
+Test Suite 'Selected tests' started at 2026-06-14 16:47:45.043.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 16:47:45.044.
+Test Suite 'OuroMDUpdateCoordinatorTests' started at 2026-06-14 16:47:45.044.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testApplyStagedUpdateOnQuitOnlyWhenEnabledAndNotManualInstall]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testApplyStagedUpdateOnQuitOnlyWhenEnabledAndNotManualInstall]' passed (0.003 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateCheckIsDefaultOnThrottledAndOncePerSession]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateCheckIsDefaultOnThrottledAndOncePerSession]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateCheckSkipsWhenDisabled]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateCheckSkipsWhenDisabled]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateDefaultsToEnabledAndPersistsOptOut]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateDefaultsToEnabledAndPersistsOptOut]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateStagesInstallableUpdateInBackground]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateStagesInstallableUpdateInBackground]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckPromptsInstallableCurrentAndUnavailableStates]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckPromptsInstallableCurrentAndUnavailableStates]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckReportsMissingInstallableAssets]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckReportsMissingInstallableAssets]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallUsesAlreadyStagedUpdateAndSuppressesQuitApply]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallUsesAlreadyStagedUpdateAndSuppressesQuitApply]' passed (0.001 seconds).
+Test Suite 'OuroMDUpdateCoordinatorTests' passed at 2026-06-14 16:47:45.055.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.010 (0.011) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 16:47:45.055.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.010 (0.011) seconds
+Test Suite 'Selected tests' passed at 2026-06-14 16:47:45.055.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.010 (0.012) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

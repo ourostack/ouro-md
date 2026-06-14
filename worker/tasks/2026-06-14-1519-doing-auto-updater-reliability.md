@@ -95,7 +95,7 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 **What**: Write failing tests for auto-update policy/defaults, persisted opt-out, 3600-second throttling, manual update prompt state, and thin app coordinator behavior where testable.
 **Acceptance**: Tests fail before implementation because app integration/update state does not exist.
 
-### ⬜ Unit 3b: App Integration And Update UI - Implementation
+### ✅ Unit 3b: App Integration And Update UI - Implementation
 **What**: Add `Check for Updates...`, update prompt/status state, launch-time background staging, install-on-quit, persisted opt-out, and preferences/menu hooks while keeping existing files thin.
 **Acceptance**: Unit 3a tests pass; updater logic remains outside `AppModel.swift` except for minimal UI/lifecycle hooks if unavoidable.
 
@@ -166,3 +166,4 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - 2026-06-14 16:35 Unit 2c complete: added installer error-description and unzip fallback coverage, saved coverage export/show/summary artifacts, and recorded explicit no-op disposition for real network/process/app-swap boundaries in `unit2c-no-op-disposition.md`; `swift test --filter OuroMDUpdateInstallerTests`, `swift test`, `swift build`, and `swift test --enable-code-coverage` passed
 - 2026-06-14 16:38 Unit 2c review fix complete: cold reviewer found injected `dataLoader` failure handling was testable but uncovered; added generic failure wrapping and `InstallError` pass-through tests, regenerated coverage artifacts, and corrected `unit2c-no-op-disposition.md`, with evidence in `unit2c-review-fix-*.log`
 - 2026-06-14 16:41 Unit 3a complete: added app-update coordinator tests for persisted opt-out, manual prompt states, launch throttling, background staging, install-on-quit, and manual staged install behavior; saved expected red compile failure to `unit3a-red-coordinator-tests.log`
+- 2026-06-14 16:48 Unit 3b complete: added `OuroMDUpdateCoordinator`, launch-time throttled background staging, install-on-quit/manual install routing, `Check for Updates...`, preferences opt-out, and main-actor UI lifecycle hooks; `swift test --filter OuroMDUpdateCoordinatorTests`, `swift test`, and `swift build` passed with evidence in `unit3b-*.log` (pre-existing weak `MockBridge` warnings remain routed to Unit 5)
