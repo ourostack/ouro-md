@@ -1,0 +1,45 @@
+Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/5] Emitting module OuroMDTests
+[4/5] Compiling OuroMDTests ReleaseUpdateTests.swift
+[4/6] Write Objects.LinkFileList
+[5/6] Linking ouro-mdPackageTests
+Build complete! (1.58s)
+Test Suite 'Selected tests' started at 2026-06-14 16:05:05.915.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 16:05:05.916.
+Test Suite 'ReleaseUpdateTests' started at 2026-06-14 16:05:05.916.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testAsyncCheckReturnsUnavailableSnapshotOnNetworkFailure]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testAsyncCheckReturnsUnavailableSnapshotOnNetworkFailure]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultConfigurationTargetsOuroMDGitHubReleases]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultConfigurationTargetsOuroMDGitHubReleases]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultLoaderSendsExpectedGitHubRequestAndReturnsBody]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultLoaderSendsExpectedGitHubRequestAndReturnsBody]' passed (0.048 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultLoaderThrowsOnNonSuccessStatus]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultLoaderThrowsOnNonSuccessStatus]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testReleaseDescriptorMatchesCurrentDistribution]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testReleaseDescriptorMatchesCurrentDistribution]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotIgnoresDraftsAndReportsNoPublishedRelease]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotIgnoresDraftsAndReportsNoPublishedRelease]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotIgnoresPrereleasesAndUsesLatestStableRelease]' started.
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/ReleaseUpdateTests.swift:87: error: -[OuroMDTests.ReleaseUpdateTests testSnapshotIgnoresPrereleasesAndUsesLatestStableRelease] : XCTAssertEqual failed: ("Optional("9.0.0-beta.1")") is not equal to ("Optional("0.10.0")")
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/ReleaseUpdateTests.swift:88: error: -[OuroMDTests.ReleaseUpdateTests testSnapshotIgnoresPrereleasesAndUsesLatestStableRelease] : XCTAssertEqual failed: ("Optional("v9.0.0-beta.1")") is not equal to ("Optional("v0.10.0")")
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotIgnoresPrereleasesAndUsesLatestStableRelease]' failed (0.109 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotReportsCurrentWhenLatestIsNotNewer]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotReportsCurrentWhenLatestIsNotNewer]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotReportsUnavailableWhenReleaseTagCannotBeCompared]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotReportsUnavailableWhenReleaseTagCannotBeCompared]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotReportsUpdateAvailableFromLatestPublishedRelease]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotReportsUpdateAvailableFromLatestPublishedRelease]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotThrowsOnMalformedReleaseJSON]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotThrowsOnMalformedReleaseJSON]' passed (0.000 seconds).
+Test Suite 'ReleaseUpdateTests' failed at 2026-06-14 16:05:06.076.
+	 Executed 11 tests, with 2 failures (0 unexpected) in 0.160 (0.160) seconds
+Test Suite 'ouro-mdPackageTests.xctest' failed at 2026-06-14 16:05:06.076.
+	 Executed 11 tests, with 2 failures (0 unexpected) in 0.160 (0.160) seconds
+Test Suite 'Selected tests' failed at 2026-06-14 16:05:06.076.
+	 Executed 11 tests, with 2 failures (0 unexpected) in 0.160 (0.161) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

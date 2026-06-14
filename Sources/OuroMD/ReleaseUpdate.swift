@@ -74,7 +74,7 @@ struct ReleaseUpdateChecker: Sendable {
 
     static func snapshot(from data: Data, currentVersion: String) throws -> ReleaseUpdateSnapshot {
         let releases = try JSONDecoder().decode([GitHubRelease].self, from: data)
-        guard let latest = releases.first(where: { !$0.draft }) else {
+        guard let latest = releases.first(where: { !$0.draft && !$0.prerelease }) else {
             return ReleaseUpdateSnapshot(
                 status: .unavailable,
                 currentVersion: currentVersion,
