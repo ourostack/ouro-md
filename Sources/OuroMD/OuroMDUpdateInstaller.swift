@@ -193,7 +193,16 @@ struct OuroMDUpdateInstaller: Sendable {
             fi
           fi
         }
-        /bin/rm -rf "$DEST.update-new" "$DEST.update-bak"
+        /bin/rm -rf "$DEST.update-new"
+        if [ -e "$DEST.update-bak" ]; then
+          if [ -d "$DEST" ]; then
+            /bin/rm -rf "$DEST.update-bak"
+          elif [ -d "$DEST.update-bak" ]; then
+            restore_backup
+          else
+            exit 1
+          fi
+        fi
         if ! /usr/bin/ditto "$STAGED" "$DEST.update-new"; then
           reopen_if_safe
           exit 1
