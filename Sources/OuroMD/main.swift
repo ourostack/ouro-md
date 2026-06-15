@@ -55,7 +55,12 @@ if hasFlag("--roundtrip") {
         exit(2)
     }
     let out = argValue("--out").map { URL(fileURLWithPath: $0) }
-    RoundTripper(fileURL: URL(fileURLWithPath: path), outURL: out).run()
+    do {
+        try RoundTripper(fileURL: URL(fileURLWithPath: path), outURL: out).run()
+    } catch {
+        FileHandle.standardError.write(Data("roundtrip: cannot read \(path): \(error.localizedDescription)\n".utf8))
+        exit(1)
+    }
 }
 
 if hasFlag("--shoot") {

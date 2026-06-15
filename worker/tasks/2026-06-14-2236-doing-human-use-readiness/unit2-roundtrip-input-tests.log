@@ -1,0 +1,57 @@
+Another instance of SwiftPM (PID: 68137) is already running using '/Users/arimendelow/Projects/ouro-md/.build', waiting until that process has finished execution...[0/1] Planning build
+Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/18] Emitting module OuroMDTests
+[4/19] Compiling OuroMDTests TerminationSaveCoordinatorTests.swift
+[5/19] Compiling OuroMDTests ReleaseUpdateTests.swift
+[6/19] Compiling OuroMDTests OutlineTreeTests.swift
+[7/19] Compiling OuroMDTests OuroMDUpdateInstallerTests.swift
+[8/19] Compiling OuroMDTests OuroMDUpdateTests.swift
+[9/19] Compiling OuroMDTests FileWatcherTests.swift
+[10/19] Compiling OuroMDTests FolderBrowserTests.swift
+[11/19] Compiling OuroMDTests OuroMDTelemetryTests.swift
+[12/19] Compiling OuroMDTests OuroMDUpdateCoordinatorTests.swift
+[13/19] Compiling OuroMDTests MarkdownRendererTests.swift
+[14/19] Compiling OuroMDTests MarkdownTidyTests.swift
+[15/19] Compiling OuroMDTests AppModelReloadTests.swift
+[16/19] Compiling OuroMDTests ContentSearcherTests.swift
+[17/19] Compiling OuroMDTests UndoRedoRoutingTests.swift
+[17/19] Write Objects.LinkFileList
+[18/19] Linking ouro-mdPackageTests
+Build complete! (2.35s)
+Test Suite 'Selected tests' started at 2026-06-14 22:44:10.288.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 22:44:10.289.
+Test Suite 'MarkdownTidyTests' started at 2026-06-14 22:44:10.289.
+Test Case '-[OuroMDTests.MarkdownTidyTests testCollapsesConsecutiveBlankLines]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testCollapsesConsecutiveBlankLines]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testDoesNotTouchFencedCode]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testDoesNotTouchFencedCode]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testExpandsTableSeparator]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testExpandsTableSeparator]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testLeavesHorizontalRuleAlone]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testLeavesHorizontalRuleAlone]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testNonTableContentUnchanged]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testNonTableContentUnchanged]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testNormalTidyDoesNotConsultOriginalForDirtySave]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testNormalTidyDoesNotConsultOriginalForDirtySave]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testPreservesTableAlignment]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testPreservesTableAlignment]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testRoundTripperReadsExistingInput]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testRoundTripperReadsExistingInput]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testRoundTripperRejectsMissingInput]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testRoundTripperRejectsMissingInput]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testRoundTripProbePreservesOriginalWhenOnlyKnownEditorNormalizationChanged]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testRoundTripProbePreservesOriginalWhenOnlyKnownEditorNormalizationChanged]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testRoundTripProbeReturnsTidiedOutputWhenContentChanged]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testRoundTripProbeReturnsTidiedOutputWhenContentChanged]' passed (0.000 seconds).
+Test Suite 'MarkdownTidyTests' passed at 2026-06-14 22:44:10.296.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.005 (0.006) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 22:44:10.296.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.005 (0.006) seconds
+Test Suite 'Selected tests' passed at 2026-06-14 22:44:10.296.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.005 (0.007) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

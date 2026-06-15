@@ -1,0 +1,23 @@
+Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/5] Emitting module OuroMDTests
+[4/5] Compiling OuroMDTests FolderBrowserTests.swift
+[4/6] Write Objects.LinkFileList
+[5/6] Linking ouro-mdPackageTests
+Build complete! (1.74s)
+Test Suite 'Selected tests' started at 2026-06-14 22:46:37.306.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 22:46:37.307.
+Test Suite 'FolderBrowserTests' started at 2026-06-14 22:46:37.307.
+Test Case '-[OuroMDTests.FolderBrowserTests testLargeWorkspaceBudgetSkipsOversizedHiddenAndSymlinkedFiles]' started.
+Test Case '-[OuroMDTests.FolderBrowserTests testLargeWorkspaceBudgetSkipsOversizedHiddenAndSymlinkedFiles]' passed (1.544 seconds).
+Test Suite 'FolderBrowserTests' passed at 2026-06-14 22:46:38.851.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.544 (1.544) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 22:46:38.851.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.544 (1.544) seconds
+Test Suite 'Selected tests' passed at 2026-06-14 22:46:38.851.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.544 (1.545) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

@@ -1,0 +1,15 @@
+exit=1
+       0 /tmp/ouro-md-missing-roundtrip.out
+     475 /tmp/ouro-md-missing-roundtrip.err
+     475 total
+Building for debugging...
+[0/3] Write swift-version--58304C5D6DBC2206.txt
+[1/4] Write sources
+[3/7] Compiling OuroMD main.swift
+[4/7] Emitting module OuroMD
+[5/7] Compiling OuroMD RoundTrip.swift
+[5/8] Write Objects.LinkFileList
+[6/8] Linking ouro-md
+[7/8] Applying ouro-md
+Build of product 'ouro-md' complete! (2.65s)
+roundtrip: cannot read /tmp/ouro-md-definitely-missing.md: The file “ouro-md-definitely-missing.md” couldn’t be opened because there is no such file.

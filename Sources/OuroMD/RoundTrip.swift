@@ -10,9 +10,13 @@ final class RoundTripper: NSObject, WKScriptMessageHandler, WKNavigationDelegate
     private let outURL: URL?
     private var webView: WKWebView!
 
-    init(fileURL: URL, outURL: URL?) {
-        self.input = (try? String(contentsOf: fileURL, encoding: .utf8)) ?? ""
+    init(fileURL: URL, outURL: URL?) throws {
+        self.input = try Self.readInput(fileURL)
         self.outURL = outURL
+    }
+
+    static func readInput(_ fileURL: URL) throws -> String {
+        try String(contentsOf: fileURL, encoding: .utf8)
     }
 
     func run() -> Never {

@@ -2,6 +2,25 @@ import XCTest
 @testable import OuroMD
 
 final class MarkdownTidyTests: XCTestCase {
+    private func tempFile() -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-roundtrip-\(UUID().uuidString).md")
+    }
+
+    func testRoundTripperReadsExistingInput() throws {
+        let url = tempFile()
+        try "# Existing\n".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        XCTAssertEqual(try RoundTripper.readInput(url), "# Existing\n")
+    }
+
+    func testRoundTripperRejectsMissingInput() {
+        let url = tempFile()
+
+        XCTAssertThrowsError(try RoundTripper.readInput(url))
+    }
+
     func testExpandsTableSeparator() {
         let input = "| A | B |\n| - | - |\n| 1 | 2 |"
         let out = MarkdownTidy.tidy(input)
