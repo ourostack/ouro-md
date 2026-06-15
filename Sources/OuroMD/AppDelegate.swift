@@ -206,17 +206,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.addButton(withTitle: "Cancel")
         switch alert.runModal() {
         case .alertFirstButtonReturn:
-            let group = DispatchGroup()
-            for c in dirty { group.enter(); c.model.performSave { _ in group.leave() } }
-            var replied = false
-            let reply: (Bool) -> Void = { ok in
-                guard !replied else { return }
-                replied = true
-                NSApp.reply(toApplicationShouldTerminate: ok)
+            let saves = dirty.map { controller in
+                { (completion: @escaping (Bool) -> Void) in
+                    controller.model.performSave(completion: completion)
+                }
             }
-            group.notify(queue: .main) { reply(true) }
-            // Safety net: never hang the quit if a save completion is lost.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 4) { reply(true) }
+            TerminationSaveCoordinator.saveAll(
+                saves,
+                onCancel: { [weak self] in self?.updateCoordinator.cancelPendingManualInstall() },
+                reply: { NSApp.reply(toApplicationShouldTerminate: $0) }
+            )
             return .terminateLater
         case .alertSecondButtonReturn:
             return .terminateNow
