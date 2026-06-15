@@ -3,6 +3,12 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ARTIFACT_DIR="${1:-$ROOT/worker/tasks/2026-06-14-2236-doing-human-use-readiness}"
+SOURCE_VERSION="$(sed -n 's/.*static let version = "\(.*\)"/\1/p' "$ROOT/Sources/OuroMD/OuroMDRelease.swift")"
+EXPECTED_LIVE_VERSION="${OURO_MD_EXPECTED_LIVE_VERSION:-$SOURCE_VERSION}"
+UPDATE_FROM_VERSION="${OURO_MD_UPDATE_FROM_VERSION:-0.9.1}"
+EXPECTED_LIVE_TAG="v$EXPECTED_LIVE_VERSION"
+EXPECTED_LIVE_ZIP="Ouro-MD-$EXPECTED_LIVE_VERSION.zip"
+EXPECTED_LIVE_MANIFEST="Ouro-MD-$EXPECTED_LIVE_VERSION.manifest.json"
 mkdir -p "$ARTIFACT_DIR"
 
 log() {
@@ -150,14 +156,14 @@ APP_PATH="$ROOT/OuroMD.app"
   /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$LIVE_INSTALL/Ouro MD.app/Contents/Info.plist"
   /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$LIVE_INSTALL/Ouro MD.app/Contents/Info.plist"
   /usr/bin/codesign --verify --deep --strict "$LIVE_INSTALL/Ouro MD.app"
-} > "$ARTIFACT_DIR/live-installer-v0.9.2.log" 2>&1
+} > "$ARTIFACT_DIR/live-installer-$EXPECTED_LIVE_TAG.log" 2>&1
 
 {
   CLONE="$TMP_ROOT/clean-clone"
   git clone --depth 1 "$ROOT" "$CLONE"
   cd "$CLONE"
   swift test
-  VERSION="$(sed -n 's/.*static let version = "\(.*\)"/\1/p' Sources/OuroMD/OuroMDRelease.swift)"
+  VERSION="$SOURCE_VERSION"
   OURO_MD_ALLOW_UNCONFIGURED_TELEMETRY=1 ./scripts/package-release.sh
   test -s "dist/Ouro-MD-$VERSION.zip"
   test -s "dist/Ouro-MD-$VERSION.manifest.json"
@@ -168,19 +174,23 @@ APP_PATH="$ROOT/OuroMD.app"
 } > "$ARTIFACT_DIR/clean-clone-release.log" 2>&1
 
 {
-  curl -fsSL -H 'Accept: application/vnd.github+json' -H 'User-Agent: OuroMD/0.9.1' \
+  curl -fsSL -H 'Accept: application/vnd.github+json' -H "User-Agent: OuroMD/$UPDATE_FROM_VERSION" \
     'https://api.github.com/repos/ourostack/ouro-md/releases?per_page=3' > "$TMP_ROOT/releases.json"
-  jq -e '.[0].tag_name == "v0.9.2"' "$TMP_ROOT/releases.json"
+  jq -e --arg tag "$EXPECTED_LIVE_TAG" '.[0].tag_name == $tag' "$TMP_ROOT/releases.json"
   jq -e '.[0].draft == false and .[0].prerelease == false' "$TMP_ROOT/releases.json"
-  jq -e '([.[0].assets[].name] | index("Ouro-MD-0.9.2.zip") and index("Ouro-MD-0.9.2.manifest.json"))' "$TMP_ROOT/releases.json"
-  curl -fsSL -o "$TMP_ROOT/Ouro-MD-0.9.2.manifest.json" \
-    https://github.com/ourostack/ouro-md/releases/download/v0.9.2/Ouro-MD-0.9.2.manifest.json
-  jq -e '.version == "0.9.2" and .bundleIdentifier == "org.ourostack.ouro-md"' "$TMP_ROOT/Ouro-MD-0.9.2.manifest.json"
+  jq -e --arg zip "$EXPECTED_LIVE_ZIP" --arg manifest "$EXPECTED_LIVE_MANIFEST" \
+    '([.[0].assets[].name] | index($zip) and index($manifest))' "$TMP_ROOT/releases.json"
+  curl -fsSL -o "$TMP_ROOT/$EXPECTED_LIVE_MANIFEST" \
+    "https://github.com/ourostack/ouro-md/releases/download/$EXPECTED_LIVE_TAG/$EXPECTED_LIVE_MANIFEST"
+  jq -e --arg version "$EXPECTED_LIVE_VERSION" \
+    '.version == $version and .bundleIdentifier == "org.ourostack.ouro-md"' "$TMP_ROOT/$EXPECTED_LIVE_MANIFEST"
   swift test --filter ReleaseUpdateTests
   swift test --filter OuroMDUpdateInstallerTests
   swift test --filter OuroMDUpdateCoordinatorTests
   printf 'deterministic_update_gate=ok\n'
-  printf 'note=live v0.9.1-to-v0.9.2 app update was verified during v0.9.2 release smoke; repeatable stress uses release feed plus updater unit gates\n'
-} > "$ARTIFACT_DIR/in-app-update-v0.9.1-to-v0.9.2.log" 2>&1
+  printf 'expected_live_version=%s\n' "$EXPECTED_LIVE_VERSION"
+  printf 'update_from_version=%s\n' "$UPDATE_FROM_VERSION"
+  printf 'note=repeatable stress uses release feed plus updater unit gates\n'
+} > "$ARTIFACT_DIR/in-app-update-v${UPDATE_FROM_VERSION}-to-v${EXPECTED_LIVE_VERSION}.log" 2>&1
 
 log "readiness stress complete" | tee "$ARTIFACT_DIR/readiness-stress-complete.log"
