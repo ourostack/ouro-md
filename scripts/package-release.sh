@@ -18,6 +18,11 @@ cd "$(dirname "$0")/.."
 # SwiftPM keeps a bare-repo dependency cache; some machines restrict bare repos.
 export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.bareRepository GIT_CONFIG_VALUE_0=all
 
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "error: release packages require a clean git worktree" >&2
+  exit 1
+fi
+
 POSTHOG_KEY="${OURO_MD_POSTHOG_KEY:-${VITE_POSTHOG_KEY:-}}"
 POSTHOG_DISABLED="${OURO_MD_TELEMETRY_DISABLED:-${VITE_POSTHOG_DISABLED:-}}"
 POSTHOG_DISABLED_NORMALIZED="$(printf '%s' "${POSTHOG_DISABLED}" | tr '[:upper:]' '[:lower:]')"

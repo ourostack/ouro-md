@@ -172,6 +172,66 @@ final class AppModelReloadTests: XCTestCase {
         XCTAssertEqual(model.currentURL, destination)
     }
 
+    func testSaveAsCleanNonUTF8DocumentCopiesOriginalBytes() {
+        let source = tempFile()
+        let destination = tempFile()
+        let original = "# Cafe\n\nresume"
+        let data = original.data(using: .utf16)!
+        try? data.write(to: source)
+        defer {
+            try? FileManager.default.removeItem(at: source)
+            try? FileManager.default.removeItem(at: destination)
+        }
+
+        let model = AppModel()
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+        model.loadInitialFile(source.path)
+
+        let saved = expectation(description: "save as completed")
+        model.performSaveAs(to: destination) { ok in
+            XCTAssertTrue(ok)
+            saved.fulfill()
+        }
+        wait(for: [saved], timeout: 2)
+
+        XCTAssertEqual(try? Data(contentsOf: destination), data)
+        XCTAssertEqual(try? String(contentsOf: destination, encoding: .utf16), original)
+    }
+
+    func testSaveAsDirtyDocumentWritesEditorBuffer() {
+        let source = tempFile()
+        let destination = tempFile()
+        try? "# Original\n".write(to: source, atomically: true, encoding: .utf8)
+        defer {
+            try? FileManager.default.removeItem(at: source)
+            try? FileManager.default.removeItem(at: destination)
+        }
+
+        let model = AppModel()
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+        model.loadInitialFile(source.path)
+
+        bridge.current = "# Dirty edit\n\n| A |\n| - |\n| 1 |\n"
+        model.setDirty(true)
+
+        let saved = expectation(description: "save as completed")
+        model.performSaveAs(to: destination) { ok in
+            XCTAssertTrue(ok)
+            saved.fulfill()
+        }
+        wait(for: [saved], timeout: 2)
+
+        XCTAssertEqual(
+            try? String(contentsOf: destination, encoding: .utf8),
+            "# Dirty edit\n\n| A |\n| --- |\n| 1 |\n"
+        )
+        XCTAssertEqual(model.currentURL, destination)
+    }
+
     func testFailedSaveAsRestoresPreviousURL() {
         let source = tempFile()
         let missingDestination = FileManager.default.temporaryDirectory

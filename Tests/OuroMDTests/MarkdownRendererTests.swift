@@ -176,6 +176,27 @@ final class MarkdownRendererTests: XCTestCase {
         XCTAssertFalse(html.contains("id=\"fn-b\""))
     }
 
+    func testLongFencesCanContainShorterFenceExamples() {
+        let markdown = """
+        ````markdown
+        ```md
+        [^a]: literal
+        ```
+        literal[^a]
+        ````
+
+        Body[^real].
+
+        [^real]: ok
+        """
+        let html = render(markdown)
+
+        XCTAssertTrue(html.contains("[^a]: literal"))
+        XCTAssertTrue(html.contains("literal[^a]"))
+        XCTAssertTrue(html.contains("<li id=\"fn-real\"><p>ok</p>"))
+        XCTAssertFalse(html.contains("id=\"fn-a\""))
+    }
+
     func testFootnoteReferencesInsideInlineCodeOrEscapesAreLeftAlone() {
         let html = render("Real[^a] code `[^a]` escaped \\[^a].\n\n[^a]: ok")
 

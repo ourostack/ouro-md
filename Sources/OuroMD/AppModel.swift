@@ -321,7 +321,7 @@ final class AppModel: ObservableObject {
     func performSaveAs(to url: URL, completion: @escaping (Bool) -> Void) {
         let previousURL = currentURL
         currentURL = url
-        writeMarkdown(to: url, allowCleanNoOp: false, useLastLoadedWhenClean: true) { [weak self] ok in
+        let finish: (Bool) -> Void = { [weak self] ok in
             guard let self else { completion(ok); return }
             if ok {
                 NSDocumentController.shared.noteNewRecentDocumentURL(url)
@@ -329,6 +329,11 @@ final class AppModel: ObservableObject {
                 self.currentURL = previousURL
             }
             completion(ok)
+        }
+        if !isDirty, let previousURL {
+            writeOriginalFileBytes(from: previousURL, to: url, completion: finish)
+        } else {
+            writeMarkdown(to: url, allowCleanNoOp: false, useLastLoadedWhenClean: true, completion: finish)
         }
     }
 
@@ -382,16 +387,38 @@ final class AppModel: ObservableObject {
         do {
             lastLoadedContent = markdown
             try markdown.write(to: target, atomically: true, encoding: .utf8)
-            bridge?.markSaved()
-            isDirty = false
-            startWatching()
-            onChromeUpdate?()
+            markSaveSucceeded()
             completion(true)
         } catch {
             presentError("Could not save \(displayURL.lastPathComponent)", error)
             captureTelemetry("ouro_md_document_save_failed")
             completion(false)
         }
+    }
+
+    private func writeOriginalFileBytes(from sourceURL: URL, to destinationURL: URL, completion: @escaping (Bool) -> Void) {
+        let source = sourceURL.resolvingSymlinksInPath()
+        let target = destinationURL.resolvingSymlinksInPath()
+        do {
+            if source != target {
+                let data = try Data(contentsOf: source)
+                try data.write(to: target, options: .atomic)
+            }
+            lastLoadedContent = AppModel.readText(at: target) ?? lastLoadedContent
+            markSaveSucceeded()
+            completion(true)
+        } catch {
+            presentError("Could not save \(destinationURL.lastPathComponent)", error)
+            captureTelemetry("ouro_md_document_save_failed")
+            completion(false)
+        }
+    }
+
+    private func markSaveSucceeded() {
+        bridge?.markSaved()
+        isDirty = false
+        startWatching()
+        onChromeUpdate?()
     }
 
     // MARK: - Live external reload

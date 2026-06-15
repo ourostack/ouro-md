@@ -45,6 +45,11 @@ private enum FootnotePreprocessor {
         var markdown: String
     }
 
+    private struct Fence {
+        var marker: Character
+        var length: Int
+    }
+
     struct Output {
         var markdown: String
         var footnotes: [RenderedFootnote]
@@ -79,16 +84,22 @@ private enum FootnotePreprocessor {
         var definitions: [Definition] = []
         var seenLabels: Set<String> = []
         var activeDefinitionIndex: Int?
-        var inFence = false
+        var activeFence: Fence?
 
         for line in lines {
-            if isFence(line) {
-                inFence.toggle()
+            if let fence = parseFence(line) {
                 activeDefinitionIndex = nil
+                if let existing = activeFence {
+                    if fence.marker == existing.marker && fence.length >= existing.length {
+                        activeFence = nil
+                    }
+                } else {
+                    activeFence = fence
+                }
                 bodyLines.append(line)
                 continue
             }
-            if inFence {
+            if activeFence != nil {
                 bodyLines.append(line)
                 continue
             }
@@ -131,9 +142,20 @@ private enum FootnotePreprocessor {
         return Definition(label: label, markdown: markdown)
     }
 
-    private static func isFence(_ line: String) -> Bool {
+    private static func parseFence(_ line: String) -> Fence? {
+        guard indentationWidth(line) <= 3 else { return nil }
         let trimmed = line.trimmingCharacters(in: .whitespaces)
-        return trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~")
+        guard let first = trimmed.first, first == "`" || first == "~" else { return nil }
+        var length = 0
+        for char in trimmed {
+            if char == first {
+                length += 1
+            } else {
+                break
+            }
+        }
+        guard length >= 3 else { return nil }
+        return Fence(marker: first, length: length)
     }
 
     private static func indentationWidth(_ line: String) -> Int {
@@ -166,15 +188,20 @@ private enum FootnotePreprocessor {
         numbersByLabel: [String: Int]
     ) -> String {
         var output: [String] = []
-        var inFence = false
+        var activeFence: Fence?
         for line in markdown.components(separatedBy: "\n") {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") {
-                inFence.toggle()
+            if let fence = parseFence(line) {
+                if let existing = activeFence {
+                    if fence.marker == existing.marker && fence.length >= existing.length {
+                        activeFence = nil
+                    }
+                } else {
+                    activeFence = fence
+                }
                 output.append(line)
                 continue
             }
-            output.append((inFence || indentationWidth(line) >= 4)
+            output.append((activeFence != nil || indentationWidth(line) >= 4)
                 ? line
                 : replaceReferences(inLine: line, idsByLabel: idsByLabel, numbersByLabel: numbersByLabel))
         }

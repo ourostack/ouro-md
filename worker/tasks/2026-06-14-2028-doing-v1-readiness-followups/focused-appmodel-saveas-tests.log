@@ -1,56 +1,169 @@
+[0/1] Planning build
 Building for debugging...
-[0/6] Write sources
-[2/6] Write swift-version--58304C5D6DBC2206.txt
-[4/8] Compiling OuroMD AppModel.swift
-[5/8] Emitting module OuroMD
-[6/16] Compiling OuroMD main.swift
-[7/16] Compiling OuroMD MenuBuilder.swift
-[8/16] Compiling OuroMD DocumentWindowController.swift
-[9/16] Compiling OuroMD EditorWebView.swift
-[10/16] Compiling OuroMD AppDelegate.swift
-[11/16] Compiling OuroMD Sidebar.swift
-[12/16] Compiling OuroMD ContentView.swift
-[13/16] Compiling OuroMD ContentSearcher.swift
-[13/18] Write Objects.LinkFileList
-[14/18] Linking ouro-md
-[15/18] Applying ouro-md
-[17/21] Emitting module OuroMDTests
-[18/21] Compiling OuroMDTests AppModelReloadTests.swift
-[19/21] Compiling OuroMDTests FolderBrowserTests.swift
-[19/21] Write Objects.LinkFileList
-[20/21] Linking ouro-mdPackageTests
-Build complete! (4.05s)
-Test Suite 'Selected tests' started at 2026-06-14 21:05:17.903.
-Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 21:05:17.904.
-Test Suite 'AppModelReloadTests' started at 2026-06-14 21:05:17.904.
+[0/7] Write sources
+[1/7] Write swift-version--58304C5D6DBC2206.txt
+[3/71] Compiling Markdown BlockContainer.swift
+[4/71] Compiling Markdown BlockMarkup.swift
+[5/71] Compiling Markdown InlineContainer.swift
+[6/71] Compiling Markdown InlineMarkup.swift
+[7/71] Compiling Markdown ListItemContainer.swift
+[8/71] Compiling Markdown AtomicCounter.swift
+[9/71] Compiling Markdown CharacterExtensions.swift
+[10/78] Compiling Markdown CodeBlock.swift
+[11/78] Compiling Markdown HTMLBlock.swift
+[12/78] Compiling Markdown Heading.swift
+[13/78] Compiling Markdown ThematicBreak.swift
+[14/78] Compiling Markdown Table.swift
+[15/78] Compiling Markdown TableBody.swift
+[16/78] Compiling Markdown TableCell.swift
+[17/78] Compiling Markdown TableCellContainer.swift
+[18/78] Compiling Markdown TableHead.swift
+[19/78] Compiling Markdown TableRow.swift
+[20/78] Compiling Markdown Replacement.swift
+[21/78] Compiling Markdown SourceLocation.swift
+[22/78] Compiling Markdown Emphasis.swift
+[23/78] Compiling Markdown Image.swift
+[24/78] Compiling Markdown LazySplitLines.swift
+[25/78] Compiling Markdown ParseOptions.swift
+[26/78] Compiling Markdown RangeAdjuster.swift
+[27/78] Compiling Markdown RangerTracker.swift
+[28/78] Compiling Markdown MarkupRewriter.swift
+[29/78] Compiling Markdown BasicBlockContainer.swift
+[30/78] Compiling Markdown BasicInlineContainer.swift
+[31/78] Compiling Markdown PlainTextConvertibleMarkup.swift
+[32/78] Compiling Markdown RawMarkup.swift
+[33/78] Compiling Markdown BlockDirective.swift
+[34/78] Compiling Markdown BlockQuote.swift
+[35/78] Compiling Markdown CustomBlock.swift
+[36/78] Compiling Markdown DoxygenAbstract.swift
+[37/78] Compiling Markdown DoxygenDiscussion.swift
+[38/78] Compiling Markdown DoxygenNote.swift
+[39/78] Compiling Markdown DoxygenParameter.swift
+[40/78] Compiling Markdown DoxygenReturns.swift
+[41/78] Compiling Markdown ListItem.swift
+[42/78] Compiling Markdown OrderedList.swift
+[43/78] Compiling Markdown UnorderedList.swift
+[44/78] Compiling Markdown Paragraph.swift
+[45/78] Compiling Markdown ChildIndexPath.swift
+[46/78] Compiling Markdown DirectiveArgument.swift
+[47/78] Compiling Markdown Document.swift
+[48/78] Compiling Markdown LiteralMarkup.swift
+[49/78] Compiling Markdown Markup.swift
+[50/78] Compiling Markdown MarkupChildren.swift
+[51/78] Compiling Markdown MarkupData.swift
+[52/78] Emitting module Markdown
+[53/78] Compiling Markdown CollectionExtensions.swift
+[54/78] Compiling Markdown StringExtensions.swift
+[55/78] Compiling Markdown MarkupVisitor.swift
+[56/78] Compiling Markdown MarkupWalker.swift
+[57/78] Compiling Markdown HTMLFormatter.swift
+[58/78] Compiling Markdown MarkupFormatter.swift
+[59/78] Compiling Markdown MarkupTreeDumper.swift
+[60/78] Compiling Markdown InlineAttributes.swift
+[61/78] Compiling Markdown Link.swift
+[62/78] Compiling Markdown Strikethrough.swift
+[63/78] Compiling Markdown Strong.swift
+[64/78] Compiling Markdown CustomInline.swift
+[65/78] Compiling Markdown InlineCode.swift
+[66/78] Compiling Markdown InlineHTML.swift
+[67/78] Compiling Markdown LineBreak.swift
+[68/78] Compiling Markdown SoftBreak.swift
+[69/78] Compiling Markdown SymbolLink.swift
+[70/78] Compiling Markdown Text.swift
+[71/78] Compiling Markdown Aside.swift
+[72/78] Compiling Markdown BlockDirectiveParser.swift
+[73/78] Compiling Markdown CommonMarkConverter.swift
+[74/108] Compiling OuroMD FileWatcher.swift
+[75/108] Compiling OuroMD FolderBrowser.swift
+[76/108] Compiling OuroMD HTMLDocument.swift
+[77/111] Compiling OuroMD OuroMDRelease.swift
+[78/111] Compiling OuroMD OuroMDTelemetry.swift
+[79/111] Compiling OuroMD OuroMDUpdate.swift
+[80/111] Compiling OuroMD WrapTest.swift
+[81/111] Compiling OuroMD main.swift
+[82/111] Compiling OuroMD resource_bundle_accessor.swift
+[83/111] Compiling OuroMD MarkdownRenderer.swift
+[84/111] Compiling OuroMD MarkdownTidy.swift
+[85/111] Compiling OuroMD MenuBuilder.swift
+[86/111] Compiling OuroMD OuroMDUpdateCoordinator.swift
+[87/111] Compiling OuroMD OuroMDUpdateInstaller.swift
+[88/111] Compiling OuroMD ReleaseUpdate.swift
+[89/111] Compiling OuroMD ContentView.swift
+[90/111] Compiling OuroMD DocumentWindowController.swift
+[91/111] Compiling OuroMD EditorWebView.swift
+[92/111] Compiling OuroMD Export.swift
+[93/111] Compiling OuroMD Snapshot.swift
+[94/111] Compiling OuroMD TerminationSaveCoordinator.swift
+[95/111] Compiling OuroMD Themes.swift
+[96/111] Emitting module OuroMD
+[97/111] Compiling OuroMD AppDelegate.swift
+[98/111] Compiling OuroMD AppModel.swift
+[99/111] Compiling OuroMD CLI.swift
+[100/111] Compiling OuroMD ContentSearcher.swift
+[101/111] Compiling OuroMD UndoRedoCommandRouter.swift
+[102/111] Compiling OuroMD UndoTest.swift
+[103/111] Compiling OuroMD Welcome.swift
+[104/111] Compiling OuroMD RenderProbe.swift
+[105/111] Compiling OuroMD RoundTrip.swift
+[106/111] Compiling OuroMD Sidebar.swift
+[106/111] Write Objects.LinkFileList
+[107/111] Linking ouro-md
+[108/111] Applying ouro-md
+[110/125] Compiling OuroMDTests ReleaseUpdateTests.swift
+[111/125] Compiling OuroMDTests OuroMDUpdateTests.swift
+[112/125] Compiling OuroMDTests OutlineTreeTests.swift
+[113/125] Compiling OuroMDTests TerminationSaveCoordinatorTests.swift
+[114/126] Compiling OuroMDTests UndoRedoRoutingTests.swift
+[115/126] Compiling OuroMDTests OuroMDUpdateInstallerTests.swift
+[116/126] Compiling OuroMDTests FileWatcherTests.swift
+[117/126] Compiling OuroMDTests FolderBrowserTests.swift
+[118/126] Compiling OuroMDTests MarkdownRendererTests.swift
+[119/126] Compiling OuroMDTests MarkdownTidyTests.swift
+[120/126] Emitting module OuroMDTests
+[121/126] Compiling OuroMDTests AppModelReloadTests.swift
+[122/126] Compiling OuroMDTests ContentSearcherTests.swift
+[123/126] Compiling OuroMDTests OuroMDTelemetryTests.swift
+[124/126] Compiling OuroMDTests OuroMDUpdateCoordinatorTests.swift
+[125/128] Compiling ouro_mdPackageTests runner.swift
+[126/128] Emitting module ouro_mdPackageTests
+[126/128] Write Objects.LinkFileList
+[127/128] Linking ouro-mdPackageTests
+Build complete! (5.86s)
+Test Suite 'Selected tests' started at 2026-06-14 21:15:58.294.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 21:15:58.294.
+Test Suite 'AppModelReloadTests' started at 2026-06-14 21:15:58.294.
 Test Case '-[OuroMDTests.AppModelReloadTests testCleanSaveDoesNotRoundTripThroughEditor]' started.
-Test Case '-[OuroMDTests.AppModelReloadTests testCleanSaveDoesNotRoundTripThroughEditor]' passed (0.217 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testCleanSaveDoesNotRoundTripThroughEditor]' passed (0.215 seconds).
 Test Case '-[OuroMDTests.AppModelReloadTests testDirtyFormattingOnlySaveDoesNotRestoreOriginalBytes]' started.
-Test Case '-[OuroMDTests.AppModelReloadTests testDirtyFormattingOnlySaveDoesNotRestoreOriginalBytes]' passed (0.425 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testDirtyFormattingOnlySaveDoesNotRestoreOriginalBytes]' passed (0.432 seconds).
 Test Case '-[OuroMDTests.AppModelReloadTests testExternalEditTriggersLiveReload]' started.
-Test Case '-[OuroMDTests.AppModelReloadTests testExternalEditTriggersLiveReload]' passed (0.560 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testExternalEditTriggersLiveReload]' passed (0.575 seconds).
 Test Case '-[OuroMDTests.AppModelReloadTests testFailedSaveAsRestoresPreviousURL]' started.
-Test Case '-[OuroMDTests.AppModelReloadTests testFailedSaveAsRestoresPreviousURL]' passed (0.030 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testFailedSaveAsRestoresPreviousURL]' passed (0.031 seconds).
 Test Case '-[OuroMDTests.AppModelReloadTests testOwnSaveDoesNotSelfReload]' started.
-Test Case '-[OuroMDTests.AppModelReloadTests testOwnSaveDoesNotSelfReload]' passed (1.068 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testOwnSaveDoesNotSelfReload]' passed (1.078 seconds).
 Test Case '-[OuroMDTests.AppModelReloadTests testRenameCaseOnlyIsAllowed]' started.
-Test Case '-[OuroMDTests.AppModelReloadTests testRenameCaseOnlyIsAllowed]' passed (0.018 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameCaseOnlyIsAllowed]' passed (0.031 seconds).
 Test Case '-[OuroMDTests.AppModelReloadTests testRenameMovesFileAndRetargetsModel]' started.
-Test Case '-[OuroMDTests.AppModelReloadTests testRenameMovesFileAndRetargetsModel]' passed (0.009 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameMovesFileAndRetargetsModel]' passed (0.007 seconds).
 Test Case '-[OuroMDTests.AppModelReloadTests testRenameRefusesCollision]' started.
-Test Case '-[OuroMDTests.AppModelReloadTests testRenameRefusesCollision]' passed (0.011 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameRefusesCollision]' passed (0.009 seconds).
 Test Case '-[OuroMDTests.AppModelReloadTests testRenameWithoutExtensionKeepsOriginal]' started.
-Test Case '-[OuroMDTests.AppModelReloadTests testRenameWithoutExtensionKeepsOriginal]' passed (0.016 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameWithoutExtensionKeepsOriginal]' passed (0.004 seconds).
 Test Case '-[OuroMDTests.AppModelReloadTests testSaveAsCleanDocumentWritesNewDestination]' started.
-Test Case '-[OuroMDTests.AppModelReloadTests testSaveAsCleanDocumentWritesNewDestination]' passed (0.090 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveAsCleanDocumentWritesNewDestination]' passed (0.055 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveAsCleanNonUTF8DocumentCopiesOriginalBytes]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveAsCleanNonUTF8DocumentCopiesOriginalBytes]' passed (0.044 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveAsDirtyDocumentWritesEditorBuffer]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveAsDirtyDocumentWritesEditorBuffer]' passed (0.045 seconds).
 Test Case '-[OuroMDTests.AppModelReloadTests testSaveBeforeEditorReadyDoesNotEmptyFile]' started.
-Test Case '-[OuroMDTests.AppModelReloadTests testSaveBeforeEditorReadyDoesNotEmptyFile]' passed (0.444 seconds).
-Test Suite 'AppModelReloadTests' passed at 2026-06-14 21:05:20.795.
-	 Executed 11 tests, with 0 failures (0 unexpected) in 2.889 (2.890) seconds
-Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 21:05:20.795.
-	 Executed 11 tests, with 0 failures (0 unexpected) in 2.889 (2.891) seconds
-Test Suite 'Selected tests' passed at 2026-06-14 21:05:20.795.
-	 Executed 11 tests, with 0 failures (0 unexpected) in 2.889 (2.891) seconds
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveBeforeEditorReadyDoesNotEmptyFile]' passed (0.453 seconds).
+Test Suite 'AppModelReloadTests' passed at 2026-06-14 21:16:01.277.
+	 Executed 13 tests, with 0 failures (0 unexpected) in 2.981 (2.982) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 21:16:01.277.
+	 Executed 13 tests, with 0 failures (0 unexpected) in 2.981 (2.982) seconds
+Test Suite 'Selected tests' passed at 2026-06-14 21:16:01.277.
+	 Executed 13 tests, with 0 failures (0 unexpected) in 2.981 (2.983) seconds
 ◇ Test run started.
 ↳ Testing Library Version: 1902
 ↳ Target Platform: arm64e-apple-macos14.0

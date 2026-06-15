@@ -84,9 +84,9 @@ Release builds can embed anonymous PostHog telemetry by setting
 The script also accepts Spoonjoy-style `VITE_POSTHOG_KEY` /
 `VITE_POSTHOG_HOST` environment variables so maintainers can reuse the same
 project configuration without committing the key. `scripts/package-release.sh`
-requires a telemetry key by default so release artifacts do not accidentally
-ship unconfigured; set `OURO_MD_ALLOW_UNCONFIGURED_TELEMETRY=1` only for local
-dry runs.
+requires a clean git worktree and a telemetry key by default so release artifacts
+do not accidentally ship uncommitted or unconfigured bytes; set
+`OURO_MD_ALLOW_UNCONFIGURED_TELEMETRY=1` only for local dry runs.
 
 ## Build
 
