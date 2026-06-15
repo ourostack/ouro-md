@@ -21,4 +21,5 @@ Allowed format:
 - Sources/OuroMD/AppModel.swift:360-999 - Pre-existing AppKit error presentation, file watcher, export, sidebar, search, format, and close-confirmation surface; changed save success/no-op paths are intentionally outside this range.
 - Sources/OuroMD/MarkdownRenderer.swift:251 - Private visitor image byte cap storage; image inlining, supported MIME branches, remote URLs, empty URLs, and unsupported extensions are covered by `MarkdownRendererTests`.
 - Sources/OuroMD/MarkdownRenderer.swift:253-254 - `MarkupVisitor.defaultVisit` fallback for future swift-markdown node types; current supported block/inline nodes touched by this follow-up are covered directly by `MarkdownRendererTests`.
+- Sources/OuroMD/OuroMDTelemetry.swift:83-86 - Default live URLSession telemetry sender; request construction and payload encoding are covered by injected-sender tests without sending network traffic.
 - Sources/OuroMD/OuroMDRelease.swift: all - Release descriptor constants are asserted directly by `ReleaseUpdateTests`; Swift coverage does not emit a file record for this inlined constants-only file.

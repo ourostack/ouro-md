@@ -1,19 +1,5 @@
-changed_files=5 checked_executable_lines=1327 noop_files=3
+changed_files=7 checked_executable_lines=1486 noop_files=3
 noop_files:
   Sources/OuroMD/AppDelegate.swift
   Sources/OuroMD/AppModel.swift
   Sources/OuroMD/OuroMDRelease.swift
-uncovered_lines:
-  Sources/OuroMD/AppDelegate.swift:339
-  Sources/OuroMD/AppDelegate.swift:341
-  Sources/OuroMD/AppDelegate.swift:345
-  Sources/OuroMD/AppDelegate.swift:385
-  Sources/OuroMD/AppModel.swift:327
-  Sources/OuroMD/AppModel.swift:328
-  Sources/OuroMD/AppModel.swift:329
-  Sources/OuroMD/AppModel.swift:330
-  Sources/OuroMD/AppModel.swift:331
-  Sources/OuroMD/AppModel.swift:332
-  Sources/OuroMD/MarkdownRenderer.swift:251
-  Sources/OuroMD/MarkdownRenderer.swift:253
-  Sources/OuroMD/MarkdownRenderer.swift:254

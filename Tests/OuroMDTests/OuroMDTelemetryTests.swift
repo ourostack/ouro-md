@@ -51,6 +51,21 @@ final class OuroMDTelemetryTests: XCTestCase {
         XCTAssertNil(config)
     }
 
+    func testConfigurationRejectsInvalidEmbeddedHost() throws {
+        let bundle = try makeBundle(
+            postHogKey: "phc_test",
+            postHogHost: "not a url"
+        )
+
+        let config = OuroMDTelemetryConfiguration.load(
+            bundle: bundle,
+            environment: [:],
+            defaults: defaults
+        )
+
+        XCTAssertNil(config)
+    }
+
     func testConfigurationIgnoresAmbientPostHogKeyEnvironmentAndSupportsDisableFlag() throws {
         let ambientEnvironmentConfig = OuroMDTelemetryConfiguration.load(
             bundle: Bundle(for: Self.self),
@@ -77,6 +92,8 @@ final class OuroMDTelemetryTests: XCTestCase {
             defaults: defaults
         )
         XCTAssertNil(disabled)
+
+        XCTAssertFalse(OuroMDTelemetryConfiguration.truthy("definitely no"))
     }
 
     func testCaptureSendsAnonymousPostHogPayload() throws {
@@ -92,7 +109,7 @@ final class OuroMDTelemetryTests: XCTestCase {
             now: { Date(timeIntervalSince1970: 0) }
         )
 
-        telemetry.capture("ouro_md_test_event", properties: ["answer": .int(42), "ok": .bool(true)])
+        telemetry.capture("ouro_md_test_event", properties: ["answer": .int(42), "ok": .bool(true), "ratio": .double(0.5)])
 
         XCTAssertEqual(requests.count, 1)
         XCTAssertEqual(requests[0].url?.absoluteString, "https://us.i.posthog.com/i/v0/e/")
@@ -113,6 +130,54 @@ final class OuroMDTelemetryTests: XCTestCase {
         XCTAssertEqual(properties["app_name"] as? String, "Ouro MD")
         XCTAssertEqual(properties["answer"] as? Int, 42)
         XCTAssertEqual(properties["ok"] as? Bool, true)
+        XCTAssertEqual(properties["ratio"] as? Double, 0.5)
+    }
+
+    func testCaptureReusesExistingDistinctID() throws {
+        defaults.set("existing-install", forKey: OuroMDTelemetry.distinctIDDefaultsKey)
+        let config = OuroMDTelemetryConfiguration(
+            apiKey: "phc_test",
+            host: URL(string: "https://us.i.posthog.com")!
+        )
+        var requests: [URLRequest] = []
+        let telemetry = OuroMDTelemetry(
+            defaults: defaults,
+            configuration: config,
+            sender: { requests.append($0) },
+            now: { Date(timeIntervalSince1970: 0) }
+        )
+
+        telemetry.capture("ouro_md_test_event")
+
+        let body = try XCTUnwrap(requests.first?.httpBody)
+        let json = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: body) as? [String: Any]
+        )
+        XCTAssertEqual(json["distinct_id"] as? String, "existing-install")
+    }
+
+    func testCaptureCanUseDefaultClockWithInjectedSender() {
+        let config = OuroMDTelemetryConfiguration(
+            apiKey: "phc_test",
+            host: URL(string: "https://us.i.posthog.com")!
+        )
+        var requests: [URLRequest] = []
+        let telemetry = OuroMDTelemetry(
+            defaults: defaults,
+            configuration: config,
+            sender: { requests.append($0) }
+        )
+
+        telemetry.capture("ouro_md_test_event")
+
+        XCTAssertEqual(requests.count, 1)
+    }
+
+    func testUnconfiguredTelemetryIsDisabled() {
+        let telemetry = OuroMDTelemetry(defaults: defaults, configuration: nil)
+
+        XCTAssertFalse(telemetry.isConfigured)
+        XCTAssertFalse(telemetry.isEnabled)
     }
 
     func testOptOutSuppressesCaptureAndPersists() {

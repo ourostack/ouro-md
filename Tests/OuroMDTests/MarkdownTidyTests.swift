@@ -54,6 +54,13 @@ final class MarkdownTidyTests: XCTestCase {
         XCTAssertEqual(MarkdownTidy.roundTripProbeOutput(editorOutput, preserving: original), original)
     }
 
+    func testRoundTripProbeReturnsTidiedOutputWhenContentChanged() {
+        XCTAssertEqual(
+            MarkdownTidy.roundTripProbeOutput("changed", preserving: "original"),
+            "changed"
+        )
+    }
+
     func testNormalTidyDoesNotConsultOriginalForDirtySave() {
         let dirtyEditorOutput = """
         ### Tables line up
