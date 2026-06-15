@@ -12,7 +12,7 @@ Execute the human-use readiness sweep described in the planning doc, patch reach
 
 ## Units
 
-- [ ] Unit 1 - Telemetry truth audit and fixes
+- [x] Unit 1 - Telemetry truth audit and fixes
   - Output: local payload audit, focused tests, and any production telemetry patches required.
   - Acceptance: events are content-free, opt-out safe, useful for dogfood debugging, and tested.
 
@@ -30,7 +30,7 @@ Execute the human-use readiness sweep described in the planning doc, patch reach
 
 ## Completion Criteria
 
-- [ ] Unit 1 complete.
+- [x] Unit 1 complete.
 - [ ] Unit 2 complete.
 - [ ] Unit 3 complete.
 - [ ] Unit 4 complete.
@@ -42,3 +42,4 @@ Execute the human-use readiness sweep described in the planning doc, patch reach
 ## Progress Log
 
 - 2026-06-14 22:36 Created doing doc and artifact plan.
+- 2026-06-14 22:42 Unit 1 complete: added content-free save/open/rename/reload telemetry codes and focused payload/no-leak tests; addressed telemetry reviewer findings.

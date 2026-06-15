@@ -12,6 +12,9 @@ Ouro MD may send:
 - App launch events.
 - Update check, stage, install, cancel, and failure status events.
 - Document create/open events with coarse file-type flags.
+- Document save/open/rename/reload success or failure events with coarse codes
+  such as `manual`, `autosave`, `write_failed`, `editor_not_ready`,
+  `collision`, or `keep_edits`.
 - Folder open events.
 - Export success/failure events with the export format.
 - Editor web-view crash recovery events.

@@ -7,10 +7,14 @@ private final class MockBridge: EditorBridge {
     var reloads: [String] = []
     var getMarkdownCalls = 0
     var onReload: ((String) -> Void)?
+    var returnsNilMarkdown = false
 
     func setMarkdown(_ markdown: String) { current = markdown }
     func reloadMarkdown(_ markdown: String) { current = markdown; reloads.append(markdown); onReload?(markdown) }
-    func getMarkdown(_ completion: @escaping (String?) -> Void) { getMarkdownCalls += 1; completion(current) }
+    func getMarkdown(_ completion: @escaping (String?) -> Void) {
+        getMarkdownCalls += 1
+        completion(returnsNilMarkdown ? nil : current)
+    }
     func getHTML(_ completion: @escaping (String?) -> Void) { completion("") }
     func applyTheme(uiMode: String, css: String, codeTheme: String) {}
     func setMode(_ mode: String) {}
@@ -34,9 +38,70 @@ private final class MockBridge: EditorBridge {
 }
 
 final class AppModelReloadTests: XCTestCase {
+    typealias TelemetryEvent = (event: String, properties: [String: OuroMDTelemetryValue])
+
+    private final class TelemetryRecorder {
+        var events: [TelemetryEvent] = []
+    }
+
     private func tempFile() -> URL {
         FileManager.default.temporaryDirectory
             .appendingPathComponent("ouro-reload-\(UUID().uuidString).md")
+    }
+
+    private func recordTelemetry(on model: AppModel) -> TelemetryRecorder {
+        let recorder = TelemetryRecorder()
+        model.telemetryHandler = { event, properties in
+            recorder.events.append((event, properties))
+        }
+        return recorder
+    }
+
+    private func telemetryStrings(_ events: [TelemetryEvent]) -> [String] {
+        events.flatMap { event, properties in
+            [event] + properties.flatMap { key, value -> [String] in
+                switch value {
+                case let .string(value):
+                    return [key, value]
+                case let .int(value):
+                    return [key, String(value)]
+                case let .double(value):
+                    return [key, String(value)]
+                case let .bool(value):
+                    return [key, String(value)]
+                }
+            }
+        }
+    }
+
+    private func assertTelemetry(
+        _ events: [TelemetryEvent],
+        contains event: String,
+        properties expected: [String: OuroMDTelemetryValue],
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let match = events.first { candidate in
+            candidate.event == event && expected.allSatisfy { candidate.properties[$0.key] == $0.value }
+        }
+        XCTAssertNotNil(match, "Missing telemetry event \(event) with \(expected); got \(events)", file: file, line: line)
+    }
+
+    private func assertTelemetryDoesNotLeak(
+        _ events: [TelemetryEvent],
+        forbidden values: [String],
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let strings = telemetryStrings(events)
+        for value in values where !value.isEmpty {
+            XCTAssertFalse(
+                strings.contains { $0.contains(value) },
+                "Telemetry leaked forbidden value \(value) in \(strings)",
+                file: file,
+                line: line
+            )
+        }
     }
 
     /// The core agent↔human loop: an agent rewrites the open file; ouro-md must
@@ -47,6 +112,7 @@ final class AppModelReloadTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let model = AppModel()
+        let recorder = recordTelemetry(on: model)
         let bridge = MockBridge()
         model.bridge = bridge
         model.editorDidBecomeReady()
@@ -62,6 +128,8 @@ final class AppModelReloadTests: XCTestCase {
         }
         wait(for: [exp], timeout: 6)
         XCTAssertTrue(bridge.current.contains("Updated by agent"), "editor should hold the agent's new content")
+        assertTelemetry(recorder.events, contains: "ouro_md_document_external_reload_completed", properties: [:])
+        assertTelemetryDoesNotLeak(recorder.events, forbidden: [url.path, url.lastPathComponent, "Updated by agent"])
     }
 
     /// Our own save must not bounce back as an external reload.
@@ -101,6 +169,7 @@ final class AppModelReloadTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let model = AppModel()
+        let recorder = recordTelemetry(on: model)
         let bridge = MockBridge()
         model.bridge = bridge
         model.editorDidBecomeReady()
@@ -121,6 +190,12 @@ final class AppModelReloadTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { done.fulfill() }
         wait(for: [done], timeout: 2)
         XCTAssertEqual(try? String(contentsOf: url, encoding: .utf8), dirtyEditorOutput)
+        assertTelemetry(
+            recorder.events,
+            contains: "ouro_md_document_save_completed",
+            properties: ["source": .string("manual"), "result": .string("written")]
+        )
+        assertTelemetryDoesNotLeak(recorder.events, forbidden: [url.path, url.lastPathComponent, "Quartz"])
     }
 
     func testCleanSaveDoesNotRoundTripThroughEditor() {
@@ -130,6 +205,7 @@ final class AppModelReloadTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let model = AppModel()
+        let recorder = recordTelemetry(on: model)
         let bridge = MockBridge()
         model.bridge = bridge
         model.editorDidBecomeReady()
@@ -143,6 +219,11 @@ final class AppModelReloadTests: XCTestCase {
         wait(for: [done], timeout: 1)
         XCTAssertEqual(try? String(contentsOf: url, encoding: .utf8), original)
         XCTAssertEqual(bridge.getMarkdownCalls, 0)
+        assertTelemetry(
+            recorder.events,
+            contains: "ouro_md_document_save_completed",
+            properties: ["source": .string("manual"), "result": .string("clean_noop")]
+        )
     }
 
     func testCleanPerformSaveCompletesWithoutRoundTripThroughEditor() {
@@ -179,6 +260,7 @@ final class AppModelReloadTests: XCTestCase {
         }
 
         let model = AppModel()
+        let recorder = recordTelemetry(on: model)
         let bridge = MockBridge()
         model.bridge = bridge
         model.editorDidBecomeReady()
@@ -193,6 +275,12 @@ final class AppModelReloadTests: XCTestCase {
 
         XCTAssertEqual(try? String(contentsOf: destination, encoding: .utf8), original)
         XCTAssertEqual(model.currentURL, destination)
+        assertTelemetry(
+            recorder.events,
+            contains: "ouro_md_document_save_completed",
+            properties: ["source": .string("save_as_copy"), "result": .string("written")]
+        )
+        assertTelemetryDoesNotLeak(recorder.events, forbidden: [source.path, destination.path, "Original"])
     }
 
     func testSaveAsCleanNonUTF8DocumentCopiesOriginalBytes() {
@@ -233,6 +321,7 @@ final class AppModelReloadTests: XCTestCase {
         }
 
         let model = AppModel()
+        let recorder = recordTelemetry(on: model)
         let bridge = MockBridge()
         model.bridge = bridge
         model.editorDidBecomeReady()
@@ -253,6 +342,12 @@ final class AppModelReloadTests: XCTestCase {
             "# Dirty edit\n\n| A |\n| --- |\n| 1 |\n"
         )
         XCTAssertEqual(model.currentURL, destination)
+        assertTelemetry(
+            recorder.events,
+            contains: "ouro_md_document_save_completed",
+            properties: ["source": .string("save_as"), "result": .string("written")]
+        )
+        assertTelemetryDoesNotLeak(recorder.events, forbidden: [source.path, destination.path, "Dirty edit"])
     }
 
     func testFailedSaveAsRestoresPreviousURL() {
@@ -264,6 +359,7 @@ final class AppModelReloadTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: source) }
 
         let model = AppModel()
+        let recorder = recordTelemetry(on: model)
         let bridge = MockBridge()
         model.bridge = bridge
         model.presentErrorHandler = { _, _ in }
@@ -279,6 +375,12 @@ final class AppModelReloadTests: XCTestCase {
 
         XCTAssertEqual(model.currentURL, source)
         XCTAssertFalse(FileManager.default.fileExists(atPath: missingDestination.path))
+        assertTelemetry(
+            recorder.events,
+            contains: "ouro_md_document_save_failed",
+            properties: ["source": .string("save_as_copy"), "code": .string("write_failed")]
+        )
+        assertTelemetryDoesNotLeak(recorder.events, forbidden: [source.path, missingDestination.path, "Original"])
     }
 
     func testFailedDirtySaveAsRestoresPreviousURL() {
@@ -290,6 +392,7 @@ final class AppModelReloadTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: source) }
 
         let model = AppModel()
+        let recorder = recordTelemetry(on: model)
         let bridge = MockBridge()
         model.bridge = bridge
         model.presentErrorHandler = { _, _ in }
@@ -307,6 +410,12 @@ final class AppModelReloadTests: XCTestCase {
 
         XCTAssertEqual(model.currentURL, source)
         XCTAssertFalse(FileManager.default.fileExists(atPath: missingDestination.path))
+        assertTelemetry(
+            recorder.events,
+            contains: "ouro_md_document_save_failed",
+            properties: ["source": .string("save_as"), "code": .string("write_failed")]
+        )
+        assertTelemetryDoesNotLeak(recorder.events, forbidden: [source.path, missingDestination.path, "Dirty edit"])
     }
 
     /// Saving before the editor has loaded must NOT overwrite the file with "".
@@ -316,9 +425,11 @@ final class AppModelReloadTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let model = AppModel()
+        let recorder = recordTelemetry(on: model)
         let bridge = MockBridge()
         model.bridge = bridge                // bridge present...
         model.loadInitialFile(url.path)      // ...but editorDidBecomeReady NOT called → not ready
+        model.setDirty(true)
         model.save()
 
         let done = expectation(description: "settled")
@@ -327,6 +438,87 @@ final class AppModelReloadTests: XCTestCase {
         XCTAssertEqual(try? String(contentsOf: url, encoding: .utf8),
                        "# Important content the user must not lose",
                        "save before the editor is ready must not clobber the file")
+        assertTelemetry(
+            recorder.events,
+            contains: "ouro_md_document_save_failed",
+            properties: ["source": .string("manual"), "code": .string("editor_not_ready")]
+        )
+        assertTelemetryDoesNotLeak(recorder.events, forbidden: [url.path, url.lastPathComponent, "Important content"])
+    }
+
+    func testSaveWithoutBridgeEmitsCoarseTelemetry() {
+        let url = tempFile()
+        try? "# Important content\n".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let model = AppModel()
+        let recorder = recordTelemetry(on: model)
+        model.loadInitialFile(url.path)
+        model.editorDidBecomeReady()
+        model.setDirty(true)
+
+        let saved = expectation(description: "save failed")
+        model.performSave { ok in
+            XCTAssertFalse(ok)
+            saved.fulfill()
+        }
+        wait(for: [saved], timeout: 1)
+
+        assertTelemetry(
+            recorder.events,
+            contains: "ouro_md_document_save_failed",
+            properties: ["source": .string("manual"), "code": .string("bridge_unavailable")]
+        )
+        assertTelemetryDoesNotLeak(recorder.events, forbidden: [url.path, url.lastPathComponent, "Important content"])
+    }
+
+    func testSaveWhenEditorValueUnavailableEmitsCoarseTelemetry() {
+        let url = tempFile()
+        try? "# Important content\n".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let model = AppModel()
+        let recorder = recordTelemetry(on: model)
+        let bridge = MockBridge()
+        bridge.returnsNilMarkdown = true
+        model.bridge = bridge
+        model.loadInitialFile(url.path)
+        model.editorDidBecomeReady()
+        model.setDirty(true)
+
+        let saved = expectation(description: "save failed")
+        model.performSave { ok in
+            XCTAssertFalse(ok)
+            saved.fulfill()
+        }
+        wait(for: [saved], timeout: 1)
+
+        assertTelemetry(
+            recorder.events,
+            contains: "ouro_md_document_save_failed",
+            properties: ["source": .string("manual"), "code": .string("editor_value_unavailable")]
+        )
+        assertTelemetryDoesNotLeak(recorder.events, forbidden: [url.path, url.lastPathComponent, "Important content"])
+    }
+
+    func testOpenFailureTelemetryIsCoarse() {
+        let url = tempFile()
+        let model = AppModel()
+        let recorder = recordTelemetry(on: model)
+        model.presentErrorHandler = { _, _ in }
+
+        model.open(url: url)
+
+        assertTelemetry(
+            recorder.events,
+            contains: "ouro_md_document_open_failed",
+            properties: [
+                "source": .string("open"),
+                "code": .string("unreadable"),
+                "markdown_type": .bool(true),
+            ]
+        )
+        assertTelemetryDoesNotLeak(recorder.events, forbidden: [url.path, url.lastPathComponent])
     }
 
     /// Click-to-rename renames the file on disk and re-points the model at it.
@@ -339,6 +531,7 @@ final class AppModelReloadTests: XCTestCase {
         try? "# Hi\n".write(to: url, atomically: true, encoding: .utf8)
 
         let model = AppModel()
+        let recorder = recordTelemetry(on: model)
         let bridge = MockBridge()
         model.bridge = bridge
         model.editorDidBecomeReady()
@@ -351,6 +544,12 @@ final class AppModelReloadTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: url.path), "old file should be gone")
         XCTAssertEqual(model.currentURL?.lastPathComponent, "after.md", "model should track the new URL")
         XCTAssertEqual(model.windowTitle, "after.md", "title should follow the rename")
+        assertTelemetry(
+            recorder.events,
+            contains: "ouro_md_document_renamed",
+            properties: ["markdown_type": .bool(true)]
+        )
+        assertTelemetryDoesNotLeak(recorder.events, forbidden: [url.path, renamed.path, "before.md", "after.md"])
     }
 
     /// A bare new name keeps the original extension, like Finder.
@@ -385,6 +584,7 @@ final class AppModelReloadTests: XCTestCase {
         try? "b".write(to: other, atomically: true, encoding: .utf8)
 
         let model = AppModel()
+        let recorder = recordTelemetry(on: model)
         let bridge = MockBridge()
         model.bridge = bridge
         model.editorDidBecomeReady()
@@ -393,6 +593,12 @@ final class AppModelReloadTests: XCTestCase {
         XCTAssertNotNil(model.renameCurrentFile(to: "b.md"), "collision should be refused")
         XCTAssertEqual(try? String(contentsOf: other, encoding: .utf8), "b", "existing file must be untouched")
         XCTAssertEqual(model.currentURL?.lastPathComponent, "a.md", "model should keep the original URL")
+        assertTelemetry(
+            recorder.events,
+            contains: "ouro_md_document_rename_failed",
+            properties: ["code": .string("collision")]
+        )
+        assertTelemetryDoesNotLeak(recorder.events, forbidden: [url.path, other.path, "a.md", "b.md"])
     }
 
     /// A case-only rename (notes.md → Notes.md) must not be mistaken for a

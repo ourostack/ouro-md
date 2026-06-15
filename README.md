@@ -117,9 +117,10 @@ export from **File ▸ Export**. Auto-save keeps a titled file written as you ty
 
 When configured in a release build, Ouro MD sends anonymous product telemetry to
 PostHog: launches, update lifecycle events, document create/open events,
-folder-open events, export success/failure, and editor crash recovery. It never
-sends document contents, filenames, folder paths, search queries, or raw error
-messages. Disable it in **Settings ▸ Telemetry**.
+coarse save/open/rename/reload success or failure codes, folder-open events,
+export success/failure, and editor crash recovery. It never sends document
+contents, filenames, folder paths, search queries, or raw error messages.
+Disable it in **Settings ▸ Telemetry**.
 See [PRIVACY.md](PRIVACY.md) for the full telemetry contract.
 
 ### Keyboard shortcuts

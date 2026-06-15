@@ -79,6 +79,7 @@ final class AppModel: ObservableObject {
     /// Invoked whenever window-chrome-relevant state changes.
     var onChromeUpdate: (() -> Void)?
     var presentErrorHandler: ((String, Error) -> Void)?
+    var telemetryHandler: ((String, [String: OuroMDTelemetryValue]) -> Void)?
 
     private let defaults = UserDefaults.standard
     private var pendingMarkdown: String?
@@ -163,7 +164,7 @@ final class AppModel: ObservableObject {
         autosaveItem?.cancel()
         let item = DispatchWorkItem { [weak self] in
             guard let self, self.isDirty, self.currentURL != nil else { return }
-            self.performSave { _ in }
+            self.performSave(source: "autosave") { _ in }
         }
         autosaveItem = item
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5, execute: item)
@@ -226,6 +227,14 @@ final class AppModel: ObservableObject {
             guard let text = AppModel.readText(at: url) else {
                 self.presentError("Could not open \(url.lastPathComponent)",
                                   NSError(domain: "ouro-md", code: 2, userInfo: [NSLocalizedDescriptionKey: "The file isn't a readable text document, or its encoding isn't supported."]))
+                self.captureTelemetry(
+                    "ouro_md_document_open_failed",
+                    properties: [
+                        "source": .string("open"),
+                        "code": .string("unreadable"),
+                        "markdown_type": .bool(Self.isMarkdownURL(url)),
+                    ]
+                )
                 return
             }
             self.currentURL = url
@@ -245,7 +254,17 @@ final class AppModel: ObservableObject {
 
     func loadInitialFile(_ path: String) {
         let url = URL(fileURLWithPath: path)
-        guard let text = AppModel.readText(at: url) else { return }
+        guard let text = AppModel.readText(at: url) else {
+            captureTelemetry(
+                "ouro_md_document_open_failed",
+                properties: [
+                    "source": .string("launch"),
+                    "code": .string("unreadable"),
+                    "markdown_type": .bool(Self.isMarkdownURL(url)),
+                ]
+            )
+            return
+        }
         currentURL = url
         lastLoadedContent = text
         pushMarkdown(text)
@@ -268,10 +287,17 @@ final class AppModel: ObservableObject {
     /// Untitled documents have no file to rename — the caller should run Save As.
     @discardableResult
     func renameCurrentFile(to rawName: String) -> String? {
-        guard let url = currentURL else { return "This document hasn’t been saved yet." }
+        guard let url = currentURL else {
+            captureTelemetry("ouro_md_document_rename_failed", properties: ["code": .string("unsaved")])
+            return "This document hasn’t been saved yet."
+        }
         var name = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { return "Please enter a name." }
+        guard !name.isEmpty else {
+            captureTelemetry("ouro_md_document_rename_failed", properties: ["code": .string("empty_name")])
+            return "Please enter a name."
+        }
         guard !name.contains("/"), !name.contains(":") else {
+            captureTelemetry("ouro_md_document_rename_failed", properties: ["code": .string("invalid_name")])
             return "A file name can’t contain “/” or “:”."
         }
         // Keep the original extension when the user doesn't type one, so the
@@ -282,6 +308,7 @@ final class AppModel: ObservableObject {
         let dest = url.deletingLastPathComponent().appendingPathComponent(name)
         if dest.standardizedFileURL == url.standardizedFileURL { return nil }
         if FileManager.default.fileExists(atPath: dest.path), !isSameFile(dest, url) {
+            captureTelemetry("ouro_md_document_rename_failed", properties: ["code": .string("collision")])
             return "“\(name)” already exists in this folder."
         }
         stopWatching()
@@ -292,9 +319,14 @@ final class AppModel: ObservableObject {
             refreshFolder()
             startWatching()
             onChromeUpdate?()
+            captureTelemetry(
+                "ouro_md_document_renamed",
+                properties: ["markdown_type": .bool(Self.isMarkdownURL(dest))]
+            )
             return nil
         } catch {
             startWatching()
+            captureTelemetry("ouro_md_document_rename_failed", properties: ["code": .string("move_failed")])
             return error.localizedDescription
         }
     }
@@ -331,16 +363,20 @@ final class AppModel: ObservableObject {
             completion(ok)
         }
         if !isDirty, let previousURL {
-            writeOriginalFileBytes(from: previousURL, to: url, completion: finish)
+            writeOriginalFileBytes(from: previousURL, to: url, telemetrySource: "save_as_copy", completion: finish)
         } else {
-            writeMarkdown(to: url, allowCleanNoOp: false, completion: finish)
+            writeMarkdown(to: url, allowCleanNoOp: false, telemetrySource: "save_as", completion: finish)
         }
     }
 
     /// Saves the current document, prompting for a location if it is untitled.
     func performSave(completion: @escaping (Bool) -> Void) {
+        performSave(source: "manual", completion: completion)
+    }
+
+    private func performSave(source: String, completion: @escaping (Bool) -> Void) {
         if let url = currentURL {
-            writeMarkdown(to: url, completion: completion)
+            writeMarkdown(to: url, telemetrySource: source, completion: completion)
         } else {
             runSavePanel(defaultName: "Untitled.md") { [weak self] url in
                 guard let self, let url else { completion(false); return }
@@ -352,6 +388,7 @@ final class AppModel: ObservableObject {
     private func writeMarkdown(
         to url: URL,
         allowCleanNoOp: Bool = true,
+        telemetrySource: String = "manual",
         completion: @escaping (Bool) -> Void
     ) {
         let target = url.resolvingSymlinksInPath()
@@ -360,6 +397,13 @@ final class AppModel: ObservableObject {
                let currentURL,
                currentURL.resolvingSymlinksInPath() == target,
                AppModel.readText(at: target) == lastLoadedContent {
+                captureTelemetry(
+                    "ouro_md_document_save_completed",
+                    properties: [
+                        "source": .string(telemetrySource),
+                        "result": .string("clean_noop"),
+                    ]
+                )
                 completion(true)
                 return
             }
@@ -367,31 +411,73 @@ final class AppModel: ObservableObject {
         // Never save before the editor has loaded its content, and never write
         // when the editor can't hand back its text — either would clobber the
         // file with an empty string.
-        guard isReady, let bridge else { completion(false); return }
+        guard isReady else {
+            captureTelemetry(
+                "ouro_md_document_save_failed",
+                properties: ["source": .string(telemetrySource), "code": .string("editor_not_ready")]
+            )
+            completion(false)
+            return
+        }
+        guard let bridge else {
+            captureTelemetry(
+                "ouro_md_document_save_failed",
+                properties: ["source": .string(telemetrySource), "code": .string("bridge_unavailable")]
+            )
+            completion(false)
+            return
+        }
         bridge.getMarkdown { [weak self] markdown in
             guard let self else { completion(false); return }
-            guard let markdown else { completion(false); return }
+            guard let markdown else {
+                self.captureTelemetry(
+                    "ouro_md_document_save_failed",
+                    properties: ["source": .string(telemetrySource), "code": .string("editor_value_unavailable")]
+                )
+                completion(false)
+                return
+            }
             let tidied = MarkdownTidy.tidy(markdown)
             // Resolve symlinks so an atomic write updates the real file rather
             // than replacing the link with a regular file.
-            self.writeResolvedMarkdown(tidied, to: target, displayURL: url, completion: completion)
+            self.writeResolvedMarkdown(
+                tidied,
+                to: target,
+                displayURL: url,
+                telemetrySource: telemetrySource,
+                completion: completion
+            )
         }
     }
 
-    private func writeResolvedMarkdown(_ markdown: String, to target: URL, displayURL: URL, completion: @escaping (Bool) -> Void) {
+    private func writeResolvedMarkdown(
+        _ markdown: String,
+        to target: URL,
+        displayURL: URL,
+        telemetrySource: String,
+        completion: @escaping (Bool) -> Void
+    ) {
         do {
             lastLoadedContent = markdown
             try markdown.write(to: target, atomically: true, encoding: .utf8)
-            markSaveSucceeded()
+            markSaveSucceeded(telemetrySource: telemetrySource, result: "written")
             completion(true)
         } catch {
             presentError("Could not save \(displayURL.lastPathComponent)", error)
-            captureTelemetry("ouro_md_document_save_failed")
+            captureTelemetry(
+                "ouro_md_document_save_failed",
+                properties: ["source": .string(telemetrySource), "code": .string("write_failed")]
+            )
             completion(false)
         }
     }
 
-    private func writeOriginalFileBytes(from sourceURL: URL, to destinationURL: URL, completion: @escaping (Bool) -> Void) {
+    private func writeOriginalFileBytes(
+        from sourceURL: URL,
+        to destinationURL: URL,
+        telemetrySource: String,
+        completion: @escaping (Bool) -> Void
+    ) {
         let source = sourceURL.resolvingSymlinksInPath()
         let target = destinationURL.resolvingSymlinksInPath()
         do {
@@ -400,20 +486,30 @@ final class AppModel: ObservableObject {
                 try data.write(to: target, options: .atomic)
             }
             lastLoadedContent = AppModel.readText(at: target) ?? lastLoadedContent
-            markSaveSucceeded()
+            markSaveSucceeded(telemetrySource: telemetrySource, result: "written")
             completion(true)
         } catch {
             presentError("Could not save \(destinationURL.lastPathComponent)", error)
-            captureTelemetry("ouro_md_document_save_failed")
+            captureTelemetry(
+                "ouro_md_document_save_failed",
+                properties: ["source": .string(telemetrySource), "code": .string("write_failed")]
+            )
             completion(false)
         }
     }
 
-    private func markSaveSucceeded() {
+    private func markSaveSucceeded(telemetrySource: String, result: String) {
         bridge?.markSaved()
         isDirty = false
         startWatching()
         onChromeUpdate?()
+        captureTelemetry(
+            "ouro_md_document_save_completed",
+            properties: [
+                "source": .string(telemetrySource),
+                "result": .string(result),
+            ]
+        )
     }
 
     // MARK: - Live external reload
@@ -443,16 +539,19 @@ final class AppModel: ObservableObject {
             // an unsaved copy rather than blanking the reader's view.
             isDirty = true
             onChromeUpdate?()
+            captureTelemetry("ouro_md_document_external_change_unreadable")
             return
         }
         // Our own save (or no real change) — nothing to do.
         guard disk != lastLoadedContent else { return }
 
         if isDirty {
+            captureTelemetry("ouro_md_document_external_change_conflict")
             presentExternalChangeConflict(diskContent: disk, url: url)
         } else {
             lastLoadedContent = disk
             bridge?.reloadMarkdown(disk)   // preserves scroll position
+            captureTelemetry("ouro_md_document_external_reload_completed")
         }
     }
 
@@ -472,6 +571,9 @@ final class AppModel: ObservableObject {
             bridge?.reloadMarkdown(diskContent)
             isDirty = false
             onChromeUpdate?()
+            captureTelemetry("ouro_md_document_external_conflict_resolved", properties: ["choice": .string("reload")])
+        } else {
+            captureTelemetry("ouro_md_document_external_conflict_resolved", properties: ["choice": .string("keep_edits")])
         }
         // "Keep My Edits": leave the dirty buffer untouched; a later save wins.
     }
@@ -482,7 +584,13 @@ final class AppModel: ObservableObject {
         runSavePanel(defaultName: exportBaseName() + ".html", types: [.html]) { [weak self] url in
             guard let self, let url else { return }
             self.bridge?.getHTML { body in
-                guard let body else { return }
+                guard let body else {
+                    self.captureTelemetry(
+                        "ouro_md_export_failed",
+                        properties: ["format": .string("html"), "code": .string("editor_html_unavailable")]
+                    )
+                    return
+                }
                 let doc = HTMLDocument.wrap(body: body, css: self.theme.css, title: url.lastPathComponent)
                 do {
                     try doc.write(to: url, atomically: true, encoding: .utf8)
@@ -499,7 +607,13 @@ final class AppModel: ObservableObject {
         runSavePanel(defaultName: exportBaseName() + ".pdf", types: [.pdf]) { [weak self] url in
             guard let self, let url else { return }
             self.bridge?.getHTML { body in
-                guard let body else { return }
+                guard let body else {
+                    self.captureTelemetry(
+                        "ouro_md_export_failed",
+                        properties: ["format": .string("pdf"), "code": .string("editor_html_unavailable")]
+                    )
+                    return
+                }
                 let doc = HTMLDocument.wrap(body: body, css: self.theme.css, title: url.lastPathComponent)
                 PDFExporter().export(html: doc, to: url) { ok in
                     if !ok {
@@ -884,6 +998,10 @@ final class AppModel: ObservableObject {
         _ event: String,
         properties: [String: OuroMDTelemetryValue] = [:]
     ) {
+        if let telemetryHandler {
+            telemetryHandler(event, properties)
+            return
+        }
         Task { @MainActor in
             OuroMDTelemetry.shared.capture(event, properties: properties)
         }
