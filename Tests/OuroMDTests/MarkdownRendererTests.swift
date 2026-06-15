@@ -16,6 +16,10 @@ final class MarkdownRendererTests: XCTestCase {
         XCTAssertTrue(render("## My Section!").contains("id=\"my-section\""))
     }
 
+    func testHeadingSlugCollapsesRuns() {
+        XCTAssertTrue(render("## My  Section__Again").contains("id=\"my-section-again\""))
+    }
+
     func testBoldAndItalic() {
         let html = render("**bold** and *italic*")
         XCTAssertTrue(html.contains("<strong>bold</strong>"))
@@ -85,6 +89,43 @@ final class MarkdownRendererTests: XCTestCase {
         XCTAssertTrue(html.contains("alt=\"the alt\""))
     }
 
+    func testImageSourcesAreEscapedOrInlined() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-render-images-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        for ext in ["png", "jpg", "jpeg", "gif", "svg", "webp", "bmp", "heic", "bin"] {
+            try Data([0x41, 0x42]).write(to: root.appendingPathComponent("pic.\(ext)"))
+        }
+
+        let markdown = """
+        ![remote](https://example.com/a.png)
+        ![empty]()
+        ![png](pic.png)
+        ![jpg](pic.jpg)
+        ![jpeg](pic.jpeg)
+        ![gif](pic.gif)
+        ![svg](pic.svg)
+        ![webp](pic.webp)
+        ![bmp](pic.bmp)
+        ![heic](pic.heic)
+        ![bin](pic.bin)
+        """
+        let html = MarkdownRenderer.renderHTMLBody(markdown, baseDirectory: root)
+
+        XCTAssertTrue(html.contains("src=\"https://example.com/a.png\""))
+        XCTAssertTrue(html.contains("src=\"\""))
+        XCTAssertTrue(html.contains("data:image/png;base64"))
+        XCTAssertTrue(html.contains("data:image/jpeg;base64"))
+        XCTAssertTrue(html.contains("data:image/gif;base64"))
+        XCTAssertTrue(html.contains("data:image/svg+xml;base64"))
+        XCTAssertTrue(html.contains("data:image/webp;base64"))
+        XCTAssertTrue(html.contains("data:image/bmp;base64"))
+        XCTAssertTrue(html.contains("data:image/heic;base64"))
+        XCTAssertTrue(html.contains("src=\"pic.bin\""))
+    }
+
     func testFootnotesRenderAsBacklinkedSection() {
         let html = render("Body with note[^alpha].\n\n[^alpha]: Footnote **text**.")
 
@@ -93,6 +134,21 @@ final class MarkdownRendererTests: XCTestCase {
         XCTAssertTrue(html.contains("<section class=\"footnotes\">"))
         XCTAssertTrue(html.contains("<li id=\"fn-alpha\"><p>Footnote <strong>text</strong>.</p>"))
         XCTAssertFalse(html.contains("[^alpha]:"))
+    }
+
+    func testFootnoteContinuationsAreRendered() {
+        let html = render("Body[^a].\n\n[^a]: first\n    second\n\tthird")
+
+        XCTAssertTrue(html.contains("first\nsecond\nthird"))
+        XCTAssertFalse(html.contains("[^a]:"))
+    }
+
+    func testBrokenOrUnknownFootnoteReferencesAreLeftAsText() {
+        let html = render("Known[^a] unknown[^missing] broken[^oops\n\n[^a]: ok")
+
+        XCTAssertTrue(html.contains("class=\"footnote-ref\""))
+        XCTAssertTrue(html.contains("unknown[^missing]"))
+        XCTAssertTrue(html.contains("broken[^oops"))
     }
 
     func testFootnoteReferencesInsideFencedCodeAreLeftAlone() {
@@ -107,6 +163,13 @@ final class MarkdownRendererTests: XCTestCase {
         XCTAssertTrue(html.contains("<!DOCTYPE html>"))
         XCTAssertTrue(html.contains("class=\"markdown-body\""))
         XCTAssertTrue(html.contains("<p>x</p>"))
+    }
+
+    func testLineBreaksAndRawHTMLPassThrough() {
+        let html = render("a  \nb\n\n<div>raw</div>")
+
+        XCTAssertTrue(html.contains("<br>"))
+        XCTAssertTrue(html.contains("<div>raw</div>"))
     }
 
     func testThemeStore() {

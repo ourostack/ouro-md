@@ -50,8 +50,27 @@ final class FolderBrowserTests: XCTestCase {
         XCTAssertEqual(snapshot.tree, FolderScanner.tree(at: root, sort: .name))
         XCTAssertEqual(snapshot.flat, FolderScanner.flatList(at: root, sort: .name))
         XCTAssertEqual(snapshot.flat.map(\.name), ["alpha.md", "beta.md", "gamma.md", "notes.txt"])
+        XCTAssertEqual(snapshot.flat.first?.id, snapshot.flat.first?.url)
         XCTAssertEqual(snapshot.tree.first?.name, "sub")
         XCTAssertEqual(snapshot.tree.first?.children?.map(\.name), ["gamma.md"])
+    }
+
+    func testFolderSortLabelsAndDateSorts() {
+        XCTAssertEqual(FolderSort.natural.label, "Sort Naturally")
+        XCTAssertEqual(FolderSort.name.label, "Sort by Name")
+        XCTAssertEqual(FolderSort.modified.label, "Sort by Modified Date")
+        XCTAssertEqual(FolderSort.created.label, "Sort by Created Date")
+
+        XCTAssertFalse(FolderScanner.flatList(at: root, sort: .modified).isEmpty)
+        XCTAssertFalse(FolderScanner.flatList(at: root, sort: .created).isEmpty)
+    }
+
+    func testSnapshotOfMissingFolderIsEmpty() {
+        let missing = root.appendingPathComponent("missing")
+        let snapshot = FolderScanner.snapshot(at: missing, sort: .name)
+
+        XCTAssertTrue(snapshot.tree.isEmpty)
+        XCTAssertTrue(snapshot.flat.isEmpty)
     }
 
     func testSymlinkCycleDoesNotCrashOrRecurse() {
