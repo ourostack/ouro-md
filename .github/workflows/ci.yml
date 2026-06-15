@@ -14,7 +14,7 @@ jobs:
     name: Swift tests
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Select newest Xcode (Swift 6.0+)
         run: |
           latest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"
@@ -28,7 +28,7 @@ jobs:
     name: App bundle
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Select newest Xcode (Swift 6.0+)
         run: |
           latest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"
@@ -49,7 +49,7 @@ jobs:
     name: Native scenario verifier
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Select newest Xcode (Swift 6.0+)
         run: |
           latest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"

@@ -38,15 +38,12 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
-
 jobs:
   release:
     runs-on: macos-14
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Select newest Xcode (needs Swift 6.0+)
         run: |
@@ -91,7 +88,7 @@ jobs:
 
       - name: Upload artifacts to the run (always, for inspection / dry run)
         if: steps.check.outputs.exists == 'false' || (github.event_name == 'workflow_dispatch' && inputs.dry_run)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ouro-md-${{ steps.ver.outputs.version }}
           path: dist/Ouro-MD-${{ steps.ver.outputs.version }}.*
