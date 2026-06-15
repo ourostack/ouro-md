@@ -24,6 +24,7 @@ if [[ -n "$(git status --porcelain)" ]]; then
 fi
 
 POSTHOG_KEY="${OURO_MD_POSTHOG_KEY:-${VITE_POSTHOG_KEY:-}}"
+POSTHOG_HOST="${OURO_MD_POSTHOG_HOST:-${VITE_POSTHOG_HOST:-https://us.i.posthog.com}}"
 POSTHOG_DISABLED="${OURO_MD_TELEMETRY_DISABLED:-${VITE_POSTHOG_DISABLED:-}}"
 POSTHOG_DISABLED_NORMALIZED="$(printf '%s' "${POSTHOG_DISABLED}" | tr '[:upper:]' '[:lower:]')"
 ALLOW_UNCONFIGURED_TELEMETRY="${OURO_MD_ALLOW_UNCONFIGURED_TELEMETRY:-}"
@@ -40,11 +41,29 @@ if [[ -z "${POSTHOG_KEY}" && "${ALLOW_UNCONFIGURED_TELEMETRY}" != "1" ]]; then
   exit 1
 fi
 
+if [[ -n "${POSTHOG_KEY}" && ! "${POSTHOG_HOST}" =~ ^[A-Za-z][A-Za-z0-9+.-]*://[^[:space:]/]+ ]]; then
+  echo "error: release packages require a valid OURO_MD_POSTHOG_HOST/VITE_POSTHOG_HOST URL" >&2
+  exit 1
+fi
+
 ./make-app.sh
 
 APP="OuroMD.app"
 INFO="$APP/Contents/Info.plist"
 plist() { /usr/libexec/PlistBuddy -c "Print :$1" "$INFO"; }
+
+if [[ -n "${POSTHOG_KEY}" ]]; then
+  embedded_posthog_key="$(plist OuroMDPostHogKey 2>/dev/null || true)"
+  embedded_posthog_host="$(plist OuroMDPostHogHost 2>/dev/null || true)"
+  if [[ -z "${embedded_posthog_key}" || -z "${embedded_posthog_host}" ]]; then
+    echo "error: built app is missing embedded PostHog telemetry configuration" >&2
+    exit 1
+  fi
+  if [[ ! "${embedded_posthog_host}" =~ ^[A-Za-z][A-Za-z0-9+.-]*://[^[:space:]/]+ ]]; then
+    echo "error: built app has invalid embedded PostHog host" >&2
+    exit 1
+  fi
+fi
 
 version="$(plist CFBundleShortVersionString)"
 build="$(plist CFBundleVersion)"
