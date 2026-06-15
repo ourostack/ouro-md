@@ -23,6 +23,8 @@ if [[ -n "$(git status --porcelain)" ]]; then
   exit 1
 fi
 
+EXPECTED_VERSION="$(./scripts/verify-release-version.sh --print)"
+
 POSTHOG_KEY="${OURO_MD_POSTHOG_KEY:-${VITE_POSTHOG_KEY:-}}"
 POSTHOG_HOST="${OURO_MD_POSTHOG_HOST:-${VITE_POSTHOG_HOST:-https://us.i.posthog.com}}"
 POSTHOG_DISABLED="${OURO_MD_TELEMETRY_DISABLED:-${VITE_POSTHOG_DISABLED:-}}"
@@ -70,6 +72,11 @@ build="$(plist CFBundleVersion)"
 bundle_id="$(plist CFBundleIdentifier)"
 git_sha="$(git rev-parse HEAD 2>/dev/null || printf 'unknown')"
 created_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+if [[ "$version" != "$EXPECTED_VERSION" || "$build" != "$EXPECTED_VERSION" ]]; then
+  echo "error: built app version/build ($version/$build) did not match release config ($EXPECTED_VERSION)" >&2
+  exit 1
+fi
 
 OUT_DIR="dist"
 archive_name="Ouro-MD-${version}.zip"
