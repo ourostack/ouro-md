@@ -6,7 +6,7 @@ ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
 in careful typography on a centered page. Type Markdown and watch it render in
 place — switch themes live, and read the same document four different ways.
 
-> **Status:** v0.9.2. Reads and edits Markdown today. Not yet Developer-ID
+> **Status:** v0.9.3. Reads and edits Markdown today. Not yet Developer-ID
 > signed or notarized — see [First launch](#first-launch).
 
 ---
@@ -67,6 +67,10 @@ quarantine flag and re-registers it with Launch Services — a plain copy into
 checks for verified releases in the background by default; disable automatic
 checks in **Settings** if you prefer to update manually.
 
+For uninstall/reset steps, see [docs/UNINSTALL_RESET.md](docs/UNINSTALL_RESET.md).
+For install or update problems, see
+[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+
 ### Cutting a release (maintainers)
 
 ```sh
@@ -117,10 +121,17 @@ export from **File ▸ Export**. Auto-save keeps a titled file written as you ty
 
 When configured in a release build, Ouro MD sends anonymous product telemetry to
 PostHog: launches, update lifecycle events, document create/open events,
-folder-open events, export success/failure, and editor crash recovery. It never
-sends document contents, filenames, folder paths, search queries, or raw error
-messages. Disable it in **Settings ▸ Telemetry**.
+coarse save/open/rename/reload success or failure codes, folder-open events,
+export success/failure, and editor crash recovery. It never sends document
+contents, filenames, folder paths, search queries, or raw error messages.
+Disable it in **Settings ▸ Telemetry**.
 See [PRIVACY.md](PRIVACY.md) for the full telemetry contract.
+
+During dogfood, telemetry should tell a complete content-free story for launch,
+update, open, save, rename, external reload, folder-open, export, and editor
+crash-recovery flows. If telemetry is enabled and something feels wrong, include the
+approximate local time in bug reports so maintainers can match coarse event
+status without needing document contents.
 
 ### Keyboard shortcuts
 
@@ -181,6 +192,9 @@ the same architecture Typora-style editors use, made to feel like a Mac app.
 - Editor display of pre-existing relative-path local images (paste/drop already inlines)
 - Higher-contrast tables in the dark theme
 - Paginated PDF export and print
+
+See [docs/V1_ACCEPTANCE.md](docs/V1_ACCEPTANCE.md) for the current human-use
+readiness checklist and known non-goals.
 
 ## License
 

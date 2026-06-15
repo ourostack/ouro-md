@@ -1,0 +1,32 @@
+[2026-06-15T07:10:09Z] editor probes start
+[0/1] Planning build
+Building for debugging...
+[0/3] Write swift-version--58304C5D6DBC2206.txt
+Build of product 'ouro-md' complete! (0.23s)
+PASS multi-step undo/redo: edit=ONE TWOAlpha line.\n undo1=ONEAlpha line.\n undo2=Alpha line.\n redo1=ONEAlpha line.\n redo2=ONE TWOAlpha line.\n
+PASS redo invalidated after new edit: A CRedo base.\n
+PASS empty stack no-op: before=Empty base.\n undo=Empty base.\n redo=Empty base.\n
+PASS undo/redo after mode rebuild: undo=Mode base.\n\n redo=AFTERMODEMode base.\n\n
+Building for debugging...
+[0/3] Write swift-version--58304C5D6DBC2206.txt
+Build of product 'ouro-md' complete! (0.14s)
+type " over selection: hello "world"\n   OK ✓
+type ( over selection: hello (world)\n   OK ✓
+paste url over selection: hello [world](https://x.com)\n   OK ✓
+auto-pair ( then x: hello(x)\n   OK ✓
+skip over typed ): ()x\n   OK ✓
+backspace deletes pair: \n   OK ✓
+Building for debugging...
+[0/3] Write swift-version--58304C5D6DBC2206.txt
+Build of product 'ouro-md' complete! (0.14s)
+heading     : rendered ✓
+bold        : rendered ✓
+inlineCode  : rendered ✓
+codeBlock   : rendered ✓
+table       : rendered ✓
+taskList    : rendered ✓
+math        : rendered ✓
+footnote    : rendered ✓
+alert       : rendered ✓
+mermaid     : rendered ✓
+[2026-06-15T07:10:27Z] editor probes complete

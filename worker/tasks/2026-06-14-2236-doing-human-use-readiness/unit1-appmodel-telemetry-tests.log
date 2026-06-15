@@ -1,0 +1,57 @@
+Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/5] Emitting module OuroMDTests
+[4/5] Compiling OuroMDTests AppModelReloadTests.swift
+[4/6] Write Objects.LinkFileList
+[5/6] Linking ouro-mdPackageTests
+Build complete! (1.83s)
+Test Suite 'Selected tests' started at 2026-06-14 22:42:20.527.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 22:42:20.528.
+Test Suite 'AppModelReloadTests' started at 2026-06-14 22:42:20.528.
+Test Case '-[OuroMDTests.AppModelReloadTests testCleanPerformSaveCompletesWithoutRoundTripThroughEditor]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testCleanPerformSaveCompletesWithoutRoundTripThroughEditor]' passed (0.005 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testCleanSaveDoesNotRoundTripThroughEditor]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testCleanSaveDoesNotRoundTripThroughEditor]' passed (0.219 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testDirtyFormattingOnlySaveDoesNotRestoreOriginalBytes]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testDirtyFormattingOnlySaveDoesNotRestoreOriginalBytes]' passed (0.445 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testExternalEditTriggersLiveReload]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testExternalEditTriggersLiveReload]' passed (0.602 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testFailedDirtySaveAsRestoresPreviousURL]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testFailedDirtySaveAsRestoresPreviousURL]' passed (0.063 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testFailedSaveAsRestoresPreviousURL]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testFailedSaveAsRestoresPreviousURL]' passed (0.071 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testOpenFailureTelemetryIsCoarse]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testOpenFailureTelemetryIsCoarse]' passed (0.013 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testOwnSaveDoesNotSelfReload]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testOwnSaveDoesNotSelfReload]' passed (1.148 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameCaseOnlyIsAllowed]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameCaseOnlyIsAllowed]' passed (0.030 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameMovesFileAndRetargetsModel]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameMovesFileAndRetargetsModel]' passed (0.011 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameRefusesCollision]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameRefusesCollision]' passed (0.024 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameWithoutExtensionKeepsOriginal]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameWithoutExtensionKeepsOriginal]' passed (0.021 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveAsCleanDocumentWritesNewDestination]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveAsCleanDocumentWritesNewDestination]' passed (0.174 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveAsCleanNonUTF8DocumentCopiesOriginalBytes]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveAsCleanNonUTF8DocumentCopiesOriginalBytes]' passed (0.089 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveAsDirtyDocumentWritesEditorBuffer]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveAsDirtyDocumentWritesEditorBuffer]' passed (0.089 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveBeforeEditorReadyDoesNotEmptyFile]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveBeforeEditorReadyDoesNotEmptyFile]' passed (0.455 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveWhenEditorValueUnavailableEmitsCoarseTelemetry]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveWhenEditorValueUnavailableEmitsCoarseTelemetry]' passed (0.047 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveWithoutBridgeEmitsCoarseTelemetry]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveWithoutBridgeEmitsCoarseTelemetry]' passed (0.066 seconds).
+Test Suite 'AppModelReloadTests' passed at 2026-06-14 22:42:24.102.
+	 Executed 18 tests, with 0 failures (0 unexpected) in 3.573 (3.574) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 22:42:24.102.
+	 Executed 18 tests, with 0 failures (0 unexpected) in 3.573 (3.574) seconds
+Test Suite 'Selected tests' passed at 2026-06-14 22:42:24.102.
+	 Executed 18 tests, with 0 failures (0 unexpected) in 3.573 (3.575) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

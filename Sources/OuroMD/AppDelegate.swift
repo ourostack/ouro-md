@@ -84,9 +84,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             alert.addButton(withTitle: "OK")
         }
         let response = alert.runModal()
-        updateCoordinator.updatePrompt = nil
         if prompt.isInstallable, response == .alertFirstButtonReturn {
+            updateCoordinator.updatePrompt = nil
             Task { await updateCoordinator.installReleaseUpdate() }
+        } else if prompt.isInstallable {
+            updateCoordinator.dismissUpdatePrompt(reason: "later")
+        } else {
+            updateCoordinator.dismissUpdatePrompt(reason: "acknowledged")
         }
     }
 

@@ -1,0 +1,174 @@
+true
+true
+true
+true
+[0/1] Planning build
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.28s)
+Test Suite 'Selected tests' started at 2026-06-15 00:13:20.185.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-15 00:13:20.186.
+Test Suite 'ReleaseUpdateTests' started at 2026-06-15 00:13:20.186.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testAsyncCheckReturnsSnapshotOnLoaderSuccess]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testAsyncCheckReturnsSnapshotOnLoaderSuccess]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testAsyncCheckReturnsUnavailableSnapshotOnNetworkFailure]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testAsyncCheckReturnsUnavailableSnapshotOnNetworkFailure]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultConfigurationTargetsOuroMDGitHubReleases]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultConfigurationTargetsOuroMDGitHubReleases]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultLoaderSendsExpectedGitHubRequestAndReturnsBody]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultLoaderSendsExpectedGitHubRequestAndReturnsBody]' passed (0.009 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultLoaderThrowsOnNonSuccessStatus]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultLoaderThrowsOnNonSuccessStatus]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testReleaseDescriptorMatchesCurrentDistribution]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testReleaseDescriptorMatchesCurrentDistribution]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSemanticVersionComparesMajorMinorAndPatch]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSemanticVersionComparesMajorMinorAndPatch]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotIgnoresDraftsAndReportsNoPublishedRelease]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotIgnoresDraftsAndReportsNoPublishedRelease]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotIgnoresPrereleasesAndUsesLatestStableRelease]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotIgnoresPrereleasesAndUsesLatestStableRelease]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotReportsCurrentWhenLatestIsNotNewer]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotReportsCurrentWhenLatestIsNotNewer]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotReportsUnavailableWhenReleaseTagCannotBeCompared]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotReportsUnavailableWhenReleaseTagCannotBeCompared]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotReportsUpdateAvailableFromLatestPublishedRelease]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotReportsUpdateAvailableFromLatestPublishedRelease]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotThrowsOnMalformedReleaseJSON]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotThrowsOnMalformedReleaseJSON]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testUpdatePlanErrorDescriptionsAreUserFacing]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testUpdatePlanErrorDescriptionsAreUserFacing]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testUpdateVerificationFailureDescriptionsAreUserFacing]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testUpdateVerificationFailureDescriptionsAreUserFacing]' passed (0.000 seconds).
+Test Suite 'ReleaseUpdateTests' passed at 2026-06-15 00:13:20.199.
+	 Executed 15 tests, with 0 failures (0 unexpected) in 0.013 (0.014) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-15 00:13:20.199.
+	 Executed 15 tests, with 0 failures (0 unexpected) in 0.013 (0.014) seconds
+Test Suite 'Selected tests' passed at 2026-06-15 00:13:20.199.
+	 Executed 15 tests, with 0 failures (0 unexpected) in 0.013 (0.014) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.14s)
+Test Suite 'Selected tests' started at 2026-06-15 00:13:20.888.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-15 00:13:20.889.
+Test Suite 'OuroMDUpdateInstallerTests' started at 2026-06-15 00:13:20.889.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptDoesNotDeleteBackupBeforeDestinationShapeIsProven]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptDoesNotDeleteBackupBeforeDestinationShapeIsProven]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptFailsFastAroundBackupInstallAndRollback]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptFailsFastAroundBackupInstallAndRollback]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptRestoresStaleBackupBeforeTryingNewInstall]' started.
+ditto: Cannot get the real path for source '/var/folders/md/_fkq3wc92_z55cgtlrfrcfh40000gn/T/ouro-apply-stale-backup-5F3903EB-A2BC-4CB5-9E28-E92530D991DE/missing-staged/Ouro MD.app'
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptRestoresStaleBackupBeforeTryingNewInstall]' passed (0.074 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptRunsInTemporaryDirectoryWithoutNestingUpdatedApp]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptRunsInTemporaryDirectoryWithoutNestingUpdatedApp]' passed (0.145 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testInstallErrorDescriptionsAreUserReadable]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testInstallErrorDescriptionsAreUserReadable]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStagePreservesInstallerErrorFromDataLoader]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStagePreservesInstallerErrorFromDataLoader]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageSucceedsAfterManifestArchiveExtractedBundleAndCodesignVerify]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageSucceedsAfterManifestArchiveExtractedBundleAndCodesignVerify]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnArchiveNameMismatch]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnArchiveNameMismatch]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnBundleIdentifierMismatch]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnBundleIdentifierMismatch]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnByteCountMismatch]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnByteCountMismatch]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnCodesignFailure]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnCodesignFailure]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnManifestDecodeFailure]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnManifestDecodeFailure]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnMissingStagedApp]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnMissingStagedApp]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnNonNewerVersion]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnNonNewerVersion]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnSHAMismatch]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnSHAMismatch]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnStagedBundleIdentifierMismatch]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnStagedBundleIdentifierMismatch]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnStagedVersionMismatch]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnStagedVersionMismatch]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnUnzipFailureWithExitStatusFallback]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnUnzipFailureWithExitStatusFallback]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageWrapsGenericDataLoaderFailureAsDownloadError]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageWrapsGenericDataLoaderFailureAsDownloadError]' passed (0.001 seconds).
+Test Suite 'OuroMDUpdateInstallerTests' passed at 2026-06-15 00:13:21.126.
+	 Executed 19 tests, with 0 failures (0 unexpected) in 0.235 (0.236) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-15 00:13:21.126.
+	 Executed 19 tests, with 0 failures (0 unexpected) in 0.235 (0.237) seconds
+Test Suite 'Selected tests' passed at 2026-06-15 00:13:21.126.
+	 Executed 19 tests, with 0 failures (0 unexpected) in 0.235 (0.237) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.14s)
+Test Suite 'Selected tests' started at 2026-06-15 00:13:21.810.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-15 00:13:21.811.
+Test Suite 'OuroMDUpdateCoordinatorTests' started at 2026-06-15 00:13:21.811.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testApplyStagedUpdateOnQuitOnlyWhenEnabledAndNotManualInstall]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testApplyStagedUpdateOnQuitOnlyWhenEnabledAndNotManualInstall]' passed (0.003 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateCheckIsDefaultOnThrottledAndOncePerSession]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateCheckIsDefaultOnThrottledAndOncePerSession]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateCheckSkipsWhenDisabled]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateCheckSkipsWhenDisabled]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateDefaultsToEnabledAndPersistsOptOut]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateDefaultsToEnabledAndPersistsOptOut]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateStagesInstallableUpdateInBackground]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateStagesInstallableUpdateInBackground]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testBadgeAndPromptUseCheckedReleaseWhenNoUpdateIsStaged]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testBadgeAndPromptUseCheckedReleaseWhenNoUpdateIsStaged]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testCancelPendingManualInstallPreventsLaterApply]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testCancelPendingManualInstallPreventsLaterApply]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testDismissingNonInstallablePromptDoesNotEmitDeferredTelemetry]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testDismissingNonInstallablePromptDoesNotEmitDeferredTelemetry]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckAwaitsInFlightLaunchCheckBeforePrompting]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckAwaitsInFlightLaunchCheckBeforePrompting]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckClearsPendingStageWhenReleaseIsNoLongerInstallable]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckClearsPendingStageWhenReleaseIsNoLongerInstallable]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckPromptsInstallableCurrentAndUnavailableStates]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckPromptsInstallableCurrentAndUnavailableStates]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckReportsMissingInstallableAssets]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckReportsMissingInstallableAssets]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallFailureSetsFailedPromptForAppObserver]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallFailureSetsFailedPromptForAppObserver]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallOfPendingStageIsIdempotent]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallOfPendingStageIsIdempotent]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallReportsPlannerFailure]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallReportsPlannerFailure]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallReportsStagingProgressBeforeApplying]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallReportsStagingProgressBeforeApplying]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallRequiresPriorCheck]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallRequiresPriorCheck]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallRestagesWhenCheckedReleaseIsNewerThanPendingStage]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallRestagesWhenCheckedReleaseIsNewerThanPendingStage]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallUsesAlreadyStagedUpdateAndSuppressesQuitApply]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallUsesAlreadyStagedUpdateAndSuppressesQuitApply]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualUpdateFailureTelemetryDoesNotLeakRawErrorDetails]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualUpdateFailureTelemetryDoesNotLeakRawErrorDetails]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualUpdateFlowCapturesTelemetryWithoutRawErrorDetails]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualUpdateFlowCapturesTelemetryWithoutRawErrorDetails]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testPromptDisplayHelpersAreUserFacing]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testPromptDisplayHelpersAreUserFacing]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testPromptFallsBackToStagedVersionWhenLatestSnapshotIsNotInstallable]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testPromptFallsBackToStagedVersionWhenLatestSnapshotIsNotInstallable]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testPromptPresentationBindingDismissesPrompt]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testPromptPresentationBindingDismissesPrompt]' passed (0.002 seconds).
+Test Suite 'OuroMDUpdateCoordinatorTests' passed at 2026-06-15 00:13:21.838.
+	 Executed 24 tests, with 0 failures (0 unexpected) in 0.026 (0.028) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-15 00:13:21.838.
+	 Executed 24 tests, with 0 failures (0 unexpected) in 0.026 (0.028) seconds
+Test Suite 'Selected tests' passed at 2026-06-15 00:13:21.838.
+	 Executed 24 tests, with 0 failures (0 unexpected) in 0.026 (0.028) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+deterministic_update_gate=ok
+expected_live_version=0.9.2
+update_from_version=0.9.1
+note=repeatable stress uses release feed plus updater unit gates

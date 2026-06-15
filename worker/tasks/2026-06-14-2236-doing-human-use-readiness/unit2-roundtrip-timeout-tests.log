@@ -1,0 +1,50 @@
+[0/1] Planning build
+Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/7] Emitting module OuroMD
+[4/7] Compiling OuroMD RoundTrip.swift
+[5/8] Compiling OuroMD main.swift
+[5/10] Write Objects.LinkFileList
+[6/10] Linking ouro-md
+[7/10] Applying ouro-md
+[9/12] Compiling OuroMDTests MarkdownTidyTests.swift
+[10/12] Emitting module OuroMDTests
+[10/12] Write Objects.LinkFileList
+[11/12] Linking ouro-mdPackageTests
+Build complete! (3.77s)
+Test Suite 'Selected tests' started at 2026-06-14 22:48:51.696.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 22:48:51.697.
+Test Suite 'MarkdownTidyTests' started at 2026-06-14 22:48:51.697.
+Test Case '-[OuroMDTests.MarkdownTidyTests testCollapsesConsecutiveBlankLines]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testCollapsesConsecutiveBlankLines]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testDoesNotTouchFencedCode]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testDoesNotTouchFencedCode]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testExpandsTableSeparator]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testExpandsTableSeparator]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testLeavesHorizontalRuleAlone]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testLeavesHorizontalRuleAlone]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testNonTableContentUnchanged]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testNonTableContentUnchanged]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testNormalTidyDoesNotConsultOriginalForDirtySave]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testNormalTidyDoesNotConsultOriginalForDirtySave]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testPreservesTableAlignment]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testPreservesTableAlignment]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testRoundTripperReadsExistingInput]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testRoundTripperReadsExistingInput]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testRoundTripperRejectsMissingInput]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testRoundTripperRejectsMissingInput]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testRoundTripProbePreservesOriginalWhenOnlyKnownEditorNormalizationChanged]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testRoundTripProbePreservesOriginalWhenOnlyKnownEditorNormalizationChanged]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testRoundTripProbeReturnsTidiedOutputWhenContentChanged]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testRoundTripProbeReturnsTidiedOutputWhenContentChanged]' passed (0.000 seconds).
+Test Suite 'MarkdownTidyTests' passed at 2026-06-14 22:48:51.704.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.006 (0.006) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 22:48:51.704.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.006 (0.006) seconds
+Test Suite 'Selected tests' passed at 2026-06-14 22:48:51.704.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.006 (0.007) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

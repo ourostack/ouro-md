@@ -1,0 +1,46 @@
+name: Rendering or export mismatch
+description: Report differences between editor preview, HTML export, PDF export, or CLI render.
+title: "[Render]: "
+labels: ["bug", "rendering"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Ouro MD version
+      placeholder: "0.9.3"
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where is the mismatch?
+      options:
+        - Editor live preview
+        - Split preview
+        - HTML export
+        - PDF export
+        - Command-line --render
+        - Multiple surfaces
+    validations:
+      required: true
+  - type: textarea
+    id: markdown
+    attributes:
+      label: Small markdown reproduction
+      description: Paste only non-private content that reproduces the issue.
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual rendering
+    validations:
+      required: true
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Screenshots or exported files
+      description: Attach screenshots, generated HTML, or PDF if they do not contain private content.
+    validations:
+      required: false

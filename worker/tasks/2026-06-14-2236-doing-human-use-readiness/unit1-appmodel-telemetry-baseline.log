@@ -1,0 +1,86 @@
+[0/1] Planning build
+Building for debugging...
+[0/7] Write sources
+[2/7] Write swift-version--58304C5D6DBC2206.txt
+[4/16] Compiling OuroMD RoundTrip.swift
+[5/16] Compiling OuroMD OuroMDRelease.swift
+[6/16] Compiling OuroMD OuroMDTelemetry.swift
+[7/16] Compiling OuroMD MarkdownTidy.swift
+[8/16] Compiling OuroMD MarkdownRenderer.swift
+[9/16] Compiling OuroMD FolderBrowser.swift
+[10/16] Compiling OuroMD AppDelegate.swift
+[11/16] Emitting module OuroMD
+[12/16] Compiling OuroMD AppModel.swift
+[13/23] Compiling OuroMD MenuBuilder.swift
+[14/23] Compiling OuroMD EditorWebView.swift
+[15/23] Compiling OuroMD main.swift
+[16/23] Compiling OuroMD DocumentWindowController.swift
+[17/23] Compiling OuroMD ContentView.swift
+[18/23] Compiling OuroMD ContentSearcher.swift
+[19/23] Compiling OuroMD Sidebar.swift
+[19/24] Write Objects.LinkFileList
+[20/24] Linking ouro-md
+[21/24] Applying ouro-md
+[23/38] Compiling OuroMDTests TerminationSaveCoordinatorTests.swift
+[24/39] Compiling OuroMDTests OutlineTreeTests.swift
+[25/39] Compiling OuroMDTests ReleaseUpdateTests.swift
+[26/39] Compiling OuroMDTests UndoRedoRoutingTests.swift
+[27/39] Compiling OuroMDTests OuroMDUpdateInstallerTests.swift
+[28/39] Compiling OuroMDTests OuroMDUpdateTests.swift
+[29/39] Compiling OuroMDTests MarkdownRendererTests.swift
+[30/39] Compiling OuroMDTests MarkdownTidyTests.swift
+[31/39] Compiling OuroMDTests FileWatcherTests.swift
+[32/39] Compiling OuroMDTests FolderBrowserTests.swift
+[33/39] Compiling OuroMDTests AppModelReloadTests.swift
+[34/39] Compiling OuroMDTests ContentSearcherTests.swift
+[35/39] Emitting module OuroMDTests
+[36/39] Compiling OuroMDTests OuroMDTelemetryTests.swift
+[37/39] Compiling OuroMDTests OuroMDUpdateCoordinatorTests.swift
+[38/41] Emitting module ouro_mdPackageTests
+[39/41] Compiling ouro_mdPackageTests runner.swift
+[39/41] Write Objects.LinkFileList
+[40/41] Linking ouro-mdPackageTests
+Build complete! (6.18s)
+Test Suite 'Selected tests' started at 2026-06-14 22:39:37.433.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 22:39:37.435.
+Test Suite 'AppModelReloadTests' started at 2026-06-14 22:39:37.435.
+Test Case '-[OuroMDTests.AppModelReloadTests testCleanPerformSaveCompletesWithoutRoundTripThroughEditor]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testCleanPerformSaveCompletesWithoutRoundTripThroughEditor]' passed (0.036 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testCleanSaveDoesNotRoundTripThroughEditor]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testCleanSaveDoesNotRoundTripThroughEditor]' passed (0.226 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testDirtyFormattingOnlySaveDoesNotRestoreOriginalBytes]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testDirtyFormattingOnlySaveDoesNotRestoreOriginalBytes]' passed (0.465 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testExternalEditTriggersLiveReload]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testExternalEditTriggersLiveReload]' passed (0.593 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testFailedDirtySaveAsRestoresPreviousURL]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testFailedDirtySaveAsRestoresPreviousURL]' passed (0.048 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testFailedSaveAsRestoresPreviousURL]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testFailedSaveAsRestoresPreviousURL]' passed (0.078 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testOwnSaveDoesNotSelfReload]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testOwnSaveDoesNotSelfReload]' passed (1.086 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameCaseOnlyIsAllowed]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameCaseOnlyIsAllowed]' passed (0.044 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameMovesFileAndRetargetsModel]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameMovesFileAndRetargetsModel]' passed (0.039 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameRefusesCollision]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameRefusesCollision]' passed (0.033 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameWithoutExtensionKeepsOriginal]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameWithoutExtensionKeepsOriginal]' passed (0.031 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveAsCleanDocumentWritesNewDestination]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveAsCleanDocumentWritesNewDestination]' passed (0.194 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveAsCleanNonUTF8DocumentCopiesOriginalBytes]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveAsCleanNonUTF8DocumentCopiesOriginalBytes]' passed (0.097 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveAsDirtyDocumentWritesEditorBuffer]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveAsDirtyDocumentWritesEditorBuffer]' passed (0.191 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveBeforeEditorReadyDoesNotEmptyFile]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveBeforeEditorReadyDoesNotEmptyFile]' passed (0.490 seconds).
+Test Suite 'AppModelReloadTests' passed at 2026-06-14 22:39:41.087.
+	 Executed 15 tests, with 0 failures (0 unexpected) in 3.650 (3.652) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 22:39:41.087.
+	 Executed 15 tests, with 0 failures (0 unexpected) in 3.650 (3.652) seconds
+Test Suite 'Selected tests' passed at 2026-06-14 22:39:41.087.
+	 Executed 15 tests, with 0 failures (0 unexpected) in 3.650 (3.655) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

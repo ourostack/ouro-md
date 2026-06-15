@@ -1,0 +1,23 @@
+
+[2026-06-15T07:10:35Z] RUN swift test --filter FolderBrowserTests/testLargeWorkspaceBudgetSkipsOversizedHiddenAndSymlinkedFiles
+[0/1] Planning build
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.27s)
+Test Suite 'Selected tests' started at 2026-06-15 00:10:36.592.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-15 00:10:36.593.
+Test Suite 'FolderBrowserTests' started at 2026-06-15 00:10:36.593.
+Test Case '-[OuroMDTests.FolderBrowserTests testLargeWorkspaceBudgetSkipsOversizedHiddenAndSymlinkedFiles]' started.
+Test Case '-[OuroMDTests.FolderBrowserTests testLargeWorkspaceBudgetSkipsOversizedHiddenAndSymlinkedFiles]' passed (1.281 seconds).
+Test Suite 'FolderBrowserTests' passed at 2026-06-15 00:10:37.874.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.281 (1.281) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-15 00:10:37.874.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.281 (1.281) seconds
+Test Suite 'Selected tests' passed at 2026-06-15 00:10:37.874.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.281 (1.282) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+
+[2026-06-15T07:10:37Z] OK swift test --filter FolderBrowserTests/testLargeWorkspaceBudgetSkipsOversizedHiddenAndSymlinkedFiles

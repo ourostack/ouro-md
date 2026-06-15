@@ -1,0 +1,28 @@
+[2026-06-15T07:09:23Z] telemetry package dry run start
+head=4564e8736e711b7ecb69d0734f7cbec75db4fbd3
+==> Building (release)…
+[0/1] Planning build
+Building for production...
+[0/3] Write sources
+[1/3] Write swift-version--58304C5D6DBC2206.txt
+[3/4] Compiling OuroMD AppDelegate.swift
+[3/5] Write Objects.LinkFileList
+[4/5] Linking ouro-md
+Build complete! (9.24s)
+==> Assembling OuroMD.app…
+==> Telemetry: PostHog configured for https://us.i.posthog.com
+==> Ad-hoc signing…
+==> Done: /Users/arimendelow/Projects/ouro-md/OuroMD.app
+    Launch with:  open OuroMD.app
+==> Archiving Ouro MD.app -> dist/Ouro-MD-0.9.3.zip
+==> Wrote dist/Ouro-MD-0.9.3.manifest.json
+    version 0.9.3 (build 0.9.3) · 7227574 bytes · sha256 986fea7edf1ecdcfa66fdb9d2db8e4a62c523f300d6fbefc2cf708fdddb5b23b
+
+Publish with:
+  gh release create v0.9.3 "dist/Ouro-MD-0.9.3.zip" "dist/Ouro-MD-0.9.3.manifest.json" \
+    --repo ourostack/ouro-md --target "4564e8736e711b7ecb69d0734f7cbec75db4fbd3" \
+    --title "Ouro MD 0.9.3" --notes "…"
+0.9.3
+https://us.i.posthog.com
+true
+[2026-06-15T07:09:34Z] telemetry package dry run complete

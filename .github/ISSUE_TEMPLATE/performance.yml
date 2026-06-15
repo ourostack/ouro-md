@@ -1,0 +1,49 @@
+name: Performance issue
+description: Report slow launch, typing, rendering, folder browsing, export, or update behavior.
+title: "[Performance]: "
+labels: ["performance"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Ouro MD version
+      placeholder: "0.9.3"
+    validations:
+      required: true
+  - type: input
+    id: machine
+    attributes:
+      label: Mac model / chip / memory
+      placeholder: "M2 MacBook Air, 16 GB"
+    validations:
+      required: false
+  - type: input
+    id: file_size
+    attributes:
+      label: Document or folder size
+      placeholder: "420 KB file, folder with 1,200 markdown files"
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Slow area
+      options:
+        - Launch
+        - Typing
+        - Open file
+        - Save or autosave
+        - External reload
+        - File tree
+        - Render/export
+        - Update/install
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: What feels slow?
+      description: Include rough timing and whether it repeats after relaunch.
+    validations:
+      required: true

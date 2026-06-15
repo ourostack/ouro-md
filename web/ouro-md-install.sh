@@ -47,7 +47,7 @@ manifest_url="$(printf '%s' "$rel" | grep -o '"browser_download_url": *"[^"]*\.m
 [ -n "$manifest_url" ] || die "no .manifest.json asset on the latest release."
 
 tmp="$(mktemp -d)"
-trap 'rm -rf "$tmp"' EXIT
+trap 'rm -rf "$tmp" "${new_dest:-}"' EXIT
 zip_path="$tmp/$(basename "$zip_url")"
 
 say "Downloading $(basename "$zip_url")…"
@@ -69,11 +69,37 @@ app_name="$(basename "$app_src")"
 
 mkdir -p "$INSTALL_DIR"
 dest="$INSTALL_DIR/$app_name"
+ver="$(printf '%s' "$manifest" | grep -o '"version": *"[^"]*"' | sed 's/.*"\([^"]*\)"/\1/' | head -1)"
+bundle_id="$(printf '%s' "$manifest" | grep -o '"bundleIdentifier": *"[^"]*"' | sed 's/.*"\([^"]*\)"/\1/' | head -1)"
+new_dest="${dest}.update-new.$$"
+bak_dest="${dest}.update-bak.$$"
+rm -rf "$new_dest" "$bak_dest"
+
+say "Preparing install…"
+ditto "$app_src" "$new_dest" || die "couldn't copy the new app into a staging location."
+xattr -cr "$new_dest" 2>/dev/null || true
+info="$new_dest/Contents/Info.plist"
+[ -f "$info" ] || die "staged app is missing Info.plist."
+staged_ver="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$info" 2>/dev/null || true)"
+[ -z "$ver" ] || [ "$staged_ver" = "$ver" ] || die "staged app version $staged_ver did not match manifest version $ver."
+if [ -n "$bundle_id" ]; then
+  staged_bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$info" 2>/dev/null || true)"
+  [ "$staged_bundle_id" = "$bundle_id" ] || die "staged app bundle id $staged_bundle_id did not match manifest bundle id $bundle_id."
+fi
+/usr/bin/codesign --verify --deep --strict "$new_dest" >/dev/null 2>&1 || die "staged app failed code-signature verification."
+
 if [ -d "$dest" ]; then
   say "Replacing existing install at $dest"
-  rm -rf "$dest"
+  mv "$dest" "$bak_dest" || die "couldn't move the existing app aside."
+  if mv "$new_dest" "$dest"; then
+    rm -rf "$bak_dest"
+  else
+    mv "$bak_dest" "$dest" 2>/dev/null || true
+    die "couldn't move the new app into place; restored the previous install."
+  fi
+else
+  mv "$new_dest" "$dest" || die "couldn't move the new app into place."
 fi
-ditto "$app_src" "$dest"
 
 # The download set the com.apple.quarantine xattr; the build is ad-hoc-signed
 # (not yet notarized), so strip it to avoid the Gatekeeper "unidentified
@@ -82,7 +108,6 @@ xattr -cr "$dest" 2>/dev/null || true
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
   -f "$dest" >/dev/null 2>&1 || true
 
-ver="$(printf '%s' "$manifest" | grep -o '"version": *"[^"]*"' | sed 's/.*"\([^"]*\)"/\1/' | head -1)"
 say "Installed ${app_name%.app} ${ver:-} → $dest"
 
 if [ "${OURO_MD_NO_OPEN:-}" != "1" ]; then

@@ -150,7 +150,7 @@ final class OuroMDUpdateCoordinator: ObservableObject {
         Binding(
             get: { self.updatePrompt != nil },
             set: { newValue in
-                if !newValue { self.updatePrompt = nil }
+                if !newValue { self.dismissUpdatePrompt(reason: "binding") }
             }
         )
     }
@@ -176,6 +176,17 @@ final class OuroMDUpdateCoordinator: ObservableObject {
             updatePrompt = .installable(version: version)
         } else if let version = stagedUpdateVersion {
             updatePrompt = .installable(version: version)
+        }
+    }
+
+    func dismissUpdatePrompt(reason: String = "dismissed") {
+        guard let prompt = updatePrompt else { return }
+        updatePrompt = nil
+        if case let .installable(version) = prompt {
+            telemetry(
+                "ouro_md_update_install_deferred",
+                ["version": .string(version), "reason": .string(reason)]
+            )
         }
     }
 

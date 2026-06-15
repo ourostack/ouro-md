@@ -1,0 +1,34 @@
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.17s)
+Test Suite 'Selected tests' started at 2026-06-14 22:42:36.369.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 22:42:36.370.
+Test Suite 'OuroMDTelemetryTests' started at 2026-06-14 22:42:36.370.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testCaptureCanUseDefaultClockWithInjectedSender]' started.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testCaptureCanUseDefaultClockWithInjectedSender]' passed (0.005 seconds).
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testCaptureReusesExistingDistinctID]' started.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testCaptureReusesExistingDistinctID]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testCaptureSendsAnonymousPostHogPayload]' started.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testCaptureSendsAnonymousPostHogPayload]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationIgnoresAmbientPostHogKeyEnvironmentAndSupportsDisableFlag]' started.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationIgnoresAmbientPostHogKeyEnvironmentAndSupportsDisableFlag]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationIgnoresStoredPostHogDefaults]' started.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationIgnoresStoredPostHogDefaults]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationLoadsEmbeddedPostHogBundleValues]' started.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationLoadsEmbeddedPostHogBundleValues]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationRejectsInvalidEmbeddedHost]' started.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationRejectsInvalidEmbeddedHost]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testOptOutSuppressesCaptureAndPersists]' started.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testOptOutSuppressesCaptureAndPersists]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testUnconfiguredTelemetryIsDisabled]' started.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testUnconfiguredTelemetryIsDisabled]' passed (0.001 seconds).
+Test Suite 'OuroMDTelemetryTests' passed at 2026-06-14 22:42:36.387.
+	 Executed 9 tests, with 0 failures (0 unexpected) in 0.016 (0.017) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 22:42:36.387.
+	 Executed 9 tests, with 0 failures (0 unexpected) in 0.016 (0.017) seconds
+Test Suite 'Selected tests' passed at 2026-06-14 22:42:36.387.
+	 Executed 9 tests, with 0 failures (0 unexpected) in 0.016 (0.018) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

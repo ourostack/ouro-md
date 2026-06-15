@@ -18,10 +18,15 @@ final class ContentSearcherTests: XCTestCase {
         let searcher = ContentSearcher()
         var results: [SearchResult] = []
         let done = expectation(description: "search complete")
+        var wasTruncated: Bool?
         searcher.search("widget", in: root, caseSensitive: false, wholeWord: false, regexp: false,
                         onResult: { results.append($0) },
-                        onComplete: { done.fulfill() })
+                        onComplete: {
+                            wasTruncated = $0
+                            done.fulfill()
+                        })
         wait(for: [done], timeout: 5)
+        XCTAssertEqual(wasTruncated, false)
 
         let names = results.map(\.name)
         XCTAssertTrue(names.contains("widget.md"))
@@ -44,10 +49,16 @@ final class ContentSearcherTests: XCTestCase {
         let searcher = ContentSearcher()
         var results: [SearchResult] = []
         let done = expectation(description: "case-sensitive search")
+        var wasTruncated: Bool?
         searcher.search("WIDGET", in: root, caseSensitive: true, wholeWord: false, regexp: false,
-                        onResult: { results.append($0) }, onComplete: { done.fulfill() })
+                        onResult: { results.append($0) },
+                        onComplete: {
+                            wasTruncated = $0
+                            done.fulfill()
+                        })
         wait(for: [done], timeout: 5)
         // No file contains uppercase WIDGET in content; only filename match is case-insensitive substring? none.
         XCTAssertTrue(results.allSatisfy { $0.snippets.isEmpty })
+        XCTAssertEqual(wasTruncated, false)
     }
 }

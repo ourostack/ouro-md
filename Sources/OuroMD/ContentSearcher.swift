@@ -39,17 +39,18 @@ final class ContentSearcher {
     func search(_ query: String, in folder: URL,
                 caseSensitive: Bool, wholeWord: Bool, regexp: Bool,
                 onResult: @escaping (SearchResult) -> Void,
-                onComplete: @escaping () -> Void) {
+                onComplete: @escaping (Bool) -> Void) {
         cancel()
         let trimmed = query.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty, let regex = Self.makeRegex(trimmed, caseSensitive: caseSensitive, wholeWord: wholeWord, regexp: regexp) else {
-            onComplete(); return
+            onComplete(false); return
         }
         let nameQuery = trimmed.lowercased()
         var workItem: DispatchWorkItem!
         let work = DispatchWorkItem { [weak self] in
             guard self != nil else { return }
-            let files = FolderScanner.flatList(at: folder, sort: .name)
+            let snapshot = FolderScanner.snapshot(at: folder, sort: .name)
+            let files = snapshot.flat
             for node in files {
                 if workItem.isCancelled { return }
                 let nameMatched = node.name.lowercased().contains(nameQuery)
@@ -62,7 +63,7 @@ final class ContentSearcher {
                                           nameMatched: nameMatched, snippets: snippets)
                 DispatchQueue.main.async { if !workItem.isCancelled { onResult(result) } }
             }
-            DispatchQueue.main.async { if !workItem.isCancelled { onComplete() } }
+            DispatchQueue.main.async { if !workItem.isCancelled { onComplete(snapshot.isTruncated) } }
         }
         workItem = work
         current = work
