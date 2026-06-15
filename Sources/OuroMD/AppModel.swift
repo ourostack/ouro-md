@@ -245,6 +245,7 @@ final class AppModel: ObservableObject {
         pushMarkdown(Welcome.markdown)
         isDirty = false
         onChromeUpdate?()
+        captureTelemetry("ouro_md_welcome_loaded")
     }
 
     func newDocument() {
@@ -256,6 +257,7 @@ final class AppModel: ObservableObject {
             self.pushMarkdown("")
             self.isDirty = false
             self.onChromeUpdate?()
+            self.captureTelemetry("ouro_md_document_created")
         }
     }
 
@@ -284,6 +286,10 @@ final class AppModel: ObservableObject {
             self.refreshFolder()
             self.startWatching()
             self.onChromeUpdate?()
+            self.captureTelemetry(
+                "ouro_md_document_opened",
+                properties: ["markdown_type": .bool(Self.isMarkdownURL(url))]
+            )
         }
     }
 
@@ -298,6 +304,13 @@ final class AppModel: ObservableObject {
         refreshFolder()
         startWatching()
         onChromeUpdate?()
+        captureTelemetry(
+            "ouro_md_document_opened",
+            properties: [
+                "source": .string("launch"),
+                "markdown_type": .bool(Self.isMarkdownURL(url)),
+            ]
+        )
     }
 
     /// Renames the open file on disk to `rawName` (a bare filename in the same
@@ -393,6 +406,7 @@ final class AppModel: ObservableObject {
                 completion(true)
             } catch {
                 self.presentError("Could not save \(url.lastPathComponent)", error)
+                self.captureTelemetry("ouro_md_document_save_failed")
                 completion(false)
             }
         }
@@ -466,8 +480,13 @@ final class AppModel: ObservableObject {
             self.bridge?.getHTML { body in
                 guard let body else { return }
                 let doc = HTMLDocument.wrap(body: body, css: self.theme.css, title: url.lastPathComponent)
-                do { try doc.write(to: url, atomically: true, encoding: .utf8) }
-                catch { self.presentError("Could not export HTML", error) }
+                do {
+                    try doc.write(to: url, atomically: true, encoding: .utf8)
+                    self.captureTelemetry("ouro_md_export_completed", properties: ["format": .string("html")])
+                } catch {
+                    self.presentError("Could not export HTML", error)
+                    self.captureTelemetry("ouro_md_export_failed", properties: ["format": .string("html")])
+                }
             }
         }
     }
@@ -484,6 +503,10 @@ final class AppModel: ObservableObject {
                                           NSError(domain: "ouro-md", code: 1,
                                                   userInfo: [NSLocalizedDescriptionKey: "PDF rendering failed."]))
                     }
+                    self.captureTelemetry(
+                        ok ? "ouro_md_export_completed" : "ouro_md_export_failed",
+                        properties: ["format": .string("pdf")]
+                    )
                 }
             }
         }
@@ -559,6 +582,7 @@ final class AppModel: ObservableObject {
         let recovered = currentURL.flatMap { AppModel.readText(at: $0) }
             ?? lastLoadedContent
         pendingMarkdown = recovered
+        captureTelemetry("ouro_md_editor_webview_crashed")
     }
 
     /// Flat heading list nested into a tree by heading level (for a collapsible
@@ -623,6 +647,7 @@ final class AppModel: ObservableObject {
         startFolderWatching()
         rescanFolder()
         onChromeUpdate?()
+        captureTelemetry("ouro_md_folder_opened")
     }
 
     func closeFolder() {
@@ -842,5 +867,18 @@ final class AppModel: ObservableObject {
         alert.informativeText = error.localizedDescription
         alert.alertStyle = .warning
         alert.runModal()
+    }
+
+    private static func isMarkdownURL(_ url: URL) -> Bool {
+        ["md", "markdown", "mdown", "mkd", "mdtext"].contains(url.pathExtension.lowercased())
+    }
+
+    private func captureTelemetry(
+        _ event: String,
+        properties: [String: OuroMDTelemetryValue] = [:]
+    ) {
+        Task { @MainActor in
+            OuroMDTelemetry.shared.capture(event, properties: properties)
+        }
     }
 }

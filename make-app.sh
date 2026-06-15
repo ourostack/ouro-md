@@ -13,6 +13,16 @@ CONFIG="release"
 BIN_NAME="ouro-md"
 BUNDLE_ID="org.ourostack.ouro-md"
 VERSION="0.9.1"
+POSTHOG_KEY="${OURO_MD_POSTHOG_KEY:-${VITE_POSTHOG_KEY:-}}"
+POSTHOG_HOST="${OURO_MD_POSTHOG_HOST:-${VITE_POSTHOG_HOST:-https://us.i.posthog.com}}"
+POSTHOG_DISABLED="${OURO_MD_TELEMETRY_DISABLED:-${VITE_POSTHOG_DISABLED:-}}"
+POSTHOG_DISABLED_NORMALIZED="$(printf '%s' "${POSTHOG_DISABLED}" | tr '[:upper:]' '[:lower:]')"
+
+case "${POSTHOG_DISABLED_NORMALIZED}" in
+  1|true|yes|on)
+    POSTHOG_KEY=""
+    ;;
+esac
 
 echo "==> Building (${CONFIG})…"
 swift build -c "${CONFIG}"
@@ -77,6 +87,16 @@ cat > "${APP}/Contents/Info.plist" <<PLIST
 </dict>
 </plist>
 PLIST
+
+if [[ -n "${POSTHOG_KEY}" ]]; then
+  /usr/libexec/PlistBuddy -c "Add :OuroMDPostHogKey string ${POSTHOG_KEY}" "${APP}/Contents/Info.plist"
+  /usr/libexec/PlistBuddy -c "Add :OuroMDPostHogHost string ${POSTHOG_HOST}" "${APP}/Contents/Info.plist"
+  echo "==> Telemetry: PostHog configured for ${POSTHOG_HOST}"
+elif [[ -n "${POSTHOG_DISABLED}" ]]; then
+  echo "==> Telemetry: disabled by OURO_MD_TELEMETRY_DISABLED/VITE_POSTHOG_DISABLED"
+else
+  echo "==> Telemetry: disabled (set OURO_MD_POSTHOG_KEY or VITE_POSTHOG_KEY to configure)"
+fi
 
 echo "==> Ad-hoc signing…"
 codesign --force --deep --sign - "${APP}" 2>/dev/null || echo "note: ad-hoc codesign skipped (continuing)"

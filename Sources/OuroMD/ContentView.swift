@@ -27,6 +27,7 @@ struct WordCountView: View {
 struct PreferencesView: View {
     @ObservedObject var model: AppModel
     @ObservedObject var updateCoordinator: OuroMDUpdateCoordinator
+    @ObservedObject var telemetry: OuroMDTelemetry
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -55,6 +56,13 @@ struct PreferencesView: View {
             HStack {
                 Text("Updates").frame(width: 90, alignment: .leading)
                 Toggle("Check for updates automatically", isOn: Binding(get: { updateCoordinator.autoUpdateEnabled }, set: { updateCoordinator.setAutoUpdateEnabled($0) }))
+                Spacer()
+            }
+
+            HStack {
+                Text("Telemetry").frame(width: 90, alignment: .leading)
+                Toggle("Share anonymous usage telemetry", isOn: Binding(get: { telemetry.isEnabled }, set: { telemetry.setEnabled($0) }))
+                    .disabled(!telemetry.isConfigured)
                 Spacer()
             }
 
