@@ -43,6 +43,21 @@ final class UndoRedoRoutingTests: XCTestCase {
         XCTAssertTrue(delegate.validateMenuItem(updates))
     }
 
+    func testMenuValidationChecksRecentItemsAndDefaults() {
+        let delegate = AppDelegate()
+
+        let recent = NSMenuItem(title: "Recent", action: #selector(AppDelegate.openRecent(_:)), keyEquivalent: "")
+        XCTAssertFalse(delegate.validateMenuItem(recent))
+        recent.representedObject = URL(fileURLWithPath: "/tmp/example.md")
+        XCTAssertTrue(delegate.validateMenuItem(recent))
+
+        let clearRecent = NSMenuItem(title: "Clear Recent", action: #selector(AppDelegate.clearRecentDocuments(_:)), keyEquivalent: "")
+        XCTAssertEqual(delegate.validateMenuItem(clearRecent), !NSDocumentController.shared.recentDocumentURLs.isEmpty)
+
+        let unknown = NSMenuItem(title: "Unknown", action: Selector(("unknownCommand:")), keyEquivalent: "")
+        XCTAssertTrue(delegate.validateMenuItem(unknown))
+    }
+
     func testUndoDoesNotFallThroughWhenNativeTextViewHasEmptyStack() {
         let manager = RecordingUndoManager()
         let textView = NativeTextView(undoManager: manager)

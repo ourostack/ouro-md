@@ -1,187 +1,193 @@
 [0/1] Planning build
 Building for debugging...
-[0/6] Write swift-version--58304C5D6DBC2206.txt
-[2/70] Compiling Markdown TableCellContainer.swift
-[3/70] Compiling Markdown TableHead.swift
-[4/70] Compiling Markdown TableRow.swift
-[5/70] Compiling Markdown Replacement.swift
-[6/70] Compiling Markdown SourceLocation.swift
-[7/70] Compiling Markdown Emphasis.swift
-[8/70] Compiling Markdown Image.swift
-[9/77] Compiling Markdown InlineAttributes.swift
-[10/77] Compiling Markdown Link.swift
-[11/77] Compiling Markdown Strikethrough.swift
-[12/77] Compiling Markdown Strong.swift
-[13/77] Compiling Markdown CustomInline.swift
-[14/77] Compiling Markdown InlineCode.swift
-[15/77] Compiling Markdown InlineHTML.swift
-[16/77] Compiling Markdown BlockContainer.swift
-[17/77] Compiling Markdown BlockMarkup.swift
-[18/77] Compiling Markdown InlineContainer.swift
-[19/77] Compiling Markdown InlineMarkup.swift
-[20/77] Compiling Markdown ListItemContainer.swift
-[21/77] Compiling Markdown AtomicCounter.swift
-[22/77] Compiling Markdown CharacterExtensions.swift
-[23/77] Compiling Markdown LazySplitLines.swift
-[24/77] Compiling Markdown ParseOptions.swift
-[25/77] Compiling Markdown RangeAdjuster.swift
-[26/77] Compiling Markdown RangerTracker.swift
-[27/77] Compiling Markdown MarkupRewriter.swift
-[28/77] Compiling Markdown BasicBlockContainer.swift
-[29/77] Compiling Markdown BasicInlineContainer.swift
-[30/77] Compiling Markdown DoxygenNote.swift
-[31/77] Compiling Markdown DoxygenParameter.swift
-[32/77] Compiling Markdown DoxygenReturns.swift
-[33/77] Compiling Markdown ListItem.swift
-[34/77] Compiling Markdown OrderedList.swift
-[35/77] Compiling Markdown UnorderedList.swift
-[36/77] Compiling Markdown Paragraph.swift
-[37/77] Compiling Markdown ChildIndexPath.swift
-[38/77] Compiling Markdown DirectiveArgument.swift
-[39/77] Compiling Markdown Document.swift
-[40/77] Compiling Markdown LiteralMarkup.swift
-[41/77] Compiling Markdown Markup.swift
-[42/77] Compiling Markdown MarkupChildren.swift
-[43/77] Compiling Markdown MarkupData.swift
-[44/77] Emitting module Markdown
-[45/77] Compiling Markdown CodeBlock.swift
-[46/77] Compiling Markdown HTMLBlock.swift
-[47/77] Compiling Markdown Heading.swift
-[48/77] Compiling Markdown ThematicBreak.swift
-[49/77] Compiling Markdown Table.swift
-[50/77] Compiling Markdown TableBody.swift
-[51/77] Compiling Markdown TableCell.swift
-[52/77] Compiling Markdown PlainTextConvertibleMarkup.swift
-[53/77] Compiling Markdown RawMarkup.swift
-[54/77] Compiling Markdown BlockDirective.swift
-[55/77] Compiling Markdown BlockQuote.swift
-[56/77] Compiling Markdown CustomBlock.swift
-[57/77] Compiling Markdown DoxygenAbstract.swift
-[58/77] Compiling Markdown DoxygenDiscussion.swift
-[59/77] Compiling Markdown LineBreak.swift
-[60/77] Compiling Markdown SoftBreak.swift
-[61/77] Compiling Markdown SymbolLink.swift
-[62/77] Compiling Markdown Text.swift
-[63/77] Compiling Markdown Aside.swift
-[64/77] Compiling Markdown BlockDirectiveParser.swift
-[65/77] Compiling Markdown CommonMarkConverter.swift
-[66/77] Compiling Markdown CollectionExtensions.swift
-[67/77] Compiling Markdown StringExtensions.swift
-[68/77] Compiling Markdown MarkupVisitor.swift
-[69/77] Compiling Markdown MarkupWalker.swift
-[70/77] Compiling Markdown HTMLFormatter.swift
-[71/77] Compiling Markdown MarkupFormatter.swift
-[72/77] Compiling Markdown MarkupTreeDumper.swift
-[73/106] Compiling OuroMD Export.swift
-[74/106] Compiling OuroMD FileWatcher.swift
-[75/106] Compiling OuroMD FolderBrowser.swift
-[76/106] Compiling OuroMD OuroMDRelease.swift
-[77/106] Compiling OuroMD OuroMDTelemetry.swift
-[78/106] Compiling OuroMD OuroMDUpdate.swift
-[79/106] Compiling OuroMD OuroMDUpdateCoordinator.swift
-[80/106] Compiling OuroMD OuroMDUpdateInstaller.swift
-[81/106] Compiling OuroMD ReleaseUpdate.swift
-[82/106] Compiling OuroMD UndoRedoCommandRouter.swift
-[83/106] Compiling OuroMD UndoTest.swift
-[84/106] Compiling OuroMD Welcome.swift
-[85/106] Compiling OuroMD HTMLDocument.swift
-[86/106] Compiling OuroMD MarkdownRenderer.swift
-[87/106] Compiling OuroMD MenuBuilder.swift
-[88/106] Compiling OuroMD Snapshot.swift
-[89/106] Compiling OuroMD TerminationSaveCoordinator.swift
-[90/106] Compiling OuroMD Themes.swift
-[91/109] Compiling OuroMD AppDelegate.swift
-[92/109] Compiling OuroMD AppModel.swift
-[93/109] Compiling OuroMD CLI.swift
-[94/109] Compiling OuroMD ContentSearcher.swift
-[95/109] Compiling OuroMD WrapTest.swift
-[96/109] Compiling OuroMD main.swift
-[97/109] Compiling OuroMD resource_bundle_accessor.swift
-[98/109] Emitting module OuroMD
-[99/109] Compiling OuroMD ContentView.swift
-[100/109] Compiling OuroMD DocumentWindowController.swift
-[101/109] Compiling OuroMD EditorWebView.swift
-[102/109] Compiling OuroMD RenderProbe.swift
-[103/109] Compiling OuroMD RoundTrip.swift
-[104/109] Compiling OuroMD Sidebar.swift
-[104/109] Write Objects.LinkFileList
-[105/109] Linking ouro-md
-[106/109] Applying ouro-md
-[108/123] Compiling OuroMDTests TerminationSaveCoordinatorTests.swift
-[109/124] Compiling OuroMDTests ReleaseUpdateTests.swift
-[110/124] Compiling OuroMDTests OutlineTreeTests.swift
-[111/124] Compiling OuroMDTests OuroMDUpdateTests.swift
-[112/124] Compiling OuroMDTests OuroMDUpdateInstallerTests.swift
-[113/124] Compiling OuroMDTests UndoRedoRoutingTests.swift
-[114/124] Compiling OuroMDTests MarkdownRendererTests.swift
-[115/124] Compiling OuroMDTests MarkdownTidyTests.swift
-[116/124] Emitting module OuroMDTests
-[117/124] Compiling OuroMDTests AppModelReloadTests.swift
-[118/124] Compiling OuroMDTests ContentSearcherTests.swift
-[119/124] Compiling OuroMDTests FileWatcherTests.swift
-[120/124] Compiling OuroMDTests FolderBrowserTests.swift
-[121/124] Compiling OuroMDTests OuroMDTelemetryTests.swift
-[122/124] Compiling OuroMDTests OuroMDUpdateCoordinatorTests.swift
-[123/126] Compiling ouro_mdPackageTests runner.swift
-[124/126] Emitting module ouro_mdPackageTests
-[124/126] Write Objects.LinkFileList
-[125/126] Linking ouro-mdPackageTests
-Build complete! (6.62s)
-Test Suite 'All tests' started at 2026-06-14 20:33:07.715.
-Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 20:33:07.716.
-Test Suite 'AppModelReloadTests' started at 2026-06-14 20:33:07.716.
+[0/7] Write sources
+[1/7] Write swift-version--58304C5D6DBC2206.txt
+[3/71] Compiling Markdown BlockContainer.swift
+[4/71] Compiling Markdown BlockMarkup.swift
+[5/71] Compiling Markdown InlineContainer.swift
+[6/71] Compiling Markdown InlineMarkup.swift
+[7/71] Compiling Markdown ListItemContainer.swift
+[8/71] Compiling Markdown AtomicCounter.swift
+[9/71] Compiling Markdown CharacterExtensions.swift
+[10/78] Compiling Markdown LazySplitLines.swift
+[11/78] Compiling Markdown ParseOptions.swift
+[12/78] Compiling Markdown RangeAdjuster.swift
+[13/78] Compiling Markdown RangerTracker.swift
+[14/78] Compiling Markdown MarkupRewriter.swift
+[15/78] Compiling Markdown BasicBlockContainer.swift
+[16/78] Compiling Markdown BasicInlineContainer.swift
+[17/78] Compiling Markdown CollectionExtensions.swift
+[18/78] Compiling Markdown StringExtensions.swift
+[19/78] Compiling Markdown MarkupVisitor.swift
+[20/78] Compiling Markdown MarkupWalker.swift
+[21/78] Compiling Markdown HTMLFormatter.swift
+[22/78] Compiling Markdown MarkupFormatter.swift
+[23/78] Compiling Markdown MarkupTreeDumper.swift
+[24/78] Compiling Markdown ChildIndexPath.swift
+[25/78] Compiling Markdown DirectiveArgument.swift
+[26/78] Compiling Markdown Document.swift
+[27/78] Compiling Markdown LiteralMarkup.swift
+[28/78] Compiling Markdown Markup.swift
+[29/78] Compiling Markdown MarkupChildren.swift
+[30/78] Compiling Markdown MarkupData.swift
+[31/78] Compiling Markdown PlainTextConvertibleMarkup.swift
+[32/78] Compiling Markdown RawMarkup.swift
+[33/78] Compiling Markdown BlockDirective.swift
+[34/78] Compiling Markdown BlockQuote.swift
+[35/78] Compiling Markdown CustomBlock.swift
+[36/78] Compiling Markdown DoxygenAbstract.swift
+[37/78] Compiling Markdown DoxygenDiscussion.swift
+[38/78] Compiling Markdown InlineAttributes.swift
+[39/78] Compiling Markdown Link.swift
+[40/78] Compiling Markdown Strikethrough.swift
+[41/78] Compiling Markdown Strong.swift
+[42/78] Compiling Markdown CustomInline.swift
+[43/78] Compiling Markdown InlineCode.swift
+[44/78] Compiling Markdown InlineHTML.swift
+[45/78] Compiling Markdown TableCellContainer.swift
+[46/78] Compiling Markdown TableHead.swift
+[47/78] Compiling Markdown TableRow.swift
+[48/78] Compiling Markdown Replacement.swift
+[49/78] Compiling Markdown SourceLocation.swift
+[50/78] Compiling Markdown Emphasis.swift
+[51/78] Compiling Markdown Image.swift
+[52/78] Compiling Markdown DoxygenNote.swift
+[53/78] Compiling Markdown DoxygenParameter.swift
+[54/78] Compiling Markdown DoxygenReturns.swift
+[55/78] Compiling Markdown ListItem.swift
+[56/78] Compiling Markdown OrderedList.swift
+[57/78] Compiling Markdown UnorderedList.swift
+[58/78] Compiling Markdown Paragraph.swift
+[59/78] Compiling Markdown CodeBlock.swift
+[60/78] Compiling Markdown HTMLBlock.swift
+[61/78] Compiling Markdown Heading.swift
+[62/78] Compiling Markdown ThematicBreak.swift
+[63/78] Compiling Markdown Table.swift
+[64/78] Compiling Markdown TableBody.swift
+[65/78] Compiling Markdown TableCell.swift
+[66/78] Emitting module Markdown
+[67/78] Compiling Markdown LineBreak.swift
+[68/78] Compiling Markdown SoftBreak.swift
+[69/78] Compiling Markdown SymbolLink.swift
+[70/78] Compiling Markdown Text.swift
+[71/78] Compiling Markdown Aside.swift
+[72/78] Compiling Markdown BlockDirectiveParser.swift
+[73/78] Compiling Markdown CommonMarkConverter.swift
+[74/108] Compiling OuroMD UndoRedoCommandRouter.swift
+[75/108] Compiling OuroMD UndoTest.swift
+[76/108] Compiling OuroMD Welcome.swift
+[77/111] Compiling OuroMD WrapTest.swift
+[78/111] Compiling OuroMD main.swift
+[79/111] Compiling OuroMD resource_bundle_accessor.swift
+[80/111] Compiling OuroMD Snapshot.swift
+[81/111] Compiling OuroMD TerminationSaveCoordinator.swift
+[82/111] Compiling OuroMD Themes.swift
+[83/111] Compiling OuroMD OuroMDUpdateCoordinator.swift
+[84/111] Compiling OuroMD OuroMDUpdateInstaller.swift
+[85/111] Compiling OuroMD ReleaseUpdate.swift
+[86/111] Compiling OuroMD OuroMDRelease.swift
+[87/111] Compiling OuroMD OuroMDTelemetry.swift
+[88/111] Compiling OuroMD OuroMDUpdate.swift
+[89/111] Emitting module OuroMD
+[90/111] Compiling OuroMD AppDelegate.swift
+[91/111] Compiling OuroMD AppModel.swift
+[92/111] Compiling OuroMD CLI.swift
+[93/111] Compiling OuroMD ContentSearcher.swift
+[94/111] Compiling OuroMD MarkdownRenderer.swift
+[95/111] Compiling OuroMD MarkdownTidy.swift
+[96/111] Compiling OuroMD MenuBuilder.swift
+[97/111] Compiling OuroMD ContentView.swift
+[98/111] Compiling OuroMD DocumentWindowController.swift
+[99/111] Compiling OuroMD EditorWebView.swift
+[100/111] Compiling OuroMD Export.swift
+[101/111] Compiling OuroMD FileWatcher.swift
+[102/111] Compiling OuroMD FolderBrowser.swift
+[103/111] Compiling OuroMD HTMLDocument.swift
+[104/111] Compiling OuroMD RenderProbe.swift
+[105/111] Compiling OuroMD RoundTrip.swift
+[106/111] Compiling OuroMD Sidebar.swift
+[106/111] Write Objects.LinkFileList
+[107/111] Linking ouro-md
+[108/111] Applying ouro-md
+[110/125] Compiling OuroMDTests TerminationSaveCoordinatorTests.swift
+[111/125] Compiling OuroMDTests ReleaseUpdateTests.swift
+[112/125] Compiling OuroMDTests OutlineTreeTests.swift
+[113/126] Compiling OuroMDTests UndoRedoRoutingTests.swift
+[114/126] Compiling OuroMDTests OuroMDUpdateInstallerTests.swift
+[115/126] Compiling OuroMDTests OuroMDUpdateTests.swift
+[116/126] Compiling OuroMDTests MarkdownRendererTests.swift
+[117/126] Compiling OuroMDTests MarkdownTidyTests.swift
+[118/126] Compiling OuroMDTests AppModelReloadTests.swift
+[119/126] Compiling OuroMDTests ContentSearcherTests.swift
+[120/126] Compiling OuroMDTests OuroMDTelemetryTests.swift
+[121/126] Compiling OuroMDTests OuroMDUpdateCoordinatorTests.swift
+[122/126] Emitting module OuroMDTests
+[123/126] Compiling OuroMDTests FileWatcherTests.swift
+[124/126] Compiling OuroMDTests FolderBrowserTests.swift
+[125/128] Emitting module ouro_mdPackageTests
+[126/128] Compiling ouro_mdPackageTests runner.swift
+[126/128] Write Objects.LinkFileList
+[127/128] Linking ouro-mdPackageTests
+Build complete! (5.93s)
+Test Suite 'All tests' started at 2026-06-14 20:48:06.548.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 20:48:06.549.
+Test Suite 'AppModelReloadTests' started at 2026-06-14 20:48:06.549.
+Test Case '-[OuroMDTests.AppModelReloadTests testCleanSaveDoesNotRoundTripThroughEditor]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testCleanSaveDoesNotRoundTripThroughEditor]' passed (0.220 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testDirtyFormattingOnlySaveDoesNotRestoreOriginalBytes]' started.
+Test Case '-[OuroMDTests.AppModelReloadTests testDirtyFormattingOnlySaveDoesNotRestoreOriginalBytes]' passed (0.445 seconds).
 Test Case '-[OuroMDTests.AppModelReloadTests testExternalEditTriggersLiveReload]' started.
-Test Case '-[OuroMDTests.AppModelReloadTests testExternalEditTriggersLiveReload]' passed (0.548 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testExternalEditTriggersLiveReload]' passed (0.601 seconds).
 Test Case '-[OuroMDTests.AppModelReloadTests testOwnSaveDoesNotSelfReload]' started.
-Test Case '-[OuroMDTests.AppModelReloadTests testOwnSaveDoesNotSelfReload]' passed (1.035 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testOwnSaveDoesNotSelfReload]' passed (1.111 seconds).
 Test Case '-[OuroMDTests.AppModelReloadTests testRenameCaseOnlyIsAllowed]' started.
-Test Case '-[OuroMDTests.AppModelReloadTests testRenameCaseOnlyIsAllowed]' passed (0.011 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameCaseOnlyIsAllowed]' passed (0.009 seconds).
 Test Case '-[OuroMDTests.AppModelReloadTests testRenameMovesFileAndRetargetsModel]' started.
-Test Case '-[OuroMDTests.AppModelReloadTests testRenameMovesFileAndRetargetsModel]' passed (0.007 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameMovesFileAndRetargetsModel]' passed (0.019 seconds).
 Test Case '-[OuroMDTests.AppModelReloadTests testRenameRefusesCollision]' started.
 Test Case '-[OuroMDTests.AppModelReloadTests testRenameRefusesCollision]' passed (0.007 seconds).
 Test Case '-[OuroMDTests.AppModelReloadTests testRenameWithoutExtensionKeepsOriginal]' started.
-Test Case '-[OuroMDTests.AppModelReloadTests testRenameWithoutExtensionKeepsOriginal]' passed (0.012 seconds).
+Test Case '-[OuroMDTests.AppModelReloadTests testRenameWithoutExtensionKeepsOriginal]' passed (0.006 seconds).
 Test Case '-[OuroMDTests.AppModelReloadTests testSaveBeforeEditorReadyDoesNotEmptyFile]' started.
-Test Case '-[OuroMDTests.AppModelReloadTests testSaveBeforeEditorReadyDoesNotEmptyFile]' passed (0.431 seconds).
-Test Suite 'AppModelReloadTests' passed at 2026-06-14 20:33:09.767.
-	 Executed 7 tests, with 0 failures (0 unexpected) in 2.050 (2.051) seconds
-Test Suite 'ContentSearcherTests' started at 2026-06-14 20:33:09.767.
+Test Case '-[OuroMDTests.AppModelReloadTests testSaveBeforeEditorReadyDoesNotEmptyFile]' passed (0.445 seconds).
+Test Suite 'AppModelReloadTests' passed at 2026-06-14 20:48:09.413.
+	 Executed 9 tests, with 0 failures (0 unexpected) in 2.863 (2.864) seconds
+Test Suite 'ContentSearcherTests' started at 2026-06-14 20:48:09.413.
 Test Case '-[OuroMDTests.ContentSearcherTests testCaseSensitiveOption]' started.
-Test Case '-[OuroMDTests.ContentSearcherTests testCaseSensitiveOption]' passed (0.012 seconds).
+Test Case '-[OuroMDTests.ContentSearcherTests testCaseSensitiveOption]' passed (0.022 seconds).
 Test Case '-[OuroMDTests.ContentSearcherTests testStreamsRankedResultsWithSnippets]' started.
-Test Case '-[OuroMDTests.ContentSearcherTests testStreamsRankedResultsWithSnippets]' passed (0.007 seconds).
-Test Suite 'ContentSearcherTests' passed at 2026-06-14 20:33:09.786.
-	 Executed 2 tests, with 0 failures (0 unexpected) in 0.019 (0.019) seconds
-Test Suite 'FileWatcherTests' started at 2026-06-14 20:33:09.786.
+Test Case '-[OuroMDTests.ContentSearcherTests testStreamsRankedResultsWithSnippets]' passed (0.011 seconds).
+Test Suite 'ContentSearcherTests' passed at 2026-06-14 20:48:09.446.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.033 (0.033) seconds
+Test Suite 'FileWatcherTests' started at 2026-06-14 20:48:09.446.
 Test Case '-[OuroMDTests.FileWatcherTests testDetectsInPlaceWrite]' started.
-Test Case '-[OuroMDTests.FileWatcherTests testDetectsInPlaceWrite]' passed (0.459 seconds).
+Test Case '-[OuroMDTests.FileWatcherTests testDetectsInPlaceWrite]' passed (0.469 seconds).
 Test Case '-[OuroMDTests.FileWatcherTests testReArmsAcrossAtomicReplace]' started.
-Test Case '-[OuroMDTests.FileWatcherTests testReArmsAcrossAtomicReplace]' passed (0.458 seconds).
-Test Suite 'FileWatcherTests' passed at 2026-06-14 20:33:10.704.
-	 Executed 2 tests, with 0 failures (0 unexpected) in 0.917 (0.917) seconds
-Test Suite 'FolderBrowserTests' started at 2026-06-14 20:33:10.704.
+Test Case '-[OuroMDTests.FileWatcherTests testReArmsAcrossAtomicReplace]' passed (0.509 seconds).
+Test Suite 'FileWatcherTests' passed at 2026-06-14 20:48:10.425.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.978 (0.979) seconds
+Test Suite 'FolderBrowserTests' started at 2026-06-14 20:48:10.425.
 Test Case '-[OuroMDTests.FolderBrowserTests testFlatListIncludesOnlyOpenableFiles]' started.
-Test Case '-[OuroMDTests.FolderBrowserTests testFlatListIncludesOnlyOpenableFiles]' passed (0.009 seconds).
+Test Case '-[OuroMDTests.FolderBrowserTests testFlatListIncludesOnlyOpenableFiles]' passed (0.013 seconds).
 Test Case '-[OuroMDTests.FolderBrowserTests testFolderSortLabelsAndDateSorts]' started.
-Test Case '-[OuroMDTests.FolderBrowserTests testFolderSortLabelsAndDateSorts]' passed (0.007 seconds).
+Test Case '-[OuroMDTests.FolderBrowserTests testFolderSortLabelsAndDateSorts]' passed (0.008 seconds).
 Test Case '-[OuroMDTests.FolderBrowserTests testNameSortIsNatural]' started.
-Test Case '-[OuroMDTests.FolderBrowserTests testNameSortIsNatural]' passed (0.005 seconds).
+Test Case '-[OuroMDTests.FolderBrowserTests testNameSortIsNatural]' passed (0.008 seconds).
 Test Case '-[OuroMDTests.FolderBrowserTests testOpenFolderPopulatesModelAndFilter]' started.
-Test Case '-[OuroMDTests.FolderBrowserTests testOpenFolderPopulatesModelAndFilter]' passed (0.617 seconds).
+Test Case '-[OuroMDTests.FolderBrowserTests testOpenFolderPopulatesModelAndFilter]' passed (0.638 seconds).
 Test Case '-[OuroMDTests.FolderBrowserTests testReadsNonUTF8File]' started.
-Test Case '-[OuroMDTests.FolderBrowserTests testReadsNonUTF8File]' passed (0.005 seconds).
+Test Case '-[OuroMDTests.FolderBrowserTests testReadsNonUTF8File]' passed (0.006 seconds).
 Test Case '-[OuroMDTests.FolderBrowserTests testSnapshotOfMissingFolderIsEmpty]' started.
-Test Case '-[OuroMDTests.FolderBrowserTests testSnapshotOfMissingFolderIsEmpty]' passed (0.012 seconds).
+Test Case '-[OuroMDTests.FolderBrowserTests testSnapshotOfMissingFolderIsEmpty]' passed (0.019 seconds).
 Test Case '-[OuroMDTests.FolderBrowserTests testSnapshotProvidesTreeAndFlatViewsFromOneAPI]' started.
-Test Case '-[OuroMDTests.FolderBrowserTests testSnapshotProvidesTreeAndFlatViewsFromOneAPI]' passed (0.009 seconds).
+Test Case '-[OuroMDTests.FolderBrowserTests testSnapshotProvidesTreeAndFlatViewsFromOneAPI]' passed (0.015 seconds).
 Test Case '-[OuroMDTests.FolderBrowserTests testSymlinkCycleDoesNotCrashOrRecurse]' started.
-Test Case '-[OuroMDTests.FolderBrowserTests testSymlinkCycleDoesNotCrashOrRecurse]' passed (0.014 seconds).
+Test Case '-[OuroMDTests.FolderBrowserTests testSymlinkCycleDoesNotCrashOrRecurse]' passed (0.006 seconds).
 Test Case '-[OuroMDTests.FolderBrowserTests testTreeGroupsDirsFirstAndPrunesEmpties]' started.
-Test Case '-[OuroMDTests.FolderBrowserTests testTreeGroupsDirsFirstAndPrunesEmpties]' passed (0.005 seconds).
-Test Suite 'FolderBrowserTests' passed at 2026-06-14 20:33:11.387.
-	 Executed 9 tests, with 0 failures (0 unexpected) in 0.683 (0.684) seconds
-Test Suite 'MarkdownRendererTests' started at 2026-06-14 20:33:11.387.
+Test Case '-[OuroMDTests.FolderBrowserTests testTreeGroupsDirsFirstAndPrunesEmpties]' passed (0.004 seconds).
+Test Suite 'FolderBrowserTests' passed at 2026-06-14 20:48:11.141.
+	 Executed 9 tests, with 0 failures (0 unexpected) in 0.715 (0.716) seconds
+Test Suite 'MarkdownRendererTests' started at 2026-06-14 20:48:11.141.
 Test Case '-[OuroMDTests.MarkdownRendererTests testBlockQuote]' started.
 Test Case '-[OuroMDTests.MarkdownRendererTests testBlockQuote]' passed (0.001 seconds).
 Test Case '-[OuroMDTests.MarkdownRendererTests testBoldAndItalic]' started.
@@ -190,12 +196,20 @@ Test Case '-[OuroMDTests.MarkdownRendererTests testBrokenOrUnknownFootnoteRefere
 Test Case '-[OuroMDTests.MarkdownRendererTests testBrokenOrUnknownFootnoteReferencesAreLeftAsText]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.MarkdownRendererTests testDocumentWrap]' started.
 Test Case '-[OuroMDTests.MarkdownRendererTests testDocumentWrap]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testDuplicateFootnoteDefinitionsDoNotCrash]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testDuplicateFootnoteDefinitionsDoNotCrash]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.MarkdownRendererTests testFencedCodeBlock]' started.
 Test Case '-[OuroMDTests.MarkdownRendererTests testFencedCodeBlock]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteContinuationsAreRendered]' started.
 Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteContinuationsAreRendered]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteDefinitionsInsideCodeBlocksRemainCode]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteDefinitionsInsideCodeBlocksRemainCode]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteMultiParagraphContinuationRendersInsideFootnote]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteMultiParagraphContinuationRendersInsideFootnote]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteReferencesInsideFencedCodeAreLeftAlone]' started.
 Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteReferencesInsideFencedCodeAreLeftAlone]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteReferencesInsideInlineCodeOrEscapesAreLeftAlone]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteReferencesInsideInlineCodeOrEscapesAreLeftAlone]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.MarkdownRendererTests testFootnotesRenderAsBacklinkedSection]' started.
 Test Case '-[OuroMDTests.MarkdownRendererTests testFootnotesRenderAsBacklinkedSection]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.MarkdownRendererTests testHeading]' started.
@@ -209,7 +223,7 @@ Test Case '-[OuroMDTests.MarkdownRendererTests testHTMLEscaping]' passed (0.000 
 Test Case '-[OuroMDTests.MarkdownRendererTests testImageAlt]' started.
 Test Case '-[OuroMDTests.MarkdownRendererTests testImageAlt]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.MarkdownRendererTests testImageSourcesAreEscapedOrInlined]' started.
-Test Case '-[OuroMDTests.MarkdownRendererTests testImageSourcesAreEscapedOrInlined]' passed (0.011 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testImageSourcesAreEscapedOrInlined]' passed (0.005 seconds).
 Test Case '-[OuroMDTests.MarkdownRendererTests testInlineCode]' started.
 Test Case '-[OuroMDTests.MarkdownRendererTests testInlineCode]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.MarkdownRendererTests testLineBreaksAndRawHTMLPassThrough]' started.
@@ -230,9 +244,9 @@ Test Case '-[OuroMDTests.MarkdownRendererTests testThemeStore]' started.
 Test Case '-[OuroMDTests.MarkdownRendererTests testThemeStore]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.MarkdownRendererTests testUnorderedList]' started.
 Test Case '-[OuroMDTests.MarkdownRendererTests testUnorderedList]' passed (0.000 seconds).
-Test Suite 'MarkdownRendererTests' passed at 2026-06-14 20:33:11.405.
-	 Executed 24 tests, with 0 failures (0 unexpected) in 0.016 (0.018) seconds
-Test Suite 'MarkdownTidyTests' started at 2026-06-14 20:33:11.405.
+Test Suite 'MarkdownRendererTests' passed at 2026-06-14 20:48:11.154.
+	 Executed 28 tests, with 0 failures (0 unexpected) in 0.012 (0.013) seconds
+Test Suite 'MarkdownTidyTests' started at 2026-06-14 20:48:11.154.
 Test Case '-[OuroMDTests.MarkdownTidyTests testCollapsesConsecutiveBlankLines]' started.
 Test Case '-[OuroMDTests.MarkdownTidyTests testCollapsesConsecutiveBlankLines]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.MarkdownTidyTests testDoesNotTouchFencedCode]' started.
@@ -243,32 +257,36 @@ Test Case '-[OuroMDTests.MarkdownTidyTests testLeavesHorizontalRuleAlone]' start
 Test Case '-[OuroMDTests.MarkdownTidyTests testLeavesHorizontalRuleAlone]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.MarkdownTidyTests testNonTableContentUnchanged]' started.
 Test Case '-[OuroMDTests.MarkdownTidyTests testNonTableContentUnchanged]' passed (0.000 seconds).
-Test Case '-[OuroMDTests.MarkdownTidyTests testPreservesOriginalWhenOnlyKnownEditorNormalizationChanged]' started.
-Test Case '-[OuroMDTests.MarkdownTidyTests testPreservesOriginalWhenOnlyKnownEditorNormalizationChanged]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownTidyTests testNormalTidyDoesNotConsultOriginalForDirtySave]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testNormalTidyDoesNotConsultOriginalForDirtySave]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.MarkdownTidyTests testPreservesTableAlignment]' started.
 Test Case '-[OuroMDTests.MarkdownTidyTests testPreservesTableAlignment]' passed (0.000 seconds).
-Test Suite 'MarkdownTidyTests' passed at 2026-06-14 20:33:11.406.
-	 Executed 7 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
-Test Suite 'OuroMDTelemetryTests' started at 2026-06-14 20:33:11.406.
+Test Case '-[OuroMDTests.MarkdownTidyTests testRoundTripProbePreservesOriginalWhenOnlyKnownEditorNormalizationChanged]' started.
+Test Case '-[OuroMDTests.MarkdownTidyTests testRoundTripProbePreservesOriginalWhenOnlyKnownEditorNormalizationChanged]' passed (0.000 seconds).
+Test Suite 'MarkdownTidyTests' passed at 2026-06-14 20:48:11.155.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'OuroMDTelemetryTests' started at 2026-06-14 20:48:11.155.
 Test Case '-[OuroMDTests.OuroMDTelemetryTests testCaptureSendsAnonymousPostHogPayload]' started.
-Test Case '-[OuroMDTests.OuroMDTelemetryTests testCaptureSendsAnonymousPostHogPayload]' passed (0.005 seconds).
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testCaptureSendsAnonymousPostHogPayload]' passed (0.004 seconds).
 Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationIgnoresAmbientPostHogKeyEnvironmentAndSupportsDisableFlag]' started.
-Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationIgnoresAmbientPostHogKeyEnvironmentAndSupportsDisableFlag]' passed (0.002 seconds).
-Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationLoadsPostHogEnvironment]' started.
-Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationLoadsPostHogEnvironment]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationIgnoresAmbientPostHogKeyEnvironmentAndSupportsDisableFlag]' passed (0.003 seconds).
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationIgnoresStoredPostHogDefaults]' started.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationIgnoresStoredPostHogDefaults]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationLoadsEmbeddedPostHogBundleValues]' started.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationLoadsEmbeddedPostHogBundleValues]' passed (0.003 seconds).
 Test Case '-[OuroMDTests.OuroMDTelemetryTests testOptOutSuppressesCaptureAndPersists]' started.
 Test Case '-[OuroMDTests.OuroMDTelemetryTests testOptOutSuppressesCaptureAndPersists]' passed (0.002 seconds).
-Test Suite 'OuroMDTelemetryTests' passed at 2026-06-14 20:33:11.418.
-	 Executed 4 tests, with 0 failures (0 unexpected) in 0.012 (0.012) seconds
-Test Suite 'OuroMDUpdateCoordinatorTests' started at 2026-06-14 20:33:11.418.
+Test Suite 'OuroMDTelemetryTests' passed at 2026-06-14 20:48:11.170.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.015 (0.015) seconds
+Test Suite 'OuroMDUpdateCoordinatorTests' started at 2026-06-14 20:48:11.170.
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testApplyStagedUpdateOnQuitOnlyWhenEnabledAndNotManualInstall]' started.
-Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testApplyStagedUpdateOnQuitOnlyWhenEnabledAndNotManualInstall]' passed (0.003 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testApplyStagedUpdateOnQuitOnlyWhenEnabledAndNotManualInstall]' passed (0.002 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateCheckIsDefaultOnThrottledAndOncePerSession]' started.
-Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateCheckIsDefaultOnThrottledAndOncePerSession]' passed (0.005 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateCheckIsDefaultOnThrottledAndOncePerSession]' passed (0.002 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateCheckSkipsWhenDisabled]' started.
-Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateCheckSkipsWhenDisabled]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateCheckSkipsWhenDisabled]' passed (0.001 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateDefaultsToEnabledAndPersistsOptOut]' started.
-Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateDefaultsToEnabledAndPersistsOptOut]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateDefaultsToEnabledAndPersistsOptOut]' passed (0.001 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateStagesInstallableUpdateInBackground]' started.
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateStagesInstallableUpdateInBackground]' passed (0.002 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testBadgeAndPromptUseCheckedReleaseWhenNoUpdateIsStaged]' started.
@@ -286,7 +304,7 @@ Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckReportsMiss
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallFailureSetsFailedPromptForAppObserver]' started.
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallFailureSetsFailedPromptForAppObserver]' passed (0.001 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallOfPendingStageIsIdempotent]' started.
-Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallOfPendingStageIsIdempotent]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallOfPendingStageIsIdempotent]' passed (0.001 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallReportsPlannerFailure]' started.
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallReportsPlannerFailure]' passed (0.001 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallReportsStagingProgressBeforeApplying]' started.
@@ -296,7 +314,7 @@ Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallRequiresP
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallRestagesWhenCheckedReleaseIsNewerThanPendingStage]' started.
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallRestagesWhenCheckedReleaseIsNewerThanPendingStage]' passed (0.002 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallUsesAlreadyStagedUpdateAndSuppressesQuitApply]' started.
-Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallUsesAlreadyStagedUpdateAndSuppressesQuitApply]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallUsesAlreadyStagedUpdateAndSuppressesQuitApply]' passed (0.001 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualUpdateFailureTelemetryDoesNotLeakRawErrorDetails]' started.
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualUpdateFailureTelemetryDoesNotLeakRawErrorDetails]' passed (0.001 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualUpdateFlowCapturesTelemetryWithoutRawErrorDetails]' started.
@@ -306,52 +324,52 @@ Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testPromptDisplayHelpersAr
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testPromptFallsBackToStagedVersionWhenLatestSnapshotIsNotInstallable]' started.
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testPromptFallsBackToStagedVersionWhenLatestSnapshotIsNotInstallable]' passed (0.002 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testPromptPresentationBindingDismissesPrompt]' started.
-Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testPromptPresentationBindingDismissesPrompt]' passed (0.002 seconds).
-Test Suite 'OuroMDUpdateCoordinatorTests' passed at 2026-06-14 20:33:11.459.
-	 Executed 23 tests, with 0 failures (0 unexpected) in 0.039 (0.040) seconds
-Test Suite 'OuroMDUpdateInstallerTests' started at 2026-06-14 20:33:11.459.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testPromptPresentationBindingDismissesPrompt]' passed (0.001 seconds).
+Test Suite 'OuroMDUpdateCoordinatorTests' passed at 2026-06-14 20:48:11.200.
+	 Executed 23 tests, with 0 failures (0 unexpected) in 0.028 (0.030) seconds
+Test Suite 'OuroMDUpdateInstallerTests' started at 2026-06-14 20:48:11.200.
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptDoesNotDeleteBackupBeforeDestinationShapeIsProven]' started.
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptDoesNotDeleteBackupBeforeDestinationShapeIsProven]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptFailsFastAroundBackupInstallAndRollback]' started.
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptFailsFastAroundBackupInstallAndRollback]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptRestoresStaleBackupBeforeTryingNewInstall]' started.
-ditto: Cannot get the real path for source '/var/folders/md/_fkq3wc92_z55cgtlrfrcfh40000gn/T/ouro-apply-stale-backup-02C50E56-73F6-4A01-91DE-DF315F30F659/missing-staged/Ouro MD.app'
-Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptRestoresStaleBackupBeforeTryingNewInstall]' passed (0.070 seconds).
+ditto: Cannot get the real path for source '/var/folders/md/_fkq3wc92_z55cgtlrfrcfh40000gn/T/ouro-apply-stale-backup-5E919AAA-ED6F-4783-9AAC-374E631BBF3E/missing-staged/Ouro MD.app'
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptRestoresStaleBackupBeforeTryingNewInstall]' passed (0.065 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptRunsInTemporaryDirectoryWithoutNestingUpdatedApp]' started.
-Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptRunsInTemporaryDirectoryWithoutNestingUpdatedApp]' passed (0.128 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testApplyScriptRunsInTemporaryDirectoryWithoutNestingUpdatedApp]' passed (0.132 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testInstallErrorDescriptionsAreUserReadable]' started.
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testInstallErrorDescriptionsAreUserReadable]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStagePreservesInstallerErrorFromDataLoader]' started.
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStagePreservesInstallerErrorFromDataLoader]' passed (0.001 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageSucceedsAfterManifestArchiveExtractedBundleAndCodesignVerify]' started.
-Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageSucceedsAfterManifestArchiveExtractedBundleAndCodesignVerify]' passed (0.003 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageSucceedsAfterManifestArchiveExtractedBundleAndCodesignVerify]' passed (0.001 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnArchiveNameMismatch]' started.
-Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnArchiveNameMismatch]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnArchiveNameMismatch]' passed (0.001 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnBundleIdentifierMismatch]' started.
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnBundleIdentifierMismatch]' passed (0.001 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnByteCountMismatch]' started.
-Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnByteCountMismatch]' passed (0.003 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnByteCountMismatch]' passed (0.001 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnCodesignFailure]' started.
-Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnCodesignFailure]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnCodesignFailure]' passed (0.001 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnManifestDecodeFailure]' started.
-Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnManifestDecodeFailure]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnManifestDecodeFailure]' passed (0.001 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnMissingStagedApp]' started.
-Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnMissingStagedApp]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnMissingStagedApp]' passed (0.003 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnNonNewerVersion]' started.
-Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnNonNewerVersion]' passed (0.003 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnNonNewerVersion]' passed (0.001 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnSHAMismatch]' started.
-Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnSHAMismatch]' passed (0.003 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnSHAMismatch]' passed (0.001 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnStagedBundleIdentifierMismatch]' started.
-Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnStagedBundleIdentifierMismatch]' passed (0.009 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnStagedBundleIdentifierMismatch]' passed (0.001 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnStagedVersionMismatch]' started.
-Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnStagedVersionMismatch]' passed (0.004 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnStagedVersionMismatch]' passed (0.001 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnUnzipFailureWithExitStatusFallback]' started.
-Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnUnzipFailureWithExitStatusFallback]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageThrowsOnUnzipFailureWithExitStatusFallback]' passed (0.001 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageWrapsGenericDataLoaderFailureAsDownloadError]' started.
-Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageWrapsGenericDataLoaderFailureAsDownloadError]' passed (0.003 seconds).
-Test Suite 'OuroMDUpdateInstallerTests' passed at 2026-06-14 20:33:11.698.
-	 Executed 19 tests, with 0 failures (0 unexpected) in 0.238 (0.240) seconds
-Test Suite 'OuroMDUpdateTests' started at 2026-06-14 20:33:11.698.
+Test Case '-[OuroMDTests.OuroMDUpdateInstallerTests testStageWrapsGenericDataLoaderFailureAsDownloadError]' passed (0.002 seconds).
+Test Suite 'OuroMDUpdateInstallerTests' passed at 2026-06-14 20:48:11.416.
+	 Executed 19 tests, with 0 failures (0 unexpected) in 0.214 (0.215) seconds
+Test Suite 'OuroMDUpdateTests' started at 2026-06-14 20:48:11.416.
 Test Case '-[OuroMDTests.OuroMDUpdateTests testAutoUpdatePolicyChecksAfterInterval]' started.
 Test Case '-[OuroMDTests.OuroMDUpdateTests testAutoUpdatePolicyChecksAfterInterval]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateTests testAutoUpdatePolicyChecksWhenNeverCheckedBefore]' started.
@@ -388,26 +406,26 @@ Test Case '-[OuroMDTests.OuroMDUpdateTests testVerifyFailsWhenVersionCannotBeCom
 Test Case '-[OuroMDTests.OuroMDUpdateTests testVerifyFailsWhenVersionCannotBeCompared]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.OuroMDUpdateTests testVerifyPassesWhenEverythingMatches]' started.
 Test Case '-[OuroMDTests.OuroMDUpdateTests testVerifyPassesWhenEverythingMatches]' passed (0.000 seconds).
-Test Suite 'OuroMDUpdateTests' passed at 2026-06-14 20:33:11.702.
+Test Suite 'OuroMDUpdateTests' passed at 2026-06-14 20:48:11.419.
 	 Executed 18 tests, with 0 failures (0 unexpected) in 0.002 (0.003) seconds
-Test Suite 'OutlineTreeTests' started at 2026-06-14 20:33:11.702.
+Test Suite 'OutlineTreeTests' started at 2026-06-14 20:48:11.419.
 Test Case '-[OuroMDTests.OutlineTreeTests testHandlesLeadingDeepHeading]' started.
 Test Case '-[OuroMDTests.OutlineTreeTests testHandlesLeadingDeepHeading]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.OutlineTreeTests testNestsByLevel]' started.
 Test Case '-[OuroMDTests.OutlineTreeTests testNestsByLevel]' passed (0.000 seconds).
-Test Suite 'OutlineTreeTests' passed at 2026-06-14 20:33:11.702.
-	 Executed 2 tests, with 0 failures (0 unexpected) in 0.000 (0.001) seconds
-Test Suite 'ReleaseUpdateTests' started at 2026-06-14 20:33:11.702.
+Test Suite 'OutlineTreeTests' passed at 2026-06-14 20:48:11.419.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.000 (0.000) seconds
+Test Suite 'ReleaseUpdateTests' started at 2026-06-14 20:48:11.419.
 Test Case '-[OuroMDTests.ReleaseUpdateTests testAsyncCheckReturnsSnapshotOnLoaderSuccess]' started.
-Test Case '-[OuroMDTests.ReleaseUpdateTests testAsyncCheckReturnsSnapshotOnLoaderSuccess]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testAsyncCheckReturnsSnapshotOnLoaderSuccess]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.ReleaseUpdateTests testAsyncCheckReturnsUnavailableSnapshotOnNetworkFailure]' started.
 Test Case '-[OuroMDTests.ReleaseUpdateTests testAsyncCheckReturnsUnavailableSnapshotOnNetworkFailure]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultConfigurationTargetsOuroMDGitHubReleases]' started.
 Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultConfigurationTargetsOuroMDGitHubReleases]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultLoaderSendsExpectedGitHubRequestAndReturnsBody]' started.
-Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultLoaderSendsExpectedGitHubRequestAndReturnsBody]' passed (0.011 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultLoaderSendsExpectedGitHubRequestAndReturnsBody]' passed (0.009 seconds).
 Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultLoaderThrowsOnNonSuccessStatus]' started.
-Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultLoaderThrowsOnNonSuccessStatus]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultLoaderThrowsOnNonSuccessStatus]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.ReleaseUpdateTests testReleaseDescriptorMatchesCurrentDistribution]' started.
 Test Case '-[OuroMDTests.ReleaseUpdateTests testReleaseDescriptorMatchesCurrentDistribution]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.ReleaseUpdateTests testSemanticVersionComparesMajorMinorAndPatch]' started.
@@ -428,9 +446,9 @@ Test Case '-[OuroMDTests.ReleaseUpdateTests testUpdatePlanErrorDescriptionsAreUs
 Test Case '-[OuroMDTests.ReleaseUpdateTests testUpdatePlanErrorDescriptionsAreUserFacing]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.ReleaseUpdateTests testUpdateVerificationFailureDescriptionsAreUserFacing]' started.
 Test Case '-[OuroMDTests.ReleaseUpdateTests testUpdateVerificationFailureDescriptionsAreUserFacing]' passed (0.000 seconds).
-Test Suite 'ReleaseUpdateTests' passed at 2026-06-14 20:33:11.718.
-	 Executed 15 tests, with 0 failures (0 unexpected) in 0.014 (0.015) seconds
-Test Suite 'TerminationSaveCoordinatorTests' started at 2026-06-14 20:33:11.718.
+Test Suite 'ReleaseUpdateTests' passed at 2026-06-14 20:48:11.431.
+	 Executed 15 tests, with 0 failures (0 unexpected) in 0.011 (0.012) seconds
+Test Suite 'TerminationSaveCoordinatorTests' started at 2026-06-14 20:48:11.431.
 Test Case '-[OuroMDTests.TerminationSaveCoordinatorTests testDefaultCancelHandlerIsSafeWhenSaveFails]' started.
 Test Case '-[OuroMDTests.TerminationSaveCoordinatorTests testDefaultCancelHandlerIsSafeWhenSaveFails]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.TerminationSaveCoordinatorTests testRepliesFalseAndCancelsWhenAnySaveFails]' started.
@@ -441,29 +459,31 @@ Test Case '-[OuroMDTests.TerminationSaveCoordinatorTests testRepliesTrueOnlyAfte
 Test Case '-[OuroMDTests.TerminationSaveCoordinatorTests testRepliesTrueOnlyAfterAllSavesSucceed]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.TerminationSaveCoordinatorTests testTimeoutCancelsInsteadOfForcingQuit]' started.
 Test Case '-[OuroMDTests.TerminationSaveCoordinatorTests testTimeoutCancelsInsteadOfForcingQuit]' passed (0.013 seconds).
-Test Suite 'TerminationSaveCoordinatorTests' passed at 2026-06-14 20:33:11.732.
-	 Executed 5 tests, with 0 failures (0 unexpected) in 0.014 (0.015) seconds
-Test Suite 'UndoRedoRoutingTests' started at 2026-06-14 20:33:11.732.
+Test Suite 'TerminationSaveCoordinatorTests' passed at 2026-06-14 20:48:11.446.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.014 (0.014) seconds
+Test Suite 'UndoRedoRoutingTests' started at 2026-06-14 20:48:11.446.
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testMenuValidationChecksRecentItemsAndDefaults]' started.
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testMenuValidationChecksRecentItemsAndDefaults]' passed (0.063 seconds).
 Test Case '-[OuroMDTests.UndoRedoRoutingTests testMenuValidationDisablesEditorOnlyCommandsWithoutAWindow]' started.
-Test Case '-[OuroMDTests.UndoRedoRoutingTests testMenuValidationDisablesEditorOnlyCommandsWithoutAWindow]' passed (0.069 seconds).
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testMenuValidationDisablesEditorOnlyCommandsWithoutAWindow]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.UndoRedoRoutingTests testMenuValidationKeepsGlobalCommandsEnabledWithoutAWindow]' started.
 Test Case '-[OuroMDTests.UndoRedoRoutingTests testMenuValidationKeepsGlobalCommandsEnabledWithoutAWindow]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.UndoRedoRoutingTests testRedoDoesNotFallThroughWhenNativeTextViewHasEmptyStack]' started.
-Test Case '-[OuroMDTests.UndoRedoRoutingTests testRedoDoesNotFallThroughWhenNativeTextViewHasEmptyStack]' passed (0.009 seconds).
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testRedoDoesNotFallThroughWhenNativeTextViewHasEmptyStack]' passed (0.008 seconds).
 Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoAndRedoFallBackWhenResponderIsNotNativeTextView]' started.
 Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoAndRedoFallBackWhenResponderIsNotNativeTextView]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoAndRedoMenuItemsTargetNativeAppDelegateSelectors]' started.
-Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoAndRedoMenuItemsTargetNativeAppDelegateSelectors]' passed (0.008 seconds).
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoAndRedoMenuItemsTargetNativeAppDelegateSelectors]' passed (0.007 seconds).
 Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoAndRedoUseNativeTextViewManagerWhenAvailable]' started.
 Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoAndRedoUseNativeTextViewManagerWhenAvailable]' passed (0.000 seconds).
 Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoDoesNotFallThroughWhenNativeTextViewHasEmptyStack]' started.
 Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoDoesNotFallThroughWhenNativeTextViewHasEmptyStack]' passed (0.000 seconds).
-Test Suite 'UndoRedoRoutingTests' passed at 2026-06-14 20:33:11.819.
-	 Executed 7 tests, with 0 failures (0 unexpected) in 0.086 (0.087) seconds
-Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 20:33:11.819.
-	 Executed 144 tests, with 0 failures (0 unexpected) in 4.092 (4.103) seconds
-Test Suite 'All tests' passed at 2026-06-14 20:33:11.819.
-	 Executed 144 tests, with 0 failures (0 unexpected) in 4.092 (4.104) seconds
+Test Suite 'UndoRedoRoutingTests' passed at 2026-06-14 20:48:11.525.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.079 (0.079) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 20:48:11.525.
+	 Executed 153 tests, with 0 failures (0 unexpected) in 4.966 (4.976) seconds
+Test Suite 'All tests' passed at 2026-06-14 20:48:11.525.
+	 Executed 153 tests, with 0 failures (0 unexpected) in 4.966 (4.977) seconds
 ◇ Test run started.
 ↳ Testing Library Version: 1902
 ↳ Target Platform: arm64e-apple-macos14.0

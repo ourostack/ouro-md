@@ -143,12 +143,46 @@ final class MarkdownRendererTests: XCTestCase {
         XCTAssertFalse(html.contains("[^a]:"))
     }
 
+    func testFootnoteMultiParagraphContinuationRendersInsideFootnote() {
+        let html = render("Body[^a].\n\n[^a]: first\n\n    second paragraph\n\nBody after.")
+
+        XCTAssertTrue(html.contains("<li id=\"fn-a\"><p>first</p>\n<p>second paragraph</p>"))
+        XCTAssertTrue(html.contains("<p>Body after.</p>"))
+        XCTAssertFalse(html.contains("[^a]:"))
+    }
+
     func testBrokenOrUnknownFootnoteReferencesAreLeftAsText() {
         let html = render("Known[^a] unknown[^missing] broken[^oops\n\n[^a]: ok")
 
         XCTAssertTrue(html.contains("class=\"footnote-ref\""))
         XCTAssertTrue(html.contains("unknown[^missing]"))
         XCTAssertTrue(html.contains("broken[^oops"))
+    }
+
+    func testDuplicateFootnoteDefinitionsDoNotCrash() {
+        let html = render("Body[^a].\n\n[^a]: first\n[^a]: second")
+
+        XCTAssertTrue(html.contains("<li id=\"fn-a\"><p>first</p>"))
+        XCTAssertFalse(html.contains("second</p>"))
+    }
+
+    func testFootnoteDefinitionsInsideCodeBlocksRemainCode() {
+        let html = render("```md\n[^a]: literal\n```\n\n    [^b]: indented code\n\nBody[^real].\n\n[^real]: ok")
+
+        XCTAssertTrue(html.contains("[^a]: literal"))
+        XCTAssertTrue(html.contains("[^b]: indented code"))
+        XCTAssertTrue(html.contains("<li id=\"fn-real\"><p>ok</p>"))
+        XCTAssertFalse(html.contains("id=\"fn-a\""))
+        XCTAssertFalse(html.contains("id=\"fn-b\""))
+    }
+
+    func testFootnoteReferencesInsideInlineCodeOrEscapesAreLeftAlone() {
+        let html = render("Real[^a] code `[^a]` escaped \\[^a].\n\n[^a]: ok")
+
+        XCTAssertTrue(html.contains("Real<sup"))
+        XCTAssertTrue(html.contains("<code>[^a]</code>"))
+        XCTAssertTrue(html.contains("escaped [^a]."))
+        XCTAssertEqual(html.components(separatedBy: "class=\"footnote-ref\"").count - 1, 1)
     }
 
     func testFootnoteReferencesInsideFencedCodeAreLeftAlone() {

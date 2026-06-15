@@ -56,13 +56,12 @@ private enum FootnotePreprocessor {
             return Output(markdown: markdown, footnotes: [])
         }
 
-        let labels = extracted.definitions.map(\.label)
-        let idsByLabel = Dictionary(uniqueKeysWithValues: labels.enumerated().map { offset, label in
-            (label, footnoteID(label: label, index: offset + 1))
-        })
-        let numbersByLabel = Dictionary(uniqueKeysWithValues: labels.enumerated().map { offset, label in
-            (label, offset + 1)
-        })
+        var idsByLabel: [String: String] = [:]
+        var numbersByLabel: [String: Int] = [:]
+        for (offset, definition) in extracted.definitions.enumerated() {
+            idsByLabel[definition.label] = footnoteID(label: definition.label, index: offset + 1)
+            numbersByLabel[definition.label] = offset + 1
+        }
         let referenced = replaceReferences(
             in: extracted.markdownWithoutDefinitions,
             idsByLabel: idsByLabel,
@@ -78,16 +77,36 @@ private enum FootnotePreprocessor {
         let lines = markdown.components(separatedBy: "\n")
         var bodyLines: [String] = []
         var definitions: [Definition] = []
+        var seenLabels: Set<String> = []
         var activeDefinitionIndex: Int?
+        var inFence = false
 
         for line in lines {
-            if let definition = parseDefinition(line) {
-                definitions.append(definition)
-                activeDefinitionIndex = definitions.count - 1
+            if isFence(line) {
+                inFence.toggle()
+                activeDefinitionIndex = nil
+                bodyLines.append(line)
                 continue
             }
-            if let index = activeDefinitionIndex, isContinuation(line) {
-                definitions[index].markdown += "\n" + line.trimmingCharacters(in: .whitespaces)
+            if inFence {
+                bodyLines.append(line)
+                continue
+            }
+            if let definition = parseDefinition(line) {
+                if seenLabels.insert(definition.label).inserted {
+                    definitions.append(definition)
+                    activeDefinitionIndex = definitions.count - 1
+                } else {
+                    activeDefinitionIndex = nil
+                }
+                continue
+            }
+            if let index = activeDefinitionIndex, line.trimmingCharacters(in: .whitespaces).isEmpty {
+                definitions[index].markdown += "\n"
+                continue
+            }
+            if let index = activeDefinitionIndex, let continuation = continuationContent(line) {
+                definitions[index].markdown += "\n" + continuation
                 continue
             }
             activeDefinitionIndex = nil
@@ -98,6 +117,7 @@ private enum FootnotePreprocessor {
     }
 
     private static func parseDefinition(_ line: String) -> Definition? {
+        guard indentationWidth(line) <= 3 else { return nil }
         let trimmed = line.trimmingCharacters(in: .whitespaces)
         guard trimmed.hasPrefix("[^"),
               let close = trimmed.range(of: "]:")
@@ -111,8 +131,33 @@ private enum FootnotePreprocessor {
         return Definition(label: label, markdown: markdown)
     }
 
-    private static func isContinuation(_ line: String) -> Bool {
-        line.hasPrefix("    ") || line.hasPrefix("\t")
+    private static func isFence(_ line: String) -> Bool {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        return trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~")
+    }
+
+    private static func indentationWidth(_ line: String) -> Int {
+        var width = 0
+        for char in line {
+            if char == " " {
+                width += 1
+            } else if char == "\t" {
+                width += 4
+            } else {
+                break
+            }
+        }
+        return width
+    }
+
+    private static func continuationContent(_ line: String) -> String? {
+        if line.hasPrefix("    ") {
+            return String(line.dropFirst(4))
+        }
+        if line.hasPrefix("\t") {
+            return String(line.dropFirst())
+        }
+        return nil
     }
 
     private static func replaceReferences(
@@ -141,25 +186,56 @@ private enum FootnotePreprocessor {
     ) -> String {
         var out = ""
         var index = line.startIndex
+        var backtickRun: Int?
         while index < line.endIndex {
-            guard let start = line[index...].range(of: "[^") else {
-                out += line[index...]
-                break
+            let char = line[index]
+            if char == "\\" {
+                out.append(char)
+                index = line.index(after: index)
+                if index < line.endIndex {
+                    out.append(line[index])
+                    index = line.index(after: index)
+                }
+                continue
             }
-            out += line[index..<start.lowerBound]
-            guard let close = line[start.upperBound...].firstIndex(of: "]") else {
-                out += line[start.lowerBound...]
-                break
+            if char == "`" {
+                let run = countBackticks(in: line, at: index)
+                out += String(repeating: "`", count: run)
+                index = line.index(index, offsetBy: run)
+                if let active = backtickRun {
+                    if active == run { backtickRun = nil }
+                } else {
+                    backtickRun = run
+                }
+                continue
             }
-            let label = String(line[start.upperBound..<close])
-            if let id = idsByLabel[label], let number = numbersByLabel[label] {
-                out += "<sup id=\"fnref-\(HTMLDocument.escapeAttr(id))\"><a href=\"#fn-\(HTMLDocument.escapeAttr(id))\" class=\"footnote-ref\">\(number)</a></sup>"
-            } else {
-                out += line[start.lowerBound...close]
+            if backtickRun == nil, line[index...].hasPrefix("[^") {
+                let labelStart = line.index(index, offsetBy: 2)
+                if let close = line[labelStart...].firstIndex(of: "]") {
+                    let label = String(line[labelStart..<close])
+                    if let id = idsByLabel[label], let number = numbersByLabel[label] {
+                        out += "<sup id=\"fnref-\(HTMLDocument.escapeAttr(id))\"><a href=\"#fn-\(HTMLDocument.escapeAttr(id))\" class=\"footnote-ref\">\(number)</a></sup>"
+                    } else {
+                        out += line[index...close]
+                    }
+                    index = line.index(after: close)
+                    continue
+                }
             }
-            index = line.index(after: close)
+            out.append(char)
+            index = line.index(after: index)
         }
         return out
+    }
+
+    private static func countBackticks(in line: String, at index: String.Index) -> Int {
+        var count = 0
+        var cursor = index
+        while cursor < line.endIndex, line[cursor] == "`" {
+            count += 1
+            cursor = line.index(after: cursor)
+        }
+        return count
     }
 
     private static func footnoteID(label: String, index: Int) -> String {

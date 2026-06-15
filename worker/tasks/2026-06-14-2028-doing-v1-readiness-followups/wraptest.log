@@ -1,6 +1,6 @@
 Building for debugging...
 [0/3] Write swift-version--58304C5D6DBC2206.txt
-Build of product 'ouro-md' complete! (0.16s)
+Build of product 'ouro-md' complete! (0.15s)
 type " over selection: hello "world"\n   OK ✓
 type ( over selection: hello (world)\n   OK ✓
 paste url over selection: hello [world](https://x.com)\n   OK ✓

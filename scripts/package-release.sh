@@ -10,7 +10,8 @@
 #
 # After running, publish them with:
 #   gh release create v<version> dist/Ouro-MD-<version>.zip dist/Ouro-MD-<version>.manifest.json \
-#     --repo ourostack/ouro-md --title "Ouro MD <version>" --notes "…"
+#     --repo ourostack/ouro-md --target "$(git rev-parse HEAD)" \
+#     --title "Ouro MD <version>" --notes "…"
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -72,4 +73,5 @@ echo "    version ${version} (build ${build}) · ${bytes} bytes · sha256 ${sha2
 echo
 echo "Publish with:"
 echo "  gh release create v${version} \"${archive_path}\" \"${manifest_path}\" \\"
-echo "    --repo ourostack/ouro-md --title \"Ouro MD ${version}\" --notes \"…\""
+echo "    --repo ourostack/ouro-md --target \"$(git rev-parse HEAD)\" \\"
+echo "    --title \"Ouro MD ${version}\" --notes \"…\""
