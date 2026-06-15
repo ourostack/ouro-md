@@ -59,7 +59,9 @@ inside the app.
 
 - **Where it lives:** `/Applications/Ouro MD.app` (or `~/Applications`)
 - **How to launch:** double-click in Finder · `open -a "Ouro MD"` · or the `md`
-  shell alias (`alias md='open -a "Ouro MD"'`) → `md notes.md`
+  shell alias (`md notes.md`). The one-line installer adds the `md` alias to your
+  shell rc automatically (skipped if you already have an `md` alias; opt out with
+  `OURO_MD_NO_ALIAS=1`).
 
 The app is currently **unsigned** (ad-hoc), so the installer clears the
 quarantine flag and re-registers it with Launch Services — a plain copy into

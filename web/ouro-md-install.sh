@@ -110,6 +110,31 @@ xattr -cr "$dest" 2>/dev/null || true
 
 say "Installed ${app_name%.app} ${ver:-} → $dest"
 
+# Wire up the `md` shell alias so `md file.md` opens the editor. Idempotent and
+# conservative: only touches a shell rc that exists, never overwrites an existing
+# `md` alias (yours or ours). Opt out with OURO_MD_NO_ALIAS=1.
+alias_line="alias md='open -a \"${app_name%.app}\"'"
+if [ "${OURO_MD_NO_ALIAS:-}" = "1" ]; then
+  :
+else
+  case "${SHELL##*/}" in
+    zsh)  rc="$HOME/.zshrc" ;;
+    bash) rc="$HOME/.bashrc" ;;
+    *)    rc="$HOME/.zshrc" ;;   # macOS default shell is zsh
+  esac
+  if [ -f "$rc" ] && grep -qE '^[[:space:]]*alias[[:space:]]+md=' "$rc"; then
+    if grep -qF "$alias_line" "$rc"; then
+      say "Shell alias 'md' already set in ${rc/#$HOME/~}."
+    else
+      warn "An 'md' alias already exists in ${rc/#$HOME/~}; left it untouched."
+    fi
+  else
+    [ -f "$rc" ] || : > "$rc"
+    printf '\n# Open markdown files in %s:  md <file>\n%s\n' "${app_name%.app}" "$alias_line" >> "$rc"
+    say "Added 'md' shell alias to ${rc/#$HOME/~} — run:  source ${rc/#$HOME/~}   (or open a new terminal)"
+  fi
+fi
+
 if [ "${OURO_MD_NO_OPEN:-}" != "1" ]; then
   open "$dest" || warn "couldn't auto-open; launch it from $INSTALL_DIR."
 fi
@@ -117,7 +142,7 @@ fi
 cat <<'NEXT'
 
 Next:
-  • Open a markdown file:  open -a "Ouro MD" some-file.md
-  • Add a shell alias:     alias md='open -a "Ouro MD"'    (then:  md file.md)
+  • Open a markdown file:  md some-file.md   (after opening a new terminal)
+  • Or:                    open -a "Ouro MD" some-file.md
   • Or just double-click any .md in Finder.
 NEXT
