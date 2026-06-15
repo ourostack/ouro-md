@@ -117,6 +117,7 @@ PostHog: launches, update lifecycle events, document create/open events,
 folder-open events, export success/failure, and editor crash recovery. It never
 sends document contents, filenames, folder paths, search queries, or raw error
 messages. Disable it in **Settings ▸ Telemetry**.
+See [PRIVACY.md](PRIVACY.md) for the full telemetry contract.
 
 ### Keyboard shortcuts
 
@@ -172,7 +173,7 @@ the same architecture Typora-style editors use, made to feel like a Mac app.
 
 ## Roadmap
 
-- Developer-ID signing + notarization
+- Post-dogfood Developer-ID signing + notarization
 - Smart typography (curly quotes, dashes) and clickable task checkboxes
 - Editor display of pre-existing relative-path local images (paste/drop already inlines)
 - Higher-contrast tables in the dark theme

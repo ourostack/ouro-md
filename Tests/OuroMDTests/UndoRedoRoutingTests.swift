@@ -19,6 +19,30 @@ final class UndoRedoRoutingTests: XCTestCase {
         XCTAssertTrue(redo?.target === delegate)
     }
 
+    func testMenuValidationDisablesEditorOnlyCommandsWithoutAWindow() {
+        let delegate = AppDelegate()
+
+        let save = NSMenuItem(title: "Save", action: #selector(AppDelegate.saveDocument(_:)), keyEquivalent: "")
+        let rename = NSMenuItem(title: "Rename", action: #selector(AppDelegate.renameDocument(_:)), keyEquivalent: "")
+        let undo = NSMenuItem(title: "Undo", action: #selector(AppDelegate.undoEdit(_:)), keyEquivalent: "")
+
+        XCTAssertFalse(delegate.validateMenuItem(save))
+        XCTAssertFalse(delegate.validateMenuItem(rename))
+        XCTAssertFalse(delegate.validateMenuItem(undo))
+    }
+
+    func testMenuValidationKeepsGlobalCommandsEnabledWithoutAWindow() {
+        let delegate = AppDelegate()
+
+        let new = NSMenuItem(title: "New", action: #selector(AppDelegate.newDocument(_:)), keyEquivalent: "")
+        let open = NSMenuItem(title: "Open", action: #selector(AppDelegate.openDocument(_:)), keyEquivalent: "")
+        let updates = NSMenuItem(title: "Check for Updates", action: #selector(AppDelegate.checkForUpdates(_:)), keyEquivalent: "")
+
+        XCTAssertTrue(delegate.validateMenuItem(new))
+        XCTAssertTrue(delegate.validateMenuItem(open))
+        XCTAssertTrue(delegate.validateMenuItem(updates))
+    }
+
     func testUndoDoesNotFallThroughWhenNativeTextViewHasEmptyStack() {
         let manager = RecordingUndoManager()
         let textView = NativeTextView(undoManager: manager)

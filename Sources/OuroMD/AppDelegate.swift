@@ -3,7 +3,7 @@ import Combine
 import SwiftUI
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     var initialFilePath: String?
     private var controllers: [DocumentWindowController] = []
     private lazy var fallbackModel = AppModel()
@@ -15,8 +15,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// The window the user is acting on (key/main), else the last opened.
     var frontController: DocumentWindowController? {
-        if let key = NSApp.keyWindow, let c = controllers.first(where: { $0.window === key }) { return c }
-        if let main = NSApp.mainWindow, let c = controllers.first(where: { $0.window === main }) { return c }
+        let app = NSApplication.shared
+        if let key = app.keyWindow, let c = controllers.first(where: { $0.window === key }) { return c }
+        if let main = app.mainWindow, let c = controllers.first(where: { $0.window === main }) { return c }
         return controllers.last
     }
     /// Forwarding accessors keep every menu action targeting the active window.
@@ -317,6 +318,72 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func reportIssue(_ sender: Any?) {
         if let url = URL(string: "https://github.com/ourostack/ouro-md/issues/new") {
             NSWorkspace.shared.open(url)
+        }
+    }
+
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        guard let action = menuItem.action else { return true }
+        let hasEditor = frontController != nil
+        let editorReady = hasEditor && model.isReady
+
+        switch action {
+        case #selector(newDocument(_:)),
+             #selector(newWindow(_:)),
+             #selector(openDocument(_:)),
+             #selector(openFolder(_:)),
+             #selector(showPreferences(_:)),
+             #selector(checkForUpdates(_:)),
+             #selector(openProjectPage(_:)),
+             #selector(reportIssue(_:)):
+            return true
+        case #selector(openRecent(_:)):
+            return menuItem.representedObject is URL
+        case #selector(clearRecentDocuments(_:)):
+            return !NSDocumentController.shared.recentDocumentURLs.isEmpty
+        case #selector(renameDocument(_:)):
+            return hasEditor && model.currentURL != nil
+        case #selector(installUpdateAndRelaunch(_:)):
+            return updateCoordinator.updateBadgeText != nil && !updateCoordinator.isInstalling
+        case #selector(undoEdit(_:)),
+             #selector(redoEdit(_:)):
+            // Vditor owns its undo stack, and native AppKit cannot inspect it.
+            // Keep the commands enabled whenever the editor is ready so the
+            // keyboard shortcuts always reach the editor-side router.
+            return editorReady
+        case #selector(saveDocument(_:)),
+             #selector(saveDocumentAs(_:)),
+             #selector(exportHTML(_:)),
+             #selector(exportPDF(_:)),
+             #selector(printDocument(_:)),
+             #selector(selectTheme(_:)),
+             #selector(selectMode(_:)),
+             #selector(toggleOutline(_:)),
+             #selector(toggleFocusMode(_:)),
+             #selector(toggleTypewriter(_:)),
+             #selector(toggleWordCount(_:)),
+             #selector(toggleSidebar(_:)),
+             #selector(showOutlineSidebar(_:)),
+             #selector(showFileTreeSidebar(_:)),
+             #selector(toggleSourceMode(_:)),
+             #selector(performFind(_:)),
+             #selector(performReplace(_:)),
+             #selector(findNextCommand(_:)),
+             #selector(findPrevCommand(_:)),
+             #selector(applyParagraph(_:)),
+             #selector(zoomIn(_:)),
+             #selector(zoomOut(_:)),
+             #selector(actualSize(_:)),
+             #selector(formatBold(_:)),
+             #selector(formatItalic(_:)),
+             #selector(formatStrikethrough(_:)),
+             #selector(formatInlineCode(_:)),
+             #selector(insertLink(_:)),
+             #selector(pasteAsPlainText(_:)),
+             #selector(copyAsMarkdown(_:)),
+             #selector(copyAsHTML(_:)):
+            return editorReady
+        default:
+            return true
         }
     }
 }

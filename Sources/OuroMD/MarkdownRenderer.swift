@@ -9,9 +9,162 @@ enum MarkdownRenderer {
     /// When `baseDirectory` is supplied, relative local images are inlined as
     /// base64 data URIs so they render without web-view file-access permissions.
     static func renderHTMLBody(_ markdown: String, baseDirectory: URL? = nil) -> String {
-        let document = Document(parsing: markdown)
+        let footnoted = FootnotePreprocessor.process(markdown)
+        let document = Document(parsing: footnoted.markdown)
         var visitor = HTMLVisitor(baseDirectory: baseDirectory)
-        return visitor.visit(document)
+        var html = visitor.visit(document)
+        if !footnoted.footnotes.isEmpty {
+            html += renderFootnotes(footnoted.footnotes, baseDirectory: baseDirectory)
+        }
+        return html
+    }
+
+    private static func renderFootnotes(_ footnotes: [RenderedFootnote], baseDirectory: URL?) -> String {
+        var html = "<section class=\"footnotes\">\n<hr>\n<ol>\n"
+        for footnote in footnotes {
+            let document = Document(parsing: footnote.markdown)
+            var visitor = HTMLVisitor(baseDirectory: baseDirectory)
+            let body = visitor.visit(document).trimmingCharacters(in: .whitespacesAndNewlines)
+            html += "<li id=\"fn-\(HTMLDocument.escapeAttr(footnote.id))\">\(body) "
+            html += "<a href=\"#fnref-\(HTMLDocument.escapeAttr(footnote.id))\" class=\"footnote-backref\">&#8617;</a></li>\n"
+        }
+        html += "</ol>\n</section>\n"
+        return html
+    }
+}
+
+private struct RenderedFootnote: Equatable {
+    var label: String
+    var id: String
+    var markdown: String
+}
+
+private enum FootnotePreprocessor {
+    private struct Definition {
+        var label: String
+        var markdown: String
+    }
+
+    struct Output {
+        var markdown: String
+        var footnotes: [RenderedFootnote]
+    }
+
+    static func process(_ markdown: String) -> Output {
+        let extracted = extractDefinitions(markdown)
+        guard !extracted.definitions.isEmpty else {
+            return Output(markdown: markdown, footnotes: [])
+        }
+
+        let labels = extracted.definitions.map(\.label)
+        let idsByLabel = Dictionary(uniqueKeysWithValues: labels.enumerated().map { offset, label in
+            (label, footnoteID(label: label, index: offset + 1))
+        })
+        let numbersByLabel = Dictionary(uniqueKeysWithValues: labels.enumerated().map { offset, label in
+            (label, offset + 1)
+        })
+        let referenced = replaceReferences(
+            in: extracted.markdownWithoutDefinitions,
+            idsByLabel: idsByLabel,
+            numbersByLabel: numbersByLabel
+        )
+        let footnotes = extracted.definitions.map {
+            RenderedFootnote(label: $0.label, id: idsByLabel[$0.label] ?? $0.label, markdown: $0.markdown)
+        }
+        return Output(markdown: referenced, footnotes: footnotes)
+    }
+
+    private static func extractDefinitions(_ markdown: String) -> (markdownWithoutDefinitions: String, definitions: [Definition]) {
+        let lines = markdown.components(separatedBy: "\n")
+        var bodyLines: [String] = []
+        var definitions: [Definition] = []
+        var activeDefinitionIndex: Int?
+
+        for line in lines {
+            if let definition = parseDefinition(line) {
+                definitions.append(definition)
+                activeDefinitionIndex = definitions.count - 1
+                continue
+            }
+            if let index = activeDefinitionIndex, isContinuation(line) {
+                definitions[index].markdown += "\n" + line.trimmingCharacters(in: .whitespaces)
+                continue
+            }
+            activeDefinitionIndex = nil
+            bodyLines.append(line)
+        }
+
+        return (bodyLines.joined(separator: "\n"), definitions)
+    }
+
+    private static func parseDefinition(_ line: String) -> Definition? {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        guard trimmed.hasPrefix("[^"),
+              let close = trimmed.range(of: "]:")
+        else {
+            return nil
+        }
+        let labelStart = trimmed.index(trimmed.startIndex, offsetBy: 2)
+        let label = String(trimmed[labelStart..<close.lowerBound])
+        guard !label.isEmpty else { return nil }
+        let markdown = String(trimmed[close.upperBound...]).trimmingCharacters(in: .whitespaces)
+        return Definition(label: label, markdown: markdown)
+    }
+
+    private static func isContinuation(_ line: String) -> Bool {
+        line.hasPrefix("    ") || line.hasPrefix("\t")
+    }
+
+    private static func replaceReferences(
+        in markdown: String,
+        idsByLabel: [String: String],
+        numbersByLabel: [String: Int]
+    ) -> String {
+        var output: [String] = []
+        var inFence = false
+        for line in markdown.components(separatedBy: "\n") {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") {
+                inFence.toggle()
+                output.append(line)
+                continue
+            }
+            output.append(inFence ? line : replaceReferences(inLine: line, idsByLabel: idsByLabel, numbersByLabel: numbersByLabel))
+        }
+        return output.joined(separator: "\n")
+    }
+
+    private static func replaceReferences(
+        inLine line: String,
+        idsByLabel: [String: String],
+        numbersByLabel: [String: Int]
+    ) -> String {
+        var out = ""
+        var index = line.startIndex
+        while index < line.endIndex {
+            guard let start = line[index...].range(of: "[^") else {
+                out += line[index...]
+                break
+            }
+            out += line[index..<start.lowerBound]
+            guard let close = line[start.upperBound...].firstIndex(of: "]") else {
+                out += line[start.lowerBound...]
+                break
+            }
+            let label = String(line[start.upperBound..<close])
+            if let id = idsByLabel[label], let number = numbersByLabel[label] {
+                out += "<sup id=\"fnref-\(HTMLDocument.escapeAttr(id))\"><a href=\"#fn-\(HTMLDocument.escapeAttr(id))\" class=\"footnote-ref\">\(number)</a></sup>"
+            } else {
+                out += line[start.lowerBound...close]
+            }
+            index = line.index(after: close)
+        }
+        return out
+    }
+
+    private static func footnoteID(label: String, index: Int) -> String {
+        let slug = HTMLVisitor.slug(label)
+        return slug.isEmpty ? "footnote-\(index)" : slug
     }
 }
 

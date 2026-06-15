@@ -85,6 +85,23 @@ final class MarkdownRendererTests: XCTestCase {
         XCTAssertTrue(html.contains("alt=\"the alt\""))
     }
 
+    func testFootnotesRenderAsBacklinkedSection() {
+        let html = render("Body with note[^alpha].\n\n[^alpha]: Footnote **text**.")
+
+        XCTAssertTrue(html.contains("class=\"footnote-ref\""))
+        XCTAssertTrue(html.contains("href=\"#fn-alpha\""))
+        XCTAssertTrue(html.contains("<section class=\"footnotes\">"))
+        XCTAssertTrue(html.contains("<li id=\"fn-alpha\"><p>Footnote <strong>text</strong>.</p>"))
+        XCTAssertFalse(html.contains("[^alpha]:"))
+    }
+
+    func testFootnoteReferencesInsideFencedCodeAreLeftAlone() {
+        let html = render("```md\nliteral[^a]\n```\n\n[^a]: footnote")
+
+        XCTAssertTrue(html.contains("literal[^a]"))
+        XCTAssertFalse(html.contains("<sup id=\"fnref-a\""))
+    }
+
     func testDocumentWrap() {
         let html = HTMLDocument.wrap(body: "<p>x</p>", css: "body{}", title: "t")
         XCTAssertTrue(html.contains("<!DOCTYPE html>"))
