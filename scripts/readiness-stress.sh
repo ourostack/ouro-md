@@ -17,6 +17,18 @@ run_logged() {
   log "OK $*" | tee -a "$log_file"
 }
 
+terminate_app_pid() {
+  local pid="$1"
+  /usr/bin/swift -e "import AppKit; if let app = NSRunningApplication(processIdentifier: pid_t($pid)) { _ = app.terminate() }" || true
+  for _ in $(seq 1 20); do
+    if ! kill -0 "$pid" 2>/dev/null; then
+      return 0
+    fi
+    sleep 0.25
+  done
+  kill "$pid" 2>/dev/null || true
+}
+
 make_large_doc() {
   local out="$1"
   local sections="$2"
@@ -103,6 +115,7 @@ APP_PATH="$ROOT/OuroMD.app"
   /usr/bin/open -W -n -F -g \
     --env "HOME=$FIRST_HOME" \
     --env "CFFIXED_USER_HOME=$FIRST_HOME" \
+    --env "CFPREFERENCES_AVOID_DAEMON=1" \
     --env "TMPDIR=$FIRST_TMP/" \
     --env "OURO_MD_TELEMETRY_DISABLED=1" \
     "$APP_PATH" &
@@ -115,8 +128,8 @@ APP_PATH="$ROOT/OuroMD.app"
   done
   test -n "$APP_PID"
   sleep 5
-  HOME="$FIRST_HOME" CFFIXED_USER_HOME="$FIRST_HOME" defaults read org.ourostack.ouro-md
-  /usr/bin/swift -e "import AppKit; if let app = NSRunningApplication(processIdentifier: pid_t($APP_PID)) { _ = app.terminate() }"
+  HOME="$FIRST_HOME" CFFIXED_USER_HOME="$FIRST_HOME" CFPREFERENCES_AVOID_DAEMON=1 defaults read org.ourostack.ouro-md
+  terminate_app_pid "$APP_PID"
   wait "$OPEN_PID" || true
 } > "$ARTIFACT_DIR/first-run.log" 2>&1
 
@@ -128,6 +141,7 @@ APP_PATH="$ROOT/OuroMD.app"
   /usr/bin/open -W -n -F -g \
     --env "HOME=$AX_HOME" \
     --env "CFFIXED_USER_HOME=$AX_HOME" \
+    --env "CFPREFERENCES_AVOID_DAEMON=1" \
     --env "TMPDIR=$AX_TMP/" \
     --env "OURO_MD_TELEMETRY_DISABLED=1" \
     "$APP_PATH" &
@@ -141,7 +155,7 @@ APP_PATH="$ROOT/OuroMD.app"
   test -n "$APP_PID"
   sleep 4
   osascript -e 'tell application "System Events" to tell first process whose unix id is '"$APP_PID"' to get {name, role, description} of UI elements of window 1' || true
-  /usr/bin/swift -e "import AppKit; if let app = NSRunningApplication(processIdentifier: pid_t($APP_PID)) { _ = app.terminate() }"
+  terminate_app_pid "$APP_PID"
   wait "$OPEN_PID" || true
 } > "$ARTIFACT_DIR/accessibility-ax.log" 2>&1
 
@@ -178,9 +192,14 @@ APP_PATH="$ROOT/OuroMD.app"
   ditto -x -k "$UPDATE_ROOT/Ouro-MD-0.9.1.zip" "$UPDATE_ROOT"
   OLD_APP="$UPDATE_ROOT/Ouro MD.app"
   START_VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$OLD_APP/Contents/Info.plist")
+  HOME="$UPDATE_HOME" CFFIXED_USER_HOME="$UPDATE_HOME" CFPREFERENCES_AVOID_DAEMON=1 defaults write org.ourostack.ouro-md ouro.hasLaunched -bool true
+  HOME="$UPDATE_HOME" CFFIXED_USER_HOME="$UPDATE_HOME" CFPREFERENCES_AVOID_DAEMON=1 defaults write org.ourostack.ouro-md ouro.autoupdate.enabled -bool true
+  HOME="$UPDATE_HOME" CFFIXED_USER_HOME="$UPDATE_HOME" CFPREFERENCES_AVOID_DAEMON=1 defaults write org.ourostack.ouro-md ouro.session.docs -array
+  HOME="$UPDATE_HOME" CFFIXED_USER_HOME="$UPDATE_HOME" CFPREFERENCES_AVOID_DAEMON=1 defaults delete org.ourostack.ouro-md ouro.autoupdate.lastCheckAt >/dev/null 2>&1 || true
   /usr/bin/open -W -n -F -g \
     --env "HOME=$UPDATE_HOME" \
     --env "CFFIXED_USER_HOME=$UPDATE_HOME" \
+    --env "CFPREFERENCES_AVOID_DAEMON=1" \
     --env "TMPDIR=$UPDATE_TMP/" \
     --env "OURO_MD_TELEMETRY_DISABLED=1" \
     "$OLD_APP" &
@@ -208,7 +227,7 @@ APP_PATH="$ROOT/OuroMD.app"
     sleep 0.5
   done
   printf 'staged=%s\n' "${STAGED:-not-observed}"
-  /usr/bin/swift -e "import AppKit; if let app = NSRunningApplication(processIdentifier: pid_t($APP_PID)) { _ = app.terminate() }" || true
+  terminate_app_pid "$APP_PID"
   wait "$OPEN_PID" || true
   for _ in $(seq 1 180); do
     FINAL_VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$OLD_APP/Contents/Info.plist")
