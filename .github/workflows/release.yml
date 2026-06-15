@@ -57,7 +57,7 @@ jobs:
           fi
 
       - name: Package release artifact
-        if: steps.check.outputs.exists == 'false'
+        if: steps.check.outputs.exists == 'false' || (github.event_name == 'workflow_dispatch' && inputs.dry_run)
         env:
           # Embeds telemetry when the secret is set; otherwise ships without it.
           OURO_MD_POSTHOG_KEY: ${{ secrets.OURO_MD_POSTHOG_KEY }}
@@ -65,7 +65,7 @@ jobs:
         run: ./scripts/package-release.sh
 
       - name: Upload artifacts to the run (always, for inspection / dry run)
-        if: steps.check.outputs.exists == 'false'
+        if: steps.check.outputs.exists == 'false' || (github.event_name == 'workflow_dispatch' && inputs.dry_run)
         uses: actions/upload-artifact@v4
         with:
           name: ouro-md-${{ steps.ver.outputs.version }}
