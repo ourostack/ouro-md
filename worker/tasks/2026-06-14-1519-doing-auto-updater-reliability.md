@@ -132,12 +132,12 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 **Output**: Verification logs, coverage artifacts, `coverage.json`, coverage-check output, and package dry-run output under artifacts.
 **Acceptance**: All local verification commands pass on the feature branch; package dry run succeeds but no GitHub release is created from the branch SHA.
 
-### 🔄 Unit 6b: PR, Review, Merge, And Cleanup
+### ✅ Unit 6b: PR, Review, Merge, And Cleanup
 **What**: Open a PR, run/record GitHub checks; if no `.github/workflows` or required external CI exists, record a no-CI disposition and rely on the complete local verification matrix; merge through GitHub; fetch `origin/main`; clean local/remote feature branch safely.
 **Output**: PR URL, merge commit, GitHub check/no-CI evidence, cleanup evidence.
 **Acceptance**: PR is merged to `main`; no dirty worktree; no unpushed commits; no stale local or remote feature branch if safe to delete. The merged PR remains as project history and is not considered residue.
 
-### ⬜ Unit 6c: Publish From Merged Main And Live E2E Smoke
+### 🔄 Unit 6c: Publish From Merged Main And Live E2E Smoke
 **What**: From merged `origin/main`, package the final release so the manifest embeds the merged main SHA, publish the GitHub release, smoke `https://ouro.bot/ouro-md-install.sh` into a temp directory with `OURO_MD_NO_OPEN=1`, verify installed bundle version/bundle id, update audit backlog terminal statuses, desk task, and final artifacts.
 **Output**: Release URL, final manifest/zip names, live installer smoke output, installed bundle identity/version, final backlog/task updates.
 **Acceptance**: Release is published from merged main; `https://ouro.bot/ouro-md-install.sh` installs the new release into a temp directory without opening the app; installed bundle id/version match expectations; no dirty worktree, unpushed commits, open PR from this run, or unsafe branch residue remains.
@@ -179,3 +179,4 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - 2026-06-14 17:34 Unit 6b Zeno review fixes complete: delayed manual update helper launch until accepted app termination, cancel now clears pending manual install, updater asset planning rejects plain HTTP, and installer coverage no-op is line-scoped rather than whole-file; targeted tests, full `swift test`, coverage export/check, harnesses, package dry run, and warning scan passed; resolution recorded in `unit6b-zeno-review-resolution.md`.
 - 2026-06-14 17:43 Unit 6b Godel review fix complete: `Save All` termination now cancels on any failed save or timeout instead of forcing quit, pending manual installs are disarmed through the cancel path, and the pure save barrier lives in `TerminationSaveCoordinator.swift` with full branch coverage; targeted tests, full local matrix, package dry run, and warning scan passed; resolution recorded in `unit6b-godel-review-resolution.md`.
 - 2026-06-14 17:45 Unit 6b Raman final focused review of commit `2be09d5` returned no blockers; result recorded in `unit6b-raman-final-review.md`.
+- 2026-06-14 17:48 Unit 6b complete: PR #1 merged to `main` with merge commit `f9fbd06d7099e84f6626d9370be3c785e66fa543`; remote feature branch was deleted by `gh pr merge --delete-branch`; local checkout fast-forwarded to `origin/main`.
