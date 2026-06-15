@@ -1,0 +1,26 @@
+Another instance of SwiftPM (PID: 19782) is already running using '/Users/arimendelow/Projects/ouro-md/.build', waiting until that process has finished execution...Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.16s)
+Test Suite 'Selected tests' started at 2026-06-14 17:11:20.293.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 17:11:20.294.
+Test Suite 'UndoRedoRoutingTests' started at 2026-06-14 17:11:20.294.
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testRedoDoesNotFallThroughWhenNativeTextViewHasEmptyStack]' started.
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testRedoDoesNotFallThroughWhenNativeTextViewHasEmptyStack]' passed (0.038 seconds).
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoAndRedoFallBackWhenResponderIsNotNativeTextView]' started.
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoAndRedoFallBackWhenResponderIsNotNativeTextView]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoAndRedoMenuItemsTargetNativeAppDelegateSelectors]' started.
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoAndRedoMenuItemsTargetNativeAppDelegateSelectors]' passed (0.020 seconds).
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoAndRedoUseNativeTextViewManagerWhenAvailable]' started.
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoAndRedoUseNativeTextViewManagerWhenAvailable]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoDoesNotFallThroughWhenNativeTextViewHasEmptyStack]' started.
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoDoesNotFallThroughWhenNativeTextViewHasEmptyStack]' passed (0.000 seconds).
+Test Suite 'UndoRedoRoutingTests' passed at 2026-06-14 17:11:20.353.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.059 (0.059) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 17:11:20.353.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.059 (0.059) seconds
+Test Suite 'Selected tests' passed at 2026-06-14 17:11:20.353.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.059 (0.060) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

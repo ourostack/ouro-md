@@ -1,0 +1,53 @@
+Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/5] Compiling OuroMDTests OuroMDUpdateCoordinatorTests.swift
+[4/5] Emitting module OuroMDTests
+[4/6] Write Objects.LinkFileList
+[5/6] Linking ouro-mdPackageTests
+Build complete! (1.90s)
+Test Suite 'Selected tests' started at 2026-06-14 16:53:41.334.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 16:53:41.335.
+Test Suite 'OuroMDUpdateCoordinatorTests' started at 2026-06-14 16:53:41.335.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testApplyStagedUpdateOnQuitOnlyWhenEnabledAndNotManualInstall]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testApplyStagedUpdateOnQuitOnlyWhenEnabledAndNotManualInstall]' passed (0.003 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateCheckIsDefaultOnThrottledAndOncePerSession]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateCheckIsDefaultOnThrottledAndOncePerSession]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateCheckSkipsWhenDisabled]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateCheckSkipsWhenDisabled]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateDefaultsToEnabledAndPersistsOptOut]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateDefaultsToEnabledAndPersistsOptOut]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateStagesInstallableUpdateInBackground]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAutoUpdateStagesInstallableUpdateInBackground]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckAwaitsInFlightLaunchCheckBeforePrompting]' started.
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateCoordinatorTests.swift:237: error: -[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckAwaitsInFlightLaunchCheckBeforePrompting] : XCTAssertNil failed: "failed(detail: "Could not check for updates right now.")"
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateCoordinatorTests.swift:244: error: -[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckAwaitsInFlightLaunchCheckBeforePrompting] : XCTAssertEqual failed: ("Optional(OuroMD.OuroMDUpdatePrompt.failed(detail: "Could not check for updates right now."))") is not equal to ("Optional(OuroMD.OuroMDUpdatePrompt.installable(version: "0.10.0"))")
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckAwaitsInFlightLaunchCheckBeforePrompting]' failed (0.164 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckPromptsInstallableCurrentAndUnavailableStates]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckPromptsInstallableCurrentAndUnavailableStates]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckReportsMissingInstallableAssets]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualCheckReportsMissingInstallableAssets]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallFailureSetsFailedPromptForAppObserver]' started.
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateCoordinatorTests.swift:257: error: -[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallFailureSetsFailedPromptForAppObserver] : XCTAssertEqual failed: ("nil") is not equal to ("Optional(OuroMD.OuroMDUpdatePrompt.failed(detail: "Download failed: offline"))")
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallFailureSetsFailedPromptForAppObserver]' failed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallOfPendingStageIsIdempotent]' started.
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateCoordinatorTests.swift:215: error: -[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallOfPendingStageIsIdempotent] : XCTAssertEqual failed: ("[OuroMD.OuroMDUpdateInstaller.Staged(appURL: file:///tmp/staged/Ouro%20MD.app, stagingRoot: file:///tmp/staged, version: "0.10.0"), OuroMD.OuroMDUpdateInstaller.Staged(appURL: file:///tmp/staged/Ouro%20MD.app, stagingRoot: file:///tmp/staged, version: "0.10.0")]") is not equal to ("[OuroMD.OuroMDUpdateInstaller.Staged(appURL: file:///tmp/staged/Ouro%20MD.app, stagingRoot: file:///tmp/staged, version: "0.10.0")]")
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateCoordinatorTests.swift:216: error: -[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallOfPendingStageIsIdempotent] : XCTAssertEqual failed: ("2") is not equal to ("1")
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateCoordinatorTests.swift:217: error: -[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallOfPendingStageIsIdempotent] : XCTAssertTrue failed
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallOfPendingStageIsIdempotent]' failed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallRestagesWhenCheckedReleaseIsNewerThanPendingStage]' started.
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateCoordinatorTests.swift:196: error: -[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallRestagesWhenCheckedReleaseIsNewerThanPendingStage] : XCTAssertEqual failed: ("["0.10.0"]") is not equal to ("["0.10.0", "0.11.0"]")
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateCoordinatorTests.swift:197: error: -[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallRestagesWhenCheckedReleaseIsNewerThanPendingStage] : XCTAssertEqual failed: ("["0.10.0"]") is not equal to ("["0.11.0"]")
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallRestagesWhenCheckedReleaseIsNewerThanPendingStage]' failed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallUsesAlreadyStagedUpdateAndSuppressesQuitApply]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testManualInstallUsesAlreadyStagedUpdateAndSuppressesQuitApply]' passed (0.001 seconds).
+Test Suite 'OuroMDUpdateCoordinatorTests' failed at 2026-06-14 16:53:41.515.
+	 Executed 12 tests, with 8 failures (0 unexpected) in 0.179 (0.180) seconds
+Test Suite 'ouro-mdPackageTests.xctest' failed at 2026-06-14 16:53:41.515.
+	 Executed 12 tests, with 8 failures (0 unexpected) in 0.179 (0.180) seconds
+Test Suite 'Selected tests' failed at 2026-06-14 16:53:41.515.
+	 Executed 12 tests, with 8 failures (0 unexpected) in 0.179 (0.181) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

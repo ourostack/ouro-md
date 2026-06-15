@@ -1,0 +1,7 @@
+changed_files=12 checked_executable_lines=1494 noop_files=5
+noop_files:
+  Sources/OuroMD/AppDelegate.swift
+  Sources/OuroMD/ContentView.swift
+  Sources/OuroMD/DocumentWindowController.swift
+  Sources/OuroMD/MenuBuilder.swift
+  Sources/OuroMD/OuroMDRelease.swift

@@ -2,7 +2,7 @@ import Foundation
 
 /// Command-line entry points: headless render, theme listing, help, version.
 enum OuroCLI {
-    static let version = "0.1.0"
+    static let version = OuroMDRelease.version
 
     static let helpText = """
     ouro-md — a minimalist, themable, native macOS Markdown editor.

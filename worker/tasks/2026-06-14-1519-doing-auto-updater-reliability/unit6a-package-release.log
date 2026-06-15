@@ -1,0 +1,16 @@
+==> Building (release)…
+[0/1] Planning build
+Building for production...
+[0/2] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.27s)
+==> Assembling OuroMD.app…
+==> Ad-hoc signing…
+==> Done: /Users/arimendelow/Projects/ouro-md/OuroMD.app
+    Launch with:  open OuroMD.app
+==> Archiving Ouro MD.app -> dist/Ouro-MD-0.9.1.zip
+==> Wrote dist/Ouro-MD-0.9.1.manifest.json
+    version 0.9.1 (build 0.9.1) · 7166527 bytes · sha256 87c93278af6a70f456e602fcddf5d9b0e2de2ba48b4e3040f52b6c8af7266672
+
+Publish with:
+  gh release create v0.9.1 "dist/Ouro-MD-0.9.1.zip" "dist/Ouro-MD-0.9.1.manifest.json" \
+    --repo ourostack/ouro-md --title "Ouro MD 0.9.1" --notes "…"

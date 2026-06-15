@@ -1,0 +1,21 @@
+# Baseline Reference Notes
+
+## Git
+## worker/ouro-md-auto-updater...origin/worker/ouro-md-auto-updater
+?? worker/tasks/2026-06-14-1519-doing-auto-updater-reliability/
+1486400 docs(doing): fix release ordering and verification scope
+a12d46a docs(doing): create auto-updater reliability plan
+8e5ec1b docs(planning): approved by reviewer convergence
+75dce98 docs(planning): fix smoke and coverage commands
+e8c0022 docs(planning): tighten verification mechanics
+e4081d1 docs(planning): address reviewer findings
+426eede docs(planning): tinfoil hat pass
+7c53623 docs(planning): create auto-updater reliability plan
+
+## Latest release
+{"assets":[{"apiUrl":"https://api.github.com/repos/ourostack/ouro-md/releases/assets/446243144","contentType":"application/json","createdAt":"2026-06-13T02:08:22Z","digest":"sha256:3333e2d6ad5f7bfa1b46dbca9da48edba049d60cdff50ccdc1356ca941765abd","downloadCount":1,"id":"RA_kwDOS4WK5s4amSFI","label":"","name":"Ouro-MD-0.9.0.manifest.json","size":345,"state":"uploaded","updatedAt":"2026-06-13T02:08:22Z","url":"https://github.com/ourostack/ouro-md/releases/download/v0.9.0/Ouro-MD-0.9.0.manifest.json"},{"apiUrl":"https://api.github.com/repos/ourostack/ouro-md/releases/assets/446243143","contentType":"application/zip","createdAt":"2026-06-13T02:08:22Z","digest":"sha256:07ea85922e96ac7da67dcf9dd83fc625a269d0b016d91b3f75195471c75ecff4","downloadCount":1,"id":"RA_kwDOS4WK5s4amSFH","label":"","name":"Ouro-MD-0.9.0.zip","size":7383286,"state":"uploaded","updatedAt":"2026-06-13T02:08:23Z","url":"https://github.com/ourostack/ouro-md/releases/download/v0.9.0/Ouro-MD-0.9.0.zip"}],"name":"Ouro MD 0.9.0","publishedAt":"2026-06-13T02:08:23Z","tagName":"v0.9.0"}
+
+## Workbench refs
+-rw-r--r--  1 arimendelow  staff  11124 Jun  1 22:00 /Users/arimendelow/Projects/ouro-workbench/Sources/OuroWorkbenchApp/WorkbenchUpdateInstaller.swift
+-rw-r--r--  1 arimendelow  staff   7542 Jun  1 19:22 /Users/arimendelow/Projects/ouro-workbench/Sources/OuroWorkbenchCore/ReleaseUpdate.swift
+-rw-r--r--  1 arimendelow  staff   7558 Jun  1 22:00 /Users/arimendelow/Projects/ouro-workbench/Sources/OuroWorkbenchCore/WorkbenchUpdate.swift

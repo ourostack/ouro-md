@@ -74,13 +74,15 @@ if hasFlag("--shoot") {
 }
 
 // GUI launch.
-let appDelegate = AppDelegate()
-if let firstFile = rawArgs.first(where: { !$0.hasPrefix("-") }) {
-    appDelegate.initialFilePath = firstFile
-}
+MainActor.assumeIsolated {
+    let appDelegate = AppDelegate()
+    if let firstFile = rawArgs.first(where: { !$0.hasPrefix("-") }) {
+        appDelegate.initialFilePath = firstFile
+    }
 
-let application = NSApplication.shared
-application.setActivationPolicy(.regular)
-application.delegate = appDelegate
-MenuBuilder.install(into: application, target: appDelegate)
-application.run()
+    let application = NSApplication.shared
+    application.setActivationPolicy(.regular)
+    application.delegate = appDelegate
+    MenuBuilder.install(into: application, target: appDelegate)
+    application.run()
+}

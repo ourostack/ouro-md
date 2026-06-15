@@ -6,7 +6,7 @@ ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
 in careful typography on a centered page. Type Markdown and watch it render in
 place — switch themes live, and read the same document four different ways.
 
-> **Status:** v0.1.0. Reads and edits Markdown today. Not yet Developer-ID
+> **Status:** v0.9.1. Reads and edits Markdown today. Not yet Developer-ID
 > signed or notarized — see [First launch](#first-launch).
 
 ---
@@ -40,14 +40,15 @@ place — switch themes live, and read the same document four different ways.
 **One line (recommended) — no checkout needed:**
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/ourostack/ouro-md/main/web/ouro-md-install.sh | bash
+curl -fsSL https://ouro.bot/ouro-md-install.sh | bash
 ```
 
 Downloads the latest [release](https://github.com/ourostack/ouro-md/releases),
 verifies its checksum against the published manifest, installs **Ouro MD.app** to
 `/Applications` (falls back to `~/Applications`), clears the download quarantine,
 and opens it. macOS-only; needs just `curl`, `ditto`, `shasum`. Re-run it any
-time to update to the latest release.
+time to update to the latest release, or use **Ouro MD ▸ Check for Updates...**
+inside the app.
 
 **From source (for development):**
 
@@ -62,9 +63,9 @@ time to update to the latest release.
 
 The app is currently **unsigned** (ad-hoc), so the installer clears the
 quarantine flag and re-registers it with Launch Services — a plain copy into
-`/Applications` would otherwise trip Gatekeeper on first launch. Once it's
-Developer-ID signed/notarized, the download installs without that step and an
-in-app auto-updater can replace re-running the installer.
+`/Applications` would otherwise trip Gatekeeper on first launch. Ouro MD also
+checks for verified releases in the background by default; disable automatic
+checks in **Settings** if you prefer to update manually.
 
 ### Cutting a release (maintainers)
 
@@ -74,8 +75,8 @@ gh release create v<version> dist/Ouro-MD-<version>.zip dist/Ouro-MD-<version>.m
   --repo ourostack/ouro-md --title "Ouro MD <version>"
 ```
 
-The installer always pulls whatever the newest release is, so publishing a new
-version is how users (and a future in-app updater) get the update.
+The installer and in-app updater always pull the newest published release, so
+publishing a new version is how users get the update.
 
 ## Build
 

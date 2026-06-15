@@ -4,6 +4,7 @@ import SwiftUI
 /// Owns one document window: its `AppModel`, the sidebar+editor split, the
 /// centered title, chrome sync, the word-count popover, and unsaved-close
 /// handling. Multiple instances give independent windows.
+@MainActor
 final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate {
     let model = AppModel()
     let window: NSWindow
@@ -47,7 +48,9 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         // window. The window subclass discriminates a click from a title drag.
         window.onTitleClicked = { [weak self] in self?.presentRename() }
         window.titleHitView = { [weak self] in self?.nativeTitleField() }
-        model.onChromeUpdate = { [weak self] in self?.syncChrome() }
+        model.onChromeUpdate = { [weak self] in
+            Task { @MainActor in self?.syncChrome() }
+        }
 
         if useAutosave {
             window.setFrameAutosaveName("OuroMainWindow")

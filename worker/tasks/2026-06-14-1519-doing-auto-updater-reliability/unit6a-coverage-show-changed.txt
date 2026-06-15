@@ -1,0 +1,707 @@
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/OuroMDUpdate.swift:
+    1|       |import Foundation
+    2|       |
+    3|       |struct OuroMDUpdateManifest: Codable, Equatable, Sendable {
+    4|       |    var appName: String
+    5|       |    var bundleIdentifier: String
+    6|       |    var version: String
+    7|       |    var build: String
+    8|       |    var archive: String
+    9|       |    var sha256: String
+   10|       |    var bytes: Int
+   11|       |}
+   12|       |
+   13|       |struct OuroMDUpdatePlan: Equatable, Sendable {
+   14|       |    var version: String
+   15|       |    var archiveURL: URL
+   16|       |    var archiveName: String
+   17|       |    var manifestURL: URL
+   18|       |}
+   19|       |
+   20|       |enum OuroMDUpdatePlanError: Error, Equatable, LocalizedError, Sendable {
+   21|       |    case notAnUpdate
+   22|       |    case missingArchiveAsset
+   23|       |    case missingManifestAsset
+   24|       |    case badAssetURL
+   25|       |
+   26|      0|    var errorDescription: String? {
+   27|      0|        switch self {
+   28|      0|        case .notAnUpdate:
+   29|      0|            return "No newer release is available to install."
+   30|      0|        case .missingArchiveAsset:
+   31|      0|            return "The release is missing a downloadable app archive (.zip)."
+   32|      0|        case .missingManifestAsset:
+   33|      0|            return "The release is missing its artifact manifest (.manifest.json)."
+   34|      0|        case .badAssetURL:
+   35|      0|            return "The release asset download URL was not valid."
+   36|      0|        }
+   37|      0|    }
+   38|       |}
+   39|       |
+   40|       |enum OuroMDUpdatePlanner {
+   41|     15|    static func plan(from snapshot: ReleaseUpdateSnapshot) -> Result<OuroMDUpdatePlan, OuroMDUpdatePlanError> {
+   42|     15|        guard snapshot.status == .updateAvailable, let version = snapshot.latestVersion else {
+   43|      1|            return .failure(.notAnUpdate)
+   44|     14|        }
+   45|     14|        guard let archive = snapshot.assets.first(where: { $0.name.hasSuffix(".zip") }) else {
+   46|      1|            return .failure(.missingArchiveAsset)
+   47|     13|        }
+   48|     25|        guard let manifest = snapshot.assets.first(where: { $0.name.hasSuffix(".manifest.json") }) else {
+   49|      1|            return .failure(.missingManifestAsset)
+   50|     12|        }
+   51|     12|        guard let archiveURL = validHTTPURL(archive.downloadURL),
+   52|     12|              let manifestURL = validHTTPURL(manifest.downloadURL)
+   53|     12|        else {
+   54|      1|            return .failure(.badAssetURL)
+   55|     11|        }
+   56|     11|        return .success(
+   57|     11|            OuroMDUpdatePlan(
+   58|     11|                version: version,
+   59|     11|                archiveURL: archiveURL,
+   60|     11|                archiveName: archive.name,
+   61|     11|                manifestURL: manifestURL
+   62|     11|            )
+   63|     11|        )
+   64|     15|    }
+   65|       |
+   66|     23|    private static func validHTTPURL(_ value: String) -> URL? {
+   67|     23|        guard let url = URL(string: value),
+   68|     23|              let scheme = url.scheme?.lowercased(),
+   69|     23|              (scheme == "https" || scheme == "http"),
+   70|     23|              url.host != nil
+   71|     23|        else {
+   72|      1|            return nil
+   73|     22|        }
+   74|     22|        return url
+   75|     23|    }
+   76|       |}
+   77|       |
+   78|       |enum OuroMDAutoUpdatePolicy {
+   79|       |    static func shouldCheck(
+   80|       |        now: Date,
+   81|       |        lastCheck: Date?,
+   82|       |        minimumInterval: TimeInterval,
+   83|       |        enabled: Bool
+   84|     13|    ) -> Bool {
+   85|     13|        guard enabled else { return false }
+   86|     11|        guard let lastCheck else { return true }
+   87|      3|        return now.timeIntervalSince(lastCheck) >= minimumInterval
+   88|     13|    }
+   89|       |}
+   90|       |
+   91|       |enum OuroMDUpdateVerification {
+   92|       |    enum Failure: Error, Equatable, LocalizedError, Sendable {
+   93|       |        case archiveNameMismatch(expected: String, got: String)
+   94|       |        case sha256Mismatch(expected: String, got: String)
+   95|       |        case byteCountMismatch(expected: Int, got: Int)
+   96|       |        case bundleIdentifierMismatch(expected: String, got: String)
+   97|       |        case unreadableVersion(manifest: String, current: String)
+   98|       |        case notNewerThanCurrent(current: String, candidate: String)
+   99|       |
+  100|      1|        var errorDescription: String? {
+  101|      1|            switch self {
+  102|      1|            case let .archiveNameMismatch(expected, got):
+  103|      0|                return "Downloaded archive name \(got) did not match the manifest (\(expected))."
+  104|      1|            case .sha256Mismatch:
+  105|      1|                return "Downloaded archive failed its SHA-256 integrity check."
+  106|      1|            case let .byteCountMismatch(expected, got):
+  107|      0|                return "Downloaded archive size (\(got) bytes) did not match the manifest (\(expected) bytes)."
+  108|      1|            case let .bundleIdentifierMismatch(expected, got):
+  109|      0|                return "Update bundle identifier \(got) did not match this app (\(expected))."
+  110|      1|            case let .unreadableVersion(manifest, current):
+  111|      0|                return "Could not compare the update version (\(manifest)) to the current version (\(current))."
+  112|      1|            case let .notNewerThanCurrent(current, candidate):
+  113|      0|                return "Update version \(candidate) is not newer than the installed \(current)."
+  114|      1|            }
+  115|      1|        }
+  116|       |    }
+  117|       |
+  118|       |    static func verify(
+  119|       |        manifest: OuroMDUpdateManifest,
+  120|       |        downloadedArchiveName: String,
+  121|       |        downloadedSHA256: String,
+  122|       |        downloadedBytes: Int,
+  123|       |        expectedBundleIdentifier: String,
+  124|       |        currentVersion: String
+  125|     18|    ) -> Failure? {
+  126|     18|        guard downloadedArchiveName == manifest.archive else {
+  127|      2|            return .archiveNameMismatch(expected: manifest.archive, got: downloadedArchiveName)
+  128|     16|        }
+  129|     16|
+  130|     16|        let expectedSHA = manifest.sha256.lowercased()
+  131|     16|        let actualSHA = downloadedSHA256.lowercased()
+  132|     16|        guard actualSHA == expectedSHA else {
+  133|      2|            return .sha256Mismatch(expected: expectedSHA, got: actualSHA)
+  134|     14|        }
+  135|     14|
+  136|     14|        guard downloadedBytes == manifest.bytes else {
+  137|      2|            return .byteCountMismatch(expected: manifest.bytes, got: downloadedBytes)
+  138|     12|        }
+  139|     12|
+  140|     12|        guard manifest.bundleIdentifier == expectedBundleIdentifier else {
+  141|      2|            return .bundleIdentifierMismatch(expected: expectedBundleIdentifier, got: manifest.bundleIdentifier)
+  142|     10|        }
+  143|     10|
+  144|     10|        guard let candidate = SemanticVersion(manifest.version),
+  145|     10|              let current = SemanticVersion(currentVersion)
+  146|     10|        else {
+  147|      1|            return .unreadableVersion(manifest: manifest.version, current: currentVersion)
+  148|      9|        }
+  149|      9|
+  150|      9|        guard candidate > current else {
+  151|      2|            return .notNewerThanCurrent(current: currentVersion, candidate: manifest.version)
+  152|      7|        }
+  153|      7|
+  154|      7|        return nil
+  155|     18|    }
+  156|       |}
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/OuroMDUpdateCoordinator.swift:
+    1|       |import AppKit
+    2|       |import Foundation
+    3|       |import SwiftUI
+    4|       |
+    5|       |enum OuroMDUpdatePrompt: Equatable {
+    6|       |    case installable(version: String)
+    7|       |    case upToDate(version: String)
+    8|       |    case failed(detail: String)
+    9|       |
+   10|      0|    var message: String {
+   11|      0|        switch self {
+   12|      0|        case let .installable(version):
+   13|      0|            return "Ouro MD \(version) is available. Install it now and relaunch?"
+   14|      0|        case let .upToDate(version):
+   15|      0|            return "You're on the latest version (\(version))."
+   16|      0|        case let .failed(detail):
+   17|      0|            return detail
+   18|      0|        }
+   19|      0|    }
+   20|       |
+   21|      0|    var isInstallable: Bool {
+   22|      0|        if case .installable = self { return true }
+   23|      0|        return false
+   24|      0|    }
+   25|       |}
+   26|       |
+   27|       |@MainActor
+   28|       |final class OuroMDUpdateCoordinator: ObservableObject {
+   29|       |    static let autoUpdateEnabledDefaultsKey = "ouro.autoupdate.enabled"
+   30|       |    static let lastUpdateCheckAtDefaultsKey = "ouro.autoupdate.lastCheckAt"
+   31|       |    static let minimumAutoUpdateCheckInterval: TimeInterval = 3600
+   32|       |
+   33|       |    @Published private(set) var releaseSnapshot: ReleaseUpdateSnapshot?
+   34|     17|    @Published private(set) var isChecking = false
+   35|     17|    @Published private(set) var isInstalling = false
+   36|       |    @Published private(set) var installStatus: String?
+   37|       |    @Published private(set) var installError: String?
+   38|       |    @Published private(set) var stagedUpdateVersion: String?
+   39|       |    @Published var updatePrompt: OuroMDUpdatePrompt?
+   40|       |    @Published private(set) var autoUpdateEnabled: Bool {
+   41|      2|        didSet {
+   42|      2|            defaults.set(autoUpdateEnabled, forKey: Self.autoUpdateEnabledDefaultsKey)
+   43|      2|        }
+   44|       |    }
+   45|       |
+   46|       |    private let defaults: UserDefaults
+   47|       |    private let checker: @MainActor () async -> ReleaseUpdateSnapshot
+   48|       |    private let stageUpdate: (OuroMDUpdatePlan, @escaping @Sendable (String) async -> Void) async throws -> OuroMDUpdateInstaller.Staged
+   49|       |    private let applyAndRelaunch: @MainActor (OuroMDUpdateInstaller.Staged, URL) -> Void
+   50|       |    private let applyOnQuit: @MainActor (OuroMDUpdateInstaller.Staged, URL) -> Void
+   51|       |    private let terminate: @MainActor () -> Void
+   52|       |    private let now: @MainActor () -> Date
+   53|       |    private var inFlightCheck: InFlightCheck?
+   54|       |    private var pendingStagedUpdate: OuroMDUpdateInstaller.Staged?
+   55|     17|    private var isApplyingManualUpdate = false
+   56|     17|    private var autoUpdateCheckStartedThisSession = false
+   57|       |
+   58|       |    private final class InFlightCheck {
+   59|       |        let task: Task<ReleaseUpdateSnapshot, Never>
+   60|       |
+   61|     13|        init(task: Task<ReleaseUpdateSnapshot, Never>) {
+   62|     13|            self.task = task
+   63|     13|        }
+   64|       |    }
+   65|       |
+   66|       |    init(
+   67|       |        defaults: UserDefaults = .standard,
+   68|      0|        checker: @escaping @MainActor () async -> ReleaseUpdateSnapshot = {
+   69|      0|            await ReleaseUpdateChecker().check()
+   70|      0|        },
+   71|      0|        stageUpdate: @escaping (OuroMDUpdatePlan, @escaping @Sendable (String) async -> Void) async throws -> OuroMDUpdateInstaller.Staged = { plan, progress in
+   72|      0|            try await Task.detached(priority: .utility) {
+   73|      0|                try await OuroMDUpdateInstaller().stage(plan: plan, progress: progress)
+   74|      0|            }.value
+   75|      0|        },
+   76|      0|        applyAndRelaunch: @escaping @MainActor (OuroMDUpdateInstaller.Staged, URL) -> Void = {
+   77|      0|            OuroMDUpdateInstaller.applyAndRelaunch(staged: $0, destinationBundle: $1)
+   78|      0|        },
+   79|      0|        applyOnQuit: @escaping @MainActor (OuroMDUpdateInstaller.Staged, URL) -> Void = {
+   80|      0|            OuroMDUpdateInstaller.applyOnQuit(staged: $0, destinationBundle: $1)
+   81|      0|        },
+   82|      0|        terminate: @escaping @MainActor () -> Void = {
+   83|      0|            NSApp.terminate(nil)
+   84|      0|        },
+   85|      0|        now: @escaping @MainActor () -> Date = Date.init
+   86|     17|    ) {
+   87|     17|        self.defaults = defaults
+   88|     17|        self.checker = checker
+   89|     17|        self.stageUpdate = stageUpdate
+   90|     17|        self.applyAndRelaunch = applyAndRelaunch
+   91|     17|        self.applyOnQuit = applyOnQuit
+   92|     17|        self.terminate = terminate
+   93|     17|        self.now = now
+   94|     17|        self.autoUpdateEnabled = defaults.object(forKey: Self.autoUpdateEnabledDefaultsKey) as? Bool ?? true
+   95|     17|    }
+   96|       |
+   97|      2|    func setAutoUpdateEnabled(_ enabled: Bool) {
+   98|      2|        autoUpdateEnabled = enabled
+   99|      2|    }
+  100|       |
+  101|       |    @discardableResult
+  102|     14|    func checkForReleaseUpdate() async -> ReleaseUpdateSnapshot {
+  103|     14|        if let existing = inFlightCheck {
+  104|      1|            let snapshot = await existing.task.value
+  105|      1|            if inFlightCheck == nil || inFlightCheck === existing {
+  106|      1|                releaseSnapshot = snapshot
+  107|      1|            }
+  108|      1|            return snapshot
+  109|     13|        }
+  110|     13|        isChecking = true
+  111|     13|        let check = InFlightCheck(task: Task { @MainActor in
+  112|     13|            await checker()
+  113|     13|        })
+  114|     13|        inFlightCheck = check
+  115|     13|        let snapshot = await check.task.value
+  116|     13|        if inFlightCheck === check {
+  117|     13|            releaseSnapshot = snapshot
+  118|     13|            inFlightCheck = nil
+  119|     13|            isChecking = false
+  120|     13|        }
+  121|     13|        return snapshot
+  122|     14|    }
+  123|       |
+  124|      6|    func checkForUpdatesAndPromptInstall() async {
+  125|      6|        let snapshot = await checkForReleaseUpdate()
+  126|      6|        discardStagedUpdateIfMismatched(with: snapshot)
+  127|      6|        switch snapshot.status {
+  128|      6|        case .updateAvailable:
+  129|      4|            if snapshot.hasInstallableAssets, let version = snapshot.latestVersion {
+  130|      3|                updatePrompt = .installable(version: version)
+  131|      3|            } else {
+  132|      1|                updatePrompt = .failed(detail: "A newer version is published but has no installable assets yet.")
+  133|      1|            }
+  134|      6|        case .current:
+  135|      1|            updatePrompt = .upToDate(version: snapshot.currentVersion)
+  136|      6|        case .unavailable:
+  137|      1|            updatePrompt = .failed(detail: snapshot.detail)
+  138|      6|        }
+  139|      6|    }
+  140|       |
+  141|      0|    var updatePromptIsPresented: Binding<Bool> {
+  142|      0|        Binding(
+  143|      0|            get: { self.updatePrompt != nil },
+  144|      0|            set: { newValue in
+  145|      0|                if !newValue { self.updatePrompt = nil }
+  146|      0|            }
+  147|      0|        )
+  148|      0|    }
+  149|       |
+  150|      1|    var updateBadgeText: String? {
+  151|      1|        if let version = stagedUpdateVersion {
+  152|      1|            return "Update \(version)"
+  153|      1|        }
+  154|      0|        if let snapshot = releaseSnapshot,
+  155|      0|           snapshot.status == .updateAvailable,
+  156|      0|           snapshot.hasInstallableAssets,
+  157|      0|           let version = snapshot.latestVersion {
+  158|      0|            return "Update \(version)"
+  159|      0|        }
+  160|      0|        return nil
+  161|      1|    }
+  162|       |
+  163|      0|    func presentUpdatePrompt() {
+  164|      0|        if let snapshot = releaseSnapshot,
+  165|      0|           snapshot.status == .updateAvailable,
+  166|      0|           snapshot.hasInstallableAssets,
+  167|      0|           let version = snapshot.latestVersion {
+  168|      0|            updatePrompt = .installable(version: version)
+  169|      0|        } else if let version = stagedUpdateVersion {
+  170|      0|            updatePrompt = .installable(version: version)
+  171|      0|        }
+  172|      0|    }
+  173|       |
+  174|      6|    private func discardStagedUpdateIfMismatched(with snapshot: ReleaseUpdateSnapshot) {
+  175|      6|        guard let staged = pendingStagedUpdate else { return }
+  176|      1|        guard snapshot.status == .updateAvailable,
+  177|      1|              snapshot.hasInstallableAssets,
+  178|      1|              let version = snapshot.latestVersion else {
+  179|      0|            clearPendingStagedUpdate()
+  180|      0|            return
+  181|      1|        }
+  182|      1|        if staged.version != version {
+  183|      1|            clearPendingStagedUpdate()
+  184|      1|        }
+  185|      1|    }
+  186|       |
+  187|     10|    func runAutoUpdateCheckIfDue() async {
+  188|     10|        guard !autoUpdateCheckStartedThisSession else { return }
+  189|      9|        autoUpdateCheckStartedThisSession = true
+  190|      9|        let currentDate = now()
+  191|      9|        let lastCheck = defaults.object(forKey: Self.lastUpdateCheckAtDefaultsKey) as? Date
+  192|      9|        guard OuroMDAutoUpdatePolicy.shouldCheck(
+  193|      9|            now: currentDate,
+  194|      9|            lastCheck: lastCheck,
+  195|      9|            minimumInterval: Self.minimumAutoUpdateCheckInterval,
+  196|      9|            enabled: autoUpdateEnabled
+  197|      9|        ) else {
+  198|      2|            return
+  199|      7|        }
+  200|      7|        defaults.set(currentDate, forKey: Self.lastUpdateCheckAtDefaultsKey)
+  201|      7|        let snapshot = await checkForReleaseUpdate()
+  202|      7|        guard autoUpdateEnabled,
+  203|      7|              snapshot.status == .updateAvailable,
+  204|      7|              snapshot.hasInstallableAssets else {
+  205|      1|            return
+  206|      6|        }
+  207|      6|        await stagePendingUpdate(from: snapshot)
+  208|      6|    }
+  209|       |
+  210|      5|    func installReleaseUpdate(destinationBundle: URL = Bundle.main.bundleURL) async {
+  211|      5|        guard !isInstalling else { return }
+  212|      4|        guard let snapshot = releaseSnapshot else {
+  213|      0|            setInstallFailure("Check for an update first.")
+  214|      0|            return
+  215|      4|        }
+  216|      4|        let plan: OuroMDUpdatePlan
+  217|      4|        switch OuroMDUpdatePlanner.plan(from: snapshot) {
+  218|      4|        case let .success(value):
+  219|      4|            plan = value
+  220|      4|        case let .failure(error):
+  221|      0|            setInstallFailure(error.errorDescription ?? error.localizedDescription)
+  222|      0|            return
+  223|      4|        }
+  224|      4|        if let staged = pendingStagedUpdate, staged.version == plan.version {
+  225|      2|            applyStagedUpdateManually(staged, destinationBundle: destinationBundle)
+  226|      2|            return
+  227|      2|        } else {
+  228|      2|            clearPendingStagedUpdate()
+  229|      2|        }
+  230|      2|
+  231|      2|        isInstalling = true
+  232|      2|        installError = nil
+  233|      2|        updatePrompt = nil
+  234|      2|        installStatus = "Starting..."
+  235|      2|        do {
+  236|      2|            let staged = try await stageUpdate(plan) { status in
+  237|      0|                await MainActor.run { self.installStatus = status }
+  238|      1|            }
+  239|      1|            applyStagedUpdateManually(staged, destinationBundle: destinationBundle)
+  240|      1|        } catch {
+  241|      1|            setInstallFailure((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+  242|      2|        }
+  243|      2|    }
+  244|       |
+  245|      3|    func applyStagedUpdateOnQuitIfNeeded(destinationBundle: URL = Bundle.main.bundleURL) {
+  246|      3|        guard autoUpdateEnabled, !isApplyingManualUpdate, let staged = pendingStagedUpdate else {
+  247|      2|            return
+  248|      2|        }
+  249|      1|        pendingStagedUpdate = nil
+  250|      1|        stagedUpdateVersion = nil
+  251|      1|        applyOnQuit(staged, destinationBundle)
+  252|      1|    }
+  253|       |
+  254|      6|    private func stagePendingUpdate(from snapshot: ReleaseUpdateSnapshot) async {
+  255|      6|        guard case let .success(plan) = OuroMDUpdatePlanner.plan(from: snapshot) else { return }
+  256|      6|        if let staged = pendingStagedUpdate, staged.version == plan.version { return }
+  257|      6|        clearPendingStagedUpdate()
+  258|      6|        do {
+  259|      6|            let staged = try await stageUpdate(plan) { _ in }
+  260|      5|            pendingStagedUpdate = staged
+  261|      5|            stagedUpdateVersion = staged.version
+  262|      5|        } catch {
+  263|      1|            // Background update staging is quiet; manual check/install reports errors.
+  264|      6|        }
+  265|      6|    }
+  266|       |
+  267|       |    private func applyStagedUpdateManually(
+  268|       |        _ staged: OuroMDUpdateInstaller.Staged,
+  269|       |        destinationBundle: URL
+  270|      3|    ) {
+  271|      3|        isInstalling = true
+  272|      3|        installError = nil
+  273|      3|        updatePrompt = nil
+  274|      3|        clearPendingStagedUpdate()
+  275|      3|        installStatus = "Installing \(staged.version) and relaunching..."
+  276|      3|        isApplyingManualUpdate = true
+  277|      3|        applyAndRelaunch(staged, destinationBundle)
+  278|      3|        terminate()
+  279|      3|    }
+  280|       |
+  281|     12|    private func clearPendingStagedUpdate() {
+  282|     12|        pendingStagedUpdate = nil
+  283|     12|        stagedUpdateVersion = nil
+  284|     12|    }
+  285|       |
+  286|      1|    private func setInstallFailure(_ detail: String) {
+  287|      1|        installError = detail
+  288|      1|        installStatus = nil
+  289|      1|        isInstalling = false
+  290|      1|        updatePrompt = .failed(detail: detail)
+  291|      1|    }
+  292|       |}
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/ReleaseUpdate.swift:
+    1|       |import Foundation
+    2|       |
+    3|       |enum ReleaseUpdateStatus: String, Codable, Equatable, Sendable {
+    4|       |    case current
+    5|       |    case updateAvailable
+    6|       |    case unavailable
+    7|       |}
+    8|       |
+    9|       |struct ReleaseUpdateAsset: Codable, Equatable, Sendable {
+   10|       |    var name: String
+   11|       |    var downloadURL: String
+   12|       |    var size: Int
+   13|       |}
+   14|       |
+   15|       |struct ReleaseUpdateSnapshot: Codable, Equatable, Sendable {
+   16|       |    var status: ReleaseUpdateStatus
+   17|       |    var currentVersion: String
+   18|       |    var latestVersion: String?
+   19|       |    var tagName: String?
+   20|       |    var htmlURL: String?
+   21|       |    var assets: [ReleaseUpdateAsset]
+   22|       |    var detail: String
+   23|       |
+   24|     12|    var hasInstallableAssets: Bool {
+   25|     12|        assets.contains { $0.name.hasSuffix(".zip") }
+   26|     22|            && assets.contains { $0.name.hasSuffix(".manifest.json") }
+   27|     12|    }
+   28|       |}
+   29|       |
+   30|       |struct ReleaseUpdateConfiguration: Equatable, Sendable {
+   31|       |    var repository: String
+   32|       |    var currentVersion: String
+   33|       |    var releasesURL: URL
+   34|       |
+   35|       |    init(
+   36|       |        repository: String = OuroMDRelease.repository,
+   37|       |        currentVersion: String = OuroMDRelease.version,
+   38|       |        releasesURL: URL? = nil
+   39|      2|    ) {
+   40|      2|        self.repository = repository
+   41|      2|        self.currentVersion = currentVersion
+   42|      2|        self.releasesURL = releasesURL ?? URL(string: "https://api.github.com/repos/\(repository)/releases?per_page=10")!
+   43|      2|    }
+   44|       |}
+   45|       |
+   46|       |struct ReleaseUpdateChecker: Sendable {
+   47|       |    var configuration: ReleaseUpdateConfiguration
+   48|       |    private let dataLoader: @Sendable (URL) async throws -> Data
+   49|       |
+   50|       |    init(
+   51|       |        configuration: ReleaseUpdateConfiguration = ReleaseUpdateConfiguration(),
+   52|       |        dataLoader: @escaping @Sendable (URL) async throws -> Data = ReleaseUpdateChecker.defaultDataLoader
+   53|      1|    ) {
+   54|      1|        self.configuration = configuration
+   55|      1|        self.dataLoader = dataLoader
+   56|      1|    }
+   57|       |
+   58|      1|    func check() async -> ReleaseUpdateSnapshot {
+   59|      1|        do {
+   60|      1|            let data = try await dataLoader(configuration.releasesURL)
+   61|      0|            return try Self.snapshot(from: data, currentVersion: configuration.currentVersion)
+   62|      1|        } catch {
+   63|      1|            return ReleaseUpdateSnapshot(
+   64|      1|                status: .unavailable,
+   65|      1|                currentVersion: configuration.currentVersion,
+   66|      1|                latestVersion: nil,
+   67|      1|                tagName: nil,
+   68|      1|                htmlURL: nil,
+   69|      1|                assets: [],
+   70|      1|                detail: "Release update check failed: \(error.localizedDescription)"
+   71|      1|            )
+   72|      1|        }
+   73|      1|    }
+   74|       |
+   75|      6|    static func snapshot(from data: Data, currentVersion: String) throws -> ReleaseUpdateSnapshot {
+   76|      6|        let releases = try JSONDecoder().decode([GitHubRelease].self, from: data)
+   77|      6|        guard let latest = releases.first(where: { !$0.draft && !$0.prerelease }) else {
+   78|      1|            return ReleaseUpdateSnapshot(
+   79|      1|                status: .unavailable,
+   80|      1|                currentVersion: currentVersion,
+   81|      1|                latestVersion: nil,
+   82|      1|                tagName: nil,
+   83|      1|                htmlURL: nil,
+   84|      1|                assets: [],
+   85|      1|                detail: "No published release found."
+   86|      1|            )
+   87|      4|        }
+   88|      4|
+   89|      4|        let latestVersion = version(fromTag: latest.tagName)
+   90|      4|        let status = status(currentVersion: currentVersion, latestVersion: latestVersion)
+   91|      4|        let assets = latest.assets.map {
+   92|      2|            ReleaseUpdateAsset(name: $0.name, downloadURL: $0.browserDownloadURL, size: $0.size)
+   93|      2|        }
+   94|      4|
+   95|      4|        let detail: String
+   96|      4|        switch status {
+   97|      4|        case .updateAvailable:
+   98|      2|            detail = "Version \(latestVersion) is available."
+   99|      4|        case .current:
+  100|      1|            detail = "Version \(currentVersion) is current."
+  101|      4|        case .unavailable:
+  102|      1|            detail = "Latest release \(latest.tagName) could not be compared to \(currentVersion)."
+  103|      4|        }
+  104|      4|
+  105|      4|        return ReleaseUpdateSnapshot(
+  106|      4|            status: status,
+  107|      4|            currentVersion: currentVersion,
+  108|      4|            latestVersion: latestVersion,
+  109|      4|            tagName: latest.tagName,
+  110|      4|            htmlURL: latest.htmlURL,
+  111|      4|            assets: assets,
+  112|      4|            detail: detail
+  113|      4|        )
+  114|      6|    }
+  115|       |
+  116|      2|    static let defaultDataLoader: @Sendable (URL) async throws -> Data = { url in
+  117|      2|        var request = URLRequest(url: url)
+  118|      2|        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+  119|      2|        request.setValue(OuroMDRelease.userAgent, forHTTPHeaderField: "User-Agent")
+  120|      2|        let (data, response) = try await URLSession.shared.data(for: request)
+  121|      2|        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+  122|      1|            throw ReleaseUpdateError.badResponse
+  123|      1|        }
+  124|      1|        return data
+  125|      2|    }
+  126|       |
+  127|      4|    private static func status(currentVersion: String, latestVersion: String) -> ReleaseUpdateStatus {
+  128|      4|        guard let current = SemanticVersion(currentVersion),
+  129|      4|              let latest = SemanticVersion(latestVersion)
+  130|      4|        else {
+  131|      1|            return .unavailable
+  132|      3|        }
+  133|      3|        return latest > current ? .updateAvailable : .current
+  134|      4|    }
+  135|       |
+  136|      4|    private static func version(fromTag tagName: String) -> String {
+  137|      4|        tagName.hasPrefix("v") ? String(tagName.dropFirst()) : tagName
+  138|      4|    }
+  139|       |}
+  140|       |
+  141|       |enum ReleaseUpdateError: Error, Equatable, LocalizedError, Sendable {
+  142|       |    case badResponse
+  143|       |
+  144|      1|    var errorDescription: String? {
+  145|      1|        switch self {
+  146|      1|        case .badResponse:
+  147|      1|            return "GitHub Releases returned an unsuccessful response."
+  148|      1|        }
+  149|      1|    }
+  150|       |}
+  151|       |
+  152|       |private struct GitHubRelease: Decodable {
+  153|       |    var tagName: String
+  154|       |    var htmlURL: String
+  155|       |    var draft: Bool
+  156|       |    var prerelease: Bool
+  157|       |    var assets: [GitHubReleaseAsset]
+  158|       |
+  159|       |    private enum CodingKeys: String, CodingKey {
+  160|       |        case tagName = "tag_name"
+  161|       |        case htmlURL = "html_url"
+  162|       |        case draft
+  163|       |        case prerelease
+  164|       |        case assets
+  165|       |    }
+  166|       |}
+  167|       |
+  168|       |private struct GitHubReleaseAsset: Decodable {
+  169|       |    var name: String
+  170|       |    var browserDownloadURL: String
+  171|       |    var size: Int
+  172|       |
+  173|       |    private enum CodingKeys: String, CodingKey {
+  174|       |        case name
+  175|       |        case browserDownloadURL = "browser_download_url"
+  176|       |        case size
+  177|       |    }
+  178|       |}
+  179|       |
+  180|       |struct SemanticVersion: Comparable, Equatable {
+  181|       |    var major: Int
+  182|       |    var minor: Int
+  183|       |    var patch: Int
+  184|       |
+  185|     27|    init?(_ value: String) {
+  186|     27|        let core = value.split(separator: "-", maxSplits: 1).first.map(String.init) ?? value
+  187|     27|        let parts = core.split(separator: ".")
+  188|     27|        guard parts.count == 3,
+  189|     27|              let major = Int(parts[0]),
+  190|     27|              let minor = Int(parts[1]),
+  191|     27|              let patch = Int(parts[2])
+  192|     27|        else {
+  193|      2|            return nil
+  194|     25|        }
+  195|     25|        self.major = major
+  196|     25|        self.minor = minor
+  197|     25|        self.patch = patch
+  198|     25|    }
+  199|       |
+  200|     12|    static func < (lhs: SemanticVersion, rhs: SemanticVersion) -> Bool {
+  201|     12|        if lhs.major != rhs.major {
+  202|      0|            return lhs.major < rhs.major
+  203|     12|        }
+  204|     12|        if lhs.minor != rhs.minor {
+  205|      9|            return lhs.minor < rhs.minor
+  206|      9|        }
+  207|      3|        return lhs.patch < rhs.patch
+  208|     12|    }
+  209|       |}
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/CLI.swift:
+    1|       |import Foundation
+    2|       |
+    3|       |/// Command-line entry points: headless render, theme listing, help, version.
+    4|       |enum OuroCLI {
+    5|       |    static let version = OuroMDRelease.version
+    6|       |
+    7|       |    static let helpText = """
+    8|       |    ouro-md — a minimalist, themable, native macOS Markdown editor.
+    9|       |
+   10|       |    USAGE
+   11|       |      ouro-md [FILE]                 Open FILE (or a blank document) in the editor.
+   12|       |      ouro-md --render FILE [opts]   Render FILE to a self-contained HTML document
+   13|       |                                     on stdout (no window).
+   14|       |      ouro-md --list-themes          List available themes and exit.
+   15|       |      ouro-md --help | --version
+   16|       |
+   17|       |    RENDER OPTIONS
+   18|       |      --theme NAME                   Theme to embed (default: quartz).
+   19|       |
+   20|       |    THEMES
+   21|       |      Built-in: quartz (light), graphite (dark), manuscript (sepia serif),
+   22|       |      newsprint (editorial). Drop your own .css files in
+   23|       |        ~/Library/Application Support/ouro-md/Themes/
+   24|       |      to add custom themes.
+   25|       |    """
+   26|       |
+   27|       |    /// Renders a Markdown file to a complete themed HTML document on stdout.
+   28|      0|    static func render(path: String, themeId: String) -> Never {
+   29|      0|        let url = URL(fileURLWithPath: path)
+   30|      0|        do {
+   31|      0|            let markdown = try String(contentsOf: url, encoding: .utf8)
+   32|      0|            let body = MarkdownRenderer.renderHTMLBody(markdown, baseDirectory: url.deletingLastPathComponent())
+   33|      0|            let theme = ThemeStore.shared.theme(id: themeId)
+   34|      0|            let html = HTMLDocument.wrap(body: body, css: theme.css, title: url.lastPathComponent)
+   35|      0|            FileHandle.standardOutput.write(Data(html.utf8))
+   36|      0|            exit(0)
+   37|      0|        } catch {
+   38|      0|            FileHandle.standardError.write(Data("ouro-md: cannot read \(path): \(error.localizedDescription)\n".utf8))
+   39|      0|            exit(1)
+   40|      0|        }
+   41|      0|    }
+   42|       |}
+

@@ -1,0 +1,46 @@
+[0/1] Planning build
+Building for debugging...
+[0/6] Write sources
+[1/6] Write swift-version--58304C5D6DBC2206.txt
+[3/17] Compiling OuroMDTests ReleaseUpdateTests.swift
+[4/17] Compiling OuroMDTests OutlineTreeTests.swift
+[5/17] Compiling OuroMDTests OuroMDUpdateTests.swift
+[6/17] Compiling OuroMDTests TerminationSaveCoordinatorTests.swift
+[7/18] Compiling OuroMDTests MarkdownRendererTests.swift
+[8/18] Compiling OuroMDTests MarkdownTidyTests.swift
+[9/18] Compiling OuroMDTests FileWatcherTests.swift
+[10/18] Compiling OuroMDTests FolderBrowserTests.swift
+[11/18] Emitting module OuroMDTests
+[12/18] Compiling OuroMDTests OuroMDUpdateCoordinatorTests.swift
+[13/18] Compiling OuroMDTests OuroMDUpdateInstallerTests.swift
+[14/18] Compiling OuroMDTests AppModelReloadTests.swift
+[15/18] Compiling OuroMDTests ContentSearcherTests.swift
+[16/18] Compiling OuroMDTests UndoRedoRoutingTests.swift
+[17/20] Compiling ouro_mdPackageTests runner.swift
+[18/20] Emitting module ouro_mdPackageTests
+[18/20] Write Objects.LinkFileList
+[19/20] Linking ouro-mdPackageTests
+Build complete! (2.12s)
+Test Suite 'Selected tests' started at 2026-06-14 17:42:23.961.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 17:42:23.962.
+Test Suite 'TerminationSaveCoordinatorTests' started at 2026-06-14 17:42:23.962.
+Test Case '-[OuroMDTests.TerminationSaveCoordinatorTests testDefaultCancelHandlerIsSafeWhenSaveFails]' started.
+Test Case '-[OuroMDTests.TerminationSaveCoordinatorTests testDefaultCancelHandlerIsSafeWhenSaveFails]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.TerminationSaveCoordinatorTests testRepliesFalseAndCancelsWhenAnySaveFails]' started.
+Test Case '-[OuroMDTests.TerminationSaveCoordinatorTests testRepliesFalseAndCancelsWhenAnySaveFails]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.TerminationSaveCoordinatorTests testRepliesTrueImmediatelyWhenNothingIsDirty]' started.
+Test Case '-[OuroMDTests.TerminationSaveCoordinatorTests testRepliesTrueImmediatelyWhenNothingIsDirty]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.TerminationSaveCoordinatorTests testRepliesTrueOnlyAfterAllSavesSucceed]' started.
+Test Case '-[OuroMDTests.TerminationSaveCoordinatorTests testRepliesTrueOnlyAfterAllSavesSucceed]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.TerminationSaveCoordinatorTests testTimeoutCancelsInsteadOfForcingQuit]' started.
+Test Case '-[OuroMDTests.TerminationSaveCoordinatorTests testTimeoutCancelsInsteadOfForcingQuit]' passed (0.014 seconds).
+Test Suite 'TerminationSaveCoordinatorTests' passed at 2026-06-14 17:42:23.978.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.016 (0.017) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 17:42:23.978.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.016 (0.017) seconds
+Test Suite 'Selected tests' passed at 2026-06-14 17:42:23.978.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.016 (0.017) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

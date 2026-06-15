@@ -1,0 +1,113 @@
+[0/1] Planning build
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+[2/68] Compiling Markdown BlockContainer.swift
+[3/68] Compiling Markdown BlockMarkup.swift
+[4/68] Compiling Markdown InlineContainer.swift
+[5/68] Compiling Markdown InlineMarkup.swift
+[6/68] Compiling Markdown ListItemContainer.swift
+[7/68] Compiling Markdown AtomicCounter.swift
+[8/68] Compiling Markdown CharacterExtensions.swift
+[9/75] Compiling Markdown DoxygenNote.swift
+[10/75] Compiling Markdown DoxygenParameter.swift
+[11/75] Compiling Markdown DoxygenReturns.swift
+[12/75] Compiling Markdown ListItem.swift
+[13/75] Compiling Markdown OrderedList.swift
+[14/75] Compiling Markdown UnorderedList.swift
+[15/75] Compiling Markdown Paragraph.swift
+[16/75] Compiling Markdown CodeBlock.swift
+[17/75] Compiling Markdown HTMLBlock.swift
+[18/75] Compiling Markdown Heading.swift
+[19/75] Compiling Markdown ThematicBreak.swift
+[20/75] Compiling Markdown Table.swift
+[21/75] Compiling Markdown TableBody.swift
+[22/75] Compiling Markdown TableCell.swift
+[23/75] Compiling Markdown InlineAttributes.swift
+[24/75] Compiling Markdown Link.swift
+[25/75] Compiling Markdown Strikethrough.swift
+[26/75] Compiling Markdown Strong.swift
+[27/75] Compiling Markdown CustomInline.swift
+[28/75] Compiling Markdown InlineCode.swift
+[29/75] Compiling Markdown InlineHTML.swift
+[30/75] Compiling Markdown TableCellContainer.swift
+[31/75] Compiling Markdown TableHead.swift
+[32/75] Compiling Markdown TableRow.swift
+[33/75] Compiling Markdown Replacement.swift
+[34/75] Compiling Markdown SourceLocation.swift
+[35/75] Compiling Markdown Emphasis.swift
+[36/75] Compiling Markdown Image.swift
+[37/75] Compiling Markdown LazySplitLines.swift
+[38/75] Compiling Markdown ParseOptions.swift
+[39/75] Compiling Markdown RangeAdjuster.swift
+[40/75] Compiling Markdown RangerTracker.swift
+[41/75] Compiling Markdown MarkupRewriter.swift
+[42/75] Compiling Markdown BasicBlockContainer.swift
+[43/75] Compiling Markdown BasicInlineContainer.swift
+[44/75] Compiling Markdown PlainTextConvertibleMarkup.swift
+[45/75] Compiling Markdown RawMarkup.swift
+[46/75] Compiling Markdown BlockDirective.swift
+[47/75] Compiling Markdown BlockQuote.swift
+[48/75] Compiling Markdown CustomBlock.swift
+[49/75] Compiling Markdown DoxygenAbstract.swift
+[50/75] Compiling Markdown DoxygenDiscussion.swift
+[51/75] Emitting module Markdown
+[52/75] Compiling Markdown ChildIndexPath.swift
+[53/75] Compiling Markdown DirectiveArgument.swift
+[54/75] Compiling Markdown Document.swift
+[55/75] Compiling Markdown LiteralMarkup.swift
+[56/75] Compiling Markdown Markup.swift
+[57/75] Compiling Markdown MarkupChildren.swift
+[58/75] Compiling Markdown MarkupData.swift
+[59/75] Compiling Markdown CollectionExtensions.swift
+[60/75] Compiling Markdown StringExtensions.swift
+[61/75] Compiling Markdown MarkupVisitor.swift
+[62/75] Compiling Markdown MarkupWalker.swift
+[63/75] Compiling Markdown HTMLFormatter.swift
+[64/75] Compiling Markdown MarkupFormatter.swift
+[65/75] Compiling Markdown MarkupTreeDumper.swift
+[66/75] Compiling Markdown LineBreak.swift
+[67/75] Compiling Markdown SoftBreak.swift
+[68/75] Compiling Markdown SymbolLink.swift
+[69/75] Compiling Markdown Text.swift
+[70/75] Compiling Markdown Aside.swift
+[71/75] Compiling Markdown BlockDirectiveParser.swift
+[72/75] Compiling Markdown CommonMarkConverter.swift
+[73/103] Compiling OuroMD ContentSearcher.swift
+[74/103] Compiling OuroMD ContentView.swift
+[75/103] Compiling OuroMD DocumentWindowController.swift
+[76/103] Compiling OuroMD MenuBuilder.swift
+[77/103] Compiling OuroMD OuroMDRelease.swift
+[78/103] Compiling OuroMD OuroMDUpdate.swift
+[79/106] Compiling OuroMD FolderBrowser.swift
+[80/106] Compiling OuroMD HTMLDocument.swift
+[81/106] Compiling OuroMD MarkdownRenderer.swift
+[82/106] Compiling OuroMD EditorWebView.swift
+[83/106] Compiling OuroMD Export.swift
+[84/106] Compiling OuroMD FileWatcher.swift
+[85/106] Compiling OuroMD UndoRedoCommandRouter.swift
+[86/106] Compiling OuroMD UndoTest.swift
+[87/106] Compiling OuroMD Welcome.swift
+[88/106] Compiling OuroMD Snapshot.swift
+[89/106] Compiling OuroMD TerminationSaveCoordinator.swift
+[90/106] Compiling OuroMD Themes.swift
+[91/106] Compiling OuroMD OuroMDUpdateCoordinator.swift
+[92/106] Compiling OuroMD OuroMDUpdateInstaller.swift
+[93/106] Compiling OuroMD ReleaseUpdate.swift
+[94/106] Compiling OuroMD WrapTest.swift
+[95/106] Compiling OuroMD main.swift
+[96/106] Compiling OuroMD resource_bundle_accessor.swift
+[97/106] Compiling OuroMD AppDelegate.swift
+[98/106] Compiling OuroMD AppModel.swift
+[99/106] Compiling OuroMD CLI.swift
+[100/106] Emitting module OuroMD
+[101/106] Compiling OuroMD RenderProbe.swift
+[102/106] Compiling OuroMD RoundTrip.swift
+[103/106] Compiling OuroMD Sidebar.swift
+[103/106] Write Objects.LinkFileList
+[104/106] Linking ouro-md
+[105/106] Applying ouro-md
+Build of product 'ouro-md' complete! (3.82s)
+PASS multi-step undo/redo: edit=ONE TWOAlpha line.\n undo1=ONEAlpha line.\n undo2=Alpha line.\n redo1=ONEAlpha line.\n redo2=ONE TWOAlpha line.\n
+PASS redo invalidated after new edit: A CRedo base.\n
+PASS empty stack no-op: before=Empty base.\n undo=Empty base.\n redo=Empty base.\n
+PASS undo/redo after mode rebuild: undo=Mode base.\n\n redo=AFTERMODEMode base.\n\n

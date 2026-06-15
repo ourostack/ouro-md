@@ -1,0 +1,10 @@
+Building for debugging...
+[0/4] Write sources
+[1/4] Write swift-version--58304C5D6DBC2206.txt
+[3/6] Compiling OuroMD ReleaseUpdate.swift
+[4/6] Emitting module OuroMD
+[4/7] Write Objects.LinkFileList
+[5/7] Linking ouro-md
+[6/7] Applying ouro-md
+Build of product 'ouro-md' complete! (1.57s)
+ouro-md 0.9.0

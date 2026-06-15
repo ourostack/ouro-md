@@ -1,0 +1,14 @@
+[0/1] Planning build
+Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/5] Emitting module OuroMDTests
+[4/5] Compiling OuroMDTests OuroMDUpdateInstallerTests.swift
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateInstallerTests.swift:216:44: error: type 'OuroMDUpdateInstaller' has no member 'applyScript'
+214 |         )
+215 | 
+216 |         let script = OuroMDUpdateInstaller.applyScript(
+    |                                            `- error: type 'OuroMDUpdateInstaller' has no member 'applyScript'
+217 |             staged: staged,
+218 |             destinationBundle: URL(fileURLWithPath: "/Applications/Ouro MD.app"),
+error: fatalError

@@ -1,0 +1,46 @@
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.15s)
+Test Suite 'Selected tests' started at 2026-06-14 17:21:25.326.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 17:21:25.327.
+Test Suite 'ReleaseUpdateTests' started at 2026-06-14 17:21:25.327.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testAsyncCheckReturnsSnapshotOnLoaderSuccess]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testAsyncCheckReturnsSnapshotOnLoaderSuccess]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testAsyncCheckReturnsUnavailableSnapshotOnNetworkFailure]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testAsyncCheckReturnsUnavailableSnapshotOnNetworkFailure]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultConfigurationTargetsOuroMDGitHubReleases]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultConfigurationTargetsOuroMDGitHubReleases]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultLoaderSendsExpectedGitHubRequestAndReturnsBody]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultLoaderSendsExpectedGitHubRequestAndReturnsBody]' passed (0.009 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultLoaderThrowsOnNonSuccessStatus]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultLoaderThrowsOnNonSuccessStatus]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testReleaseDescriptorMatchesCurrentDistribution]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testReleaseDescriptorMatchesCurrentDistribution]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSemanticVersionComparesMajorMinorAndPatch]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSemanticVersionComparesMajorMinorAndPatch]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotIgnoresDraftsAndReportsNoPublishedRelease]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotIgnoresDraftsAndReportsNoPublishedRelease]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotIgnoresPrereleasesAndUsesLatestStableRelease]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotIgnoresPrereleasesAndUsesLatestStableRelease]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotReportsCurrentWhenLatestIsNotNewer]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotReportsCurrentWhenLatestIsNotNewer]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotReportsUnavailableWhenReleaseTagCannotBeCompared]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotReportsUnavailableWhenReleaseTagCannotBeCompared]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotReportsUpdateAvailableFromLatestPublishedRelease]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotReportsUpdateAvailableFromLatestPublishedRelease]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotThrowsOnMalformedReleaseJSON]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testSnapshotThrowsOnMalformedReleaseJSON]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testUpdatePlanErrorDescriptionsAreUserFacing]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testUpdatePlanErrorDescriptionsAreUserFacing]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testUpdateVerificationFailureDescriptionsAreUserFacing]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testUpdateVerificationFailureDescriptionsAreUserFacing]' passed (0.000 seconds).
+Test Suite 'ReleaseUpdateTests' passed at 2026-06-14 17:21:25.339.
+	 Executed 15 tests, with 0 failures (0 unexpected) in 0.012 (0.013) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 17:21:25.339.
+	 Executed 15 tests, with 0 failures (0 unexpected) in 0.012 (0.013) seconds
+Test Suite 'Selected tests' passed at 2026-06-14 17:21:25.340.
+	 Executed 15 tests, with 0 failures (0 unexpected) in 0.012 (0.014) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

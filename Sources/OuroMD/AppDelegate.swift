@@ -1,11 +1,15 @@
 import AppKit
+import Combine
 import SwiftUI
 
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     var initialFilePath: String?
     private var controllers: [DocumentWindowController] = []
     private lazy var fallbackModel = AppModel()
     private let defaults = UserDefaults.standard
+    let updateCoordinator = OuroMDUpdateCoordinator()
+    private var updateCancellables: Set<AnyCancellable> = []
 
     private var isSelfTest: Bool { ProcessInfo.processInfo.environment["OURO_SELFTEST"] == "1" }
 
@@ -36,6 +40,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { exit(0) }
             return
         }
+        observeUpdatePrompts()
         if let path = initialFilePath {
             openInitial(path)
         } else if !restoreSession() {
@@ -45,6 +50,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             track(controller)
             if firstRun { controller.model.loadWelcome() }
             controller.show(cascadeFrom: nil)
+        }
+        Task { await updateCoordinator.runAutoUpdateCheckIfDue() }
+    }
+
+    private func observeUpdatePrompts() {
+        updateCoordinator.$updatePrompt
+            .compactMap { $0 }
+            .sink { [weak self] prompt in
+                self?.presentUpdatePrompt(prompt)
+            }
+            .store(in: &updateCancellables)
+    }
+
+    private func presentUpdatePrompt(_ prompt: OuroMDUpdatePrompt) {
+        let alert = NSAlert()
+        alert.messageText = "Software Update"
+        alert.informativeText = prompt.message
+        if prompt.isInstallable {
+            alert.addButton(withTitle: "Install & Relaunch")
+            alert.addButton(withTitle: "Later")
+        } else {
+            alert.addButton(withTitle: "OK")
+        }
+        let response = alert.runModal()
+        updateCoordinator.updatePrompt = nil
+        if prompt.isInstallable, response == .alertFirstButtonReturn {
+            Task { await updateCoordinator.installReleaseUpdate() }
         }
     }
 
@@ -56,7 +88,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 
-    func applicationWillTerminate(_ notification: Notification) { saveSession() }
+    func applicationWillTerminate(_ notification: Notification) {
+        saveSession()
+        if !updateCoordinator.applyPendingManualUpdateAndRelaunchIfNeeded() {
+            updateCoordinator.applyStagedUpdateOnQuitIfNeeded()
+        }
+    }
 
     // MARK: - Session restoration
 
@@ -130,20 +167,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func printDocument(_ sender: Any?) { frontController?.printDocument() }
     @objc func undoEdit(_ sender: Any?) {
-        if let textView = NSApp.keyWindow?.firstResponder as? NSTextView,
-           let undoManager = textView.undoManager, undoManager.canUndo {
-            undoManager.undo()
-            return
+        UndoRedoCommandRouter.performUndo(firstResponder: NSApp.keyWindow?.firstResponder) {
+            model.undo()
         }
-        model.undo()
     }
     @objc func redoEdit(_ sender: Any?) {
-        if let textView = NSApp.keyWindow?.firstResponder as? NSTextView,
-           let undoManager = textView.undoManager, undoManager.canRedo {
-            undoManager.redo()
-            return
+        UndoRedoCommandRouter.performRedo(firstResponder: NSApp.keyWindow?.firstResponder) {
+            model.redo()
         }
-        model.redo()
     }
 
     private var prefsWindow: NSWindow?
@@ -157,7 +188,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             prefsWindow = w
         }
         // Re-bind to the active window's model each time it opens.
-        prefsWindow?.contentViewController = NSHostingController(rootView: PreferencesView(model: model))
+        prefsWindow?.contentViewController = NSHostingController(
+            rootView: PreferencesView(model: model, updateCoordinator: updateCoordinator)
+        )
         prefsWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
@@ -173,26 +206,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.addButton(withTitle: "Cancel")
         switch alert.runModal() {
         case .alertFirstButtonReturn:
-            let group = DispatchGroup()
-            for c in dirty { group.enter(); c.model.performSave { _ in group.leave() } }
-            var replied = false
-            let reply: (Bool) -> Void = { ok in
-                guard !replied else { return }
-                replied = true
-                NSApp.reply(toApplicationShouldTerminate: ok)
+            let saves = dirty.map { controller in
+                { (completion: @escaping (Bool) -> Void) in
+                    controller.model.performSave(completion: completion)
+                }
             }
-            group.notify(queue: .main) { reply(true) }
-            // Safety net: never hang the quit if a save completion is lost.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 4) { reply(true) }
+            TerminationSaveCoordinator.saveAll(
+                saves,
+                onCancel: { [weak self] in self?.updateCoordinator.cancelPendingManualInstall() },
+                reply: { NSApp.reply(toApplicationShouldTerminate: $0) }
+            )
             return .terminateLater
         case .alertSecondButtonReturn:
             return .terminateNow
         default:
+            updateCoordinator.cancelPendingManualInstall()
             return .terminateCancel
         }
     }
 
     // MARK: - Menu actions
+
+    @objc func checkForUpdates(_ sender: Any?) {
+        Task { await updateCoordinator.checkForUpdatesAndPromptInstall() }
+    }
+
+    @objc func installUpdateAndRelaunch(_ sender: Any?) {
+        Task { await updateCoordinator.installReleaseUpdate() }
+    }
 
     @objc func newDocument(_ sender: Any?) { model.newDocument() }
     @objc func openDocument(_ sender: Any?) { model.openPanel() }

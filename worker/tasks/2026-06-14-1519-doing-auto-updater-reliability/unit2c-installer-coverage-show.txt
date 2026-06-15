@@ -1,0 +1,310 @@
+    1|       |import CryptoKit
+    2|       |import Foundation
+    3|       |
+    4|       |struct OuroMDUpdateInstaller: Sendable {
+    5|       |    var bundleIdentifier: String
+    6|       |    var currentVersion: String
+    7|       |    private let dataLoader: @Sendable (URL) async throws -> Data
+    8|       |    private let processRunner: @Sendable (ProcessInvocation) async throws -> ProcessResult
+    9|       |
+   10|       |    struct Staged: Equatable, Sendable {
+   11|       |        var appURL: URL
+   12|       |        var stagingRoot: URL
+   13|       |        var version: String
+   14|       |    }
+   15|       |
+   16|       |    struct ProcessInvocation: Equatable, Sendable {
+   17|       |        var executablePath: String
+   18|       |        var arguments: [String]
+   19|       |    }
+   20|       |
+   21|       |    struct ProcessResult: Equatable, Sendable {
+   22|       |        var status: Int32
+   23|       |        var stderr: String
+   24|       |
+   25|       |        static let success = ProcessResult(status: 0, stderr: "")
+   26|       |    }
+   27|       |
+   28|       |    enum InstallError: LocalizedError, Equatable, Sendable {
+   29|       |        case download(String)
+   30|       |        case manifestDecode(String)
+   31|       |        case verification(OuroMDUpdateVerification.Failure)
+   32|       |        case unzipFailed(String)
+   33|       |        case missingStagedApp
+   34|       |        case stagedIdentityMismatch(String)
+   35|       |        case codesignFailed(String)
+   36|       |
+   37|      7|        var errorDescription: String? {
+   38|      7|            switch self {
+   39|      7|            case let .download(message):
+   40|      1|                return "Download failed: \(message)"
+   41|      7|            case let .manifestDecode(message):
+   42|      1|                return "Could not read the release manifest: \(message)"
+   43|      7|            case let .verification(failure):
+   44|      1|                return failure.errorDescription
+   45|      7|            case let .unzipFailed(message):
+   46|      1|                return "Could not expand the downloaded archive: \(message)"
+   47|      7|            case .missingStagedApp:
+   48|      1|                return "The downloaded archive did not contain Ouro MD.app."
+   49|      7|            case let .stagedIdentityMismatch(message):
+   50|      1|                return "The downloaded app failed its identity check: \(message)"
+   51|      7|            case let .codesignFailed(message):
+   52|      1|                return "The downloaded app failed its code-signature check: \(message)"
+   53|      7|            }
+   54|      7|        }
+   55|       |    }
+   56|       |
+   57|       |    init(
+   58|       |        bundleIdentifier: String = OuroMDRelease.bundleIdentifier,
+   59|       |        currentVersion: String = OuroMDRelease.version,
+   60|       |        dataLoader: (@Sendable (URL) async throws -> Data)? = nil,
+   61|       |        processRunner: @escaping @Sendable (ProcessInvocation) async throws -> ProcessResult = OuroMDUpdateInstaller.defaultProcessRunner
+   62|     14|    ) {
+   63|     14|        self.bundleIdentifier = bundleIdentifier
+   64|     14|        self.currentVersion = currentVersion
+   65|     14|        let userAgent = "OuroMD/\(currentVersion)"
+   66|     14|        self.dataLoader = dataLoader ?? { url in
+   67|      0|            try await Self.defaultData(from: url, userAgent: userAgent)
+   68|      0|        }
+  ------------------
+  | Unexecuted instantiation: $s6OuroMD0A17MDUpdateInstallerV16bundleIdentifier14currentVersion10dataLoader13processRunnerACSS_SS10Foundation4DataVAH3URLVYaYbKcSgAC13ProcessResultVAC0P10InvocationVYaYbKctcfcAjLYaYbKcyKXEfu_
+  ------------------
+  | Unexecuted instantiation: $s6OuroMD0A17MDUpdateInstallerV16bundleIdentifier14currentVersion10dataLoader13processRunnerACSS_SS10Foundation4DataVAH3URLVYaYbKcSgAC13ProcessResultVAC0P10InvocationVYaYbKctcfcAjLYaYbKcyKXEfu_AjLYaYbKcfU_
+  ------------------
+   69|     14|        self.processRunner = processRunner
+   70|     14|    }
+   71|       |
+   72|       |    @discardableResult
+   73|       |    func stage(
+   74|       |        plan: OuroMDUpdatePlan,
+   75|       |        progress: @Sendable (String) async -> Void
+   76|     14|    ) async throws -> Staged {
+   77|     14|        let fileManager = FileManager.default
+   78|     14|        let root = fileManager.temporaryDirectory
+   79|     14|            .appendingPathComponent("ouro-md-update-\(UUID().uuidString)", isDirectory: true)
+   80|     14|
+   81|     14|        do {
+   82|     14|            try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+   83|     14|
+   84|     14|            await progress("Downloading release manifest...")
+   85|     14|            let manifestData = try await load(plan.manifestURL)
+   86|     12|            let manifest: OuroMDUpdateManifest
+   87|     12|            do {
+   88|     12|                manifest = try JSONDecoder().decode(OuroMDUpdateManifest.self, from: manifestData)
+   89|     11|            } catch {
+   90|      1|                throw InstallError.manifestDecode(error.localizedDescription)
+   91|     11|            }
+   92|     11|
+   93|     11|            await progress("Downloading \(plan.archiveName)...")
+   94|     11|            let archiveData = try await load(plan.archiveURL)
+   95|     11|            let archiveURL = root.appendingPathComponent(plan.archiveName)
+   96|     11|            try archiveData.write(to: archiveURL)
+   97|     11|
+   98|     11|            await progress("Verifying download...")
+   99|     11|            let sha = Self.sha256Hex(archiveData)
+  100|     11|            if let failure = OuroMDUpdateVerification.verify(
+  101|     11|                manifest: manifest,
+  102|     11|                downloadedArchiveName: plan.archiveName,
+  103|     11|                downloadedSHA256: sha,
+  104|     11|                downloadedBytes: archiveData.count,
+  105|     11|                expectedBundleIdentifier: bundleIdentifier,
+  106|     11|                currentVersion: currentVersion
+  107|     11|            ) {
+  108|      5|                throw InstallError.verification(failure)
+  109|      6|            }
+  110|      6|
+  111|      6|            await progress("Expanding update...")
+  112|      6|            let extractRoot = root.appendingPathComponent("extract", isDirectory: true)
+  113|      6|            try fileManager.createDirectory(at: extractRoot, withIntermediateDirectories: true)
+  114|      6|            let unzip = try await processRunner(
+  115|      6|                ProcessInvocation(
+  116|      6|                    executablePath: "/usr/bin/ditto",
+  117|      6|                    arguments: ["-x", "-k", archiveURL.path, extractRoot.path]
+  118|      6|                )
+  119|      6|            )
+  120|      6|            guard unzip.status == 0 else {
+  121|      1|                throw InstallError.unzipFailed(unzip.stderr.isEmpty ? "ditto exited \(unzip.status)" : unzip.stderr)
+  122|      5|            }
+  123|      5|
+  124|      5|            let appURL = extractRoot.appendingPathComponent("Ouro MD.app", isDirectory: true)
+  125|      5|            guard fileManager.fileExists(atPath: appURL.path) else {
+  126|      1|                throw InstallError.missingStagedApp
+  127|      4|            }
+  128|      4|
+  129|      4|            try verifyStagedApp(appURL, manifest: manifest)
+  130|      2|
+  131|      2|            await progress("Checking signature...")
+  132|      2|            let codesign = try await processRunner(
+  133|      2|                ProcessInvocation(
+  134|      2|                    executablePath: "/usr/bin/codesign",
+  135|      2|                    arguments: ["--verify", "--deep", "--strict", appURL.path]
+  136|      2|                )
+  137|      2|            )
+  138|      2|            guard codesign.status == 0 else {
+  139|      1|                throw InstallError.codesignFailed(
+  140|      1|                    codesign.stderr.isEmpty ? "codesign exited \(codesign.status)" : codesign.stderr
+  141|      1|                )
+  142|      1|            }
+  143|      1|
+  144|      1|            return Staged(appURL: appURL, stagingRoot: root, version: manifest.version)
+  145|     14|        } catch {
+  146|     13|            try? fileManager.removeItem(at: root)
+  147|     13|            throw error
+  148|     13|        }
+  149|     14|    }
+  150|       |
+  151|      0|    static func applyAndRelaunch(staged: Staged, destinationBundle: URL, relaunch: Bool = true) {
+  152|      0|        let script = applyScript(
+  153|      0|            staged: staged,
+  154|      0|            destinationBundle: destinationBundle,
+  155|      0|            relaunch: relaunch,
+  156|      0|            waitingForPID: ProcessInfo.processInfo.processIdentifier
+  157|      0|        )
+  158|      0|        let task = Process()
+  159|      0|        task.executableURL = URL(fileURLWithPath: "/bin/sh")
+  160|      0|        task.arguments = ["-c", script]
+  161|      0|        try? task.run()
+  162|      0|    }
+  163|       |
+  164|      0|    static func applyOnQuit(staged: Staged, destinationBundle: URL) {
+  165|      0|        applyAndRelaunch(staged: staged, destinationBundle: destinationBundle, relaunch: false)
+  166|      0|    }
+  167|       |
+  168|       |    static func applyScript(
+  169|       |        staged: Staged,
+  170|       |        destinationBundle: URL,
+  171|       |        relaunch: Bool,
+  172|       |        waitingForPID pid: Int32
+  173|      4|    ) -> String {
+  174|      4|        let dest = destinationBundle.path
+  175|      4|        let lsregister = "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister"
+  176|      4|        let reopen = relaunch ? "/usr/bin/open \"$DEST\"\n" : ""
+  177|      4|        return """
+  178|      4|        while kill -0 \(pid) 2>/dev/null; do sleep 0.2; done
+  179|      4|        DEST=\(shellQuoted(dest))
+  180|      4|        STAGED=\(shellQuoted(staged.appURL.path))
+  181|      4|        STAGING_ROOT=\(shellQuoted(staged.stagingRoot.path))
+  182|      4|        reopen_if_safe() {
+  183|      4|          [ -d "$DEST" ] && \(reopen.isEmpty ? ":" : "/usr/bin/open \"$DEST\"")
+  184|      4|        }
+  185|      4|        restore_backup() {
+  186|      4|          if [ -d "$DEST.update-bak" ]; then
+  187|      4|            /bin/rm -rf "$DEST"
+  188|      4|            if ! /bin/mv "$DEST.update-bak" "$DEST"; then
+  189|      4|              exit 1
+  190|      4|            fi
+  191|      4|            if [ ! -d "$DEST" ]; then
+  192|      4|              exit 1
+  193|      4|            fi
+  194|      4|          fi
+  195|      4|        }
+  196|      4|        /bin/rm -rf "$DEST.update-new"
+  197|      4|        if [ -e "$DEST.update-bak" ]; then
+  198|      4|          if [ -d "$DEST" ]; then
+  199|      4|            /bin/rm -rf "$DEST.update-bak"
+  200|      4|          elif [ -d "$DEST.update-bak" ]; then
+  201|      4|            restore_backup
+  202|      4|          else
+  203|      4|            exit 1
+  204|      4|          fi
+  205|      4|        fi
+  206|      4|        if ! /usr/bin/ditto "$STAGED" "$DEST.update-new"; then
+  207|      4|          reopen_if_safe
+  208|      4|          exit 1
+  209|      4|        fi
+  210|      4|        if [ -e "$DEST" ] && ! /bin/mv "$DEST" "$DEST.update-bak"; then
+  211|      4|          /bin/rm -rf "$DEST.update-new"
+  212|      4|          reopen_if_safe
+  213|      4|          exit 1
+  214|      4|        fi
+  215|      4|        if /bin/mv "$DEST.update-new" "$DEST"; then
+  216|      4|          if [ ! -d "$DEST" ]; then
+  217|      4|            restore_backup
+  218|      4|            reopen_if_safe
+  219|      4|            exit 1
+  220|      4|          fi
+  221|      4|          /bin/rm -rf "$DEST.update-bak"
+  222|      4|        else
+  223|      4|          restore_backup
+  224|      4|          reopen_if_safe
+  225|      4|          exit 1
+  226|      4|        fi
+  227|      4|        /usr/bin/xattr -dr com.apple.quarantine "$DEST" 2>/dev/null || true
+  228|      4|        \(shellQuoted(lsregister)) -f "$DEST" 2>/dev/null || true
+  229|      4|        reopen_if_safe
+  230|      4|        /bin/rm -rf "$STAGING_ROOT" 2>/dev/null
+  231|      4|        """
+  232|      4|    }
+  233|       |
+  234|     25|    private func load(_ url: URL) async throws -> Data {
+  235|     25|        do {
+  236|     25|            return try await dataLoader(url)
+  237|     25|        } catch let error as InstallError {
+  238|      1|            throw error
+  239|      1|        } catch {
+  240|      1|            throw InstallError.download("\(url.lastPathComponent): \(error.localizedDescription)")
+  241|      1|        }
+  242|     25|    }
+  243|       |
+  244|      4|    private func verifyStagedApp(_ appURL: URL, manifest: OuroMDUpdateManifest) throws {
+  245|      4|        let infoURL = appURL.appendingPathComponent("Contents/Info.plist")
+  246|      4|        let infoData = try Data(contentsOf: infoURL)
+  247|      4|        let info = try PropertyListSerialization.propertyList(from: infoData, options: [], format: nil) as? [String: Any]
+  248|      4|        let stagedBundleID = info?["CFBundleIdentifier"] as? String
+  249|      4|        let stagedVersion = info?["CFBundleShortVersionString"] as? String
+  250|      4|
+  251|      4|        guard stagedBundleID == manifest.bundleIdentifier else {
+  252|      1|            throw InstallError.stagedIdentityMismatch(
+  253|      1|                "bundle id \(stagedBundleID ?? "nil") != manifest \(manifest.bundleIdentifier)"
+  254|      1|            )
+  255|      3|        }
+  256|      3|        guard stagedVersion == manifest.version else {
+  257|      1|            throw InstallError.stagedIdentityMismatch(
+  258|      1|                "version \(stagedVersion ?? "nil") != manifest \(manifest.version)"
+  259|      1|            )
+  260|      2|        }
+  261|      2|    }
+  262|       |
+  263|      0|    private static func defaultData(from url: URL, userAgent: String) async throws -> Data {
+  264|      0|        var request = URLRequest(url: url)
+  265|      0|        request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+  266|      0|        let (data, response) = try await URLSession.shared.data(for: request)
+  267|      0|        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+  268|      0|            throw InstallError.download("\(url.lastPathComponent) returned HTTP \(http.statusCode)")
+  269|      0|        }
+  270|      0|        return data
+  271|      0|    }
+  272|       |
+  273|      0|    private static let defaultProcessRunner: @Sendable (ProcessInvocation) async throws -> ProcessResult = { invocation in
+  274|      0|        try await withCheckedThrowingContinuation { continuation in
+  275|      0|            DispatchQueue.global(qos: .userInitiated).async {
+  276|      0|                let process = Process()
+  277|      0|                process.executableURL = URL(fileURLWithPath: invocation.executablePath)
+  278|      0|                process.arguments = invocation.arguments
+  279|      0|                let errorPipe = Pipe()
+  280|      0|                process.standardError = errorPipe
+  281|      0|                process.standardOutput = Pipe()
+  282|      0|                do {
+  283|      0|                    try process.run()
+  284|      0|                } catch {
+  285|      0|                    continuation.resume(throwing: error)
+  286|      0|                    return
+  287|      0|                }
+  288|      0|                let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+  289|      0|                process.waitUntilExit()
+  290|      0|                let stderr = String(data: errorData, encoding: .utf8)?
+  291|      0|                    .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+  292|      0|                continuation.resume(returning: ProcessResult(status: process.terminationStatus, stderr: stderr))
+  293|      0|            }
+  294|      0|        }
+  295|      0|    }
+  296|       |
+  297|     11|    private static func sha256Hex(_ data: Data) -> String {
+  298|    352|        SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+  299|     11|    }
+  300|       |
+  301|     16|    private static func shellQuoted(_ value: String) -> String {
+  302|     16|        "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'"
+  303|     16|    }
+  304|       |}
+

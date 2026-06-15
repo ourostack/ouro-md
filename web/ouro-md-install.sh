@@ -4,9 +4,8 @@
 #
 #   curl -fsSL https://ouro.bot/ouro-md-install.sh | bash
 #
-# (Until the ouro.bot pretty-URL is wired, the same script works straight from
-#  GitHub:
-#   curl -fsSL https://raw.githubusercontent.com/ourostack/ouro-md/main/web/ouro-md-install.sh | bash )
+# Direct GitHub fallback:
+#   curl -fsSL https://raw.githubusercontent.com/ourostack/ouro-md/main/web/ouro-md-install.sh | bash
 #
 # Self-contained: needs only tools present on a stock macOS (curl, ditto,
 # shasum). No git checkout, no GitHub CLI, no jq/python. Downloads the latest

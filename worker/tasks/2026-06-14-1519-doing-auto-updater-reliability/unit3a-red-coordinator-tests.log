@@ -1,0 +1,454 @@
+[0/1] Planning build
+Building for debugging...
+[0/7] Write sources
+[1/7] Write swift-version--58304C5D6DBC2206.txt
+[3/71] Compiling Markdown BlockContainer.swift
+[4/71] Compiling Markdown BlockMarkup.swift
+[5/71] Compiling Markdown InlineContainer.swift
+[6/71] Compiling Markdown InlineMarkup.swift
+[7/71] Compiling Markdown ListItemContainer.swift
+[8/71] Compiling Markdown AtomicCounter.swift
+[9/71] Compiling Markdown CharacterExtensions.swift
+[10/78] Compiling Markdown InlineAttributes.swift
+[11/78] Compiling Markdown Link.swift
+[12/78] Compiling Markdown Strikethrough.swift
+[13/78] Compiling Markdown Strong.swift
+[14/78] Compiling Markdown CustomInline.swift
+[15/78] Compiling Markdown InlineCode.swift
+[16/78] Compiling Markdown InlineHTML.swift
+[17/78] Compiling Markdown LazySplitLines.swift
+[18/78] Compiling Markdown ParseOptions.swift
+[19/78] Compiling Markdown RangeAdjuster.swift
+[20/78] Compiling Markdown RangerTracker.swift
+[21/78] Compiling Markdown MarkupRewriter.swift
+[22/78] Compiling Markdown BasicBlockContainer.swift
+[23/78] Compiling Markdown BasicInlineContainer.swift
+[24/78] Compiling Markdown TableCellContainer.swift
+[25/78] Compiling Markdown TableHead.swift
+[26/78] Compiling Markdown TableRow.swift
+[27/78] Compiling Markdown Replacement.swift
+[28/78] Compiling Markdown SourceLocation.swift
+[29/78] Compiling Markdown Emphasis.swift
+[30/78] Compiling Markdown Image.swift
+[31/78] Compiling Markdown DoxygenNote.swift
+[32/78] Compiling Markdown DoxygenParameter.swift
+[33/78] Compiling Markdown DoxygenReturns.swift
+[34/78] Compiling Markdown ListItem.swift
+[35/78] Compiling Markdown OrderedList.swift
+[36/78] Compiling Markdown UnorderedList.swift
+[37/78] Compiling Markdown Paragraph.swift
+[38/78] Compiling Markdown CodeBlock.swift
+[39/78] Compiling Markdown HTMLBlock.swift
+[40/78] Compiling Markdown Heading.swift
+[41/78] Compiling Markdown ThematicBreak.swift
+[42/78] Compiling Markdown Table.swift
+[43/78] Compiling Markdown TableBody.swift
+[44/78] Compiling Markdown TableCell.swift
+[45/78] Compiling Markdown PlainTextConvertibleMarkup.swift
+[46/78] Compiling Markdown RawMarkup.swift
+[47/78] Compiling Markdown BlockDirective.swift
+[48/78] Compiling Markdown BlockQuote.swift
+[49/78] Compiling Markdown CustomBlock.swift
+[50/78] Compiling Markdown DoxygenAbstract.swift
+[51/78] Compiling Markdown DoxygenDiscussion.swift
+[52/78] Compiling Markdown ChildIndexPath.swift
+[53/78] Compiling Markdown DirectiveArgument.swift
+[54/78] Compiling Markdown Document.swift
+[55/78] Compiling Markdown LiteralMarkup.swift
+[56/78] Compiling Markdown Markup.swift
+[57/78] Compiling Markdown MarkupChildren.swift
+[58/78] Compiling Markdown MarkupData.swift
+[59/78] Emitting module Markdown
+[60/78] Compiling Markdown CollectionExtensions.swift
+[61/78] Compiling Markdown StringExtensions.swift
+[62/78] Compiling Markdown MarkupVisitor.swift
+[63/78] Compiling Markdown MarkupWalker.swift
+[64/78] Compiling Markdown HTMLFormatter.swift
+[65/78] Compiling Markdown MarkupFormatter.swift
+[66/78] Compiling Markdown MarkupTreeDumper.swift
+[67/78] Compiling Markdown LineBreak.swift
+[68/78] Compiling Markdown SoftBreak.swift
+[69/78] Compiling Markdown SymbolLink.swift
+[70/78] Compiling Markdown Text.swift
+[71/78] Compiling Markdown Aside.swift
+[72/78] Compiling Markdown BlockDirectiveParser.swift
+[73/78] Compiling Markdown CommonMarkConverter.swift
+[74/104] Compiling OuroMD EditorWebView.swift
+[75/104] Compiling OuroMD Export.swift
+[76/104] Compiling OuroMD FileWatcher.swift
+[77/106] Compiling OuroMD main.swift
+[78/106] Compiling OuroMD resource_bundle_accessor.swift
+[79/106] Compiling OuroMD Themes.swift
+[80/106] Compiling OuroMD UndoTest.swift
+[81/106] Compiling OuroMD OuroMDUpdateInstaller.swift
+[82/106] Compiling OuroMD ReleaseUpdate.swift
+[83/106] Compiling OuroMD RenderProbe.swift
+[84/106] Compiling OuroMD Welcome.swift
+[85/106] Compiling OuroMD WrapTest.swift
+[86/106] Compiling OuroMD ContentSearcher.swift
+[87/106] Compiling OuroMD ContentView.swift
+[88/106] Compiling OuroMD DocumentWindowController.swift
+[89/106] Compiling OuroMD AppDelegate.swift
+[90/106] Compiling OuroMD AppModel.swift
+[91/106] Compiling OuroMD CLI.swift
+[92/106] Compiling OuroMD FolderBrowser.swift
+[93/106] Compiling OuroMD HTMLDocument.swift
+[94/106] Compiling OuroMD MarkdownRenderer.swift
+[95/106] Compiling OuroMD RoundTrip.swift
+[96/106] Compiling OuroMD Sidebar.swift
+[97/106] Compiling OuroMD Snapshot.swift
+[98/106] Emitting module OuroMD
+[99/106] Compiling OuroMD MenuBuilder.swift
+[100/106] Compiling OuroMD OuroMDRelease.swift
+[101/106] Compiling OuroMD OuroMDUpdate.swift
+[101/106] Write Objects.LinkFileList
+[102/106] Linking ouro-md
+[103/106] Applying ouro-md
+error: emit-module command failed with exit code 1 (use -v to see invocation)
+[105/117] Compiling OuroMDTests MarkdownTidyTests.swift
+[106/117] Compiling OuroMDTests FolderBrowserTests.swift
+[107/117] Compiling OuroMDTests AppModelReloadTests.swift
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:96:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+ 94 | 
+ 95 |         let model = AppModel()
+ 96 |         model.bridge = MockBridge()          // bridge present...
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+ 97 |         model.loadInitialFile(url.path)      // ...but editorDidBecomeReady NOT called → not ready
+ 98 |         model.save()
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:118:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+116 | 
+117 |         let model = AppModel()
+118 |         model.bridge = MockBridge()
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+119 |         model.editorDidBecomeReady()
+120 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:141:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+139 | 
+140 |         let model = AppModel()
+141 |         model.bridge = MockBridge()
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+142 |         model.editorDidBecomeReady()
+143 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:162:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+160 | 
+161 |         let model = AppModel()
+162 |         model.bridge = MockBridge()
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+163 |         model.editorDidBecomeReady()
+164 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:182:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+180 | 
+181 |         let model = AppModel()
+182 |         model.bridge = MockBridge()
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+183 |         model.editorDidBecomeReady()
+184 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:96:22: warning: weak reference will always be nil because the referenced object is deallocated here
+ 94 | 
+ 95 |         let model = AppModel()
+ 96 |         model.bridge = MockBridge()          // bridge present...
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+ 97 |         model.loadInitialFile(url.path)      // ...but editorDidBecomeReady NOT called → not ready
+ 98 |         model.save()
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:118:22: warning: weak reference will always be nil because the referenced object is deallocated here
+116 | 
+117 |         let model = AppModel()
+118 |         model.bridge = MockBridge()
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+119 |         model.editorDidBecomeReady()
+120 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:141:22: warning: weak reference will always be nil because the referenced object is deallocated here
+139 | 
+140 |         let model = AppModel()
+141 |         model.bridge = MockBridge()
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+142 |         model.editorDidBecomeReady()
+143 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:162:22: warning: weak reference will always be nil because the referenced object is deallocated here
+160 | 
+161 |         let model = AppModel()
+162 |         model.bridge = MockBridge()
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+163 |         model.editorDidBecomeReady()
+164 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:182:22: warning: weak reference will always be nil because the referenced object is deallocated here
+180 | 
+181 |         let model = AppModel()
+182 |         model.bridge = MockBridge()
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+183 |         model.editorDidBecomeReady()
+184 |         model.loadInitialFile(url.path)
+[108/117] Compiling OuroMDTests ContentSearcherTests.swift
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:96:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+ 94 | 
+ 95 |         let model = AppModel()
+ 96 |         model.bridge = MockBridge()          // bridge present...
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+ 97 |         model.loadInitialFile(url.path)      // ...but editorDidBecomeReady NOT called → not ready
+ 98 |         model.save()
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:118:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+116 | 
+117 |         let model = AppModel()
+118 |         model.bridge = MockBridge()
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+119 |         model.editorDidBecomeReady()
+120 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:141:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+139 | 
+140 |         let model = AppModel()
+141 |         model.bridge = MockBridge()
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+142 |         model.editorDidBecomeReady()
+143 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:162:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+160 | 
+161 |         let model = AppModel()
+162 |         model.bridge = MockBridge()
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+163 |         model.editorDidBecomeReady()
+164 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:182:22: warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+180 | 
+181 |         let model = AppModel()
+182 |         model.bridge = MockBridge()
+    |                      |- warning: instance will be immediately deallocated because property 'bridge' is 'weak'
+    |                      `- note: a strong reference is required to prevent the instance from being deallocated
+183 |         model.editorDidBecomeReady()
+184 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Sources/OuroMD/AppModel.swift:78:14: note: 'bridge' declared here
+ 76 |     @Published var searchRegexp = false
+ 77 | 
+ 78 |     weak var bridge: EditorBridge?
+    |              `- note: 'bridge' declared here
+ 79 |     /// Invoked whenever window-chrome-relevant state changes.
+ 80 |     var onChromeUpdate: (() -> Void)?
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:96:22: warning: weak reference will always be nil because the referenced object is deallocated here
+ 94 | 
+ 95 |         let model = AppModel()
+ 96 |         model.bridge = MockBridge()          // bridge present...
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+ 97 |         model.loadInitialFile(url.path)      // ...but editorDidBecomeReady NOT called → not ready
+ 98 |         model.save()
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:118:22: warning: weak reference will always be nil because the referenced object is deallocated here
+116 | 
+117 |         let model = AppModel()
+118 |         model.bridge = MockBridge()
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+119 |         model.editorDidBecomeReady()
+120 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:141:22: warning: weak reference will always be nil because the referenced object is deallocated here
+139 | 
+140 |         let model = AppModel()
+141 |         model.bridge = MockBridge()
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+142 |         model.editorDidBecomeReady()
+143 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:162:22: warning: weak reference will always be nil because the referenced object is deallocated here
+160 | 
+161 |         let model = AppModel()
+162 |         model.bridge = MockBridge()
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+163 |         model.editorDidBecomeReady()
+164 |         model.loadInitialFile(url.path)
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/AppModelReloadTests.swift:182:22: warning: weak reference will always be nil because the referenced object is deallocated here
+180 | 
+181 |         let model = AppModel()
+182 |         model.bridge = MockBridge()
+    |                      `- warning: weak reference will always be nil because the referenced object is deallocated here
+183 |         model.editorDidBecomeReady()
+184 |         model.loadInitialFile(url.path)
+[109/117] Compiling OuroMDTests MarkdownRendererTests.swift
+[110/117] Compiling OuroMDTests FileWatcherTests.swift
+[111/117] Compiling OuroMDTests OuroMDUpdateInstallerTests.swift
+[112/117] Emitting module OuroMDTests
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateCoordinatorTests.swift:192:10: error: cannot find type 'OuroMDUpdateCoordinator' in scope
+190 |         terminate: @escaping () -> Void = {},
+191 |         now: @escaping () -> Date = { Date(timeIntervalSince1970: 1_000) }
+192 |     ) -> OuroMDUpdateCoordinator {
+    |          `- error: cannot find type 'OuroMDUpdateCoordinator' in scope
+193 |         OuroMDUpdateCoordinator(
+194 |             defaults: defaults,
+[113/117] Compiling OuroMDTests OuroMDUpdateTests.swift
+[114/117] Compiling OuroMDTests OutlineTreeTests.swift
+[115/117] Compiling OuroMDTests OuroMDUpdateCoordinatorTests.swift
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateCoordinatorTests.swift:192:10: error: cannot find type 'OuroMDUpdateCoordinator' in scope
+190 |         terminate: @escaping () -> Void = {},
+191 |         now: @escaping () -> Date = { Date(timeIntervalSince1970: 1_000) }
+192 |     ) -> OuroMDUpdateCoordinator {
+    |          `- error: cannot find type 'OuroMDUpdateCoordinator' in scope
+193 |         OuroMDUpdateCoordinator(
+194 |             defaults: defaults,
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateCoordinatorTests.swift:30:48: error: cannot find 'OuroMDUpdateCoordinator' in scope
+ 28 |         coordinator.setAutoUpdateEnabled(false)
+ 29 |         XCTAssertFalse(coordinator.autoUpdateEnabled)
+ 30 |         XCTAssertEqual(defaults.object(forKey: OuroMDUpdateCoordinator.autoUpdateEnabledDefaultsKey) as? Bool, false)
+    |                                                `- error: cannot find 'OuroMDUpdateCoordinator' in scope
+ 31 | 
+ 32 |         let restored = makeCoordinator()
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateCoordinatorTests.swift:39:51: error: type 'Equatable' has no member 'installable'
+ 37 |         let installable = makeCoordinator(checker: { self.updateSnapshot() })
+ 38 |         await installable.checkForUpdatesAndPromptInstall()
+ 39 |         XCTAssertEqual(installable.updatePrompt, .installable(version: "0.10.0"))
+    |                                                   `- error: type 'Equatable' has no member 'installable'
+ 40 | 
+ 41 |         let current = makeCoordinator(checker: { self.currentSnapshot() })
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateCoordinatorTests.swift:43:47: error: type 'Equatable' has no member 'upToDate'
+ 41 |         let current = makeCoordinator(checker: { self.currentSnapshot() })
+ 42 |         await current.checkForUpdatesAndPromptInstall()
+ 43 |         XCTAssertEqual(current.updatePrompt, .upToDate(version: "0.9.0"))
+    |                                               `- error: type 'Equatable' has no member 'upToDate'
+ 44 | 
+ 45 |         let unavailable = makeCoordinator(checker: { self.unavailableSnapshot(detail: "offline") })
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateCoordinatorTests.swift:47:51: error: type 'Equatable' has no member 'failed'
+ 45 |         let unavailable = makeCoordinator(checker: { self.unavailableSnapshot(detail: "offline") })
+ 46 |         await unavailable.checkForUpdatesAndPromptInstall()
+ 47 |         XCTAssertEqual(unavailable.updatePrompt, .failed(detail: "offline"))
+    |                                                   `- error: type 'Equatable' has no member 'failed'
+ 48 |     }
+ 49 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateCoordinatorTests.swift:63:14: error: type 'Equatable' has no member 'failed'
+ 61 |         XCTAssertEqual(
+ 62 |             coordinator.updatePrompt,
+ 63 |             .failed(detail: "A newer version is published but has no installable assets yet.")
+    |              `- error: type 'Equatable' has no member 'failed'
+ 64 |         )
+ 65 |     }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateCoordinatorTests.swift:82:48: error: cannot find 'OuroMDUpdateCoordinator' in scope
+ 80 | 
+ 81 |         XCTAssertEqual(checkCount, 1)
+ 82 |         XCTAssertEqual(defaults.object(forKey: OuroMDUpdateCoordinator.lastUpdateCheckAtDefaultsKey) as? Date, now)
+    |                                                `- error: cannot find 'OuroMDUpdateCoordinator' in scope
+ 83 | 
+ 84 |         defaults.set(now.addingTimeInterval(-120), forKey: OuroMDUpdateCoordinator.lastUpdateCheckAtDefaultsKey)
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateCoordinatorTests.swift:84:60: error: cannot find 'OuroMDUpdateCoordinator' in scope
+ 82 |         XCTAssertEqual(defaults.object(forKey: OuroMDUpdateCoordinator.lastUpdateCheckAtDefaultsKey) as? Date, now)
+ 83 | 
+ 84 |         defaults.set(now.addingTimeInterval(-120), forKey: OuroMDUpdateCoordinator.lastUpdateCheckAtDefaultsKey)
+    |                                                            `- error: cannot find 'OuroMDUpdateCoordinator' in scope
+ 85 |         let throttled = makeCoordinator(
+ 86 |             checker: {
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateCoordinatorTests.swift:106:46: error: cannot find 'OuroMDUpdateCoordinator' in scope
+104 |         await coordinator.runAutoUpdateCheckIfDue()
+105 | 
+106 |         XCTAssertNil(defaults.object(forKey: OuroMDUpdateCoordinator.lastUpdateCheckAtDefaultsKey))
+    |                                              `- error: cannot find 'OuroMDUpdateCoordinator' in scope
+107 |     }
+108 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateCoordinatorTests.swift:193:9: error: cannot find 'OuroMDUpdateCoordinator' in scope
+191 |         now: @escaping () -> Date = { Date(timeIntervalSince1970: 1_000) }
+192 |     ) -> OuroMDUpdateCoordinator {
+193 |         OuroMDUpdateCoordinator(
+    |         `- error: cannot find 'OuroMDUpdateCoordinator' in scope
+194 |             defaults: defaults,
+195 |             checker: checker,
+[116/118] Compiling OuroMDTests ReleaseUpdateTests.swift
+error: fatalError

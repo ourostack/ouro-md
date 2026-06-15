@@ -1,0 +1,572 @@
+Building for debugging...
+[0/5] Write swift-version--58304C5D6DBC2206.txt
+error: emit-module command failed with exit code 1 (use -v to see invocation)
+[2/6] Emitting module OuroMDTests
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:9:10: error: cannot find type 'ReleaseUpdateSnapshot' in scope
+  7 |         latest: String?,
+  8 |         assets: [ReleaseUpdateAsset]
+  9 |     ) -> ReleaseUpdateSnapshot {
+    |          `- error: cannot find type 'ReleaseUpdateSnapshot' in scope
+ 10 |         ReleaseUpdateSnapshot(
+ 11 |             status: status,
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:6:17: error: cannot find type 'ReleaseUpdateStatus' in scope
+  4 | final class OuroMDUpdateTests: XCTestCase {
+  5 |     private func snapshot(
+  6 |         status: ReleaseUpdateStatus,
+    |                 `- error: cannot find type 'ReleaseUpdateStatus' in scope
+  7 |         latest: String?,
+  8 |         assets: [ReleaseUpdateAsset]
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:8:18: error: cannot find type 'ReleaseUpdateAsset' in scope
+  6 |         status: ReleaseUpdateStatus,
+  7 |         latest: String?,
+  8 |         assets: [ReleaseUpdateAsset]
+    |                  `- error: cannot find type 'ReleaseUpdateAsset' in scope
+  9 |     ) -> ReleaseUpdateSnapshot {
+ 10 |         ReleaseUpdateSnapshot(
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:21:37: error: cannot find type 'ReleaseUpdateAsset' in scope
+ 19 |     }
+ 20 | 
+ 21 |     private var installableAssets: [ReleaseUpdateAsset] {
+    |                                     `- error: cannot find type 'ReleaseUpdateAsset' in scope
+ 22 |         [
+ 23 |             ReleaseUpdateAsset(
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:90:10: error: cannot find type 'OuroMDUpdateManifest' in scope
+ 88 |         version: String = "0.10.0",
+ 89 |         archive: String = "Ouro-MD-0.10.0.zip"
+ 90 |     ) -> OuroMDUpdateManifest {
+    |          `- error: cannot find type 'OuroMDUpdateManifest' in scope
+ 91 |         OuroMDUpdateManifest(
+ 92 |             appName: "Ouro MD",
+[3/6] Compiling OuroMDTests OuroMDUpdateTests.swift
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:9:10: error: cannot find type 'ReleaseUpdateSnapshot' in scope
+  7 |         latest: String?,
+  8 |         assets: [ReleaseUpdateAsset]
+  9 |     ) -> ReleaseUpdateSnapshot {
+    |          `- error: cannot find type 'ReleaseUpdateSnapshot' in scope
+ 10 |         ReleaseUpdateSnapshot(
+ 11 |             status: status,
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:6:17: error: cannot find type 'ReleaseUpdateStatus' in scope
+  4 | final class OuroMDUpdateTests: XCTestCase {
+  5 |     private func snapshot(
+  6 |         status: ReleaseUpdateStatus,
+    |                 `- error: cannot find type 'ReleaseUpdateStatus' in scope
+  7 |         latest: String?,
+  8 |         assets: [ReleaseUpdateAsset]
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:8:18: error: cannot find type 'ReleaseUpdateAsset' in scope
+  6 |         status: ReleaseUpdateStatus,
+  7 |         latest: String?,
+  8 |         assets: [ReleaseUpdateAsset]
+    |                  `- error: cannot find type 'ReleaseUpdateAsset' in scope
+  9 |     ) -> ReleaseUpdateSnapshot {
+ 10 |         ReleaseUpdateSnapshot(
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:21:37: error: cannot find type 'ReleaseUpdateAsset' in scope
+ 19 |     }
+ 20 | 
+ 21 |     private var installableAssets: [ReleaseUpdateAsset] {
+    |                                     `- error: cannot find type 'ReleaseUpdateAsset' in scope
+ 22 |         [
+ 23 |             ReleaseUpdateAsset(
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:90:10: error: cannot find type 'OuroMDUpdateManifest' in scope
+ 88 |         version: String = "0.10.0",
+ 89 |         archive: String = "Ouro-MD-0.10.0.zip"
+ 90 |     ) -> OuroMDUpdateManifest {
+    |          `- error: cannot find type 'OuroMDUpdateManifest' in scope
+ 91 |         OuroMDUpdateManifest(
+ 92 |             appName: "Ouro MD",
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:10:9: error: cannot find 'ReleaseUpdateSnapshot' in scope
+  8 |         assets: [ReleaseUpdateAsset]
+  9 |     ) -> ReleaseUpdateSnapshot {
+ 10 |         ReleaseUpdateSnapshot(
+    |         `- error: cannot find 'ReleaseUpdateSnapshot' in scope
+ 11 |             status: status,
+ 12 |             currentVersion: "0.9.0",
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:23:13: error: cannot find 'ReleaseUpdateAsset' in scope
+ 21 |     private var installableAssets: [ReleaseUpdateAsset] {
+ 22 |         [
+ 23 |             ReleaseUpdateAsset(
+    |             `- error: cannot find 'ReleaseUpdateAsset' in scope
+ 24 |                 name: "Ouro-MD-0.10.0.zip",
+ 25 |                 downloadURL: "https://example.com/Ouro-MD-0.10.0.zip",
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:28:13: error: cannot find 'ReleaseUpdateAsset' in scope
+ 26 |                 size: 7_400_000
+ 27 |             ),
+ 28 |             ReleaseUpdateAsset(
+    |             `- error: cannot find 'ReleaseUpdateAsset' in scope
+ 29 |                 name: "Ouro-MD-0.10.0.manifest.json",
+ 30 |                 downloadURL: "https://example.com/Ouro-MD-0.10.0.manifest.json",
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:37:24: error: cannot find 'OuroMDUpdatePlanner' in scope
+ 35 | 
+ 36 |     func testPlanPicksZipAndManifestAssets() throws {
+ 37 |         let plan = try OuroMDUpdatePlanner.plan(
+    |                        `- error: cannot find 'OuroMDUpdatePlanner' in scope
+ 38 |             from: snapshot(status: .updateAvailable, latest: "0.10.0", assets: installableAssets)
+ 39 |         ).get()
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:38:37: error: cannot infer contextual base in reference to member 'updateAvailable'
+ 36 |     func testPlanPicksZipAndManifestAssets() throws {
+ 37 |         let plan = try OuroMDUpdatePlanner.plan(
+ 38 |             from: snapshot(status: .updateAvailable, latest: "0.10.0", assets: installableAssets)
+    |                                     `- error: cannot infer contextual base in reference to member 'updateAvailable'
+ 39 |         ).get()
+ 40 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:48:22: error: cannot find 'OuroMDUpdatePlanner' in scope
+ 46 | 
+ 47 |     func testPlanFailsWhenNotAnUpdate() {
+ 48 |         let result = OuroMDUpdatePlanner.plan(
+    |                      `- error: cannot find 'OuroMDUpdatePlanner' in scope
+ 49 |             from: snapshot(status: .current, latest: "0.9.0", assets: installableAssets)
+ 50 |         )
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:49:37: error: cannot infer contextual base in reference to member 'current'
+ 47 |     func testPlanFailsWhenNotAnUpdate() {
+ 48 |         let result = OuroMDUpdatePlanner.plan(
+ 49 |             from: snapshot(status: .current, latest: "0.9.0", assets: installableAssets)
+    |                                     `- error: cannot infer contextual base in reference to member 'current'
+ 50 |         )
+ 51 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:52:33: error: type 'Equatable' has no member 'failure'
+ 50 |         )
+ 51 | 
+ 52 |         XCTAssertEqual(result, .failure(.notAnUpdate))
+    |                                 `- error: type 'Equatable' has no member 'failure'
+ 53 |     }
+ 54 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:52:42: error: cannot infer contextual base in reference to member 'notAnUpdate'
+ 50 |         )
+ 51 | 
+ 52 |         XCTAssertEqual(result, .failure(.notAnUpdate))
+    |                                          `- error: cannot infer contextual base in reference to member 'notAnUpdate'
+ 53 |     }
+ 54 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:56:22: error: cannot find 'OuroMDUpdatePlanner' in scope
+ 54 | 
+ 55 |     func testPlanFailsWhenArchiveMissing() {
+ 56 |         let result = OuroMDUpdatePlanner.plan(
+    |                      `- error: cannot find 'OuroMDUpdatePlanner' in scope
+ 57 |             from: snapshot(status: .updateAvailable, latest: "0.10.0", assets: [installableAssets[1]])
+ 58 |         )
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:57:37: error: cannot infer contextual base in reference to member 'updateAvailable'
+ 55 |     func testPlanFailsWhenArchiveMissing() {
+ 56 |         let result = OuroMDUpdatePlanner.plan(
+ 57 |             from: snapshot(status: .updateAvailable, latest: "0.10.0", assets: [installableAssets[1]])
+    |                                     `- error: cannot infer contextual base in reference to member 'updateAvailable'
+ 58 |         )
+ 59 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:60:33: error: type 'Equatable' has no member 'failure'
+ 58 |         )
+ 59 | 
+ 60 |         XCTAssertEqual(result, .failure(.missingArchiveAsset))
+    |                                 `- error: type 'Equatable' has no member 'failure'
+ 61 |     }
+ 62 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:60:42: error: cannot infer contextual base in reference to member 'missingArchiveAsset'
+ 58 |         )
+ 59 | 
+ 60 |         XCTAssertEqual(result, .failure(.missingArchiveAsset))
+    |                                          `- error: cannot infer contextual base in reference to member 'missingArchiveAsset'
+ 61 |     }
+ 62 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:64:22: error: cannot find 'OuroMDUpdatePlanner' in scope
+ 62 | 
+ 63 |     func testPlanFailsWhenManifestMissing() {
+ 64 |         let result = OuroMDUpdatePlanner.plan(
+    |                      `- error: cannot find 'OuroMDUpdatePlanner' in scope
+ 65 |             from: snapshot(status: .updateAvailable, latest: "0.10.0", assets: [installableAssets[0]])
+ 66 |         )
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:65:37: error: cannot infer contextual base in reference to member 'updateAvailable'
+ 63 |     func testPlanFailsWhenManifestMissing() {
+ 64 |         let result = OuroMDUpdatePlanner.plan(
+ 65 |             from: snapshot(status: .updateAvailable, latest: "0.10.0", assets: [installableAssets[0]])
+    |                                     `- error: cannot infer contextual base in reference to member 'updateAvailable'
+ 66 |         )
+ 67 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:68:33: error: type 'Equatable' has no member 'failure'
+ 66 |         )
+ 67 | 
+ 68 |         XCTAssertEqual(result, .failure(.missingManifestAsset))
+    |                                 `- error: type 'Equatable' has no member 'failure'
+ 69 |     }
+ 70 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:68:42: error: cannot infer contextual base in reference to member 'missingManifestAsset'
+ 66 |         )
+ 67 | 
+ 68 |         XCTAssertEqual(result, .failure(.missingManifestAsset))
+    |                                          `- error: cannot infer contextual base in reference to member 'missingManifestAsset'
+ 69 |     }
+ 70 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:73:13: error: cannot find 'ReleaseUpdateAsset' in scope
+ 71 |     func testPlanFailsWhenAssetURLIsInvalid() {
+ 72 |         let assets = [
+ 73 |             ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.zip", downloadURL: "not a url", size: 10),
+    |             `- error: cannot find 'ReleaseUpdateAsset' in scope
+ 74 |             ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.manifest.json", downloadURL: "https://example.com/manifest.json", size: 10),
+ 75 |         ]
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:74:13: error: cannot find 'ReleaseUpdateAsset' in scope
+ 72 |         let assets = [
+ 73 |             ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.zip", downloadURL: "not a url", size: 10),
+ 74 |             ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.manifest.json", downloadURL: "https://example.com/manifest.json", size: 10),
+    |             `- error: cannot find 'ReleaseUpdateAsset' in scope
+ 75 |         ]
+ 76 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:77:22: error: cannot find 'OuroMDUpdatePlanner' in scope
+ 75 |         ]
+ 76 | 
+ 77 |         let result = OuroMDUpdatePlanner.plan(
+    |                      `- error: cannot find 'OuroMDUpdatePlanner' in scope
+ 78 |             from: snapshot(status: .updateAvailable, latest: "0.10.0", assets: assets)
+ 79 |         )
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:78:37: error: cannot infer contextual base in reference to member 'updateAvailable'
+ 76 | 
+ 77 |         let result = OuroMDUpdatePlanner.plan(
+ 78 |             from: snapshot(status: .updateAvailable, latest: "0.10.0", assets: assets)
+    |                                     `- error: cannot infer contextual base in reference to member 'updateAvailable'
+ 79 |         )
+ 80 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:81:33: error: type 'Equatable' has no member 'failure'
+ 79 |         )
+ 80 | 
+ 81 |         XCTAssertEqual(result, .failure(.badAssetURL))
+    |                                 `- error: type 'Equatable' has no member 'failure'
+ 82 |     }
+ 83 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:81:42: error: cannot infer contextual base in reference to member 'badAssetURL'
+ 79 |         )
+ 80 | 
+ 81 |         XCTAssertEqual(result, .failure(.badAssetURL))
+    |                                          `- error: cannot infer contextual base in reference to member 'badAssetURL'
+ 82 |     }
+ 83 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:91:9: error: cannot find 'OuroMDUpdateManifest' in scope
+ 89 |         archive: String = "Ouro-MD-0.10.0.zip"
+ 90 |     ) -> OuroMDUpdateManifest {
+ 91 |         OuroMDUpdateManifest(
+    |         `- error: cannot find 'OuroMDUpdateManifest' in scope
+ 92 |             appName: "Ouro MD",
+ 93 |             bundleIdentifier: bundleID,
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:103:23: error: cannot find 'OuroMDUpdateVerification' in scope
+101 | 
+102 |     func testVerifyPassesWhenEverythingMatches() {
+103 |         let failure = OuroMDUpdateVerification.verify(
+    |                       `- error: cannot find 'OuroMDUpdateVerification' in scope
+104 |             manifest: manifest(sha: "ABC123"),
+105 |             downloadedArchiveName: "Ouro-MD-0.10.0.zip",
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:116:23: error: cannot find 'OuroMDUpdateVerification' in scope
+114 | 
+115 |     func testVerifyFailsOnSHAMismatch() {
+116 |         let failure = OuroMDUpdateVerification.verify(
+    |                       `- error: cannot find 'OuroMDUpdateVerification' in scope
+117 |             manifest: manifest(sha: "abc123"),
+118 |             downloadedArchiveName: "Ouro-MD-0.10.0.zip",
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:125:34: error: type 'Equatable' has no member 'sha256Mismatch'
+123 |         )
+124 | 
+125 |         XCTAssertEqual(failure, .sha256Mismatch(expected: "abc123", got: "deadbeef"))
+    |                                  `- error: type 'Equatable' has no member 'sha256Mismatch'
+126 |     }
+127 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:129:23: error: cannot find 'OuroMDUpdateVerification' in scope
+127 | 
+128 |     func testVerifyFailsOnByteCountMismatch() {
+129 |         let failure = OuroMDUpdateVerification.verify(
+    |                       `- error: cannot find 'OuroMDUpdateVerification' in scope
+130 |             manifest: manifest(bytes: 7_400_000),
+131 |             downloadedArchiveName: "Ouro-MD-0.10.0.zip",
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:138:34: error: type 'Equatable' has no member 'byteCountMismatch'
+136 |         )
+137 | 
+138 |         XCTAssertEqual(failure, .byteCountMismatch(expected: 7_400_000, got: 42))
+    |                                  `- error: type 'Equatable' has no member 'byteCountMismatch'
+139 |     }
+140 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:142:23: error: cannot find 'OuroMDUpdateVerification' in scope
+140 | 
+141 |     func testVerifyFailsOnBundleIdentifierMismatch() {
+142 |         let failure = OuroMDUpdateVerification.verify(
+    |                       `- error: cannot find 'OuroMDUpdateVerification' in scope
+143 |             manifest: manifest(bundleID: "com.example.bad"),
+144 |             downloadedArchiveName: "Ouro-MD-0.10.0.zip",
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:151:34: error: type 'Equatable' has no member 'bundleIdentifierMismatch'
+149 |         )
+150 | 
+151 |         XCTAssertEqual(failure, .bundleIdentifierMismatch(expected: "org.ourostack.ouro-md", got: "com.example.bad"))
+    |                                  `- error: type 'Equatable' has no member 'bundleIdentifierMismatch'
+152 |     }
+153 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:155:23: error: cannot find 'OuroMDUpdateVerification' in scope
+153 | 
+154 |     func testVerifyFailsWhenArchiveNameDiffersFromManifest() {
+155 |         let failure = OuroMDUpdateVerification.verify(
+    |                       `- error: cannot find 'OuroMDUpdateVerification' in scope
+156 |             manifest: manifest(archive: "Ouro-MD-0.10.0.zip"),
+157 |             downloadedArchiveName: "different.zip",
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:164:34: error: type 'Equatable' has no member 'archiveNameMismatch'
+162 |         )
+163 | 
+164 |         XCTAssertEqual(failure, .archiveNameMismatch(expected: "Ouro-MD-0.10.0.zip", got: "different.zip"))
+    |                                  `- error: type 'Equatable' has no member 'archiveNameMismatch'
+165 |     }
+166 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:168:23: error: cannot find 'OuroMDUpdateVerification' in scope
+166 | 
+167 |     func testVerifyFailsWhenNotNewerThanCurrent() {
+168 |         let failure = OuroMDUpdateVerification.verify(
+    |                       `- error: cannot find 'OuroMDUpdateVerification' in scope
+169 |             manifest: manifest(version: "0.9.0"),
+170 |             downloadedArchiveName: "Ouro-MD-0.10.0.zip",
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:177:34: error: type 'Equatable' has no member 'notNewerThanCurrent'
+175 |         )
+176 | 
+177 |         XCTAssertEqual(failure, .notNewerThanCurrent(current: "0.9.0", candidate: "0.9.0"))
+    |                                  `- error: type 'Equatable' has no member 'notNewerThanCurrent'
+178 |     }
+179 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:181:23: error: cannot find 'OuroMDUpdateVerification' in scope
+179 | 
+180 |     func testVerifyFailsWhenVersionCannotBeCompared() {
+181 |         let failure = OuroMDUpdateVerification.verify(
+    |                       `- error: cannot find 'OuroMDUpdateVerification' in scope
+182 |             manifest: manifest(version: "banana"),
+183 |             downloadedArchiveName: "Ouro-MD-0.10.0.zip",
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:190:34: error: type 'Equatable' has no member 'unreadableVersion'
+188 |         )
+189 | 
+190 |         XCTAssertEqual(failure, .unreadableVersion(manifest: "banana", current: "0.9.0"))
+    |                                  `- error: type 'Equatable' has no member 'unreadableVersion'
+191 |     }
+192 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:195:13: error: cannot find 'OuroMDAutoUpdatePolicy' in scope
+193 |     func testAutoUpdatePolicyChecksWhenNeverCheckedBefore() {
+194 |         XCTAssertTrue(
+195 |             OuroMDAutoUpdatePolicy.shouldCheck(
+    |             `- error: cannot find 'OuroMDAutoUpdatePolicy' in scope
+196 |                 now: Date(timeIntervalSince1970: 1000),
+197 |                 lastCheck: nil,
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:197:28: error: 'nil' requires a contextual type
+195 |             OuroMDAutoUpdatePolicy.shouldCheck(
+196 |                 now: Date(timeIntervalSince1970: 1000),
+197 |                 lastCheck: nil,
+    |                            `- error: 'nil' requires a contextual type
+198 |                 minimumInterval: 3600,
+199 |                 enabled: true
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:206:13: error: cannot find 'OuroMDAutoUpdatePolicy' in scope
+204 |     func testAutoUpdatePolicySkipsWhenDisabled() {
+205 |         XCTAssertFalse(
+206 |             OuroMDAutoUpdatePolicy.shouldCheck(
+    |             `- error: cannot find 'OuroMDAutoUpdatePolicy' in scope
+207 |                 now: Date(timeIntervalSince1970: 100_000),
+208 |                 lastCheck: nil,
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:208:28: error: 'nil' requires a contextual type
+206 |             OuroMDAutoUpdatePolicy.shouldCheck(
+207 |                 now: Date(timeIntervalSince1970: 100_000),
+208 |                 lastCheck: nil,
+    |                            `- error: 'nil' requires a contextual type
+209 |                 minimumInterval: 3600,
+210 |                 enabled: false
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:218:13: error: cannot find 'OuroMDAutoUpdatePolicy' in scope
+216 |         let last = Date(timeIntervalSince1970: 100_000)
+217 |         XCTAssertFalse(
+218 |             OuroMDAutoUpdatePolicy.shouldCheck(
+    |             `- error: cannot find 'OuroMDAutoUpdatePolicy' in scope
+219 |                 now: last.addingTimeInterval(1800),
+220 |                 lastCheck: last,
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:230:13: error: cannot find 'OuroMDAutoUpdatePolicy' in scope
+228 |         let last = Date(timeIntervalSince1970: 100_000)
+229 |         XCTAssertTrue(
+230 |             OuroMDAutoUpdatePolicy.shouldCheck(
+    |             `- error: cannot find 'OuroMDAutoUpdatePolicy' in scope
+231 |                 now: last.addingTimeInterval(3600),
+232 |                 lastCheck: last,
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:254:49: error: cannot find 'OuroMDUpdateManifest' in scope
+252 |         """
+253 | 
+254 |         let manifest = try JSONDecoder().decode(OuroMDUpdateManifest.self, from: Data(json.utf8))
+    |                                                 `- error: cannot find 'OuroMDUpdateManifest' in scope
+255 | 
+256 |         XCTAssertEqual(manifest.appName, "Ouro MD")
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/OuroMDUpdateTests.swift:254:42: error: failed to produce diagnostic for expression; please submit a bug report (https://swift.org/contributing/#reporting-bugs)
+252 |         """
+253 | 
+254 |         let manifest = try JSONDecoder().decode(OuroMDUpdateManifest.self, from: Data(json.utf8))
+    |                                          `- error: failed to produce diagnostic for expression; please submit a bug report (https://swift.org/contributing/#reporting-bugs)
+255 | 
+256 |         XCTAssertEqual(manifest.appName, "Ouro MD")
+[4/6] Compiling OuroMDTests ReleaseUpdateTests.swift
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/ReleaseUpdateTests.swift:7:24: error: cannot find 'OuroMDRelease' in scope
+ 5 | final class ReleaseUpdateTests: XCTestCase {
+ 6 |     func testReleaseDescriptorMatchesCurrentDistribution() {
+ 7 |         XCTAssertEqual(OuroMDRelease.appName, "Ouro MD")
+   |                        `- error: cannot find 'OuroMDRelease' in scope
+ 8 |         XCTAssertEqual(OuroMDRelease.bundleIdentifier, "org.ourostack.ouro-md")
+ 9 |         XCTAssertEqual(OuroMDRelease.repository, "ourostack/ouro-md")
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/ReleaseUpdateTests.swift:8:24: error: cannot find 'OuroMDRelease' in scope
+ 6 |     func testReleaseDescriptorMatchesCurrentDistribution() {
+ 7 |         XCTAssertEqual(OuroMDRelease.appName, "Ouro MD")
+ 8 |         XCTAssertEqual(OuroMDRelease.bundleIdentifier, "org.ourostack.ouro-md")
+   |                        `- error: cannot find 'OuroMDRelease' in scope
+ 9 |         XCTAssertEqual(OuroMDRelease.repository, "ourostack/ouro-md")
+10 |         XCTAssertEqual(OuroMDRelease.version, "0.9.0")
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/ReleaseUpdateTests.swift:9:24: error: cannot find 'OuroMDRelease' in scope
+ 7 |         XCTAssertEqual(OuroMDRelease.appName, "Ouro MD")
+ 8 |         XCTAssertEqual(OuroMDRelease.bundleIdentifier, "org.ourostack.ouro-md")
+ 9 |         XCTAssertEqual(OuroMDRelease.repository, "ourostack/ouro-md")
+   |                        `- error: cannot find 'OuroMDRelease' in scope
+10 |         XCTAssertEqual(OuroMDRelease.version, "0.9.0")
+11 |         XCTAssertEqual(OuroMDRelease.userAgent, "OuroMD/0.9.0")
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/ReleaseUpdateTests.swift:10:24: error: cannot find 'OuroMDRelease' in scope
+ 8 |         XCTAssertEqual(OuroMDRelease.bundleIdentifier, "org.ourostack.ouro-md")
+ 9 |         XCTAssertEqual(OuroMDRelease.repository, "ourostack/ouro-md")
+10 |         XCTAssertEqual(OuroMDRelease.version, "0.9.0")
+   |                        `- error: cannot find 'OuroMDRelease' in scope
+11 |         XCTAssertEqual(OuroMDRelease.userAgent, "OuroMD/0.9.0")
+12 |     }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/ReleaseUpdateTests.swift:11:24: error: cannot find 'OuroMDRelease' in scope
+ 9 |         XCTAssertEqual(OuroMDRelease.repository, "ourostack/ouro-md")
+10 |         XCTAssertEqual(OuroMDRelease.version, "0.9.0")
+11 |         XCTAssertEqual(OuroMDRelease.userAgent, "OuroMD/0.9.0")
+   |                        `- error: cannot find 'OuroMDRelease' in scope
+12 |     }
+13 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/ReleaseUpdateTests.swift:30:28: error: cannot find 'ReleaseUpdateChecker' in scope
+28 |         """.utf8)
+29 | 
+30 |         let snapshot = try ReleaseUpdateChecker.snapshot(from: data, currentVersion: "0.9.0")
+   |                            `- error: cannot find 'ReleaseUpdateChecker' in scope
+31 | 
+32 |         XCTAssertEqual(snapshot.status, .updateAvailable)
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/ReleaseUpdateTests.swift:32:42: error: type 'Equatable' has no member 'updateAvailable'
+30 |         let snapshot = try ReleaseUpdateChecker.snapshot(from: data, currentVersion: "0.9.0")
+31 | 
+32 |         XCTAssertEqual(snapshot.status, .updateAvailable)
+   |                                          `- error: type 'Equatable' has no member 'updateAvailable'
+33 |         XCTAssertEqual(snapshot.latestVersion, "0.10.0")
+34 |         XCTAssertEqual(snapshot.tagName, "v0.10.0")
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/ReleaseUpdateTests.swift:51:28: error: cannot find 'ReleaseUpdateChecker' in scope
+49 |         """.utf8)
+50 | 
+51 |         let snapshot = try ReleaseUpdateChecker.snapshot(from: data, currentVersion: "0.9.0")
+   |                            `- error: cannot find 'ReleaseUpdateChecker' in scope
+52 | 
+53 |         XCTAssertEqual(snapshot.status, .current)
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/ReleaseUpdateTests.swift:53:42: error: type 'Equatable' has no member 'current'
+51 |         let snapshot = try ReleaseUpdateChecker.snapshot(from: data, currentVersion: "0.9.0")
+52 | 
+53 |         XCTAssertEqual(snapshot.status, .current)
+   |                                          `- error: type 'Equatable' has no member 'current'
+54 |         XCTAssertEqual(snapshot.detail, "Version 0.9.0 is current.")
+55 |     }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/ReleaseUpdateTests.swift:70:28: error: cannot find 'ReleaseUpdateChecker' in scope
+68 |         """.utf8)
+69 | 
+70 |         let snapshot = try ReleaseUpdateChecker.snapshot(from: data, currentVersion: "0.9.0")
+   |                            `- error: cannot find 'ReleaseUpdateChecker' in scope
+71 | 
+72 |         XCTAssertEqual(snapshot.status, .unavailable)
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/ReleaseUpdateTests.swift:72:42: error: type 'Equatable' has no member 'unavailable'
+70 |         let snapshot = try ReleaseUpdateChecker.snapshot(from: data, currentVersion: "0.9.0")
+71 | 
+72 |         XCTAssertEqual(snapshot.status, .unavailable)
+   |                                          `- error: type 'Equatable' has no member 'unavailable'
+73 |         XCTAssertNil(snapshot.latestVersion)
+74 |         XCTAssertEqual(snapshot.detail, "No published release found.")
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/ReleaseUpdateTests.swift:80:34: error: cannot find 'ReleaseUpdateChecker' in scope
+78 |         let data = Data("{\"not\":\"an array\"}".utf8)
+79 | 
+80 |         XCTAssertThrowsError(try ReleaseUpdateChecker.snapshot(from: data, currentVersion: "0.9.0"))
+   |                                  `- error: cannot find 'ReleaseUpdateChecker' in scope
+81 |     }
+82 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/ReleaseUpdateTests.swift:84:23: error: cannot find 'ReleaseUpdateChecker' in scope
+82 | 
+83 |     func testAsyncCheckReturnsUnavailableSnapshotOnNetworkFailure() async {
+84 |         let checker = ReleaseUpdateChecker { _ in
+   |                       `- error: cannot find 'ReleaseUpdateChecker' in scope
+85 |             throw ReleaseUpdateError.badResponse
+86 |         }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/ReleaseUpdateTests.swift:85:19: error: cannot find 'ReleaseUpdateError' in scope
+83 |     func testAsyncCheckReturnsUnavailableSnapshotOnNetworkFailure() async {
+84 |         let checker = ReleaseUpdateChecker { _ in
+85 |             throw ReleaseUpdateError.badResponse
+   |                   `- error: cannot find 'ReleaseUpdateError' in scope
+86 |         }
+87 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/ReleaseUpdateTests.swift:90:42: error: type 'Equatable' has no member 'unavailable'
+88 |         let snapshot = await checker.check()
+89 | 
+90 |         XCTAssertEqual(snapshot.status, .unavailable)
+   |                                          `- error: type 'Equatable' has no member 'unavailable'
+91 |         XCTAssertEqual(snapshot.currentVersion, OuroMDRelease.version)
+92 |         XCTAssertTrue(snapshot.detail.contains("Release update check failed"))
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/ReleaseUpdateTests.swift:91:49: error: cannot find 'OuroMDRelease' in scope
+89 | 
+90 |         XCTAssertEqual(snapshot.status, .unavailable)
+91 |         XCTAssertEqual(snapshot.currentVersion, OuroMDRelease.version)
+   |                                                 `- error: cannot find 'OuroMDRelease' in scope
+92 |         XCTAssertTrue(snapshot.detail.contains("Release update check failed"))
+93 |     }
+error: fatalError

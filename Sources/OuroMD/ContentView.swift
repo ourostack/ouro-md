@@ -26,6 +26,7 @@ struct WordCountView: View {
 /// Minimal preferences sheet: default theme, auto-save, text size.
 struct PreferencesView: View {
     @ObservedObject var model: AppModel
+    @ObservedObject var updateCoordinator: OuroMDUpdateCoordinator
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -52,6 +53,12 @@ struct PreferencesView: View {
             }
 
             HStack {
+                Text("Updates").frame(width: 90, alignment: .leading)
+                Toggle("Check for updates automatically", isOn: Binding(get: { updateCoordinator.autoUpdateEnabled }, set: { updateCoordinator.setAutoUpdateEnabled($0) }))
+                Spacer()
+            }
+
+            HStack {
                 Text("Text size").frame(width: 90, alignment: .leading)
                 Slider(value: Binding(get: { model.zoom }, set: { model.setTextScale($0) }), in: 0.7...2.0, step: 0.1)
                 Text("\(Int((model.zoom * 100).rounded()))%").monospacedDigit().frame(width: 44, alignment: .trailing)
@@ -61,4 +68,3 @@ struct PreferencesView: View {
         .frame(width: 380)
     }
 }
-
