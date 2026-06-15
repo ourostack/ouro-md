@@ -22,7 +22,7 @@ fail() {
 }
 
 make_version="$(sed -n 's/^VERSION="\([^"]*\)"/\1/p' make-app.sh | head -1)"
-swift_version="$(sed -n 's/.*static let version = "\([^"]*\)".*/\1/p' Sources/OuroMD/OuroMDRelease.swift | head -1)"
+swift_version="$(sed -n 's/.*static let version = "\([^"]*\)".*/\1/p' Sources/OuroMDCore/OuroMDRelease.swift | head -1)"
 readme_version="$(sed -n 's/^> \*\*Status:\*\* v\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/p' README.md | head -1)"
 
 [[ -n "$make_version" ]] || fail "could not read VERSION from make-app.sh"
