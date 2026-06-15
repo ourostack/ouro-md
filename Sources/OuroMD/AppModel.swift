@@ -78,6 +78,7 @@ final class AppModel: ObservableObject {
     weak var bridge: EditorBridge?
     /// Invoked whenever window-chrome-relevant state changes.
     var onChromeUpdate: (() -> Void)?
+    var presentErrorHandler: ((String, Error) -> Void)?
 
     private let defaults = UserDefaults.standard
     private var pendingMarkdown: String?
@@ -115,57 +116,6 @@ final class AppModel: ObservableObject {
             if let s = try? String(contentsOf: url, encoding: encoding) { return s }
         }
         return nil
-    }
-
-    /// Undo the only two things the editor normalizes on a markdown round-trip
-    /// (verified: everything else is byte-identical) so saving doesn't churn the
-    /// diff: re-expand collapsed table separators (`| - |` → `| --- |`) and
-    /// collapse runs of blank lines that the table renderer introduces. Content
-    /// inside fenced code blocks is left untouched.
-    static func tidyMarkdown(_ markdown: String) -> String {
-        let lines = markdown.components(separatedBy: "\n")
-        var out: [String] = []
-        var inFence = false
-        var prevBlank = false
-        for line in lines {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") {
-                inFence.toggle()
-                out.append(line)
-                prevBlank = false
-                continue
-            }
-            if inFence {
-                out.append(line)
-                continue
-            }
-            if trimmed.isEmpty {
-                if prevBlank { continue }   // collapse consecutive blank lines
-                prevBlank = true
-                out.append(line)
-                continue
-            }
-            prevBlank = false
-            out.append(isTableSeparator(trimmed) ? expandTableSeparator(line) : line)
-        }
-        return out.joined(separator: "\n")
-    }
-
-    private static func isTableSeparator(_ trimmed: String) -> Bool {
-        trimmed.contains("|") && trimmed.contains("-") && trimmed.allSatisfy { "|:- \t".contains($0) }
-    }
-
-    private static func expandTableSeparator(_ line: String) -> String {
-        let leading = String(line.prefix(while: { $0 == " " || $0 == "\t" }))
-        var cells = line.trimmingCharacters(in: .whitespaces)
-            .split(separator: "|", omittingEmptySubsequences: false)
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-        if cells.first == "" { cells.removeFirst() }
-        if cells.last == "" { cells.removeLast() }
-        let cols = cells.map { cell -> String in
-            (cell.hasPrefix(":") ? ":" : "") + "---" + (cell.hasSuffix(":") ? ":" : "")
-        }
-        return leading + "| " + cols.joined(separator: " | ") + " |"
     }
 
     static let mdTypes: [UTType] = {
@@ -364,9 +314,26 @@ final class AppModel: ObservableObject {
     func saveAs() {
         runSavePanel(defaultName: currentURL?.lastPathComponent ?? "Untitled.md") { [weak self] url in
             guard let self, let url else { return }
-            self.currentURL = url
-            NSDocumentController.shared.noteNewRecentDocumentURL(url)
-            self.writeMarkdown(to: url) { _ in }
+            self.performSaveAs(to: url) { _ in }
+        }
+    }
+
+    func performSaveAs(to url: URL, completion: @escaping (Bool) -> Void) {
+        let previousURL = currentURL
+        currentURL = url
+        let finish: (Bool) -> Void = { [weak self] ok in
+            guard let self else { completion(ok); return }
+            if ok {
+                NSDocumentController.shared.noteNewRecentDocumentURL(url)
+            } else {
+                self.currentURL = previousURL
+            }
+            completion(ok)
+        }
+        if !isDirty, let previousURL {
+            writeOriginalFileBytes(from: previousURL, to: url, completion: finish)
+        } else {
+            writeMarkdown(to: url, allowCleanNoOp: false, completion: finish)
         }
     }
 
@@ -377,14 +344,26 @@ final class AppModel: ObservableObject {
         } else {
             runSavePanel(defaultName: "Untitled.md") { [weak self] url in
                 guard let self, let url else { completion(false); return }
-                self.currentURL = url
-                NSDocumentController.shared.noteNewRecentDocumentURL(url)
-                self.writeMarkdown(to: url, completion: completion)
+                self.performSaveAs(to: url, completion: completion)
             }
         }
     }
 
-    private func writeMarkdown(to url: URL, completion: @escaping (Bool) -> Void) {
+    private func writeMarkdown(
+        to url: URL,
+        allowCleanNoOp: Bool = true,
+        completion: @escaping (Bool) -> Void
+    ) {
+        let target = url.resolvingSymlinksInPath()
+        if !isDirty, let lastLoadedContent {
+            if allowCleanNoOp,
+               let currentURL,
+               currentURL.resolvingSymlinksInPath() == target,
+               AppModel.readText(at: target) == lastLoadedContent {
+                completion(true)
+                return
+            }
+        }
         // Never save before the editor has loaded its content, and never write
         // when the editor can't hand back its text — either would clobber the
         // file with an empty string.
@@ -392,24 +371,49 @@ final class AppModel: ObservableObject {
         bridge.getMarkdown { [weak self] markdown in
             guard let self else { completion(false); return }
             guard let markdown else { completion(false); return }
-            let tidied = AppModel.tidyMarkdown(markdown)
+            let tidied = MarkdownTidy.tidy(markdown)
             // Resolve symlinks so an atomic write updates the real file rather
             // than replacing the link with a regular file.
-            let target = url.resolvingSymlinksInPath()
-            do {
-                self.lastLoadedContent = tidied
-                try tidied.write(to: target, atomically: true, encoding: .utf8)
-                self.bridge?.markSaved()
-                self.isDirty = false
-                self.startWatching()
-                self.onChromeUpdate?()
-                completion(true)
-            } catch {
-                self.presentError("Could not save \(url.lastPathComponent)", error)
-                self.captureTelemetry("ouro_md_document_save_failed")
-                completion(false)
-            }
+            self.writeResolvedMarkdown(tidied, to: target, displayURL: url, completion: completion)
         }
+    }
+
+    private func writeResolvedMarkdown(_ markdown: String, to target: URL, displayURL: URL, completion: @escaping (Bool) -> Void) {
+        do {
+            lastLoadedContent = markdown
+            try markdown.write(to: target, atomically: true, encoding: .utf8)
+            markSaveSucceeded()
+            completion(true)
+        } catch {
+            presentError("Could not save \(displayURL.lastPathComponent)", error)
+            captureTelemetry("ouro_md_document_save_failed")
+            completion(false)
+        }
+    }
+
+    private func writeOriginalFileBytes(from sourceURL: URL, to destinationURL: URL, completion: @escaping (Bool) -> Void) {
+        let source = sourceURL.resolvingSymlinksInPath()
+        let target = destinationURL.resolvingSymlinksInPath()
+        do {
+            if source != target {
+                let data = try Data(contentsOf: source)
+                try data.write(to: target, options: .atomic)
+            }
+            lastLoadedContent = AppModel.readText(at: target) ?? lastLoadedContent
+            markSaveSucceeded()
+            completion(true)
+        } catch {
+            presentError("Could not save \(destinationURL.lastPathComponent)", error)
+            captureTelemetry("ouro_md_document_save_failed")
+            completion(false)
+        }
+    }
+
+    private func markSaveSucceeded() {
+        bridge?.markSaved()
+        isDirty = false
+        startWatching()
+        onChromeUpdate?()
     }
 
     // MARK: - Live external reload
@@ -690,12 +694,11 @@ final class AppModel: ObservableObject {
         guard let folder = mountedFolder else { folderTree = []; folderFlat = []; return }
         let sort = folderSort
         folderScanQueue.async { [weak self] in
-            let tree = FolderScanner.tree(at: folder, sort: sort)
-            let flat = FolderScanner.flatList(at: folder, sort: sort)
+            let snapshot = FolderScanner.snapshot(at: folder, sort: sort)
             DispatchQueue.main.async {
                 guard let self, self.mountedFolder == folder else { return }
-                self.folderTree = tree
-                self.folderFlat = flat
+                self.folderTree = snapshot.tree
+                self.folderFlat = snapshot.flat
             }
         }
     }
@@ -862,6 +865,10 @@ final class AppModel: ObservableObject {
     }
 
     private func presentError(_ message: String, _ error: Error) {
+        if let presentErrorHandler {
+            presentErrorHandler(message, error)
+            return
+        }
         let alert = NSAlert()
         alert.messageText = message
         alert.informativeText = error.localizedDescription

@@ -9,9 +9,291 @@ enum MarkdownRenderer {
     /// When `baseDirectory` is supplied, relative local images are inlined as
     /// base64 data URIs so they render without web-view file-access permissions.
     static func renderHTMLBody(_ markdown: String, baseDirectory: URL? = nil) -> String {
-        let document = Document(parsing: markdown)
+        let footnoted = FootnotePreprocessor.process(markdown)
+        let document = Document(parsing: footnoted.markdown)
         var visitor = HTMLVisitor(baseDirectory: baseDirectory)
-        return visitor.visit(document)
+        var html = visitor.visit(document)
+        if !footnoted.footnotes.isEmpty {
+            html += renderFootnotes(footnoted.footnotes, baseDirectory: baseDirectory)
+        }
+        return html
+    }
+
+    private static func renderFootnotes(_ footnotes: [RenderedFootnote], baseDirectory: URL?) -> String {
+        var html = "<section class=\"footnotes\">\n<hr>\n<ol>\n"
+        for footnote in footnotes {
+            let document = Document(parsing: footnote.markdown)
+            var visitor = HTMLVisitor(baseDirectory: baseDirectory)
+            let body = visitor.visit(document).trimmingCharacters(in: .whitespacesAndNewlines)
+            html += "<li id=\"fn-\(HTMLDocument.escapeAttr(footnote.id))\">\(body) "
+            let refs = footnote.referenceIDs.isEmpty ? ["fnref-\(footnote.id)"] : footnote.referenceIDs
+            html += refs.map {
+                "<a href=\"#\(HTMLDocument.escapeAttr($0))\" class=\"footnote-backref\">&#8617;</a>"
+            }.joined(separator: " ")
+            html += "</li>\n"
+        }
+        html += "</ol>\n</section>\n"
+        return html
+    }
+}
+
+private struct RenderedFootnote: Equatable {
+    var label: String
+    var id: String
+    var markdown: String
+    var referenceIDs: [String]
+}
+
+private enum FootnotePreprocessor {
+    private struct Definition {
+        var label: String
+        var markdown: String
+    }
+
+    private struct Fence {
+        var marker: Character
+        var length: Int
+    }
+
+    struct Output {
+        var markdown: String
+        var footnotes: [RenderedFootnote]
+    }
+
+    static func process(_ markdown: String) -> Output {
+        let extracted = extractDefinitions(markdown)
+        guard !extracted.definitions.isEmpty else {
+            return Output(markdown: markdown, footnotes: [])
+        }
+
+        var idsByLabel: [String: String] = [:]
+        var numbersByLabel: [String: Int] = [:]
+        for (offset, definition) in extracted.definitions.enumerated() {
+            idsByLabel[definition.label] = footnoteID(label: definition.label, index: offset + 1)
+            numbersByLabel[definition.label] = offset + 1
+        }
+        let referenced = replaceReferences(
+            in: extracted.markdownWithoutDefinitions,
+            idsByLabel: idsByLabel,
+            numbersByLabel: numbersByLabel
+        )
+        let footnotes = extracted.definitions.map {
+            RenderedFootnote(
+                label: $0.label,
+                id: idsByLabel[$0.label] ?? $0.label,
+                markdown: $0.markdown,
+                referenceIDs: referenced.referenceIDsByLabel[$0.label] ?? []
+            )
+        }
+        return Output(markdown: referenced.markdown, footnotes: footnotes)
+    }
+
+    private static func extractDefinitions(_ markdown: String) -> (markdownWithoutDefinitions: String, definitions: [Definition]) {
+        let lines = markdown.components(separatedBy: "\n")
+        var bodyLines: [String] = []
+        var definitions: [Definition] = []
+        var seenLabels: Set<String> = []
+        var activeDefinitionIndex: Int?
+        var activeFence: Fence?
+
+        for line in lines {
+            if let fence = parseFence(line) {
+                activeDefinitionIndex = nil
+                if let existing = activeFence {
+                    if fence.marker == existing.marker && fence.length >= existing.length {
+                        activeFence = nil
+                    }
+                } else {
+                    activeFence = fence
+                }
+                bodyLines.append(line)
+                continue
+            }
+            if activeFence != nil {
+                bodyLines.append(line)
+                continue
+            }
+            if let definition = parseDefinition(line) {
+                if seenLabels.insert(definition.label).inserted {
+                    definitions.append(definition)
+                    activeDefinitionIndex = definitions.count - 1
+                } else {
+                    activeDefinitionIndex = nil
+                }
+                continue
+            }
+            if let index = activeDefinitionIndex, line.trimmingCharacters(in: .whitespaces).isEmpty {
+                definitions[index].markdown += "\n"
+                continue
+            }
+            if let index = activeDefinitionIndex, let continuation = continuationContent(line) {
+                definitions[index].markdown += "\n" + continuation
+                continue
+            }
+            activeDefinitionIndex = nil
+            bodyLines.append(line)
+        }
+
+        return (bodyLines.joined(separator: "\n"), definitions)
+    }
+
+    private static func parseDefinition(_ line: String) -> Definition? {
+        guard indentationWidth(line) <= 3 else { return nil }
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        guard trimmed.hasPrefix("[^"),
+              let close = trimmed.range(of: "]:")
+        else {
+            return nil
+        }
+        let labelStart = trimmed.index(trimmed.startIndex, offsetBy: 2)
+        let label = String(trimmed[labelStart..<close.lowerBound])
+        guard !label.isEmpty else { return nil }
+        let markdown = String(trimmed[close.upperBound...]).trimmingCharacters(in: .whitespaces)
+        return Definition(label: label, markdown: markdown)
+    }
+
+    private static func parseFence(_ line: String) -> Fence? {
+        guard indentationWidth(line) <= 3 else { return nil }
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        guard let first = trimmed.first, first == "`" || first == "~" else { return nil }
+        var length = 0
+        for char in trimmed {
+            if char == first {
+                length += 1
+            } else {
+                break
+            }
+        }
+        guard length >= 3 else { return nil }
+        return Fence(marker: first, length: length)
+    }
+
+    private static func indentationWidth(_ line: String) -> Int {
+        var width = 0
+        for char in line {
+            if char == " " {
+                width += 1
+            } else if char == "\t" {
+                width += 4
+            } else {
+                break
+            }
+        }
+        return width
+    }
+
+    private static func continuationContent(_ line: String) -> String? {
+        if line.hasPrefix("    ") {
+            return String(line.dropFirst(4))
+        }
+        if line.hasPrefix("\t") {
+            return String(line.dropFirst())
+        }
+        return nil
+    }
+
+    private static func replaceReferences(
+        in markdown: String,
+        idsByLabel: [String: String],
+        numbersByLabel: [String: Int]
+    ) -> (markdown: String, referenceIDsByLabel: [String: [String]]) {
+        var output: [String] = []
+        var activeFence: Fence?
+        var referenceCounts: [String: Int] = [:]
+        var referenceIDsByLabel: [String: [String]] = [:]
+        for line in markdown.components(separatedBy: "\n") {
+            if let fence = parseFence(line) {
+                if let existing = activeFence {
+                    if fence.marker == existing.marker && fence.length >= existing.length {
+                        activeFence = nil
+                    }
+                } else {
+                    activeFence = fence
+                }
+                output.append(line)
+                continue
+            }
+            output.append((activeFence != nil || indentationWidth(line) >= 4)
+                ? line
+                : replaceReferences(
+                    inLine: line,
+                    idsByLabel: idsByLabel,
+                    numbersByLabel: numbersByLabel,
+                    referenceCounts: &referenceCounts,
+                    referenceIDsByLabel: &referenceIDsByLabel
+                ))
+        }
+        return (output.joined(separator: "\n"), referenceIDsByLabel)
+    }
+
+    private static func replaceReferences(
+        inLine line: String,
+        idsByLabel: [String: String],
+        numbersByLabel: [String: Int],
+        referenceCounts: inout [String: Int],
+        referenceIDsByLabel: inout [String: [String]]
+    ) -> String {
+        var out = ""
+        var index = line.startIndex
+        var backtickRun: Int?
+        while index < line.endIndex {
+            let char = line[index]
+            if char == "\\" {
+                out.append(char)
+                index = line.index(after: index)
+                if index < line.endIndex {
+                    out.append(line[index])
+                    index = line.index(after: index)
+                }
+                continue
+            }
+            if char == "`" {
+                let run = countBackticks(in: line, at: index)
+                out += String(repeating: "`", count: run)
+                index = line.index(index, offsetBy: run)
+                if let active = backtickRun {
+                    if active == run { backtickRun = nil }
+                } else {
+                    backtickRun = run
+                }
+                continue
+            }
+            if backtickRun == nil, line[index...].hasPrefix("[^") {
+                let labelStart = line.index(index, offsetBy: 2)
+                if let close = line[labelStart...].firstIndex(of: "]") {
+                    let label = String(line[labelStart..<close])
+                    if let id = idsByLabel[label], let number = numbersByLabel[label] {
+                        let count = (referenceCounts[label] ?? 0) + 1
+                        referenceCounts[label] = count
+                        let referenceID = count == 1 ? "fnref-\(id)" : "fnref-\(id)-\(count)"
+                        referenceIDsByLabel[label, default: []].append(referenceID)
+                        out += "<sup id=\"\(HTMLDocument.escapeAttr(referenceID))\"><a href=\"#fn-\(HTMLDocument.escapeAttr(id))\" class=\"footnote-ref\">\(number)</a></sup>"
+                    } else {
+                        out += line[index...close]
+                    }
+                    index = line.index(after: close)
+                    continue
+                }
+            }
+            out.append(char)
+            index = line.index(after: index)
+        }
+        return out
+    }
+
+    private static func countBackticks(in line: String, at index: String.Index) -> Int {
+        var count = 0
+        var cursor = index
+        while cursor < line.endIndex, line[cursor] == "`" {
+            count += 1
+            cursor = line.index(after: cursor)
+        }
+        return count
+    }
+
+    private static func footnoteID(label: String, index: Int) -> String {
+        let slug = HTMLVisitor.slug(label)
+        return slug.isEmpty ? "footnote-\(index)" : slug
     }
 }
 

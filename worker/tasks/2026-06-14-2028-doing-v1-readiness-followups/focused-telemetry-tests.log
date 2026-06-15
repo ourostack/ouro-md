@@ -1,0 +1,162 @@
+[0/1] Planning build
+Building for debugging...
+[0/7] Write sources
+[1/7] Write swift-version--58304C5D6DBC2206.txt
+[3/71] Compiling Markdown BlockContainer.swift
+[4/71] Compiling Markdown BlockMarkup.swift
+[5/71] Compiling Markdown InlineContainer.swift
+[6/71] Compiling Markdown InlineMarkup.swift
+[7/71] Compiling Markdown ListItemContainer.swift
+[8/71] Compiling Markdown AtomicCounter.swift
+[9/71] Compiling Markdown CharacterExtensions.swift
+[10/78] Compiling Markdown DoxygenNote.swift
+[11/78] Compiling Markdown DoxygenParameter.swift
+[12/78] Compiling Markdown DoxygenReturns.swift
+[13/78] Compiling Markdown ListItem.swift
+[14/78] Compiling Markdown OrderedList.swift
+[15/78] Compiling Markdown UnorderedList.swift
+[16/78] Compiling Markdown Paragraph.swift
+[17/78] Compiling Markdown CodeBlock.swift
+[18/78] Compiling Markdown HTMLBlock.swift
+[19/78] Compiling Markdown Heading.swift
+[20/78] Compiling Markdown ThematicBreak.swift
+[21/78] Compiling Markdown Table.swift
+[22/78] Compiling Markdown TableBody.swift
+[23/78] Compiling Markdown TableCell.swift
+[24/78] Compiling Markdown LazySplitLines.swift
+[25/78] Compiling Markdown ParseOptions.swift
+[26/78] Compiling Markdown RangeAdjuster.swift
+[27/78] Compiling Markdown RangerTracker.swift
+[28/78] Compiling Markdown MarkupRewriter.swift
+[29/78] Compiling Markdown BasicBlockContainer.swift
+[30/78] Compiling Markdown BasicInlineContainer.swift
+[31/78] Compiling Markdown TableCellContainer.swift
+[32/78] Compiling Markdown TableHead.swift
+[33/78] Compiling Markdown TableRow.swift
+[34/78] Compiling Markdown Replacement.swift
+[35/78] Compiling Markdown SourceLocation.swift
+[36/78] Compiling Markdown Emphasis.swift
+[37/78] Compiling Markdown Image.swift
+[38/78] Compiling Markdown PlainTextConvertibleMarkup.swift
+[39/78] Compiling Markdown RawMarkup.swift
+[40/78] Compiling Markdown BlockDirective.swift
+[41/78] Compiling Markdown BlockQuote.swift
+[42/78] Compiling Markdown CustomBlock.swift
+[43/78] Compiling Markdown DoxygenAbstract.swift
+[44/78] Compiling Markdown DoxygenDiscussion.swift
+[45/78] Emitting module Markdown
+[46/78] Compiling Markdown ChildIndexPath.swift
+[47/78] Compiling Markdown DirectiveArgument.swift
+[48/78] Compiling Markdown Document.swift
+[49/78] Compiling Markdown LiteralMarkup.swift
+[50/78] Compiling Markdown Markup.swift
+[51/78] Compiling Markdown MarkupChildren.swift
+[52/78] Compiling Markdown MarkupData.swift
+[53/78] Compiling Markdown CollectionExtensions.swift
+[54/78] Compiling Markdown StringExtensions.swift
+[55/78] Compiling Markdown MarkupVisitor.swift
+[56/78] Compiling Markdown MarkupWalker.swift
+[57/78] Compiling Markdown HTMLFormatter.swift
+[58/78] Compiling Markdown MarkupFormatter.swift
+[59/78] Compiling Markdown MarkupTreeDumper.swift
+[60/78] Compiling Markdown LineBreak.swift
+[61/78] Compiling Markdown SoftBreak.swift
+[62/78] Compiling Markdown SymbolLink.swift
+[63/78] Compiling Markdown Text.swift
+[64/78] Compiling Markdown Aside.swift
+[65/78] Compiling Markdown BlockDirectiveParser.swift
+[66/78] Compiling Markdown CommonMarkConverter.swift
+[67/78] Compiling Markdown InlineAttributes.swift
+[68/78] Compiling Markdown Link.swift
+[69/78] Compiling Markdown Strikethrough.swift
+[70/78] Compiling Markdown Strong.swift
+[71/78] Compiling Markdown CustomInline.swift
+[72/78] Compiling Markdown InlineCode.swift
+[73/78] Compiling Markdown InlineHTML.swift
+[74/108] Compiling OuroMD UndoRedoCommandRouter.swift
+[75/108] Compiling OuroMD UndoTest.swift
+[76/108] Compiling OuroMD Welcome.swift
+[77/111] Compiling OuroMD OuroMDRelease.swift
+[78/111] Compiling OuroMD OuroMDTelemetry.swift
+[79/111] Compiling OuroMD OuroMDUpdate.swift
+[80/111] Compiling OuroMD WrapTest.swift
+[81/111] Compiling OuroMD main.swift
+[82/111] Compiling OuroMD resource_bundle_accessor.swift
+[83/111] Compiling OuroMD MarkdownRenderer.swift
+[84/111] Compiling OuroMD MarkdownTidy.swift
+[85/111] Compiling OuroMD MenuBuilder.swift
+[86/111] Compiling OuroMD FileWatcher.swift
+[87/111] Compiling OuroMD FolderBrowser.swift
+[88/111] Compiling OuroMD HTMLDocument.swift
+[89/111] Compiling OuroMD OuroMDUpdateCoordinator.swift
+[90/111] Compiling OuroMD OuroMDUpdateInstaller.swift
+[91/111] Compiling OuroMD ReleaseUpdate.swift
+[92/111] Compiling OuroMD Snapshot.swift
+[93/111] Compiling OuroMD TerminationSaveCoordinator.swift
+[94/111] Compiling OuroMD Themes.swift
+[95/111] Compiling OuroMD ContentView.swift
+[96/111] Compiling OuroMD DocumentWindowController.swift
+[97/111] Compiling OuroMD EditorWebView.swift
+[98/111] Compiling OuroMD Export.swift
+[99/111] Emitting module OuroMD
+[100/111] Compiling OuroMD AppDelegate.swift
+[101/111] Compiling OuroMD AppModel.swift
+[102/111] Compiling OuroMD CLI.swift
+[103/111] Compiling OuroMD ContentSearcher.swift
+[104/111] Compiling OuroMD RenderProbe.swift
+[105/111] Compiling OuroMD RoundTrip.swift
+[106/111] Compiling OuroMD Sidebar.swift
+[106/111] Write Objects.LinkFileList
+[107/111] Linking ouro-md
+[108/111] Applying ouro-md
+[110/125] Compiling OuroMDTests ReleaseUpdateTests.swift
+[111/125] Compiling OuroMDTests TerminationSaveCoordinatorTests.swift
+[112/126] Compiling OuroMDTests UndoRedoRoutingTests.swift
+[113/126] Compiling OuroMDTests OutlineTreeTests.swift
+[114/126] Compiling OuroMDTests OuroMDUpdateTests.swift
+[115/126] Compiling OuroMDTests OuroMDUpdateInstallerTests.swift
+[116/126] Compiling OuroMDTests MarkdownRendererTests.swift
+[117/126] Compiling OuroMDTests MarkdownTidyTests.swift
+[118/126] Compiling OuroMDTests FileWatcherTests.swift
+[119/126] Compiling OuroMDTests FolderBrowserTests.swift
+[120/126] Compiling OuroMDTests AppModelReloadTests.swift
+[121/126] Compiling OuroMDTests ContentSearcherTests.swift
+[122/126] Compiling OuroMDTests OuroMDTelemetryTests.swift
+[123/126] Compiling OuroMDTests OuroMDUpdateCoordinatorTests.swift
+[124/126] Emitting module OuroMDTests
+[125/128] Compiling ouro_mdPackageTests runner.swift
+[126/128] Emitting module ouro_mdPackageTests
+[126/128] Write Objects.LinkFileList
+[127/128] Linking ouro-mdPackageTests
+Build complete! (6.35s)
+Test Suite 'Selected tests' started at 2026-06-14 20:50:53.986.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 20:50:53.987.
+Test Suite 'OuroMDTelemetryTests' started at 2026-06-14 20:50:53.987.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testCaptureCanUseDefaultClockWithInjectedSender]' started.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testCaptureCanUseDefaultClockWithInjectedSender]' passed (0.005 seconds).
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testCaptureReusesExistingDistinctID]' started.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testCaptureReusesExistingDistinctID]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testCaptureSendsAnonymousPostHogPayload]' started.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testCaptureSendsAnonymousPostHogPayload]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationIgnoresAmbientPostHogKeyEnvironmentAndSupportsDisableFlag]' started.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationIgnoresAmbientPostHogKeyEnvironmentAndSupportsDisableFlag]' passed (0.003 seconds).
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationIgnoresStoredPostHogDefaults]' started.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationIgnoresStoredPostHogDefaults]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationLoadsEmbeddedPostHogBundleValues]' started.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationLoadsEmbeddedPostHogBundleValues]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationRejectsInvalidEmbeddedHost]' started.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testConfigurationRejectsInvalidEmbeddedHost]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testOptOutSuppressesCaptureAndPersists]' started.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testOptOutSuppressesCaptureAndPersists]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testUnconfiguredTelemetryIsDisabled]' started.
+Test Case '-[OuroMDTests.OuroMDTelemetryTests testUnconfiguredTelemetryIsDisabled]' passed (0.000 seconds).
+Test Suite 'OuroMDTelemetryTests' passed at 2026-06-14 20:50:54.004.
+	 Executed 9 tests, with 0 failures (0 unexpected) in 0.016 (0.017) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 20:50:54.004.
+	 Executed 9 tests, with 0 failures (0 unexpected) in 0.016 (0.017) seconds
+Test Suite 'Selected tests' passed at 2026-06-14 20:50:54.004.
+	 Executed 9 tests, with 0 failures (0 unexpected) in 0.016 (0.018) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

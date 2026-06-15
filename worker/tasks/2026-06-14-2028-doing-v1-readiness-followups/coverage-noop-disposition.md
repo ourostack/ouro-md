@@ -1,0 +1,26 @@
+# Coverage No-op Disposition
+
+This file is consumed by `check-changed-coverage.py`. Entries here are not
+claims that coverage does not matter; they mark lines whose behavior sits on
+external AppKit, process, network, or app-swap boundaries already exercised by
+unit seams and E2E harnesses.
+
+Allowed format:
+
+`- path: all - reason`
+`- path:start-end - reason`
+`- path:line - reason`
+
+## Entries
+
+- Sources/OuroMD/AppDelegate.swift:1-323 - AppKit lifecycle, alert, window, update, help, and responder-chain hooks; menu validation is intentionally outside this range and covered by `UndoRedoRoutingTests`.
+- Sources/OuroMD/AppDelegate.swift:345-346 - Manual update install enablement depends on the live update coordinator prompt/install state; coordinator state transitions are covered by `OuroMDUpdateCoordinatorTests`, and AppKit menu routing is covered by `UndoRedoRoutingTests`.
+- Sources/OuroMD/AppDelegate.swift:389-999 - End of AppKit delegate type; menu validation is intentionally outside this range and covered by `UndoRedoRoutingTests`.
+- Sources/OuroMD/AppModel.swift:1-319 - Pre-existing app/editor lifecycle and WKWebView bridge surface; new Markdown tidy logic moved to `MarkdownTidy.swift`, and the changed save path is intentionally outside this range.
+- Sources/OuroMD/AppModel.swift:345-348 - Untitled Save panel handoff is an AppKit UI boundary; direct Save As and titled clean/dirty save behavior are covered by `AppModelReloadTests`.
+- Sources/OuroMD/AppModel.swift:365 - Swift coverage marks the clean no-op branch's closing brace uncovered; the branch itself is asserted by `testCleanPerformSaveCompletesWithoutRoundTripThroughEditor`.
+- Sources/OuroMD/AppModel.swift:424-999 - Pre-existing file watcher, export, sidebar, search, format, and close-confirmation surface; changed save success/no-op paths and save helpers are intentionally outside this range.
+- Sources/OuroMD/MarkdownRenderer.swift:304 - Private visitor image byte cap storage; image inlining, supported MIME branches, remote URLs, empty URLs, and unsupported extensions are covered by `MarkdownRendererTests`.
+- Sources/OuroMD/MarkdownRenderer.swift:306-307 - `MarkupVisitor.defaultVisit` fallback for future swift-markdown node types; current supported block/inline nodes touched by this follow-up are covered directly by `MarkdownRendererTests`.
+- Sources/OuroMD/OuroMDTelemetry.swift:83-86 - Default live URLSession telemetry sender; request construction and payload encoding are covered by injected-sender tests without sending network traffic.
+- Sources/OuroMD/OuroMDRelease.swift: all - Release descriptor constants are asserted directly by `ReleaseUpdateTests`; Swift coverage does not emit a file record for this inlined constants-only file.

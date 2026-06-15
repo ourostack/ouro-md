@@ -21,12 +21,14 @@ final class OuroMDTelemetryTests: XCTestCase {
         super.tearDown()
     }
 
-    func testConfigurationLoadsPostHogEnvironment() {
-        defaults.set("phc_test", forKey: "ouro.telemetry.posthogKey")
-        defaults.set("https://eu.i.posthog.com", forKey: "ouro.telemetry.posthogHost")
+    func testConfigurationLoadsEmbeddedPostHogBundleValues() throws {
+        let bundle = try makeBundle(
+            postHogKey: "phc_test",
+            postHogHost: "https://eu.i.posthog.com"
+        )
 
         let config = OuroMDTelemetryConfiguration.load(
-            bundle: Bundle(for: Self.self),
+            bundle: bundle,
             environment: [:],
             defaults: defaults
         )
@@ -36,7 +38,35 @@ final class OuroMDTelemetryTests: XCTestCase {
         XCTAssertEqual(config?.captureURL.absoluteString, "https://eu.i.posthog.com/i/v0/e/")
     }
 
-    func testConfigurationIgnoresAmbientPostHogKeyEnvironmentAndSupportsDisableFlag() {
+    func testConfigurationIgnoresStoredPostHogDefaults() {
+        defaults.set("phc_test", forKey: "ouro.telemetry.posthogKey")
+        defaults.set("https://eu.i.posthog.com", forKey: "ouro.telemetry.posthogHost")
+
+        let config = OuroMDTelemetryConfiguration.load(
+            bundle: Bundle(for: Self.self),
+            environment: [:],
+            defaults: defaults
+        )
+
+        XCTAssertNil(config)
+    }
+
+    func testConfigurationRejectsInvalidEmbeddedHost() throws {
+        let bundle = try makeBundle(
+            postHogKey: "phc_test",
+            postHogHost: "not a url"
+        )
+
+        let config = OuroMDTelemetryConfiguration.load(
+            bundle: bundle,
+            environment: [:],
+            defaults: defaults
+        )
+
+        XCTAssertNil(config)
+    }
+
+    func testConfigurationIgnoresAmbientPostHogKeyEnvironmentAndSupportsDisableFlag() throws {
         let ambientEnvironmentConfig = OuroMDTelemetryConfiguration.load(
             bundle: Bundle(for: Self.self),
             environment: [
@@ -49,16 +79,21 @@ final class OuroMDTelemetryTests: XCTestCase {
 
         XCTAssertNil(ambientEnvironmentConfig)
 
-        defaults.set("phc_spoonjoy", forKey: "ouro.telemetry.posthogKey")
+        let bundle = try makeBundle(
+            postHogKey: "phc_spoonjoy",
+            postHogHost: nil
+        )
 
         let disabled = OuroMDTelemetryConfiguration.load(
-            bundle: Bundle(for: Self.self),
+            bundle: bundle,
             environment: [
                 "VITE_POSTHOG_DISABLED": "true",
             ],
             defaults: defaults
         )
         XCTAssertNil(disabled)
+
+        XCTAssertFalse(OuroMDTelemetryConfiguration.truthy("definitely no"))
     }
 
     func testCaptureSendsAnonymousPostHogPayload() throws {
@@ -74,7 +109,7 @@ final class OuroMDTelemetryTests: XCTestCase {
             now: { Date(timeIntervalSince1970: 0) }
         )
 
-        telemetry.capture("ouro_md_test_event", properties: ["answer": .int(42), "ok": .bool(true)])
+        telemetry.capture("ouro_md_test_event", properties: ["answer": .int(42), "ok": .bool(true), "ratio": .double(0.5)])
 
         XCTAssertEqual(requests.count, 1)
         XCTAssertEqual(requests[0].url?.absoluteString, "https://us.i.posthog.com/i/v0/e/")
@@ -95,6 +130,54 @@ final class OuroMDTelemetryTests: XCTestCase {
         XCTAssertEqual(properties["app_name"] as? String, "Ouro MD")
         XCTAssertEqual(properties["answer"] as? Int, 42)
         XCTAssertEqual(properties["ok"] as? Bool, true)
+        XCTAssertEqual(properties["ratio"] as? Double, 0.5)
+    }
+
+    func testCaptureReusesExistingDistinctID() throws {
+        defaults.set("existing-install", forKey: OuroMDTelemetry.distinctIDDefaultsKey)
+        let config = OuroMDTelemetryConfiguration(
+            apiKey: "phc_test",
+            host: URL(string: "https://us.i.posthog.com")!
+        )
+        var requests: [URLRequest] = []
+        let telemetry = OuroMDTelemetry(
+            defaults: defaults,
+            configuration: config,
+            sender: { requests.append($0) },
+            now: { Date(timeIntervalSince1970: 0) }
+        )
+
+        telemetry.capture("ouro_md_test_event")
+
+        let body = try XCTUnwrap(requests.first?.httpBody)
+        let json = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: body) as? [String: Any]
+        )
+        XCTAssertEqual(json["distinct_id"] as? String, "existing-install")
+    }
+
+    func testCaptureCanUseDefaultClockWithInjectedSender() {
+        let config = OuroMDTelemetryConfiguration(
+            apiKey: "phc_test",
+            host: URL(string: "https://us.i.posthog.com")!
+        )
+        var requests: [URLRequest] = []
+        let telemetry = OuroMDTelemetry(
+            defaults: defaults,
+            configuration: config,
+            sender: { requests.append($0) }
+        )
+
+        telemetry.capture("ouro_md_test_event")
+
+        XCTAssertEqual(requests.count, 1)
+    }
+
+    func testUnconfiguredTelemetryIsDisabled() {
+        let telemetry = OuroMDTelemetry(defaults: defaults, configuration: nil)
+
+        XCTAssertFalse(telemetry.isConfigured)
+        XCTAssertFalse(telemetry.isEnabled)
     }
 
     func testOptOutSuppressesCaptureAndPersists() {
@@ -122,5 +205,26 @@ final class OuroMDTelemetryTests: XCTestCase {
             sender: { requests.append($0) }
         )
         XCTAssertFalse(restored.isEnabled)
+    }
+
+    private func makeBundle(postHogKey: String, postHogHost: String?) throws -> Bundle {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("OuroMDTelemetry-\(UUID().uuidString).bundle")
+        let contents = root.appendingPathComponent("Contents")
+        try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: true)
+        var plist: [String: Any] = [
+            "CFBundleIdentifier": "org.ourostack.ouro-md.tests",
+            "CFBundleExecutable": "",
+            "OuroMDPostHogKey": postHogKey,
+        ]
+        if let postHogHost {
+            plist["OuroMDPostHogHost"] = postHogHost
+        }
+        let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+        try data.write(to: contents.appendingPathComponent("Info.plist"))
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: root)
+        }
+        return try XCTUnwrap(Bundle(url: root))
     }
 }

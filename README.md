@@ -6,7 +6,7 @@ ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
 in careful typography on a centered page. Type Markdown and watch it render in
 place — switch themes live, and read the same document four different ways.
 
-> **Status:** v0.9.1. Reads and edits Markdown today. Not yet Developer-ID
+> **Status:** v0.9.2. Reads and edits Markdown today. Not yet Developer-ID
 > signed or notarized — see [First launch](#first-launch).
 
 ---
@@ -72,7 +72,8 @@ checks in **Settings** if you prefer to update manually.
 ```sh
 ./scripts/package-release.sh    # build → dist/Ouro-MD-<version>.zip + .manifest.json
 gh release create v<version> dist/Ouro-MD-<version>.zip dist/Ouro-MD-<version>.manifest.json \
-  --repo ourostack/ouro-md --title "Ouro MD <version>"
+  --repo ourostack/ouro-md --target "$(git rev-parse HEAD)" \
+  --title "Ouro MD <version>"
 ```
 
 The installer and in-app updater always pull the newest published release, so
@@ -82,8 +83,10 @@ Release builds can embed anonymous PostHog telemetry by setting
 `OURO_MD_POSTHOG_KEY` and, optionally, `OURO_MD_POSTHOG_HOST` before packaging.
 The script also accepts Spoonjoy-style `VITE_POSTHOG_KEY` /
 `VITE_POSTHOG_HOST` environment variables so maintainers can reuse the same
-project configuration without committing the key. Telemetry is disabled when no
-key is present, or when `OURO_MD_TELEMETRY_DISABLED=true` is set.
+project configuration without committing the key. `scripts/package-release.sh`
+requires a clean git worktree and a telemetry key by default so release artifacts
+do not accidentally ship uncommitted or unconfigured bytes; set
+`OURO_MD_ALLOW_UNCONFIGURED_TELEMETRY=1` only for local dry runs.
 
 ## Build
 
@@ -117,6 +120,7 @@ PostHog: launches, update lifecycle events, document create/open events,
 folder-open events, export success/failure, and editor crash recovery. It never
 sends document contents, filenames, folder paths, search queries, or raw error
 messages. Disable it in **Settings ▸ Telemetry**.
+See [PRIVACY.md](PRIVACY.md) for the full telemetry contract.
 
 ### Keyboard shortcuts
 
@@ -172,7 +176,7 @@ the same architecture Typora-style editors use, made to feel like a Mac app.
 
 ## Roadmap
 
-- Developer-ID signing + notarization
+- Post-dogfood Developer-ID signing + notarization
 - Smart typography (curly quotes, dashes) and clickable task checkboxes
 - Editor display of pre-existing relative-path local images (paste/drop already inlines)
 - Higher-contrast tables in the dark theme

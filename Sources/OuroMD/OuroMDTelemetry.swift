@@ -43,14 +43,14 @@ struct OuroMDTelemetryConfiguration: Equatable, Sendable {
             return nil
         }
 
+        _ = defaults
+
         let apiKey = firstNonEmpty(
-            defaults.string(forKey: "ouro.telemetry.posthogKey"),
             bundle.object(forInfoDictionaryKey: "OuroMDPostHogKey") as? String
         )
         guard let apiKey else { return nil }
 
         let hostValue = firstNonEmpty(
-            defaults.string(forKey: "ouro.telemetry.posthogHost"),
             bundle.object(forInfoDictionaryKey: "OuroMDPostHogHost") as? String,
             defaultHost
         ) ?? defaultHost

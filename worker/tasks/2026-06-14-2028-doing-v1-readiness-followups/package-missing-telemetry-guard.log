@@ -1,0 +1,2 @@
+error: release packages require OURO_MD_POSTHOG_KEY or VITE_POSTHOG_KEY
+       set OURO_MD_ALLOW_UNCONFIGURED_TELEMETRY=1 only for non-release dry runs

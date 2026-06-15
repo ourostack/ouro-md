@@ -5,11 +5,12 @@ import XCTest
 private final class MockBridge: EditorBridge {
     var current = ""
     var reloads: [String] = []
+    var getMarkdownCalls = 0
     var onReload: ((String) -> Void)?
 
     func setMarkdown(_ markdown: String) { current = markdown }
     func reloadMarkdown(_ markdown: String) { current = markdown; reloads.append(markdown); onReload?(markdown) }
-    func getMarkdown(_ completion: @escaping (String?) -> Void) { completion(current) }
+    func getMarkdown(_ completion: @escaping (String?) -> Void) { getMarkdownCalls += 1; completion(current) }
     func getHTML(_ completion: @escaping (String?) -> Void) { completion("") }
     func applyTheme(uiMode: String, css: String, codeTheme: String) {}
     func setMode(_ mode: String) {}
@@ -84,6 +85,228 @@ final class AppModelReloadTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { done.fulfill() }
         wait(for: [done], timeout: 3)
         XCTAssertTrue(bridge.reloads.isEmpty, "saving our own content should not trigger a reload")
+    }
+
+    func testDirtyFormattingOnlySaveDoesNotRestoreOriginalBytes() {
+        let url = tempFile()
+        let original = """
+        ### Tables line up
+
+
+        | Theme      | Mood             | Type  |
+        | :--------- | :--------------- | :---- |
+        | Quartz     | calm daylight    | sans  |
+        """
+        try? original.write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let model = AppModel()
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+        model.loadInitialFile(url.path)
+
+        let dirtyEditorOutput = """
+        ### Tables line up
+
+        | Theme      | Mood             | Type  |
+        | :--- | :--- | :--- |
+        | Quartz     | calm daylight    | sans  |
+        """
+        bridge.current = dirtyEditorOutput
+        model.setDirty(true)
+        model.save()
+
+        let done = expectation(description: "save settled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { done.fulfill() }
+        wait(for: [done], timeout: 2)
+        XCTAssertEqual(try? String(contentsOf: url, encoding: .utf8), dirtyEditorOutput)
+    }
+
+    func testCleanSaveDoesNotRoundTripThroughEditor() {
+        let url = tempFile()
+        let original = "# Original\n\n"
+        try? original.write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let model = AppModel()
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+        model.loadInitialFile(url.path)
+
+        bridge.current = "# Unexpected editor normalization\n"
+        model.save()
+
+        let done = expectation(description: "save settled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { done.fulfill() }
+        wait(for: [done], timeout: 1)
+        XCTAssertEqual(try? String(contentsOf: url, encoding: .utf8), original)
+        XCTAssertEqual(bridge.getMarkdownCalls, 0)
+    }
+
+    func testCleanPerformSaveCompletesWithoutRoundTripThroughEditor() {
+        let url = tempFile()
+        let original = "# Original\n\n"
+        try? original.write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let model = AppModel()
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+        model.loadInitialFile(url.path)
+
+        let saved = expectation(description: "clean save completed")
+        model.performSave { ok in
+            XCTAssertTrue(ok)
+            saved.fulfill()
+        }
+        wait(for: [saved], timeout: 1)
+
+        XCTAssertEqual(try? String(contentsOf: url, encoding: .utf8), original)
+        XCTAssertEqual(bridge.getMarkdownCalls, 0)
+    }
+
+    func testSaveAsCleanDocumentWritesNewDestination() {
+        let source = tempFile()
+        let destination = tempFile()
+        let original = "# Original\n\n"
+        try? original.write(to: source, atomically: true, encoding: .utf8)
+        defer {
+            try? FileManager.default.removeItem(at: source)
+            try? FileManager.default.removeItem(at: destination)
+        }
+
+        let model = AppModel()
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+        model.loadInitialFile(source.path)
+
+        let saved = expectation(description: "save as completed")
+        model.performSaveAs(to: destination) { ok in
+            XCTAssertTrue(ok)
+            saved.fulfill()
+        }
+        wait(for: [saved], timeout: 2)
+
+        XCTAssertEqual(try? String(contentsOf: destination, encoding: .utf8), original)
+        XCTAssertEqual(model.currentURL, destination)
+    }
+
+    func testSaveAsCleanNonUTF8DocumentCopiesOriginalBytes() {
+        let source = tempFile()
+        let destination = tempFile()
+        let original = "# Cafe\n\nresume"
+        let data = original.data(using: .utf16)!
+        try? data.write(to: source)
+        defer {
+            try? FileManager.default.removeItem(at: source)
+            try? FileManager.default.removeItem(at: destination)
+        }
+
+        let model = AppModel()
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+        model.loadInitialFile(source.path)
+
+        let saved = expectation(description: "save as completed")
+        model.performSaveAs(to: destination) { ok in
+            XCTAssertTrue(ok)
+            saved.fulfill()
+        }
+        wait(for: [saved], timeout: 2)
+
+        XCTAssertEqual(try? Data(contentsOf: destination), data)
+        XCTAssertEqual(try? String(contentsOf: destination, encoding: .utf16), original)
+    }
+
+    func testSaveAsDirtyDocumentWritesEditorBuffer() {
+        let source = tempFile()
+        let destination = tempFile()
+        try? "# Original\n".write(to: source, atomically: true, encoding: .utf8)
+        defer {
+            try? FileManager.default.removeItem(at: source)
+            try? FileManager.default.removeItem(at: destination)
+        }
+
+        let model = AppModel()
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+        model.loadInitialFile(source.path)
+
+        bridge.current = "# Dirty edit\n\n| A |\n| - |\n| 1 |\n"
+        model.setDirty(true)
+
+        let saved = expectation(description: "save as completed")
+        model.performSaveAs(to: destination) { ok in
+            XCTAssertTrue(ok)
+            saved.fulfill()
+        }
+        wait(for: [saved], timeout: 2)
+
+        XCTAssertEqual(
+            try? String(contentsOf: destination, encoding: .utf8),
+            "# Dirty edit\n\n| A |\n| --- |\n| 1 |\n"
+        )
+        XCTAssertEqual(model.currentURL, destination)
+    }
+
+    func testFailedSaveAsRestoresPreviousURL() {
+        let source = tempFile()
+        let missingDestination = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-missing-\(UUID().uuidString)")
+            .appendingPathComponent("copy.md")
+        try? "# Original\n".write(to: source, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: source) }
+
+        let model = AppModel()
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.presentErrorHandler = { _, _ in }
+        model.editorDidBecomeReady()
+        model.loadInitialFile(source.path)
+
+        let saved = expectation(description: "save as failed")
+        model.performSaveAs(to: missingDestination) { ok in
+            XCTAssertFalse(ok)
+            saved.fulfill()
+        }
+        wait(for: [saved], timeout: 2)
+
+        XCTAssertEqual(model.currentURL, source)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: missingDestination.path))
+    }
+
+    func testFailedDirtySaveAsRestoresPreviousURL() {
+        let source = tempFile()
+        let missingDestination = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-missing-\(UUID().uuidString)")
+            .appendingPathComponent("copy.md")
+        try? "# Original\n".write(to: source, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: source) }
+
+        let model = AppModel()
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.presentErrorHandler = { _, _ in }
+        model.editorDidBecomeReady()
+        model.loadInitialFile(source.path)
+        bridge.current = "# Dirty edit\n"
+        model.setDirty(true)
+
+        let saved = expectation(description: "save as failed")
+        model.performSaveAs(to: missingDestination) { ok in
+            XCTAssertFalse(ok)
+            saved.fulfill()
+        }
+        wait(for: [saved], timeout: 2)
+
+        XCTAssertEqual(model.currentURL, source)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: missingDestination.path))
     }
 
     /// Saving before the editor has loaded must NOT overwrite the file with "".
