@@ -129,7 +129,7 @@ See [PRIVACY.md](PRIVACY.md) for the full telemetry contract.
 
 During dogfood, telemetry should tell a complete content-free story for launch,
 update, open, save, rename, external reload, folder-open, export, and editor
-recovery flows. If telemetry is enabled and something feels wrong, include the
+crash-recovery flows. If telemetry is enabled and something feels wrong, include the
 approximate local time in bug reports so maintainers can match coarse event
 status without needing document contents.
 

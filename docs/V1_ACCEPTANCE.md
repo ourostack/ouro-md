@@ -10,7 +10,8 @@ licensing and paid-hosting decisions.
 - Auto-save titled files without losing unsaved local edits.
 - Detect external file changes and reload or preserve local edits predictably.
 - Undo/redo and common formatting shortcuts work from the editor focus state.
-- Sidebar outline and file tree remain responsive on large-but-normal folders.
+- Sidebar outline and file tree remain responsive on large-but-normal folders,
+  and warn when a safety cap truncates folder browsing/search.
 - Export to HTML and PDF without document-content telemetry.
 
 ## Install And Update

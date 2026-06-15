@@ -112,6 +112,7 @@ final class FolderBrowserTests: XCTestCase {
         let names = Set(snapshot.flat.map(\.name))
 
         XCTAssertEqual(snapshot.flat.count, 5_000, "scanner should stop at its fixed safety budget")
+        XCTAssertTrue(snapshot.isTruncated, "scanner should report that additional openable files were omitted")
         XCTAssertLessThan(elapsed, 10, "budgeted scan should stay responsive even with thousands of files")
         XCTAssertFalse(names.contains("oversized.md"))
         XCTAssertFalse(names.contains(".hidden.md"))
@@ -135,6 +136,8 @@ final class FolderBrowserTests: XCTestCase {
         wait(for: [populated], timeout: 3)
         XCTAssertEqual(model.mountedFolderName, root.lastPathComponent)
         XCTAssertEqual(model.folderFlat.count, 4)
+        XCTAssertFalse(model.folderScanIsTruncated)
+        XCTAssertNil(model.folderTruncationMessage)
 
         model.folderFilter = "gam"
         XCTAssertEqual(model.filteredFolderFiles.map(\.name), ["gamma.md"])

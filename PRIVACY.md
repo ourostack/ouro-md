@@ -10,7 +10,7 @@ project key is embedded by the release package.
 Ouro MD may send:
 
 - App launch events.
-- Update check, stage, install, cancel, and failure status events.
+- Update check, stage, install, defer/cancel, and failure status events.
 - Document create/open events with coarse file-type flags.
 - Document save/open/rename/reload success or failure events with coarse codes
   such as `manual`, `autosave`, `write_failed`, `editor_not_ready`,
@@ -25,7 +25,9 @@ Representative dogfood events include `ouro_md_app_launched`,
 `ouro_md_update_check_completed`, `ouro_md_document_opened`,
 `ouro_md_document_save_completed`, `ouro_md_document_save_failed`,
 `ouro_md_document_renamed`, `ouro_md_document_external_reload_completed`, and
-`ouro_md_export_completed`.
+`ouro_md_export_completed`. If the editor web view crashes, Ouro MD emits a
+crash event and then a recovery-completed event after recovered text is loaded
+back into the editor.
 
 Ouro MD does not send:
 

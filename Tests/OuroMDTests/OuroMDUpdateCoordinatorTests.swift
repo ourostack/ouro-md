@@ -79,7 +79,8 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
     }
 
     func testPromptPresentationBindingDismissesPrompt() {
-        let coordinator = makeCoordinator()
+        var events: [(String, [String: OuroMDTelemetryValue])] = []
+        let coordinator = makeCoordinator(telemetry: { event, properties in events.append((event, properties)) })
         coordinator.updatePrompt = .installable(version: "0.10.0")
 
         let binding = coordinator.updatePromptIsPresented
@@ -88,6 +89,20 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
         binding.wrappedValue = false
         XCTAssertNil(coordinator.updatePrompt)
         XCTAssertFalse(binding.wrappedValue)
+        XCTAssertEqual(events.last?.0, "ouro_md_update_install_deferred")
+        XCTAssertEqual(events.last?.1["version"], .string("0.10.0"))
+        XCTAssertEqual(events.last?.1["reason"], .string("binding"))
+    }
+
+    func testDismissingNonInstallablePromptDoesNotEmitDeferredTelemetry() {
+        var events: [(String, [String: OuroMDTelemetryValue])] = []
+        let coordinator = makeCoordinator(telemetry: { event, properties in events.append((event, properties)) })
+        coordinator.updatePrompt = .upToDate(version: "0.9.0")
+
+        coordinator.dismissUpdatePrompt(reason: "acknowledged")
+
+        XCTAssertNil(coordinator.updatePrompt)
+        XCTAssertTrue(events.isEmpty)
     }
 
     func testBadgeAndPromptUseCheckedReleaseWhenNoUpdateIsStaged() async {

@@ -16,6 +16,7 @@ struct FolderNode: Identifiable, Hashable {
 struct FolderScanSnapshot: Equatable {
     var tree: [FolderNode]
     var flat: [FolderNode]
+    var isTruncated = false
 }
 
 enum FolderSort: String, CaseIterable {
@@ -41,7 +42,7 @@ enum FolderScanner {
     ]
     /// Safety caps so a huge tree can't wedge the UI (Typora switches to tree
     /// view past a similar threshold).
-    private static let maxFiles = 5000
+    static let maxFiles = 5000
     private static let maxFileBytes = 2_000_000
 
     static func canOpen(_ url: URL) -> Bool {
@@ -65,7 +66,8 @@ enum FolderScanner {
         let raw = scan(folder, sort: sort, budget: &budget)
         return FolderScanSnapshot(
             tree: raw.tree,
-            flat: sortNodes(raw.flat, sort: sort, groupDirs: false)
+            flat: sortNodes(raw.flat, sort: sort, groupDirs: false),
+            isTruncated: raw.isTruncated
         )
     }
 
@@ -79,7 +81,8 @@ enum FolderScanner {
     ]
 
     private static func scan(_ dir: URL, sort: FolderSort, budget: inout Int, depth: Int = 0) -> FolderScanSnapshot {
-        guard budget > 0, depth < maxDepth else { return FolderScanSnapshot(tree: [], flat: []) }
+        guard depth < maxDepth else { return FolderScanSnapshot(tree: [], flat: []) }
+        guard budget > 0 else { return FolderScanSnapshot(tree: [], flat: [], isTruncated: true) }
         let fm = FileManager.default
         guard let entries = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: scanKeys,
                                                         options: [.skipsHiddenFiles]) else {
@@ -102,18 +105,32 @@ enum FolderScanner {
                     treeNodes.append(FolderNode(url: url, name: name, isDirectory: true,
                                                 modified: mtime, created: ctime, children: child.tree))
                 }
+                if child.isTruncated {
+                    return FolderScanSnapshot(
+                        tree: sortNodes(treeNodes, sort: sort, groupDirs: true),
+                        flat: flatNodes,
+                        isTruncated: true
+                    )
+                }
             } else if canOpen(url), (values?.fileSize ?? 0) <= maxFileBytes {
                 budget -= 1
                 let node = FolderNode(url: url, name: name, isDirectory: false,
                                       modified: mtime, created: ctime, children: nil)
                 treeNodes.append(node)
                 flatNodes.append(node)
-                if budget <= 0 { break }
+                if budget <= 0 {
+                    return FolderScanSnapshot(
+                        tree: sortNodes(treeNodes, sort: sort, groupDirs: true),
+                        flat: flatNodes,
+                        isTruncated: true
+                    )
+                }
             }
         }
         return FolderScanSnapshot(
             tree: sortNodes(treeNodes, sort: sort, groupDirs: true),
-            flat: flatNodes
+            flat: flatNodes,
+            isTruncated: false
         )
     }
 

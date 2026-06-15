@@ -103,6 +103,36 @@ RENDER_PNG="$ARTIFACT_DIR/render-fixture.png"
   /usr/bin/time -p swift run ouro-md --shoot "$VISUAL_DOC" --out "$RENDER_PNG" --width 1000 --height 1300
   test -s "$RENDER_PNG"
   sips -g pixelWidth -g pixelHeight "$RENDER_PNG"
+  PNG="$RENDER_PNG" /usr/bin/swift - <<'SWIFT'
+import AppKit
+let env = ProcessInfo.processInfo.environment
+guard let path = env["PNG"],
+      let image = NSImage(contentsOfFile: path),
+      let tiff = image.tiffRepresentation,
+      let bitmap = NSBitmapImageRep(data: tiff) else {
+    FileHandle.standardError.write(Data("png_content_check=unreadable\n".utf8))
+    exit(1)
+}
+let width = bitmap.pixelsWide
+let height = bitmap.pixelsHigh
+let xStep = max(1, width / 20)
+let yStep = max(1, height / 20)
+var samples = 0
+var nonWhite = 0
+for y in stride(from: 0, to: height, by: yStep) {
+    for x in stride(from: 0, to: width, by: xStep) {
+        guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else { continue }
+        samples += 1
+        let brightness = (color.redComponent + color.greenComponent + color.blueComponent) / 3
+        if color.alphaComponent > 0.1 && brightness < 0.98 { nonWhite += 1 }
+    }
+}
+guard samples > 0, nonWhite >= max(3, samples / 25) else {
+    FileHandle.standardError.write(Data("png_content_check=too_blank nonwhite=\(nonWhite) samples=\(samples)\n".utf8))
+    exit(1)
+}
+print("png_content_check=ok nonwhite=\(nonWhite) samples=\(samples)")
+SWIFT
 } > "$ARTIFACT_DIR/render-fixture-screenshot.log" 2>&1
 
 {
@@ -132,7 +162,7 @@ APP_PATH="$ROOT/OuroMD.app"
 } > "$ARTIFACT_DIR/first-run.log" 2>&1
 
 {
-  rg -n "accessibility(Label|Identifier|Value|Hint)|help\\(" "$ROOT/Sources/OuroMD" || true
+  rg -n "accessibility(Label|Identifier|Value|Hint)|help\\(" "$ROOT/Sources/OuroMD"
   AX_HOME="$TMP_ROOT/ax-home"
   AX_TMP="$TMP_ROOT/ax-tmp"
   mkdir -p "$AX_HOME/Library/Preferences" "$AX_TMP"
@@ -144,7 +174,10 @@ APP_PATH="$ROOT/OuroMD.app"
     "$APP_PATH/Contents/MacOS/ouro-md" &
   APP_PID=$!
   sleep 4
-  osascript -e 'tell application "System Events" to tell first process whose unix id is '"$APP_PID"' to get {name, role, description} of UI elements of window 1' || true
+  AX_OUT="$TMP_ROOT/ax-window.txt"
+  osascript -e 'tell application "System Events" to tell first process whose unix id is '"$APP_PID"' to get role of window 1' > "$AX_OUT"
+  cat "$AX_OUT"
+  grep -q 'AXWindow' "$AX_OUT"
   terminate_app_pid "$APP_PID"
   wait "$APP_PID" || true
 } > "$ARTIFACT_DIR/accessibility-ax.log" 2>&1
@@ -152,6 +185,7 @@ APP_PATH="$ROOT/OuroMD.app"
 {
   LIVE_INSTALL="$TMP_ROOT/live-install"
   mkdir -p "$LIVE_INSTALL"
+  curl -fsSL https://ouro.bot/ouro-md-install.sh | OURO_MD_INSTALL_DIR="$LIVE_INSTALL" OURO_MD_NO_OPEN=1 bash
   curl -fsSL https://ouro.bot/ouro-md-install.sh | OURO_MD_INSTALL_DIR="$LIVE_INSTALL" OURO_MD_NO_OPEN=1 bash
   /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$LIVE_INSTALL/Ouro MD.app/Contents/Info.plist"
   /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$LIVE_INSTALL/Ouro MD.app/Contents/Info.plist"

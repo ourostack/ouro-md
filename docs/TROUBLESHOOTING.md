@@ -102,6 +102,10 @@ Known current boundary: multi-megabyte live-editor roundtrip is not a v1 claim.
 If ordinary notes feel slow, include file size, folder size, and the action that
 felt slow.
 
+The folder sidebar and folder search intentionally cap scans at the first 5,000
+openable files to keep the UI responsive. Ouro MD shows a warning when a scan is
+truncated; narrow the folder or search path if the omitted files matter.
+
 ## Telemetry
 
 Release builds may send anonymous product telemetry when packaged with a PostHog

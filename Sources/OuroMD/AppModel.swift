@@ -56,6 +56,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var mountedFolder: URL?
     @Published private(set) var folderTree: [FolderNode] = []
     @Published private(set) var folderFlat: [FolderNode] = []
+    @Published private(set) var folderScanIsTruncated = false
     @Published var folderSort: FolderSort = .natural
     @Published var useTreeView = false
     @Published var folderFilter = ""
@@ -71,6 +72,7 @@ final class AppModel: ObservableObject {
     @Published var searchQuery = ""
     @Published private(set) var searchResults: [SearchResult] = []
     @Published private(set) var searching = false
+    @Published private(set) var searchWasTruncated = false
     @Published var searchCaseSensitive = false
     @Published var searchWholeWord = false
     @Published var searchRegexp = false
@@ -87,6 +89,7 @@ final class AppModel: ObservableObject {
     /// The content currently on disk (last loaded or saved). Lets the file
     /// watcher distinguish a genuine external edit from our own save echo.
     private var lastLoadedContent: String?
+    private var pendingRecoverySource: String?
     private var fileWatcher: FileWatcher?
     private var folderWatcher: FolderWatcher?
     private let folderScanQueue = DispatchQueue(label: "md.ouro.folderscan", qos: .userInitiated)
@@ -133,10 +136,17 @@ final class AppModel: ObservableObject {
     func editorDidBecomeReady() {
         isReady = true
         applyThemeToEditor()
-        if let pending = pendingMarkdown {
-            bridge?.setDocBase(currentURL?.deletingLastPathComponent().path)
-            bridge?.setMarkdown(pending)
+        if let pending = pendingMarkdown, let bridge {
+            bridge.setDocBase(currentURL?.deletingLastPathComponent().path)
+            bridge.setMarkdown(pending)
             pendingMarkdown = nil
+            if let source = pendingRecoverySource {
+                pendingRecoverySource = nil
+                captureTelemetry(
+                    "ouro_md_editor_webview_recovery_completed",
+                    properties: ["source": .string(source)]
+                )
+            }
         }
         bridge?.setMode(mode)
         bridge?.setOutline(showOutline)
@@ -550,7 +560,15 @@ final class AppModel: ObservableObject {
             presentExternalChangeConflict(diskContent: disk, url: url)
         } else {
             lastLoadedContent = disk
-            bridge?.reloadMarkdown(disk)   // preserves scroll position
+            guard isReady, let bridge else {
+                pendingMarkdown = disk
+                captureTelemetry(
+                    "ouro_md_document_external_reload_queued",
+                    properties: ["reason": .string(isReady ? "bridge_unavailable" : "editor_not_ready")]
+                )
+                return
+            }
+            bridge.reloadMarkdown(disk)   // preserves scroll position
             captureTelemetry("ouro_md_document_external_reload_completed")
         }
     }
@@ -697,9 +715,10 @@ final class AppModel: ObservableObject {
     /// the reloaded editor isn't left blank and work isn't lost.
     func editorCrashed() {
         isReady = false
-        let recovered = currentURL.flatMap { AppModel.readText(at: $0) }
-            ?? lastLoadedContent
+        let diskContent = currentURL.flatMap { AppModel.readText(at: $0) }
+        let recovered = diskContent ?? lastLoadedContent ?? ""
         pendingMarkdown = recovered
+        pendingRecoverySource = diskContent != nil ? "disk" : (lastLoadedContent != nil ? "last_loaded" : "empty")
         captureTelemetry("ouro_md_editor_webview_crashed")
     }
 
@@ -772,6 +791,7 @@ final class AppModel: ObservableObject {
         mountedFolder = nil
         folderTree = []
         folderFlat = []
+        folderScanIsTruncated = false
         folderWatcher?.stop()
         folderWatcher = nil
         onChromeUpdate?()
@@ -805,7 +825,12 @@ final class AppModel: ObservableObject {
 
     /// Re-scans the mounted folder off the main thread, then publishes.
     func rescanFolder() {
-        guard let folder = mountedFolder else { folderTree = []; folderFlat = []; return }
+        guard let folder = mountedFolder else {
+            folderTree = []
+            folderFlat = []
+            folderScanIsTruncated = false
+            return
+        }
         let sort = folderSort
         folderScanQueue.async { [weak self] in
             let snapshot = FolderScanner.snapshot(at: folder, sort: sort)
@@ -813,6 +838,7 @@ final class AppModel: ObservableObject {
                 guard let self, self.mountedFolder == folder else { return }
                 self.folderTree = snapshot.tree
                 self.folderFlat = snapshot.flat
+                self.folderScanIsTruncated = snapshot.isTruncated
             }
         }
     }
@@ -835,6 +861,9 @@ final class AppModel: ObservableObject {
     }
 
     var mountedFolderName: String { mountedFolder?.lastPathComponent ?? "Open Folder…" }
+    var folderTruncationMessage: String? {
+        folderScanIsTruncated ? "Showing first \(folderFlat.count) files" : nil
+    }
 
     func refreshFolder() {
         // Folder browser now tracks an explicitly-mounted folder; opening a file
@@ -918,6 +947,7 @@ final class AppModel: ObservableObject {
     func runFolderSearch() {
         let query = searchQuery
         searchResults = []
+        searchWasTruncated = false
         guard let folder = mountedFolder ?? currentURL?.deletingLastPathComponent(),
               !query.trimmingCharacters(in: .whitespaces).isEmpty else {
             searching = false
@@ -929,7 +959,10 @@ final class AppModel: ObservableObject {
         contentSearcher.search(query, in: folder,
                                caseSensitive: searchCaseSensitive, wholeWord: searchWholeWord, regexp: searchRegexp,
                                onResult: { [weak self] result in self?.appendSearchResult(result) },
-                               onComplete: { [weak self] in self?.searching = false })
+                               onComplete: { [weak self] isTruncated in
+                                   self?.searchWasTruncated = isTruncated
+                                   self?.searching = false
+                               })
     }
 
     private func appendSearchResult(_ result: SearchResult) {

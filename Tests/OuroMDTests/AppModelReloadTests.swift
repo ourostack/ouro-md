@@ -132,6 +132,68 @@ final class AppModelReloadTests: XCTestCase {
         assertTelemetryDoesNotLeak(recorder.events, forbidden: [url.path, url.lastPathComponent, "Updated by agent"])
     }
 
+    func testExternalEditBeforeEditorReadyQueuesReloadWithoutFalseCompletion() {
+        let url = tempFile()
+        try? "# Original\n".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let model = AppModel()
+        let recorder = recordTelemetry(on: model)
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.loadInitialFile(url.path)
+
+        let queued = expectation(description: "external edit queued before editor ready")
+        queued.assertForOverFulfill = false
+        model.telemetryHandler = { event, properties in
+            recorder.events.append((event, properties))
+            if event == "ouro_md_document_external_reload_queued" { queued.fulfill() }
+        }
+
+        try? "# Updated before ready\n".write(to: url, atomically: true, encoding: .utf8)
+        wait(for: [queued], timeout: 6)
+
+        XCTAssertTrue(bridge.reloads.isEmpty, "not-ready editor should not receive a completed reload")
+        XCTAssertFalse(recorder.events.contains { $0.event == "ouro_md_document_external_reload_completed" })
+
+        model.editorDidBecomeReady()
+        XCTAssertEqual(bridge.current, "# Updated before ready\n")
+        assertTelemetry(
+            recorder.events,
+            contains: "ouro_md_document_external_reload_queued",
+            properties: ["reason": .string("editor_not_ready")]
+        )
+        assertTelemetryDoesNotLeak(recorder.events, forbidden: [url.path, url.lastPathComponent, "Updated before ready"])
+    }
+
+    func testEditorCrashRecoveryEmitsCompletionAfterRecoveredContentReachesBridge() {
+        let url = tempFile()
+        try? "# Disk recovery\n".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let model = AppModel()
+        let recorder = recordTelemetry(on: model)
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+        model.loadInitialFile(url.path)
+
+        bridge.current = ""
+        model.editorCrashed()
+        XCTAssertFalse(recorder.events.contains { $0.event == "ouro_md_editor_webview_recovery_completed" })
+
+        model.editorDidBecomeReady()
+
+        XCTAssertEqual(bridge.current, "# Disk recovery\n")
+        assertTelemetry(recorder.events, contains: "ouro_md_editor_webview_crashed", properties: [:])
+        assertTelemetry(
+            recorder.events,
+            contains: "ouro_md_editor_webview_recovery_completed",
+            properties: ["source": .string("disk")]
+        )
+        assertTelemetryDoesNotLeak(recorder.events, forbidden: [url.path, url.lastPathComponent, "Disk recovery"])
+    }
+
     /// Our own save must not bounce back as an external reload.
     func testOwnSaveDoesNotSelfReload() {
         let url = tempFile()

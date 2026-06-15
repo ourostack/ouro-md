@@ -145,6 +145,17 @@ struct FolderBrowserView: View {
             .padding(.horizontal, 8).padding(.vertical, 6)
             Divider()
 
+            if let message = model.folderTruncationMessage {
+                Label(message, systemImage: "exclamationmark.triangle")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .accessibilityLabel("Folder scan limited")
+                    .accessibilityValue(message)
+                Divider()
+            }
+
             content
 
             Divider()
@@ -282,6 +293,15 @@ struct SearchPanelView: View {
             }
             .padding(.horizontal, 8).padding(.bottom, 6)
             Divider()
+            if model.searchWasTruncated {
+                Label("Searched first \(FolderScanner.maxFiles) files", systemImage: "exclamationmark.triangle")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .accessibilityLabel("Search limited")
+                Divider()
+            }
             results
         }
         .onAppear { focused = true }
