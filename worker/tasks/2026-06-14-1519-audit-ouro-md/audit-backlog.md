@@ -1,6 +1,6 @@
 # Ouro MD Audit Backlog
 
-**Status**: NEEDS_REVIEW
+**Status**: DONE
 **Created**: 2026-06-14 15:19
 **Source report**: ./audit-report.md
 
@@ -16,9 +16,9 @@
 **Recommended lane**: planner-required
 **Suggested supporting skills**: work-planner, work-doer
 **Verification**: Add pure unit tests for release snapshot/planning/verification; run `swift test`; run a safe staged-install harness or dry-run for app extraction and identity checks.
-**Status**: in_progress
+**Status**: done
 **Linked work**: ../2026-06-14-1519-doing-auto-updater-reliability.md
-**Notes**: Implemented on branch `worker/ouro-md-auto-updater` with pure release/update logic, installer/stager verification, app coordinator, menu/preferences hooks, and reviewer-driven race fixes. Keep non-terminal until merge, published release, and live installer smoke complete.
+**Notes**: Shipped in PR #1 and release `v0.9.1` with pure release/update logic, verified installer/stager, app coordinator, menu/preferences hooks, launch-time staging, manual install safety fixes, and live `https://ouro.bot/ouro-md-install.sh` smoke passing.
 
 ---
 
@@ -34,9 +34,9 @@
 **Recommended lane**: planner-required
 **Suggested supporting skills**: work-planner, work-doer
 **Verification**: Expand headless harness coverage for multi-step undo/redo, redo invalidation after new edit, empty-stack no-op, menu selector path, and focus/native-control routing where feasible.
-**Status**: in_progress
+**Status**: done
 **Linked work**: ../2026-06-14-1519-doing-auto-updater-reliability.md
-**Notes**: Implemented on branch `worker/ouro-md-auto-updater` with native shortcut routing tests, focused native text-view preservation, and expanded `--undotest` coverage for multi-step undo/redo, redo invalidation, empty stacks, and mode rebuilds. Keep non-terminal until merge/live verification completes.
+**Notes**: Shipped in PR #1 with native shortcut routing tests, focused native text-view preservation, and expanded `--undotest` coverage for multi-step undo/redo, redo invalidation, empty stacks, and mode rebuilds; final local harness passed before release.
 
 ---
 
@@ -52,9 +52,9 @@
 **Recommended lane**: planner-required
 **Suggested supporting skills**: work-planner, work-doer
 **Verification**: `swift run ouro-md --version` reports the release version; README install command uses `https://ouro.bot/ouro-md-install.sh`; package manifest emits the same release version.
-**Status**: in_progress
+**Status**: done
 **Linked work**: ../2026-06-14-1519-doing-auto-updater-reliability.md
-**Notes**: Implemented on branch `worker/ouro-md-auto-updater` with shared `OuroMDRelease` truth and release version `0.9.1`. Keep non-terminal until merged main is packaged and the published manifest is verified.
+**Notes**: Shipped in PR #1/release `v0.9.1` with shared `OuroMDRelease` truth; final package manifest, bundle Info.plist, release assets, and live installed app all verified as `0.9.1`.
 
 ---
 
@@ -70,9 +70,9 @@
 **Recommended lane**: inch-worm-ready-after-reeval
 **Suggested supporting skills**: work-doer
 **Verification**: `swift test` passes with no warnings from weak mock bridge assignment.
-**Status**: in_progress
+**Status**: done
 **Linked work**: ../2026-06-14-1519-doing-auto-updater-reliability.md
-**Notes**: Implemented on branch `worker/ouro-md-auto-updater` by retaining weak mock bridges in tests. Keep non-terminal until final clean verification before merge/release.
+**Notes**: Shipped in PR #1 by retaining weak mock bridges in tests; final warning scans across test, coverage, harness, and package logs were empty.
 
 ---
 
@@ -88,9 +88,9 @@
 **Recommended lane**: planner-required
 **Suggested supporting skills**: work-planner, work-doer
 **Verification**: Updater pure logic and install staging live in separate files; AppDelegate/AppModel only expose minimal UI/action hooks.
-**Status**: in_progress
+**Status**: done
 **Linked work**: ../2026-06-14-1519-doing-auto-updater-reliability.md
-**Notes**: Implemented on branch `worker/ouro-md-auto-updater` by keeping updater release logic, installer/stager, and coordinator outside `AppModel.swift`; AppDelegate/MenuBuilder/Preferences received focused hooks only. Deeper AppModel extraction remains deferred.
+**Notes**: Shipped in PR #1 by keeping updater release logic, installer/stager, coordinator, and termination-save barrier outside `AppModel.swift`; AppDelegate/MenuBuilder/Preferences received focused hooks only. Deeper AppModel extraction remains deferred.
 
 ---
 
@@ -124,8 +124,8 @@
 **Recommended lane**: inch-worm-ready-after-reeval
 **Suggested supporting skills**: work-doer
 **Verification**: README describes live pretty URL, current version, update behavior, and remaining signing/notarization limits accurately.
-**Status**: in_progress
+**Status**: done
 **Linked work**: ../2026-06-14-1519-doing-auto-updater-reliability.md
-**Notes**: Implemented on branch `worker/ouro-md-auto-updater` with README status/install/updater text and installer comments refreshed for the live pretty URL. Keep non-terminal until published release and live smoke confirm user-facing install behavior.
+**Notes**: Shipped in PR #1/release `v0.9.1` with README status/install/updater text and installer comments refreshed for the live pretty URL; live smoke confirmed `https://ouro.bot/ouro-md-install.sh` installs `Ouro MD.app` version `0.9.1`.
 
 ---

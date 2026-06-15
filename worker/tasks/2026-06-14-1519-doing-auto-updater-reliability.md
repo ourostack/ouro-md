@@ -137,7 +137,7 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 **Output**: PR URL, merge commit, GitHub check/no-CI evidence, cleanup evidence.
 **Acceptance**: PR is merged to `main`; no dirty worktree; no unpushed commits; no stale local or remote feature branch if safe to delete. The merged PR remains as project history and is not considered residue.
 
-### 🔄 Unit 6c: Publish From Merged Main And Live E2E Smoke
+### ✅ Unit 6c: Publish From Merged Main And Live E2E Smoke
 **What**: From merged `origin/main`, package the final release so the manifest embeds the merged main SHA, publish the GitHub release, smoke `https://ouro.bot/ouro-md-install.sh` into a temp directory with `OURO_MD_NO_OPEN=1`, verify installed bundle version/bundle id, update audit backlog terminal statuses, desk task, and final artifacts.
 **Output**: Release URL, final manifest/zip names, live installer smoke output, installed bundle identity/version, final backlog/task updates.
 **Acceptance**: Release is published from merged main; `https://ouro.bot/ouro-md-install.sh` installs the new release into a temp directory without opening the app; installed bundle id/version match expectations; no dirty worktree, unpushed commits, open PR from this run, or unsafe branch residue remains.
@@ -180,3 +180,6 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - 2026-06-14 17:43 Unit 6b Godel review fix complete: `Save All` termination now cancels on any failed save or timeout instead of forcing quit, pending manual installs are disarmed through the cancel path, and the pure save barrier lives in `TerminationSaveCoordinator.swift` with full branch coverage; targeted tests, full local matrix, package dry run, and warning scan passed; resolution recorded in `unit6b-godel-review-resolution.md`.
 - 2026-06-14 17:45 Unit 6b Raman final focused review of commit `2be09d5` returned no blockers; result recorded in `unit6b-raman-final-review.md`.
 - 2026-06-14 17:48 Unit 6b complete: PR #1 merged to `main` with merge commit `f9fbd06d7099e84f6626d9370be3c785e66fa543`; remote feature branch was deleted by `gh pr merge --delete-branch`; local checkout fast-forwarded to `origin/main`.
+- 2026-06-14 17:49 Unit 6c package complete from main commit `e7b03d1cb7e5b495beb28413562b7c09ffc42dc6`; final manifest `dist/Ouro-MD-0.9.1.manifest.json` records version/build `0.9.1`, bundle id `org.ourostack.ouro-md`, archive `Ouro-MD-0.9.1.zip`, bytes `7166527`, sha256 `a788d90771d7f617f57c18bec951be610589e3ed4c3a1bf5de511c682765769b`; bundle Info.plist and codesign verified.
+- 2026-06-14 17:50 Unit 6c release published at https://github.com/ourostack/ouro-md/releases/tag/v0.9.1 with zip and manifest assets uploaded; release assets report matching zip sha256/bytes.
+- 2026-06-14 17:51 Unit 6c live smoke passed: `curl -fsSL https://ouro.bot/ouro-md-install.sh | OURO_MD_INSTALL_DIR="$tmp" OURO_MD_NO_OPEN=1 bash` installed to temp dir; installed bundle id `org.ourostack.ouro-md`, version `0.9.1`, codesign verify `ok`; evidence saved in `unit6c-live-install-smoke.log`.
