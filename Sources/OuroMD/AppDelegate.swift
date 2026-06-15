@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private let defaults = UserDefaults.standard
     let updateCoordinator = OuroMDUpdateCoordinator()
     private var updateCancellables: Set<AnyCancellable> = []
+    private var undoRedoShortcutMonitor: UndoRedoShortcutMonitor?
 
     private var isSelfTest: Bool { ProcessInfo.processInfo.environment["OURO_SELFTEST"] == "1" }
 
@@ -35,6 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        installUndoRedoShortcutMonitor()
         if isSelfTest {
             let controller = DocumentWindowController(filePath: initialFilePath, selfTest: true, useAutosave: true)
             track(controller)
@@ -103,6 +105,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 
     func applicationWillTerminate(_ notification: Notification) {
+        undoRedoShortcutMonitor?.invalidate()
         saveSession()
         if !updateCoordinator.applyPendingManualUpdateAndRelaunchIfNeeded() {
             updateCoordinator.applyStagedUpdateOnQuitIfNeeded()
@@ -181,14 +184,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
     @objc func printDocument(_ sender: Any?) { frontController?.printDocument() }
     @objc func undoEdit(_ sender: Any?) {
-        UndoRedoCommandRouter.performUndo(firstResponder: NSApp.keyWindow?.firstResponder) {
-            model.undo()
-        }
+        performUndoRedoCommand(.undo, firstResponder: NSApp.keyWindow?.firstResponder)
     }
     @objc func redoEdit(_ sender: Any?) {
-        UndoRedoCommandRouter.performRedo(firstResponder: NSApp.keyWindow?.firstResponder) {
-            model.redo()
+        performUndoRedoCommand(.redo, firstResponder: NSApp.keyWindow?.firstResponder)
+    }
+
+    private func installUndoRedoShortcutMonitor() {
+        guard undoRedoShortcutMonitor == nil else { return }
+        let monitor = UndoRedoShortcutMonitor { [weak self] command, firstResponder in
+            self?.performUndoRedoCommand(command, firstResponder: firstResponder) ?? false
         }
+        monitor.install()
+        undoRedoShortcutMonitor = monitor
+    }
+
+    @discardableResult
+    private func performUndoRedoCommand(_ command: UndoRedoCommand, firstResponder: NSResponder?) -> Bool {
+        UndoRedoCommandRouter.perform(
+            command,
+            firstResponder: firstResponder,
+            editorIsReady: model.isReady,
+            editorUndo: { [model] in model.undo() },
+            editorRedo: { [model] in model.redo() }
+        )
     }
 
     private var prefsWindow: NSWindow?

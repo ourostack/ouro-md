@@ -1,4 +1,5 @@
 import AppKit
+import WebKit
 import XCTest
 @testable import OuroMD
 
@@ -17,6 +18,74 @@ final class UndoRedoRoutingTests: XCTestCase {
         XCTAssertTrue(undo?.target === delegate)
         XCTAssertEqual(redo?.action, #selector(AppDelegate.redoEdit(_:)))
         XCTAssertTrue(redo?.target === delegate)
+        XCTAssertEqual(redo?.keyEquivalent, "z")
+        XCTAssertTrue(redo?.keyEquivalentModifierMask.contains(.command) == true)
+        XCTAssertTrue(redo?.keyEquivalentModifierMask.contains(.shift) == true)
+    }
+
+    func testShortcutParserRecognizesMacUndoRedoKeystrokes() {
+        XCTAssertEqual(
+            UndoRedoCommandRouter.command(for: keyEvent("z", modifiers: [.command])),
+            .undo
+        )
+        XCTAssertEqual(
+            UndoRedoCommandRouter.command(for: keyEvent("Z", modifiers: [.command, .shift])),
+            .redo
+        )
+        XCTAssertEqual(
+            UndoRedoCommandRouter.command(for: keyEvent("y", modifiers: [.command])),
+            .redo
+        )
+    }
+
+    func testShortcutParserRejectsModifiedNonUndoRedoKeystrokes() {
+        XCTAssertNil(UndoRedoCommandRouter.command(for: keyEvent("z", modifiers: [.command, .option])))
+        XCTAssertNil(UndoRedoCommandRouter.command(for: keyEvent("z", modifiers: [.command, .control])))
+        XCTAssertNil(UndoRedoCommandRouter.command(for: keyEvent("x", modifiers: [.command])))
+    }
+
+    func testShortcutMonitorHandlesNSApplicationSendEventBeforeMenuDispatch() {
+        let app = NSApplication.shared
+        let previousMenu = app.mainMenu
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 320, height: 200),
+                              styleMask: [.titled],
+                              backing: .buffered,
+                              defer: false)
+        let content = NSView(frame: window.contentView?.bounds ?? .zero)
+        let responder = FirstResponderView(frame: NSRect(x: 0, y: 0, width: 50, height: 50))
+        content.addSubview(responder)
+        window.contentView = content
+        window.makeKeyAndOrderFront(nil)
+        XCTAssertTrue(window.makeFirstResponder(responder))
+
+        let menu = NSMenu()
+        let edit = NSMenuItem()
+        let editMenu = NSMenu(title: "Edit")
+        let redo = editMenu.addItem(withTitle: "Redo",
+                                    action: #selector(FirstResponderView.unwantedRedo(_:)),
+                                    keyEquivalent: "z")
+        redo.keyEquivalentModifierMask = [.command, .shift]
+        redo.target = responder
+        edit.submenu = editMenu
+        menu.addItem(edit)
+        app.mainMenu = menu
+
+        var handledCommand: UndoRedoCommand?
+        let monitor = UndoRedoShortcutMonitor { command, firstResponder in
+            handledCommand = command
+            return true
+        }
+        monitor.install()
+        defer {
+            monitor.invalidate()
+            app.mainMenu = previousMenu
+            window.orderOut(nil)
+        }
+
+        app.sendEvent(keyEvent("Z", modifiers: [.command, .shift], windowNumber: window.windowNumber))
+
+        XCTAssertEqual(handledCommand, .redo)
+        XCTAssertEqual(responder.unwantedRedoCount, 0)
     }
 
     func testMenuValidationDisablesEditorOnlyCommandsWithoutAWindow() {
@@ -99,6 +168,23 @@ final class UndoRedoRoutingTests: XCTestCase {
         XCTAssertEqual(fallbackCount, 0)
     }
 
+    func testUndoAndRedoFallBackForTextViewsInsideWebView() {
+        let manager = RecordingUndoManager(canUndo: true, canRedo: true)
+        let webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 320, height: 200))
+        let textView = NativeTextView(undoManager: manager)
+        webView.addSubview(textView)
+        var undoFallbackCount = 0
+        var redoFallbackCount = 0
+
+        XCTAssertFalse(UndoRedoCommandRouter.performUndo(firstResponder: textView) { undoFallbackCount += 1 })
+        XCTAssertFalse(UndoRedoCommandRouter.performRedo(firstResponder: textView) { redoFallbackCount += 1 })
+
+        XCTAssertEqual(manager.undoCalls, 0)
+        XCTAssertEqual(manager.redoCalls, 0)
+        XCTAssertEqual(undoFallbackCount, 1)
+        XCTAssertEqual(redoFallbackCount, 1)
+    }
+
     func testUndoAndRedoFallBackWhenResponderIsNotNativeTextView() {
         let responder = NSResponder()
         var undoFallbackCount = 0
@@ -109,6 +195,29 @@ final class UndoRedoRoutingTests: XCTestCase {
 
         XCTAssertEqual(undoFallbackCount, 1)
         XCTAssertEqual(redoFallbackCount, 1)
+    }
+}
+
+private func keyEvent(_ key: String, modifiers: NSEvent.ModifierFlags, windowNumber: Int = 0) -> NSEvent {
+    NSEvent.keyEvent(with: .keyDown,
+                     location: .zero,
+                     modifierFlags: modifiers,
+                     timestamp: 0,
+                     windowNumber: windowNumber,
+                     context: nil,
+                     characters: key,
+                     charactersIgnoringModifiers: key.lowercased(),
+                     isARepeat: false,
+                     keyCode: key.lowercased() == "y" ? 16 : 6)!
+}
+
+private final class FirstResponderView: NSView {
+    private(set) var unwantedRedoCount = 0
+
+    override var acceptsFirstResponder: Bool { true }
+
+    @objc func unwantedRedo(_ sender: Any?) {
+        unwantedRedoCount += 1
     }
 }
 
