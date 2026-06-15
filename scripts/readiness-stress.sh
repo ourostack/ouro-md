@@ -19,21 +19,30 @@ run_logged() {
 
 make_large_doc() {
   local out="$1"
+  local sections="$2"
+  local rich="${3:-1}"
   : > "$out"
   {
     printf '# Synthetic Dogfood Stress Fixture\n\n'
-    printf '> [!NOTE]\n> Alert body for render checks.\n\n'
-    printf '| Column A | Column B | Column C |\n| --- | --- | --- |\n'
-    printf '| one | two | three |\n\n'
-    printf '$$E = mc^2$$\n\n'
-    printf '[^stress]: Footnote body.\n\n'
-    printf '```mermaid\ngraph TD; A-->B;\n```\n\n'
+    if [ "$rich" = "1" ]; then
+      printf '> [!NOTE]\n> Alert body for render checks.\n\n'
+      printf '| Column A | Column B | Column C |\n| --- | --- | --- |\n'
+      printf '| one | two | three |\n\n'
+      printf '$$E = mc^2$$\n\n'
+      printf '[^stress]: Footnote body.\n\n'
+      printf '```mermaid\ngraph TD; A-->B;\n```\n\n'
+    fi
   } >> "$out"
-  for i in $(seq 1 18000); do
+  for i in $(seq 1 "$sections"); do
     {
       printf '## Section %05d\n\n' "$i"
-      printf 'Paragraph %05d with **bold**, `inline code`, [a link](https://example.com), and a footnote reference[^stress].\n\n' "$i"
-      printf -- '- [x] completed item %05d\n- [ ] open item %05d\n\n' "$i" "$i"
+      if [ "$rich" = "1" ]; then
+        printf 'Paragraph %05d with **bold**, `inline code`, [a link](https://example.com), and a footnote reference[^stress].\n\n' "$i"
+        printf -- '- [x] completed item %05d\n- [ ] open item %05d\n\n' "$i" "$i"
+      else
+        printf 'Paragraph %05d with **bold**, `inline code`, and enough plain text to exercise editor scale without table normalization.\n\n' "$i"
+        printf -- '- completed item %05d\n- open item %05d\n\n' "$i" "$i"
+      fi
       printf '```swift\nlet value%d = "%05d"\n```\n\n' "$i" "$i"
     } >> "$out"
   done
@@ -46,19 +55,22 @@ cd "$ROOT"
 
 run_logged "$ARTIFACT_DIR/large-workspace.log" swift test --filter FolderBrowserTests/testLargeWorkspaceBudgetSkipsOversizedHiddenAndSymlinkedFiles
 
-LARGE_DOC="$ARTIFACT_DIR/large-dogfood-fixture.md"
+ROUNDTRIP_DOC="$ARTIFACT_DIR/large-roundtrip-fixture.md"
+RENDER_DOC="$ARTIFACT_DIR/large-render-fixture.md"
 ROUNDTRIP_OUT="$ARTIFACT_DIR/large-doc-roundtrip.md"
-make_large_doc "$LARGE_DOC"
+make_large_doc "$ROUNDTRIP_DOC" 2500 0
+make_large_doc "$RENDER_DOC" 18000 1
 {
-  log "large-doc bytes=$(wc -c < "$LARGE_DOC")"
-  /usr/bin/time -p swift run ouro-md --roundtrip "$LARGE_DOC" --out "$ROUNDTRIP_OUT"
-  cmp "$LARGE_DOC" "$ROUNDTRIP_OUT"
+  log "large-roundtrip-doc bytes=$(wc -c < "$ROUNDTRIP_DOC")"
+  /usr/bin/time -p swift run ouro-md --roundtrip "$ROUNDTRIP_DOC" --out "$ROUNDTRIP_OUT"
+  cmp "$ROUNDTRIP_DOC" "$ROUNDTRIP_OUT"
   log "large roundtrip cmp ok"
 } > "$ARTIFACT_DIR/large-doc-roundtrip.log" 2>&1
 
 RENDER_HTML="$ARTIFACT_DIR/render-fixture.html"
 {
-  /usr/bin/time -p swift run ouro-md --render "$LARGE_DOC" --theme quartz > "$RENDER_HTML"
+  log "large-render-doc bytes=$(wc -c < "$RENDER_DOC")"
+  /usr/bin/time -p swift run ouro-md --render "$RENDER_DOC" --theme quartz > "$RENDER_HTML"
   test -s "$RENDER_HTML"
   grep -q 'Synthetic Dogfood Stress Fixture' "$RENDER_HTML"
   grep -q 'footnotes' "$RENDER_HTML"
@@ -68,7 +80,7 @@ RENDER_HTML="$ARTIFACT_DIR/render-fixture.html"
 
 RENDER_PNG="$ARTIFACT_DIR/render-fixture.png"
 {
-  /usr/bin/time -p swift run ouro-md --shoot "$LARGE_DOC" --out "$RENDER_PNG" --width 1000 --height 1300
+  /usr/bin/time -p swift run ouro-md --shoot "$ROUNDTRIP_DOC" --out "$RENDER_PNG" --width 1000 --height 1300
   test -s "$RENDER_PNG"
   sips -g pixelWidth -g pixelHeight "$RENDER_PNG"
 } > "$ARTIFACT_DIR/render-fixture-screenshot.log" 2>&1

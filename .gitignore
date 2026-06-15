@@ -10,5 +10,11 @@ OuroMD.app/
 # Release artifacts (produced by scripts/package-release.sh)
 dist/
 
+# Generated readiness-stress fixtures (logs stay tracked under worker/tasks)
+worker/tasks/*/large-*-fixture.md
+worker/tasks/*/large-doc-roundtrip.md
+worker/tasks/*/render-fixture.html
+worker/tasks/*/render-fixture.png
+
 # macOS
 .DS_Store

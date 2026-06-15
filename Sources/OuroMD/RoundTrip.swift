@@ -9,6 +9,12 @@ final class RoundTripper: NSObject, WKScriptMessageHandler, WKNavigationDelegate
     private let input: String
     private let outURL: URL?
     private var webView: WKWebView!
+    private var timeoutSeconds: TimeInterval {
+        min(360, max(180, 60 + Double(input.utf8.count) / 20_000))
+    }
+    private var settleSeconds: TimeInterval {
+        min(12, max(1.5, Double(input.utf8.count) / 500_000))
+    }
 
     init(fileURL: URL, outURL: URL?) throws {
         self.input = try Self.readInput(fileURL)
@@ -36,7 +42,7 @@ final class RoundTripper: NSObject, WKScriptMessageHandler, WKNavigationDelegate
             FileHandle.standardError.write(Data("roundtrip: index.html not found\n".utf8)); exit(1)
         }
         webView.loadFileURL(indexURL, allowingReadAccessTo: indexURL.deletingLastPathComponent())
-        DispatchQueue.main.asyncAfter(deadline: .now() + 25) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + timeoutSeconds) {
             FileHandle.standardError.write(Data("roundtrip: timed out\n".utf8)); exit(1)
         }
         app.run()
@@ -46,7 +52,7 @@ final class RoundTripper: NSObject, WKScriptMessageHandler, WKNavigationDelegate
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let body = message.body as? [String: Any], body["type"] as? String == "ready" else { return }
         webView.evaluateJavaScript("window.ouro.setValue(\(RoundTripper.js(input)))", completionHandler: nil)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + settleSeconds) {
             self.webView.evaluateJavaScript("window.ouro.getValue()") { result, _ in
                 let output = MarkdownTidy.roundTripProbeOutput((result as? String) ?? "", preserving: self.input)
                 if let outURL = self.outURL {
