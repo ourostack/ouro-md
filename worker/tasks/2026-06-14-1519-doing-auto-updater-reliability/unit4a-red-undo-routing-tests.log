@@ -1,0 +1,53 @@
+Building for debugging...
+[0/6] Write sources
+[1/6] Write swift-version--58304C5D6DBC2206.txt
+[3/6] Emitting module OuroMDTests
+[4/6] Compiling OuroMDTests UndoRedoRoutingTests.swift
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/UndoRedoRoutingTests.swift:27:29: error: cannot find 'UndoRedoCommandRouter' in scope
+ 25 |         var fallbackCount = 0
+ 26 | 
+ 27 |         let handledNative = UndoRedoCommandRouter.performUndo(firstResponder: textView) {
+    |                             `- error: cannot find 'UndoRedoCommandRouter' in scope
+ 28 |             fallbackCount += 1
+ 29 |         }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/UndoRedoRoutingTests.swift:41:29: error: cannot find 'UndoRedoCommandRouter' in scope
+ 39 |         var fallbackCount = 0
+ 40 | 
+ 41 |         let handledNative = UndoRedoCommandRouter.performRedo(firstResponder: textView) {
+    |                             `- error: cannot find 'UndoRedoCommandRouter' in scope
+ 42 |             fallbackCount += 1
+ 43 |         }
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/UndoRedoRoutingTests.swift:55:23: error: cannot find 'UndoRedoCommandRouter' in scope
+ 53 |         var fallbackCount = 0
+ 54 | 
+ 55 |         XCTAssertTrue(UndoRedoCommandRouter.performUndo(firstResponder: textView) { fallbackCount += 1 })
+    |                       `- error: cannot find 'UndoRedoCommandRouter' in scope
+ 56 |         XCTAssertTrue(UndoRedoCommandRouter.performRedo(firstResponder: textView) { fallbackCount += 1 })
+ 57 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/UndoRedoRoutingTests.swift:56:23: error: cannot find 'UndoRedoCommandRouter' in scope
+ 54 | 
+ 55 |         XCTAssertTrue(UndoRedoCommandRouter.performUndo(firstResponder: textView) { fallbackCount += 1 })
+ 56 |         XCTAssertTrue(UndoRedoCommandRouter.performRedo(firstResponder: textView) { fallbackCount += 1 })
+    |                       `- error: cannot find 'UndoRedoCommandRouter' in scope
+ 57 | 
+ 58 |         XCTAssertEqual(manager.undoCalls, 1)
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/UndoRedoRoutingTests.swift:68:24: error: cannot find 'UndoRedoCommandRouter' in scope
+ 66 |         var redoFallbackCount = 0
+ 67 | 
+ 68 |         XCTAssertFalse(UndoRedoCommandRouter.performUndo(firstResponder: responder) { undoFallbackCount += 1 })
+    |                        `- error: cannot find 'UndoRedoCommandRouter' in scope
+ 69 |         XCTAssertFalse(UndoRedoCommandRouter.performRedo(firstResponder: responder) { redoFallbackCount += 1 })
+ 70 | 
+
+/Users/arimendelow/Projects/ouro-md/Tests/OuroMDTests/UndoRedoRoutingTests.swift:69:24: error: cannot find 'UndoRedoCommandRouter' in scope
+ 67 | 
+ 68 |         XCTAssertFalse(UndoRedoCommandRouter.performUndo(firstResponder: responder) { undoFallbackCount += 1 })
+ 69 |         XCTAssertFalse(UndoRedoCommandRouter.performRedo(firstResponder: responder) { redoFallbackCount += 1 })
+    |                        `- error: cannot find 'UndoRedoCommandRouter' in scope
+ 70 | 
+ 71 |         XCTAssertEqual(undoFallbackCount, 1)
+error: fatalError

@@ -103,7 +103,7 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 **What**: Refactor app integration for clarity and add missing tests for defaults/throttle/prompt transitions.
 **Acceptance**: Integration tests cover policy and state transitions; UI hooks are documented and narrow.
 
-### ⬜ Unit 4a: Undo/Redo Bulletproofing - Tests
+### ✅ Unit 4a: Undo/Redo Bulletproofing - Tests
 **What**: Expand the headless undo harness and/or add native unit seams to fail on multi-step undo/redo, redo invalidation after a new edit, empty-stack no-op safety, behavior across Vditor mode rebuilds, native menu selector forwarding, and native text-field focus preservation.
 **Acceptance**: Expanded tests fail before implementation or harness changes because current proof does not cover the new cases.
 
@@ -168,3 +168,4 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - 2026-06-14 16:41 Unit 3a complete: added app-update coordinator tests for persisted opt-out, manual prompt states, launch throttling, background staging, install-on-quit, and manual staged install behavior; saved expected red compile failure to `unit3a-red-coordinator-tests.log`
 - 2026-06-14 16:48 Unit 3b complete: added `OuroMDUpdateCoordinator`, launch-time throttled background staging, install-on-quit/manual install routing, `Check for Updates...`, preferences opt-out, and main-actor UI lifecycle hooks; `swift test --filter OuroMDUpdateCoordinatorTests`, `swift test`, and `swift build` passed with evidence in `unit3b-*.log` (pre-existing weak `MockBridge` warnings remain routed to Unit 5)
 - 2026-06-14 16:56 Unit 3b review fix complete: cold reviewer found stale staged manual install, re-entrant manual apply, in-flight manual check race, missing install-error prompt, and main-actor staging risk; added red regressions in `unit3b-review-red-coordinator-tests.log`, then coalesced update checks, version-matched staged reuse, single-use manual apply, install failure prompts, and detached production staging with green evidence in `unit3b-review-fix-*.log`
+- 2026-06-14 17:02 Unit 4a complete: added native undo/redo routing tests for menu selectors, native text-view empty-stack preservation, native manager forwarding, and web-editor fallback; saved expected missing-router red log to `unit4a-red-undo-routing-tests.log`; expanded `--undotest` to cover multi-step undo/redo, redo invalidation, empty-stack no-op, and post-mode-rebuild behavior, which already passes with evidence in `unit4a-red-undotest.log`
