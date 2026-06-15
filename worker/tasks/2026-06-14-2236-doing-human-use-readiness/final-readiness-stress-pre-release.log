@@ -1,6 +1,6 @@
 
-[2026-06-15T06:50:24Z] RUN swift test --filter FolderBrowserTests/testLargeWorkspaceBudgetSkipsOversizedHiddenAndSymlinkedFiles
+[2026-06-15T07:10:35Z] RUN swift test --filter FolderBrowserTests/testLargeWorkspaceBudgetSkipsOversizedHiddenAndSymlinkedFiles
 
-[2026-06-15T06:50:27Z] OK swift test --filter FolderBrowserTests/testLargeWorkspaceBudgetSkipsOversizedHiddenAndSymlinkedFiles
+[2026-06-15T07:10:37Z] OK swift test --filter FolderBrowserTests/testLargeWorkspaceBudgetSkipsOversizedHiddenAndSymlinkedFiles
 
-[2026-06-15T06:53:08Z] readiness stress complete
+[2026-06-15T07:13:21Z] readiness stress complete
