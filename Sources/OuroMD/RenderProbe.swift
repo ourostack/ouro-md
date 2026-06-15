@@ -51,7 +51,9 @@ final class RenderProbe: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
                 // mermaid + footnote are "nice to have"; the rest are core.
                 let core = !["mermaid"].contains(key)
                 if core && !ok { allCore = false }
-                print("\(key.padding(toLength: 12, withPad: " ", startingAt: 0)): \(ok ? "rendered ✓" : "MISSING ✗")")
+                let detail = body["\(key)Detail"] as? String
+                let suffix = ok || detail == nil ? "" : " — \(detail!)"
+                print("\(key.padding(toLength: 12, withPad: " ", startingAt: 0)): \(ok ? "rendered ✓" : "MISSING ✗")\(suffix)")
             }
             exit(allCore ? 0 : 1)
         }
@@ -66,8 +68,50 @@ final class RenderProbe: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
         "",
         "[^1]: Footnote text.",
         "",
+        "  > Leading-space top-level quote stays normal.",
+        "",
+        "- List item",
+        "  > [!NOTE]",
+        "  > List-contained marker stays normal.",
+        "",
         "> [!NOTE]",
-        "> An alert.",
+        "> Note alert.",
+        "> > Nested alert body.",
+        "",
+        "> [!TIP]",
+        "> Tip alert.",
+        "",
+        "> [!IMPORTANT]",
+        "> Important alert.",
+        "",
+        "> [!WARNING]",
+        "> Warning alert.",
+        "",
+        "> [!CAUTION]",
+        "> Caution alert.",
+        "",
+        "> [!CUSTOM]",
+        "> Not an alert.",
+        "",
+        "> `[!NOTE]`",
+        "> Code marker stays normal.",
+        "",
+        "> [!NOTE](https://x.com)",
+        "> Link marker stays normal.",
+        "",
+        "> **[!NOTE]**",
+        "> Strong marker stays normal.",
+        "",
+        "> [!NOTE][ref]",
+        "> Ref marker stays normal.",
+        "",
+        "> Ordinary quote first.",
+        "> [!NOTE] later stays normal.",
+        "",
+        "> > [!NOTE]",
+        "> > Nested marker stays normal.",
+        "",
+        "Inline [!NOTE] is not an alert.",
         "",
         "- [x] done",
         "- [ ] todo",
@@ -87,6 +131,39 @@ final class RenderProbe: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
       setTimeout(function () {
         var root = document.querySelector("#editor");
         function has(sel) { return !!root.querySelector(sel); }
+        function alertProbe() {
+          var alerts = root.querySelectorAll("blockquote.ouro-alert");
+          var markers = root.querySelectorAll("blockquote.ouro-alert .ouro-alert-marker");
+          var typeOK = ["note", "tip", "important", "warning", "caution"].every(function (type) {
+            return !!root.querySelector("blockquote.ouro-alert-" + type);
+          });
+          var hiddenOK = Array.prototype.every.call(markers, function (marker) {
+            var style = getComputedStyle(marker);
+            return parseFloat(style.fontSize) === 0 && parseFloat(style.opacity) === 0;
+          });
+          var labelsOK = Array.prototype.every.call(alerts, function (bq) {
+            var label = getComputedStyle(bq, "::before").content || "";
+            return label !== "none" && label !== "\"\"";
+          });
+          var bodyOK = Array.prototype.every.call(alerts, function (bq) {
+            var p = bq.querySelector("p");
+            return !!p && getComputedStyle(p).display !== "none" && /alert\./.test(p.textContent || "");
+          });
+          var normalOK = Array.prototype.some.call(root.querySelectorAll("blockquote:not(.ouro-alert)"), function (bq) {
+            return (bq.textContent || "").indexOf("[!CUSTOM]") !== -1;
+          });
+          var value = window.ouro.getValue();
+          var sourceOK = ["> [!NOTE]", "> [!TIP]", "> [!IMPORTANT]", "> [!WARNING]", "> [!CAUTION]", "> [!CUSTOM]"].every(function (needle) {
+            return value.indexOf(needle) !== -1;
+          });
+          return {
+            ok: alerts.length === 5 && markers.length === 5 && typeOK && hiddenOK && labelsOK && bodyOK && normalOK && sourceOK,
+            detail: "alerts=" + alerts.length + " markers=" + markers.length + " typeOK=" + typeOK +
+              " hiddenOK=" + hiddenOK + " labelsOK=" + labelsOK + " bodyOK=" + bodyOK +
+              " normalOK=" + normalOK + " sourceOK=" + sourceOK
+          };
+        }
+        var alert = alertProbe();
         var result = {
           heading: has("h1"),
           bold: has("strong"),
@@ -96,7 +173,8 @@ final class RenderProbe: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
           taskList: has('input[type="checkbox"]'),
           math: has(".katex") || has(".language-math svg") || has(".vditor-math"),
           footnote: has("sup") || has('[data-type="footnotes-ref"]') || has(".vditor-footnotes__ref"),
-          alert: has(".ouro-alert"),
+          alert: alert.ok,
+          alertDetail: alert.detail,
           mermaid: has(".language-mermaid svg") || has('[data-type="mermaid"] svg') || has(".vditor-ir__preview svg")
         };
         window.webkit.messageHandlers.ouro.postMessage(Object.assign({ type: "renderprobe" }, result));

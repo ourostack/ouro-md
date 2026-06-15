@@ -225,6 +225,7 @@
         state.value = value;
         setDirty(true);
         postCount(value);
+        schedulePostRender();
       },
       after: function () {
         ready = true;
@@ -261,33 +262,231 @@
     // images an agent referenced relatively actually display; style alerts.
     postRender();
     var observer = new MutationObserver(function () { postRender(); });
-    observer.observe(el, { childList: true, subtree: true });
+    observer.observe(el, { childList: true, characterData: true, subtree: true });
   }
 
   var docBase = "";
 
-  // GitHub-style alerts (> [!NOTE] …). Vditor has no native support, so we
-  // detect the marker and tag the blockquote with a class (attribute-only, safe
-  // for IR editing); CSS colors it. The raw marker stays visible because
-  // removing it would corrupt the editable source.
-  var ALERT_TYPES = { NOTE: "note", TIP: "tip", IMPORTANT: "important", WARNING: "warning", CAUTION: "caution" };
-  function styleAlerts() {
-    var bqs = document.querySelectorAll(".vditor-reset blockquote");
-    for (var i = 0; i < bqs.length; i++) {
-      var bq = bqs[i];
-      bq.className = bq.className.replace(/\bouro-alert(-\w+)?\b/g, "").replace(/\s+/g, " ").trim();
-      var m = (bq.textContent || "").replace(/^\s+/, "").match(/^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]/i);
-      if (m) {
-        bq.classList.add("ouro-alert");
-        bq.classList.add("ouro-alert-" + ALERT_TYPES[m[1].toUpperCase()]);
+  // GitHub-style alerts (> [!NOTE] ...). Vditor has no native support, so we
+  // decorate the editable DOM while keeping the marker text in place. The span
+  // is display-only: Vditor can still round-trip the original Markdown marker.
+  var ALERT_TYPES = {
+    NOTE: { className: "note", label: "Note" },
+    TIP: { className: "tip", label: "Tip" },
+    IMPORTANT: { className: "important", label: "Important" },
+    WARNING: { className: "warning", label: "Warning" },
+    CAUTION: { className: "caution", label: "Caution" }
+  };
+  var ALERT_RE = /^(\s*)\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\](\s*)/i;
+  var ALERT_MARKER_LINE_RE = /^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*$/i;
+  var editingAlert = null;
+
+  function removeAlertClasses(bq) {
+    bq.className = bq.className.replace(/\bouro-alert(-\w+)?\b/g, "").replace(/\s+/g, " ").trim();
+    bq.removeAttribute("data-ouro-alert-label");
+  }
+
+  function existingAlertMarker(bq) {
+    var marker = bq.querySelector(".ouro-alert-marker");
+    if (!marker) { return null; }
+    var m = (marker.textContent || "").match(ALERT_RE);
+    return m ? { type: m[2].toUpperCase(), marker: marker } : null;
+  }
+
+  function wrapAlertMarkerText(textNode, match) {
+    var value = textNode.nodeValue || "";
+    var matched = match[0] || "";
+    var leading = match[1] || "";
+    var type = match[2].toUpperCase();
+    var trailing = match[3] || "";
+    var markerText = matched.slice(leading.length, matched.length - trailing.length);
+    var parent = textNode.parentNode;
+    if (!parent) { return null; }
+
+    var frag = document.createDocumentFragment();
+    if (leading) { frag.appendChild(document.createTextNode(leading)); }
+    var marker = document.createElement("span");
+    marker.className = "ouro-alert-marker";
+    marker.setAttribute("data-ouro-alert-type", type);
+    marker.setAttribute("spellcheck", "false");
+    marker.textContent = markerText;
+    frag.appendChild(marker);
+    if (trailing) { frag.appendChild(document.createTextNode(trailing)); }
+    var suffix = value.slice(matched.length);
+    if (suffix) { frag.appendChild(document.createTextNode(suffix)); }
+    parent.replaceChild(frag, textNode);
+    return marker;
+  }
+
+  function currentMarkdown() {
+    try { return vditor ? vditor.getValue() : state.value; } catch (e) { return state.value; }
+  }
+
+  function alertEntriesFromMarkdown(markdown) {
+    var lines = (markdown || "").replace(/\r\n?/g, "\n").split("\n");
+    var entries = [];
+    var inFence = null;
+    function fence(line) {
+      var m = line.match(/^ {0,3}(`{3,}|~{3,})/);
+      return m ? { ch: m[1].charAt(0), len: m[1].length } : null;
+    }
+    function closesFence(line, f) {
+      if (!f) { return false; }
+      var m = line.match(/^ {0,3}(`{3,}|~{3,})/);
+      return !!(m && m[1].charAt(0) === f.ch && m[1].length >= f.len);
+    }
+    var listStack = [];
+    function leadingSpaces(line) {
+      var m = line.match(/^ */);
+      return m ? m[0].length : 0;
+    }
+    function listMarker(line) {
+      var m = line.match(/^( {0,3})(?:[-+*]|\d{1,9}[.)])([ \t]+)/);
+      return m ? { contentIndent: m[0].length } : null;
+    }
+    function updateListContext(line) {
+      if (!line.trim()) { return; }
+      var indent = leadingSpaces(line);
+      while (listStack.length && indent < listStack[listStack.length - 1].contentIndent) {
+        listStack.pop();
+      }
+      var marker = listMarker(line);
+      if (marker) {
+        while (listStack.length && marker.contentIndent <= listStack[listStack.length - 1].contentIndent) {
+          listStack.pop();
+        }
+        listStack.push(marker);
       }
     }
+    function insideList(line) {
+      if (!listStack.length) { return false; }
+      return leadingSpaces(line) >= listStack[listStack.length - 1].contentIndent;
+    }
+    // CommonMark allows 0-3 leading spaces before a top-level blockquote.
+    // Quote lines indented into an active list item are list content instead,
+    // and must not shift pairing against top-level rendered blockquotes.
+    function isTopLevelQuote(line) {
+      return /^ {0,3}>/.test(line) && !insideList(line);
+    }
+    function quoteContent(line) {
+      return line.replace(/^ {0,3}> ?/, "");
+    }
+    function markerEntry(content) {
+      var m = (content || "").match(ALERT_MARKER_LINE_RE);
+      return m ? { type: m[1].toUpperCase() } : null;
+    }
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      updateListContext(line);
+      if (inFence) {
+        if (closesFence(line, inFence)) { inFence = null; }
+        continue;
+      }
+      var f = fence(line);
+      if (f) {
+        inFence = f;
+        continue;
+      }
+      if (!isTopLevelQuote(line)) { continue; }
+      var firstContent = "";
+      var foundFirst = false;
+      while (i < lines.length) {
+        line = lines[i];
+        if (isTopLevelQuote(line)) {
+          var content = quoteContent(line);
+          if (!foundFirst && content.trim()) {
+            firstContent = content;
+            foundFirst = true;
+          }
+          i++;
+          continue;
+        }
+        if (!line.trim()) { break; }
+        i++;
+      }
+      entries.push(markerEntry(firstContent));
+    }
+    return entries;
+  }
+
+  function topLevelBlockquotes() {
+    var root = document.querySelector(".vditor-reset");
+    var bqs = document.querySelectorAll(".vditor-reset blockquote");
+    var out = [];
+    for (var i = 0; i < bqs.length; i++) {
+      var bq = bqs[i];
+      var parent = bq.parentElement;
+      var nested = false;
+      while (parent && parent !== root) {
+        if (parent.matches && parent.matches("blockquote, li, td, th")) {
+          nested = true;
+          break;
+        }
+        parent = parent.parentElement;
+      }
+      if (!nested) { out.push(bq); }
+    }
+    return out;
+  }
+
+  function findAlertMarkerText(node) {
+    for (var child = node.firstChild; child; child = child.nextSibling) {
+      if (child.nodeType === 3) {
+        var m = (child.nodeValue || "").match(ALERT_RE);
+        if (m) { return { type: m[2].toUpperCase(), marker: wrapAlertMarkerText(child, m) }; }
+        continue;
+      }
+      if (child.nodeType !== 1) { continue; }
+      if (child.matches && child.matches(".ouro-alert-marker")) { continue; }
+      if (child.matches && child.matches("code, pre, blockquote")) { continue; }
+      var found = findAlertMarkerText(child);
+      if (found) { return found; }
+    }
+    return null;
+  }
+
+  function styleAlerts() {
+    var all = document.querySelectorAll(".vditor-reset blockquote");
+    for (var i = 0; i < all.length; i++) { removeAlertClasses(all[i]); }
+    var entries = alertEntriesFromMarkdown(currentMarkdown());
+    var bqs = topLevelBlockquotes();
+    for (var j = 0; j < bqs.length; j++) {
+      var entry = entries[j];
+      if (!entry || !ALERT_TYPES[entry.type]) { continue; }
+      var bq = bqs[j];
+      var alert = existingAlertMarker(bq) || findAlertMarkerText(bq);
+      if (!alert || alert.type !== entry.type) { continue; }
+      var meta = ALERT_TYPES[entry.type];
+      bq.classList.add("ouro-alert");
+      bq.classList.add("ouro-alert-" + meta.className);
+      bq.setAttribute("data-ouro-alert-label", meta.label);
+    }
+  }
+
+  function updateAlertEditing() {
+    if (editingAlert && !editingAlert.isConnected) { editingAlert = null; }
+    var sel = window.getSelection();
+    var node = sel && sel.anchorNode;
+    var el = node && (node.nodeType === 1 ? node : node.parentElement);
+    var next = el && el.closest ? el.closest(".vditor-reset blockquote.ouro-alert") : null;
+    if (editingAlert && editingAlert !== next) { editingAlert.classList.remove("ouro-callout-editing"); }
+    if (next) { next.classList.add("ouro-callout-editing"); }
+    editingAlert = next;
   }
 
   function postRender() {
     rewriteRelativeImages();
     styleAlerts();
+    updateAlertEditing();
   }
+
+  function schedulePostRender() {
+    requestAnimationFrame(function () {
+      postRender();
+      requestAnimationFrame(postRender);
+    });
+  }
+
   function rewriteRelativeImages() {
     if (!docBase) { return; }
     var imgs = document.querySelectorAll(".vditor-reset img");
@@ -378,6 +577,7 @@
     setValue: function (md) {
       state.value = (md == null) ? "" : md;
       if (vditor && ready) { vditor.setValue(state.value, true); }
+      schedulePostRender();
       dirty = false;
       postCount(state.value);
     },
@@ -388,6 +588,7 @@
       var prevY = scroller ? scroller.scrollTop : window.scrollY;
       state.value = (md == null) ? "" : md;
       if (vditor && ready) { vditor.setValue(state.value, true); }
+      schedulePostRender();
       dirty = false;
       postCount(state.value);
       var restore = function () {
@@ -532,6 +733,7 @@
 
   document.addEventListener("selectionchange", function () {
     if (state.focus) { updateActiveBlock(); }
+    updateAlertEditing();
   });
 
   // Track the heading nearest the top of the viewport so the outline can
