@@ -41,16 +41,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         observeUpdatePrompts()
+        let launchKind: String
         if let path = initialFilePath {
             openInitial(path)
-        } else if !restoreSession() {
+            launchKind = "file"
+        } else if restoreSession() {
+            launchKind = "restored_session"
+        } else {
             let firstRun = !defaults.bool(forKey: "ouro.hasLaunched")
             defaults.set(true, forKey: "ouro.hasLaunched")
             let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: true)
             track(controller)
             if firstRun { controller.model.loadWelcome() }
             controller.show(cascadeFrom: nil)
+            launchKind = firstRun ? "first_run" : "new_document"
         }
+        OuroMDTelemetry.shared.capture(
+            "ouro_md_app_launched",
+            properties: ["launch_kind": .string(launchKind)]
+        )
         Task { await updateCoordinator.runAutoUpdateCheckIfDue() }
     }
 
@@ -180,7 +189,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var prefsWindow: NSWindow?
     @objc func showPreferences(_ sender: Any?) {
         if prefsWindow == nil {
-            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 380, height: 240),
+            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 380, height: 280),
                              styleMask: [.titled, .closable], backing: .buffered, defer: false)
             w.title = "Preferences"
             w.isReleasedWhenClosed = false
@@ -189,7 +198,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         // Re-bind to the active window's model each time it opens.
         prefsWindow?.contentViewController = NSHostingController(
-            rootView: PreferencesView(model: model, updateCoordinator: updateCoordinator)
+            rootView: PreferencesView(
+                model: model,
+                updateCoordinator: updateCoordinator,
+                telemetry: OuroMDTelemetry.shared
+            )
         )
         prefsWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)

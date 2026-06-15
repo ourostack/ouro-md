@@ -395,6 +395,61 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.updatePrompt, .failed(detail: "No newer release is available to install."))
     }
 
+    func testManualUpdateFlowCapturesTelemetryWithoutRawErrorDetails() async {
+        let staged = stagedUpdate(version: "0.10.0")
+        var events: [(String, [String: OuroMDTelemetryValue])] = []
+        let coordinator = makeCoordinator(
+            checker: { self.updateSnapshot() },
+            stageUpdate: { _, _ in staged },
+            telemetry: { event, properties in events.append((event, properties)) }
+        )
+
+        await coordinator.checkForUpdatesAndPromptInstall()
+        await coordinator.installReleaseUpdate(destinationBundle: URL(fileURLWithPath: "/tmp/Ouro MD.app"))
+
+        XCTAssertEqual(events.map { $0.0 }, [
+            "ouro_md_update_check_completed",
+            "ouro_md_update_install_requested",
+            "ouro_md_update_install_scheduled",
+        ])
+        XCTAssertEqual(events[0].1["trigger"], .string("manual"))
+        XCTAssertEqual(events[0].1["status"], .string("updateAvailable"))
+        XCTAssertEqual(events[0].1["current_version"], .string("0.9.0"))
+        XCTAssertEqual(events[0].1["latest_version"], .string("0.10.0"))
+        XCTAssertEqual(events[0].1["has_installable_assets"], .bool(true))
+        XCTAssertNil(events[0].1["detail"])
+        XCTAssertEqual(events[2].1["version"], .string("0.10.0"))
+    }
+
+    func testManualUpdateFailureTelemetryDoesNotLeakRawErrorDetails() async {
+        var events: [(String, [String: OuroMDTelemetryValue])] = []
+        let coordinator = makeCoordinator(
+            checker: { self.updateSnapshot() },
+            stageUpdate: { _, _ in
+                throw NSError(
+                    domain: "test",
+                    code: 1,
+                    userInfo: [
+                        NSLocalizedDescriptionKey: "failed at /Users/ari/private.md with phc_should_not_leak",
+                    ]
+                )
+            },
+            telemetry: { event, properties in events.append((event, properties)) }
+        )
+
+        await coordinator.checkForReleaseUpdate()
+        await coordinator.installReleaseUpdate(destinationBundle: URL(fileURLWithPath: "/tmp/Ouro MD.app"))
+
+        XCTAssertEqual(events.last?.0, "ouro_md_update_install_failed")
+        XCTAssertEqual(events.last?.1, ["code": .string("stage_failed")])
+
+        let renderedTelemetry = events.flatMap { event, properties in
+            [event] + properties.keys + properties.values.map { "\($0)" }
+        }.joined(separator: " ")
+        XCTAssertFalse(renderedTelemetry.contains("/Users/ari/private.md"))
+        XCTAssertFalse(renderedTelemetry.contains("phc_should_not_leak"))
+    }
+
     private func makeCoordinator(
         checker: @escaping () async -> ReleaseUpdateSnapshot = { ReleaseUpdateSnapshot(
             status: .current,
@@ -411,7 +466,8 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
         applyAndRelaunch: @escaping (OuroMDUpdateInstaller.Staged, URL) -> Void = { _, _ in },
         applyOnQuit: @escaping (OuroMDUpdateInstaller.Staged, URL) -> Void = { _, _ in },
         terminate: @escaping () -> Void = {},
-        now: @escaping () -> Date = { Date(timeIntervalSince1970: 1_000) }
+        now: @escaping () -> Date = { Date(timeIntervalSince1970: 1_000) },
+        telemetry: @escaping (String, [String: OuroMDTelemetryValue]) -> Void = { _, _ in }
     ) -> OuroMDUpdateCoordinator {
         OuroMDUpdateCoordinator(
             defaults: defaults,
@@ -420,7 +476,8 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
             applyAndRelaunch: applyAndRelaunch,
             applyOnQuit: applyOnQuit,
             terminate: terminate,
-            now: now
+            now: now,
+            telemetry: telemetry
         )
     }
 

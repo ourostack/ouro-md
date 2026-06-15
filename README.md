@@ -78,6 +78,13 @@ gh release create v<version> dist/Ouro-MD-<version>.zip dist/Ouro-MD-<version>.m
 The installer and in-app updater always pull the newest published release, so
 publishing a new version is how users get the update.
 
+Release builds can embed anonymous PostHog telemetry by setting
+`OURO_MD_POSTHOG_KEY` and, optionally, `OURO_MD_POSTHOG_HOST` before packaging.
+The script also accepts Spoonjoy-style `VITE_POSTHOG_KEY` /
+`VITE_POSTHOG_HOST` environment variables so maintainers can reuse the same
+project configuration without committing the key. Telemetry is disabled when no
+key is present, or when `OURO_MD_TELEMETRY_DISABLED=true` is set.
+
 ## Build
 
 Requires macOS 13+ and a recent Swift toolchain (Xcode 15+ / Swift 5.9+).
@@ -102,6 +109,14 @@ open OuroMD.app
 Open a file with **⌘O**, start a new document with **⌘N**, save with **⌘S**.
 Pick a theme from the **Themes** menu, toggle the sidebar with **⇧⌘L**, and
 export from **File ▸ Export**. Auto-save keeps a titled file written as you type.
+
+### Telemetry
+
+When configured in a release build, Ouro MD sends anonymous product telemetry to
+PostHog: launches, update lifecycle events, document create/open events,
+folder-open events, export success/failure, and editor crash recovery. It never
+sends document contents, filenames, folder paths, search queries, or raw error
+messages. Disable it in **Settings ▸ Telemetry**.
 
 ### Keyboard shortcuts
 
