@@ -119,7 +119,7 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 **What**: Write failing or currently-warning verification for weak `MockBridge` assignments and add doc/install truth checks if practical.
 **Acceptance**: Baseline verification shows the current warnings or stale text before fixes.
 
-### ⬜ Unit 5b: Warning Cleanup And Documentation Truth - Implementation
+### ✅ Unit 5b: Warning Cleanup And Documentation Truth - Implementation
 **What**: Fix weak mock bridge warning patterns, update README and `web/ouro-md-install.sh` comments for v0.9.0, pretty URL, and updater behavior, and keep package/install behavior unchanged.
 **Acceptance**: `swift test` emits no weak `MockBridge` warnings; docs and installer comments no longer claim the pretty URL is unwired or the app is v0.1.0.
 
@@ -171,3 +171,4 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - 2026-06-14 17:02 Unit 4a complete: added native undo/redo routing tests for menu selectors, native text-view empty-stack preservation, native manager forwarding, and web-editor fallback; saved expected missing-router red log to `unit4a-red-undo-routing-tests.log`; expanded `--undotest` to cover multi-step undo/redo, redo invalidation, empty-stack no-op, and post-mode-rebuild behavior, which already passes with evidence in `unit4a-red-undotest.log`
 - 2026-06-14 17:03 Unit 4b complete: added `UndoRedoCommandRouter` and routed AppDelegate undo/redo through it so focused native text views consume shortcuts even with empty undo stacks; `swift test --filter UndoRedoRoutingTests`, `swift test`, `swift build`, and `swift run ouro-md --undotest` passed with evidence in `unit4b-*.log`
 - 2026-06-14 17:05 Unit 5a complete: forced a clean `swift test` baseline and reproduced weak `MockBridge` warnings at `AppModelReloadTests.swift` lines 96, 118, 141, 162, and 182; saved evidence to `unit5a-warning-baseline-swift-test.log`
+- 2026-06-14 17:07 Unit 5b complete: retained weak test bridges, bumped release/bundle truth to `0.9.1`, refreshed README installer/updater text, and removed stale pretty-URL comments; clean `swift test`, `swift build`, and `swift run ouro-md --version` passed with no warning/stale-string matches in `unit5b-*.log`

@@ -93,7 +93,8 @@ final class AppModelReloadTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let model = AppModel()
-        model.bridge = MockBridge()          // bridge present...
+        let bridge = MockBridge()
+        model.bridge = bridge                // bridge present...
         model.loadInitialFile(url.path)      // ...but editorDidBecomeReady NOT called → not ready
         model.save()
 
@@ -115,7 +116,8 @@ final class AppModelReloadTests: XCTestCase {
         try? "# Hi\n".write(to: url, atomically: true, encoding: .utf8)
 
         let model = AppModel()
-        model.bridge = MockBridge()
+        let bridge = MockBridge()
+        model.bridge = bridge
         model.editorDidBecomeReady()
         model.loadInitialFile(url.path)
 
@@ -138,7 +140,8 @@ final class AppModelReloadTests: XCTestCase {
         try? "x".write(to: url, atomically: true, encoding: .utf8)
 
         let model = AppModel()
-        model.bridge = MockBridge()
+        let bridge = MockBridge()
+        model.bridge = bridge
         model.editorDidBecomeReady()
         model.loadInitialFile(url.path)
 
@@ -159,7 +162,8 @@ final class AppModelReloadTests: XCTestCase {
         try? "b".write(to: other, atomically: true, encoding: .utf8)
 
         let model = AppModel()
-        model.bridge = MockBridge()
+        let bridge = MockBridge()
+        model.bridge = bridge
         model.editorDidBecomeReady()
         model.loadInitialFile(url.path)
 
@@ -179,7 +183,8 @@ final class AppModelReloadTests: XCTestCase {
         try? "x".write(to: url, atomically: true, encoding: .utf8)
 
         let model = AppModel()
-        model.bridge = MockBridge()
+        let bridge = MockBridge()
+        model.bridge = bridge
         model.editorDidBecomeReady()
         model.loadInitialFile(url.path)
 

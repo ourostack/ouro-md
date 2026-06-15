@@ -22,15 +22,15 @@ final class ReleaseUpdateTests: XCTestCase {
         XCTAssertEqual(OuroMDRelease.appName, "Ouro MD")
         XCTAssertEqual(OuroMDRelease.bundleIdentifier, "org.ourostack.ouro-md")
         XCTAssertEqual(OuroMDRelease.repository, "ourostack/ouro-md")
-        XCTAssertEqual(OuroMDRelease.version, "0.9.0")
-        XCTAssertEqual(OuroMDRelease.userAgent, "OuroMD/0.9.0")
+        XCTAssertEqual(OuroMDRelease.version, "0.9.1")
+        XCTAssertEqual(OuroMDRelease.userAgent, "OuroMD/0.9.1")
     }
 
     func testDefaultConfigurationTargetsOuroMDGitHubReleases() {
         let configuration = ReleaseUpdateConfiguration()
 
         XCTAssertEqual(configuration.repository, "ourostack/ouro-md")
-        XCTAssertEqual(configuration.currentVersion, "0.9.0")
+        XCTAssertEqual(configuration.currentVersion, "0.9.1")
         XCTAssertEqual(
             configuration.releasesURL.absoluteString,
             "https://api.github.com/repos/ourostack/ouro-md/releases?per_page=10"
@@ -178,7 +178,7 @@ final class ReleaseUpdateTests: XCTestCase {
         XCTAssertEqual(request.httpMethod, "GET")
         XCTAssertEqual(request.url?.absoluteString, "https://api.github.com/repos/ourostack/ouro-md/releases?per_page=10")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/vnd.github+json")
-        XCTAssertEqual(request.value(forHTTPHeaderField: "User-Agent"), "OuroMD/0.9.0")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "User-Agent"), "OuroMD/0.9.1")
     }
 
     func testDefaultLoaderThrowsOnNonSuccessStatus() async {

@@ -12,7 +12,7 @@ APP="${APP_NAME}.app"
 CONFIG="release"
 BIN_NAME="ouro-md"
 BUNDLE_ID="org.ourostack.ouro-md"
-VERSION="0.9.0"
+VERSION="0.9.1"
 
 echo "==> Building (${CONFIG})…"
 swift build -c "${CONFIG}"
