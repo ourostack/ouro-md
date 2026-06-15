@@ -18,6 +18,23 @@ cd "$(dirname "$0")/.."
 # SwiftPM keeps a bare-repo dependency cache; some machines restrict bare repos.
 export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.bareRepository GIT_CONFIG_VALUE_0=all
 
+POSTHOG_KEY="${OURO_MD_POSTHOG_KEY:-${VITE_POSTHOG_KEY:-}}"
+POSTHOG_DISABLED="${OURO_MD_TELEMETRY_DISABLED:-${VITE_POSTHOG_DISABLED:-}}"
+POSTHOG_DISABLED_NORMALIZED="$(printf '%s' "${POSTHOG_DISABLED}" | tr '[:upper:]' '[:lower:]')"
+ALLOW_UNCONFIGURED_TELEMETRY="${OURO_MD_ALLOW_UNCONFIGURED_TELEMETRY:-}"
+
+case "${POSTHOG_DISABLED_NORMALIZED}" in
+  1|true|yes|on)
+    POSTHOG_KEY=""
+    ;;
+esac
+
+if [[ -z "${POSTHOG_KEY}" && "${ALLOW_UNCONFIGURED_TELEMETRY}" != "1" ]]; then
+  echo "error: release packages require OURO_MD_POSTHOG_KEY or VITE_POSTHOG_KEY" >&2
+  echo "       set OURO_MD_ALLOW_UNCONFIGURED_TELEMETRY=1 only for non-release dry runs" >&2
+  exit 1
+fi
+
 ./make-app.sh
 
 APP="OuroMD.app"

@@ -72,7 +72,8 @@ checks in **Settings** if you prefer to update manually.
 ```sh
 ./scripts/package-release.sh    # build → dist/Ouro-MD-<version>.zip + .manifest.json
 gh release create v<version> dist/Ouro-MD-<version>.zip dist/Ouro-MD-<version>.manifest.json \
-  --repo ourostack/ouro-md --title "Ouro MD <version>"
+  --repo ourostack/ouro-md --target "$(git rev-parse HEAD)" \
+  --title "Ouro MD <version>"
 ```
 
 The installer and in-app updater always pull the newest published release, so
@@ -82,8 +83,10 @@ Release builds can embed anonymous PostHog telemetry by setting
 `OURO_MD_POSTHOG_KEY` and, optionally, `OURO_MD_POSTHOG_HOST` before packaging.
 The script also accepts Spoonjoy-style `VITE_POSTHOG_KEY` /
 `VITE_POSTHOG_HOST` environment variables so maintainers can reuse the same
-project configuration without committing the key. Telemetry is disabled when no
-key is present, or when `OURO_MD_TELEMETRY_DISABLED=true` is set.
+project configuration without committing the key. `scripts/package-release.sh`
+requires a telemetry key by default so release artifacts do not accidentally
+ship unconfigured; set `OURO_MD_ALLOW_UNCONFIGURED_TELEMETRY=1` only for local
+dry runs.
 
 ## Build
 

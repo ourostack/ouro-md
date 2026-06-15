@@ -145,6 +145,33 @@ final class AppModelReloadTests: XCTestCase {
         XCTAssertEqual(bridge.getMarkdownCalls, 0)
     }
 
+    func testSaveAsCleanDocumentWritesNewDestination() {
+        let source = tempFile()
+        let destination = tempFile()
+        let original = "# Original\n\n"
+        try? original.write(to: source, atomically: true, encoding: .utf8)
+        defer {
+            try? FileManager.default.removeItem(at: source)
+            try? FileManager.default.removeItem(at: destination)
+        }
+
+        let model = AppModel()
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+        model.loadInitialFile(source.path)
+
+        let saved = expectation(description: "save as completed")
+        model.performSaveAs(to: destination) { ok in
+            XCTAssertTrue(ok)
+            saved.fulfill()
+        }
+        wait(for: [saved], timeout: 2)
+
+        XCTAssertEqual(try? String(contentsOf: destination, encoding: .utf8), original)
+        XCTAssertEqual(model.currentURL, destination)
+    }
+
     /// Saving before the editor has loaded must NOT overwrite the file with "".
     func testSaveBeforeEditorReadyDoesNotEmptyFile() {
         let url = tempFile()

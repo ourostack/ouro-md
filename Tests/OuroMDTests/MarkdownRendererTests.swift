@@ -192,6 +192,14 @@ final class MarkdownRendererTests: XCTestCase {
         XCTAssertFalse(html.contains("<sup id=\"fnref-a\""))
     }
 
+    func testFootnoteReferencesInsideIndentedCodeAreLeftAlone() {
+        let html = render("    literal[^a]\n\nBody[^a].\n\n[^a]: footnote")
+
+        XCTAssertTrue(html.contains("literal[^a]"))
+        XCTAssertTrue(html.contains("Body<sup"))
+        XCTAssertEqual(html.components(separatedBy: "class=\"footnote-ref\"").count - 1, 1)
+    }
+
     func testDocumentWrap() {
         let html = HTMLDocument.wrap(body: "<p>x</p>", css: "body{}", title: "t")
         XCTAssertTrue(html.contains("<!DOCTYPE html>"))

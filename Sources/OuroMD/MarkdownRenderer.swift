@@ -174,7 +174,9 @@ private enum FootnotePreprocessor {
                 output.append(line)
                 continue
             }
-            output.append(inFence ? line : replaceReferences(inLine: line, idsByLabel: idsByLabel, numbersByLabel: numbersByLabel))
+            output.append((inFence || indentationWidth(line) >= 4)
+                ? line
+                : replaceReferences(inLine: line, idsByLabel: idsByLabel, numbersByLabel: numbersByLabel))
         }
         return output.joined(separator: "\n")
     }

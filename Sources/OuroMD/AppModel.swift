@@ -313,9 +313,21 @@ final class AppModel: ObservableObject {
     func saveAs() {
         runSavePanel(defaultName: currentURL?.lastPathComponent ?? "Untitled.md") { [weak self] url in
             guard let self, let url else { return }
-            self.currentURL = url
-            NSDocumentController.shared.noteNewRecentDocumentURL(url)
-            self.writeMarkdown(to: url) { _ in }
+            self.performSaveAs(to: url) { _ in }
+        }
+    }
+
+    func performSaveAs(to url: URL, completion: @escaping (Bool) -> Void) {
+        let previousURL = currentURL
+        currentURL = url
+        writeMarkdown(to: url, allowCleanNoOp: false, useLastLoadedWhenClean: true) { [weak self] ok in
+            guard let self else { completion(ok); return }
+            if ok {
+                NSDocumentController.shared.noteNewRecentDocumentURL(url)
+            } else {
+                self.currentURL = previousURL
+            }
+            completion(ok)
         }
     }
 
@@ -326,18 +338,30 @@ final class AppModel: ObservableObject {
         } else {
             runSavePanel(defaultName: "Untitled.md") { [weak self] url in
                 guard let self, let url else { completion(false); return }
-                self.currentURL = url
-                NSDocumentController.shared.noteNewRecentDocumentURL(url)
-                self.writeMarkdown(to: url, completion: completion)
+                self.performSaveAs(to: url, completion: completion)
             }
         }
     }
 
-    private func writeMarkdown(to url: URL, completion: @escaping (Bool) -> Void) {
+    private func writeMarkdown(
+        to url: URL,
+        allowCleanNoOp: Bool = true,
+        useLastLoadedWhenClean: Bool = false,
+        completion: @escaping (Bool) -> Void
+    ) {
         let target = url.resolvingSymlinksInPath()
-        if !isDirty, let currentURL, currentURL.resolvingSymlinksInPath() == target {
-            completion(true)
-            return
+        if !isDirty, let lastLoadedContent {
+            if allowCleanNoOp,
+               let currentURL,
+               currentURL.resolvingSymlinksInPath() == target,
+               AppModel.readText(at: target) == lastLoadedContent {
+                completion(true)
+                return
+            }
+            if useLastLoadedWhenClean {
+                writeResolvedMarkdown(lastLoadedContent, to: target, displayURL: url, completion: completion)
+                return
+            }
         }
         // Never save before the editor has loaded its content, and never write
         // when the editor can't hand back its text — either would clobber the
@@ -349,19 +373,23 @@ final class AppModel: ObservableObject {
             let tidied = MarkdownTidy.tidy(markdown)
             // Resolve symlinks so an atomic write updates the real file rather
             // than replacing the link with a regular file.
-            do {
-                self.lastLoadedContent = tidied
-                try tidied.write(to: target, atomically: true, encoding: .utf8)
-                self.bridge?.markSaved()
-                self.isDirty = false
-                self.startWatching()
-                self.onChromeUpdate?()
-                completion(true)
-            } catch {
-                self.presentError("Could not save \(url.lastPathComponent)", error)
-                self.captureTelemetry("ouro_md_document_save_failed")
-                completion(false)
-            }
+            self.writeResolvedMarkdown(tidied, to: target, displayURL: url, completion: completion)
+        }
+    }
+
+    private func writeResolvedMarkdown(_ markdown: String, to target: URL, displayURL: URL, completion: @escaping (Bool) -> Void) {
+        do {
+            lastLoadedContent = markdown
+            try markdown.write(to: target, atomically: true, encoding: .utf8)
+            bridge?.markSaved()
+            isDirty = false
+            startWatching()
+            onChromeUpdate?()
+            completion(true)
+        } catch {
+            presentError("Could not save \(displayURL.lastPathComponent)", error)
+            captureTelemetry("ouro_md_document_save_failed")
+            completion(false)
         }
     }
 
