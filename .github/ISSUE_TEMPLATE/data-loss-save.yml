@@ -1,0 +1,54 @@
+name: Save or data safety issue
+description: Report save, autosave, reload, conflict, or possible data-loss behavior.
+title: "[Data safety]: "
+labels: ["bug", "data-safety"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please avoid private contents. A tiny reproduction file is ideal if you can make one.
+  - type: input
+    id: version
+    attributes:
+      label: Ouro MD version
+      placeholder: "0.9.2"
+    validations:
+      required: true
+  - type: dropdown
+    id: document_state
+    attributes:
+      label: Document state
+      options:
+        - New untitled document
+        - Existing saved file
+        - Save As / duplicate flow
+        - File changed by another app
+        - Unsure
+    validations:
+      required: true
+  - type: textarea
+    id: timeline
+    attributes:
+      label: Exact timeline
+      description: Include edits, saves, prompts, external tools, and whether relaunch changed the result.
+      placeholder: |
+        1. Opened an existing file...
+        2. Typed...
+        3. Another app changed...
+        4. Ouro MD showed...
+    validations:
+      required: true
+  - type: textarea
+    id: recovery
+    attributes:
+      label: Recovery result
+      description: Did the content exist in the file, another editor, undo stack, backups, or recent versions?
+    validations:
+      required: false
+  - type: textarea
+    id: telemetry
+    attributes:
+      label: Telemetry/debugging note
+      description: If telemetry was enabled, include approximate time and timezone so maintainers can inspect coarse event status.
+    validations:
+      required: false

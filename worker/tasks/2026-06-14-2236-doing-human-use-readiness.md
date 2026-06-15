@@ -20,7 +20,7 @@ Execute the human-use readiness sweep described in the planning doc, patch reach
   - Output: repeatable stress script/fixtures for large folders, large docs, rendering, editor commands, install/update, first-run, accessibility, and release reproduction.
   - Acceptance: harness runs locally and stores logs/artifacts under this task directory.
 
-- [ ] Unit 3 - Docs and feedback surfaces
+- [x] Unit 3 - Docs and feedback surfaces
   - Output: README/PRIVACY/docs updates, uninstall/reset docs, issue templates, and v1 acceptance checklist.
   - Acceptance: docs match actual product/release behavior and exclude deferred signing/licensing work.
 
@@ -32,7 +32,7 @@ Execute the human-use readiness sweep described in the planning doc, patch reach
 
 - [x] Unit 1 complete.
 - [x] Unit 2 complete.
-- [ ] Unit 3 complete.
+- [x] Unit 3 complete.
 - [ ] Unit 4 complete.
 
 ## Evidence Directory
@@ -44,3 +44,4 @@ Execute the human-use readiness sweep described in the planning doc, patch reach
 - 2026-06-14 22:36 Created doing doc and artifact plan.
 - 2026-06-14 22:42 Unit 1 complete: added content-free save/open/rename/reload telemetry codes and focused payload/no-leak tests; addressed telemetry reviewer findings.
 - 2026-06-14 23:41 Unit 2 complete: added and ran `scripts/readiness-stress.sh`; artifacts cover large folder, large editor roundtrip, large render, screenshot smoke, editor lifecycle, first-run, accessibility, live installer, clean-clone release packaging, and deterministic update checks. Recorded multi-megabyte live-editor roundtrip as a known non-v1 limit.
+- 2026-06-14 23:47 Unit 3 complete: added troubleshooting, uninstall/reset, v1 acceptance docs, and targeted GitHub issue templates for bugs, data safety, rendering, performance, and feature requests.

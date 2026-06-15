@@ -21,6 +21,12 @@ Ouro MD may send:
 - App version, bundle id, macOS version, architecture, and an anonymous install
   id stored in local preferences.
 
+Representative dogfood events include `ouro_md_app_launched`,
+`ouro_md_update_check_completed`, `ouro_md_document_opened`,
+`ouro_md_document_save_completed`, `ouro_md_document_save_failed`,
+`ouro_md_document_renamed`, `ouro_md_document_external_reload_completed`, and
+`ouro_md_export_completed`.
+
 Ouro MD does not send:
 
 - Document contents.
@@ -48,3 +54,9 @@ the default for local development builds.
 to the repository.
 
 Runtime ambient PostHog environment variables do not enable telemetry.
+
+To reset the local anonymous telemetry id, quit Ouro MD and run:
+
+```sh
+defaults delete org.ourostack.ouro-md ouro.telemetry.distinctID
+```
