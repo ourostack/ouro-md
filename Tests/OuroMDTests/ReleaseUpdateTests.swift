@@ -1,6 +1,7 @@
 import Foundation
 import XCTest
 @testable import OuroMD
+import OuroMDCore
 
 final class ReleaseUpdateTests: XCTestCase {
     override class func setUp() {

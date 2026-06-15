@@ -13,9 +13,16 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-markdown.git", branch: "main")
     ],
     targets: [
+        .target(
+            name: "OuroMDCore",
+            swiftSettings: [
+                .swiftLanguageMode(.v5)
+            ]
+        ),
         .executableTarget(
             name: "OuroMD",
             dependencies: [
+                "OuroMDCore",
                 .product(name: "Markdown", package: "swift-markdown")
             ],
             resources: [
@@ -27,7 +34,7 @@ let package = Package(
         ),
         .testTarget(
             name: "OuroMDTests",
-            dependencies: ["OuroMD"],
+            dependencies: ["OuroMD", "OuroMDCore"],
             swiftSettings: [
                 .swiftLanguageMode(.v5)
             ]

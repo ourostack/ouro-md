@@ -1,4 +1,5 @@
 import Foundation
+import OuroMDCore
 
 /// Command-line entry points: headless render, theme listing, help, version.
 enum OuroCLI {

@@ -1,4 +1,5 @@
 import CryptoKit
+import OuroMDCore
 import Foundation
 
 struct OuroMDUpdateInstaller: Sendable {

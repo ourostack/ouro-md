@@ -1,4 +1,5 @@
 import AppKit
+import OuroMDCore
 import WebKit
 
 /// Headless `--roundtrip` mode: loads a markdown file into the real editor,
