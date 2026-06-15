@@ -74,18 +74,23 @@ final class UndoTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         await delay(450);
       }
       async function insert(text) {
-        var ed = window.__ouroEditor, iv = ed.vditor;
+        var ed = window.__ouroEditor;
+        if (!ed || !ed.vditor) { return "editor not ready"; }
+        var iv = ed.vditor;
         window.ouro.focus();
+        try { iv.undo.addToUndoStack(iv); } catch (e) {}
         ed.insertValue(text);
         await delay(250);
         try { iv.undo.addToUndoStack(iv); } catch (e) {}
         await delay(250);
+        return "";
       }
       async function undo() { window.ouro.undo(); await delay(350); return gv(); }
       async function redo() { window.ouro.redo(); await delay(350); return gv(); }
-      async function waitForEditor() {
-        for (var i = 0; i < 30; i++) {
-          if (window.__ouroEditor && window.__ouroEditor.vditor) { return true; }
+      async function waitForEditorReplacement(previous) {
+        for (var i = 0; i < 50; i++) {
+          var ed = window.__ouroEditor;
+          if (ed && ed !== previous && ed.vditor) { return true; }
           await delay(100);
         }
         return false;
@@ -126,15 +131,23 @@ final class UndoTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         "before=" + emptyBefore + " undo=" + emptyUndo + " redo=" + emptyRedo);
 
       await reset("Mode base.");
+      var beforeRebuild = window.__ouroEditor;
       window.ouro.setMode("sv");
-      await delay(900);
-      await waitForEditor();
-      await insert(" AFTERMODE");
-      var modeUndo = await undo();
-      var modeRedo = await redo();
-      record("undo/redo after mode rebuild",
-        modeUndo.indexOf("AFTERMODE") < 0 && modeRedo.indexOf("AFTERMODE") >= 0,
-        "undo=" + modeUndo + " redo=" + modeRedo);
+      var rebuilt = await waitForEditorReplacement(beforeRebuild);
+      if (!rebuilt) {
+        record("undo/redo after mode rebuild", false, "new editor did not become ready after mode change");
+      } else {
+        var modeInsertError = await insert(" AFTERMODE");
+        if (modeInsertError) {
+          record("undo/redo after mode rebuild", false, modeInsertError);
+        } else {
+          var modeUndo = await undo();
+          var modeRedo = await redo();
+          record("undo/redo after mode rebuild",
+            modeUndo.indexOf("AFTERMODE") < 0 && modeRedo.indexOf("AFTERMODE") >= 0,
+            "undo=" + modeUndo + " redo=" + modeRedo);
+        }
+      }
 
       window.webkit.messageHandlers.ouro.postMessage({ type: "undotest", results: results });
     })();

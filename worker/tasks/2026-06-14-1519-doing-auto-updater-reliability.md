@@ -111,7 +111,7 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 **What**: Adjust undo/redo bridge/menu behavior only as required by Unit 4a; otherwise make the harness prove the existing implementation is correct.
 **Acceptance**: Expanded undo/redo tests pass and existing `--undotest` remains green.
 
-### ⬜ Unit 4c: Undo/Redo Bulletproofing - Coverage & Refactor
+### ✅ Unit 4c: Undo/Redo Bulletproofing - Coverage & Refactor
 **What**: Refactor undo test output for clear pass/fail evidence and record any native AppKit focus no-op disposition if automation is not reliable.
 **Acceptance**: `swift run ouro-md --undotest` proves all required undo/redo cases or the doing doc records an explicit no-op disposition with manual smoke command.
 
@@ -170,5 +170,6 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - 2026-06-14 16:56 Unit 3b review fix complete: cold reviewer found stale staged manual install, re-entrant manual apply, in-flight manual check race, missing install-error prompt, and main-actor staging risk; added red regressions in `unit3b-review-red-coordinator-tests.log`, then coalesced update checks, version-matched staged reuse, single-use manual apply, install failure prompts, and detached production staging with green evidence in `unit3b-review-fix-*.log`
 - 2026-06-14 17:02 Unit 4a complete: added native undo/redo routing tests for menu selectors, native text-view empty-stack preservation, native manager forwarding, and web-editor fallback; saved expected missing-router red log to `unit4a-red-undo-routing-tests.log`; expanded `--undotest` to cover multi-step undo/redo, redo invalidation, empty-stack no-op, and post-mode-rebuild behavior, which already passes with evidence in `unit4a-red-undotest.log`
 - 2026-06-14 17:03 Unit 4b complete: added `UndoRedoCommandRouter` and routed AppDelegate undo/redo through it so focused native text views consume shortcuts even with empty undo stacks; `swift test --filter UndoRedoRoutingTests`, `swift test`, `swift build`, and `swift run ouro-md --undotest` passed with evidence in `unit4b-*.log`
+- 2026-06-14 17:11 Unit 4c complete: cold reviewer found the mode-rebuild `--undotest` case could reuse a stale Vditor global; tightened the harness to wait for a replacement editor instance, seed synthetic inserts with pre/post undo snapshots, and fail explicitly on rebuild timeout; `swift run ouro-md --undotest`, `swift test --filter UndoRedoRoutingTests`, `swift test`, and `swift build` passed with evidence in `unit4c-*.log`
 - 2026-06-14 17:05 Unit 5a complete: forced a clean `swift test` baseline and reproduced weak `MockBridge` warnings at `AppModelReloadTests.swift` lines 96, 118, 141, 162, and 182; saved evidence to `unit5a-warning-baseline-swift-test.log`
 - 2026-06-14 17:07 Unit 5b complete: retained weak test bridges, bumped release/bundle truth to `0.9.1`, refreshed README installer/updater text, and removed stale pretty-URL comments; clean `swift test`, `swift build`, and `swift run ouro-md --version` passed with no warning/stale-string matches in `unit5b-*.log`
