@@ -165,6 +165,69 @@ final class ReleaseUpdateTests: XCTestCase {
         XCTAssertTrue(snapshot.detail.contains("Release update check failed"))
     }
 
+    func testAsyncCheckReturnsSnapshotOnLoaderSuccess() async {
+        let data = Data("""
+        [
+          {
+            "tag_name": "v0.9.1",
+            "html_url": "https://github.com/ourostack/ouro-md/releases/tag/v0.9.1",
+            "draft": false,
+            "prerelease": false,
+            "assets": []
+          }
+        ]
+        """.utf8)
+        let checker = ReleaseUpdateChecker { url in
+            XCTAssertEqual(url.absoluteString, "https://api.github.com/repos/ourostack/ouro-md/releases?per_page=10")
+            return data
+        }
+
+        let snapshot = await checker.check()
+
+        XCTAssertEqual(snapshot.status, .current)
+        XCTAssertEqual(snapshot.currentVersion, OuroMDRelease.version)
+    }
+
+    func testUpdatePlanErrorDescriptionsAreUserFacing() {
+        XCTAssertEqual(
+            OuroMDUpdatePlanError.notAnUpdate.errorDescription,
+            "No newer release is available to install."
+        )
+        XCTAssertEqual(
+            OuroMDUpdatePlanError.missingArchiveAsset.errorDescription,
+            "The release is missing a downloadable app archive (.zip)."
+        )
+        XCTAssertEqual(
+            OuroMDUpdatePlanError.missingManifestAsset.errorDescription,
+            "The release is missing its artifact manifest (.manifest.json)."
+        )
+        XCTAssertEqual(
+            OuroMDUpdatePlanError.badAssetURL.errorDescription,
+            "The release asset download URL was not valid."
+        )
+    }
+
+    func testUpdateVerificationFailureDescriptionsAreUserFacing() {
+        let failures: [OuroMDUpdateVerification.Failure] = [
+            .archiveNameMismatch(expected: "expected.zip", got: "actual.zip"),
+            .sha256Mismatch(expected: "abc", got: "def"),
+            .byteCountMismatch(expected: 10, got: 9),
+            .bundleIdentifierMismatch(expected: "org.ourostack.ouro-md", got: "other.bundle"),
+            .unreadableVersion(manifest: "banana", current: "0.9.1"),
+            .notNewerThanCurrent(current: "0.9.1", candidate: "0.9.1"),
+        ]
+
+        for failure in failures {
+            XCTAssertFalse((failure.errorDescription ?? "").isEmpty)
+        }
+    }
+
+    func testSemanticVersionComparesMajorMinorAndPatch() throws {
+        XCTAssertGreaterThan(try XCTUnwrap(SemanticVersion("1.0.0")), try XCTUnwrap(SemanticVersion("0.999.999")))
+        XCTAssertGreaterThan(try XCTUnwrap(SemanticVersion("1.2.0")), try XCTUnwrap(SemanticVersion("1.1.9")))
+        XCTAssertGreaterThan(try XCTUnwrap(SemanticVersion("1.2.3")), try XCTUnwrap(SemanticVersion("1.2.2")))
+    }
+
     func testDefaultLoaderSendsExpectedGitHubRequestAndReturnsBody() async throws {
         let expectedData = Data("[{\"tag_name\":\"v0.9.0\",\"html_url\":\"https://example.test\",\"draft\":false,\"prerelease\":false,\"assets\":[]}]".utf8)
         RecordingURLProtocol.stub(statusCode: 200, data: expectedData)

@@ -1,0 +1,4 @@
+.build/arm64-apple-macosx/debug/ouro-mdPackageTests.xctest
+.build/arm64-apple-macosx/debug/ouro-mdPackageTests.xctest/Contents/MacOS/ouro-mdPackageTests.dSYM/Contents/Resources/DWARF/ouro-mdPackageTests
+.build/arm64-apple-macosx/debug/ouro-mdPackageTests.xctest/Contents/MacOS/ouro-mdPackageTests
+.build/arm64-apple-macosx/debug/codecov/default.profdata

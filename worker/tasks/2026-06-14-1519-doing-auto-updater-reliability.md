@@ -127,12 +127,12 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 **What**: Run warning-clean verification, ensure docs are accurate after updater behavior is known, and update audit backlog items with in-progress linked work/progress notes only.
 **Acceptance**: Warning output is clean; A-001/A-002/A-003/A-004/A-005/A-007 point at this doing doc/branch without terminal fixed dispositions before merge, release, and live smoke are complete.
 
-### ⬜ Unit 6a: Pre-Merge Full Verification And Package Dry Run
+### ✅ Unit 6a: Pre-Merge Full Verification And Package Dry Run
 **What**: Run the full verification matrix on the feature branch, save coverage artifacts, and run `./scripts/package-release.sh` as a dry-run packaging verification only.
 **Output**: Verification logs, coverage artifacts, `coverage.json`, coverage-check output, and package dry-run output under artifacts.
 **Acceptance**: All local verification commands pass on the feature branch; package dry run succeeds but no GitHub release is created from the branch SHA.
 
-### ⬜ Unit 6b: PR, Review, Merge, And Cleanup
+### 🔄 Unit 6b: PR, Review, Merge, And Cleanup
 **What**: Open a PR, run/record GitHub checks; if no `.github/workflows` or required external CI exists, record a no-CI disposition and rely on the complete local verification matrix; merge through GitHub; fetch `origin/main`; clean local/remote feature branch safely.
 **Output**: PR URL, merge commit, GitHub check/no-CI evidence, cleanup evidence.
 **Acceptance**: PR is merged to `main`; no dirty worktree; no unpushed commits; no stale local or remote feature branch if safe to delete. The merged PR remains as project history and is not considered residue.
@@ -174,3 +174,4 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - 2026-06-14 17:05 Unit 5a complete: forced a clean `swift test` baseline and reproduced weak `MockBridge` warnings at `AppModelReloadTests.swift` lines 96, 118, 141, 162, and 182; saved evidence to `unit5a-warning-baseline-swift-test.log`
 - 2026-06-14 17:07 Unit 5b complete: retained weak test bridges, bumped release/bundle truth to `0.9.1`, refreshed README installer/updater text, and removed stale pretty-URL comments; clean `swift test`, `swift build`, and `swift run ouro-md --version` passed with no warning/stale-string matches in `unit5b-*.log`
 - 2026-06-14 17:14 Unit 5c complete: linked audit backlog items A-001/A-002/A-003/A-004/A-005/A-007 to this doing doc and branch as `in_progress`, keeping them non-terminal until merge/release/live smoke; clean `swift test` passed and warning/stale-string scan logs are empty in `unit5c-*.log`
+- 2026-06-14 17:23 Unit 6a complete: added missing coverage assertions for release errors, semantic version major comparison, coordinator prompts, manual install failures, and staging progress; regenerated `coverage.json`; `swift test`, `swift test --enable-code-coverage`, changed-source coverage check, `--undotest`, `--wraptest`, `--renderprobe`, `--roundtrip sample.md`, and `./scripts/package-release.sh` all passed; warning scan was empty.
