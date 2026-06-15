@@ -20,7 +20,7 @@ final class RenderProbe: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
 
         webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 900, height: 700), configuration: configuration)
         webView.navigationDelegate = self
-        guard let indexURL = Bundle.module.url(forResource: "index", withExtension: "html", subdirectory: "web") else {
+        guard let indexURL = OuroResources.web("index", "html") else {
             FileHandle.standardError.write(Data("renderprobe: index.html not found\n".utf8)); exit(1)
         }
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 700),

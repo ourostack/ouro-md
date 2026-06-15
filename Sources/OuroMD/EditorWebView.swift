@@ -22,7 +22,7 @@ struct EditorWebView: NSViewRepresentable {
         context.coordinator.webView = webView
         model.bridge = context.coordinator
 
-        if let indexURL = Bundle.module.url(forResource: "index", withExtension: "html", subdirectory: "web") {
+        if let indexURL = OuroResources.web("index", "html") {
             // Read access at root lets the editor display images a document
             // references by absolute or (resolved) relative file paths.
             webView.loadFileURL(indexURL, allowingReadAccessTo: URL(fileURLWithPath: "/"))
@@ -88,7 +88,7 @@ struct EditorWebView: NSViewRepresentable {
         // restore content and reload rather than leaving a blank editor.
         func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
             model.editorCrashed()
-            if let indexURL = Bundle.module.url(forResource: "index", withExtension: "html", subdirectory: "web") {
+            if let indexURL = OuroResources.web("index", "html") {
                 webView.loadFileURL(indexURL, allowingReadAccessTo: URL(fileURLWithPath: "/"))
             } else {
                 webView.reload()

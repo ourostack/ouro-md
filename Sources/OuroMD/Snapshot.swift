@@ -35,7 +35,7 @@ final class Snapshotter: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
         webView = WKWebView(frame: NSRect(origin: .zero, size: size), configuration: configuration)
         webView.navigationDelegate = self
 
-        guard let indexURL = Bundle.module.url(forResource: "index", withExtension: "html", subdirectory: "web") else {
+        guard let indexURL = OuroResources.web("index", "html") else {
             fail("index.html not found in bundle")
         }
         webView.loadFileURL(indexURL, allowingReadAccessTo: indexURL.deletingLastPathComponent())
