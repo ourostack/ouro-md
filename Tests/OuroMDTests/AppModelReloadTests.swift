@@ -172,6 +172,32 @@ final class AppModelReloadTests: XCTestCase {
         XCTAssertEqual(model.currentURL, destination)
     }
 
+    func testFailedSaveAsRestoresPreviousURL() {
+        let source = tempFile()
+        let missingDestination = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-missing-\(UUID().uuidString)")
+            .appendingPathComponent("copy.md")
+        try? "# Original\n".write(to: source, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: source) }
+
+        let model = AppModel()
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.presentErrorHandler = { _, _ in }
+        model.editorDidBecomeReady()
+        model.loadInitialFile(source.path)
+
+        let saved = expectation(description: "save as failed")
+        model.performSaveAs(to: missingDestination) { ok in
+            XCTAssertFalse(ok)
+            saved.fulfill()
+        }
+        wait(for: [saved], timeout: 2)
+
+        XCTAssertEqual(model.currentURL, source)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: missingDestination.path))
+    }
+
     /// Saving before the editor has loaded must NOT overwrite the file with "".
     func testSaveBeforeEditorReadyDoesNotEmptyFile() {
         let url = tempFile()

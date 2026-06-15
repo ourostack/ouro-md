@@ -78,6 +78,7 @@ final class AppModel: ObservableObject {
     weak var bridge: EditorBridge?
     /// Invoked whenever window-chrome-relevant state changes.
     var onChromeUpdate: (() -> Void)?
+    var presentErrorHandler: ((String, Error) -> Void)?
 
     private let defaults = UserDefaults.standard
     private var pendingMarkdown: String?
@@ -842,6 +843,10 @@ final class AppModel: ObservableObject {
     }
 
     private func presentError(_ message: String, _ error: Error) {
+        if let presentErrorHandler {
+            presentErrorHandler(message, error)
+            return
+        }
         let alert = NSAlert()
         alert.messageText = message
         alert.informativeText = error.localizedDescription

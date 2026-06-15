@@ -1,4 +1,4 @@
-changed_files=7 checked_executable_lines=1486 noop_files=3
+changed_files=7 checked_executable_lines=1511 noop_files=3
 noop_files:
   Sources/OuroMD/AppDelegate.swift
   Sources/OuroMD/AppModel.swift
