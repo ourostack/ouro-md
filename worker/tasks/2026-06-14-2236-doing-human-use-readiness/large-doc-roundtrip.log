@@ -1,11 +1,11 @@
 
-[2026-06-15T06:36:21Z] large-roundtrip-doc bytes=  551429
+[2026-06-15T06:50:28Z] large-roundtrip-doc bytes=  551429
 [0/1] Planning build
 Building for debugging...
 [0/3] Write swift-version--58304C5D6DBC2206.txt
-Build of product 'ouro-md' complete! (0.22s)
-real 43.38
-user 0.65
-sys 0.25
+Build of product 'ouro-md' complete! (0.21s)
+real 43.03
+user 0.64
+sys 0.26
 
-[2026-06-15T06:37:05Z] large roundtrip cmp ok
+[2026-06-15T06:51:11Z] large roundtrip cmp ok

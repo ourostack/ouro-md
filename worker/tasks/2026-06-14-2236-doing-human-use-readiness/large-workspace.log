@@ -1,23 +1,23 @@
 
-[2026-06-15T06:36:18Z] RUN swift test --filter FolderBrowserTests/testLargeWorkspaceBudgetSkipsOversizedHiddenAndSymlinkedFiles
+[2026-06-15T06:50:24Z] RUN swift test --filter FolderBrowserTests/testLargeWorkspaceBudgetSkipsOversizedHiddenAndSymlinkedFiles
 [0/1] Planning build
 Building for debugging...
 [0/4] Write swift-version--58304C5D6DBC2206.txt
-Build complete! (0.29s)
-Test Suite 'Selected tests' started at 2026-06-14 23:36:18.981.
-Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 23:36:18.982.
-Test Suite 'FolderBrowserTests' started at 2026-06-14 23:36:18.982.
+Build complete! (1.00s)
+Test Suite 'Selected tests' started at 2026-06-14 23:50:26.022.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 23:50:26.023.
+Test Suite 'FolderBrowserTests' started at 2026-06-14 23:50:26.023.
 Test Case '-[OuroMDTests.FolderBrowserTests testLargeWorkspaceBudgetSkipsOversizedHiddenAndSymlinkedFiles]' started.
-Test Case '-[OuroMDTests.FolderBrowserTests testLargeWorkspaceBudgetSkipsOversizedHiddenAndSymlinkedFiles]' passed (1.256 seconds).
-Test Suite 'FolderBrowserTests' passed at 2026-06-14 23:36:20.238.
-	 Executed 1 test, with 0 failures (0 unexpected) in 1.256 (1.256) seconds
-Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 23:36:20.238.
-	 Executed 1 test, with 0 failures (0 unexpected) in 1.256 (1.257) seconds
-Test Suite 'Selected tests' passed at 2026-06-14 23:36:20.238.
-	 Executed 1 test, with 0 failures (0 unexpected) in 1.256 (1.257) seconds
+Test Case '-[OuroMDTests.FolderBrowserTests testLargeWorkspaceBudgetSkipsOversizedHiddenAndSymlinkedFiles]' passed (1.262 seconds).
+Test Suite 'FolderBrowserTests' passed at 2026-06-14 23:50:27.285.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.262 (1.262) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 23:50:27.285.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.262 (1.262) seconds
+Test Suite 'Selected tests' passed at 2026-06-14 23:50:27.285.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.262 (1.263) seconds
 ◇ Test run started.
 ↳ Testing Library Version: 1902
 ↳ Target Platform: arm64e-apple-macos14.0
 ✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
 
-[2026-06-15T06:36:20Z] OK swift test --filter FolderBrowserTests/testLargeWorkspaceBudgetSkipsOversizedHiddenAndSymlinkedFiles
+[2026-06-15T06:50:27Z] OK swift test --filter FolderBrowserTests/testLargeWorkspaceBudgetSkipsOversizedHiddenAndSymlinkedFiles

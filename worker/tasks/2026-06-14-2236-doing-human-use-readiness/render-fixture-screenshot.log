@@ -1,9 +1,9 @@
 Building for debugging...
 [0/3] Write swift-version--58304C5D6DBC2206.txt
-Build of product 'ouro-md' complete! (0.15s)
+Build of product 'ouro-md' complete! (0.14s)
 /Users/arimendelow/Projects/ouro-md/worker/tasks/2026-06-14-2236-doing-human-use-readiness/render-fixture.png
-real 3.48
-user 0.33
+real 4.15
+user 0.35
 sys 0.12
 /Users/arimendelow/Projects/ouro-md/worker/tasks/2026-06-14-2236-doing-human-use-readiness/render-fixture.png
   pixelWidth: 2000

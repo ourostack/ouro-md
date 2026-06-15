@@ -1,4 +1,4 @@
-[2026-06-15T06:44:58Z] editor probes start
+[2026-06-15T06:49:50Z] editor probes start
 [0/1] Planning build
 Building for debugging...
 [0/3] Write swift-version--58304C5D6DBC2206.txt
@@ -9,7 +9,7 @@ PASS empty stack no-op: before=Empty base.\n undo=Empty base.\n redo=Empty base.
 PASS undo/redo after mode rebuild: undo=Mode base.\n\n redo=AFTERMODEMode base.\n\n
 Building for debugging...
 [0/3] Write swift-version--58304C5D6DBC2206.txt
-Build of product 'ouro-md' complete! (0.14s)
+Build of product 'ouro-md' complete! (0.15s)
 type " over selection: hello "world"\n   OK ✓
 type ( over selection: hello (world)\n   OK ✓
 paste url over selection: hello [world](https://x.com)\n   OK ✓
@@ -18,7 +18,7 @@ skip over typed ): ()x\n   OK ✓
 backspace deletes pair: \n   OK ✓
 Building for debugging...
 [0/3] Write swift-version--58304C5D6DBC2206.txt
-Build of product 'ouro-md' complete! (0.14s)
+Build of product 'ouro-md' complete! (0.15s)
 heading     : rendered ✓
 bold        : rendered ✓
 inlineCode  : rendered ✓
@@ -29,4 +29,4 @@ math        : rendered ✓
 footnote    : rendered ✓
 alert       : rendered ✓
 mermaid     : rendered ✓
-[2026-06-15T06:45:17Z] editor probes complete
+[2026-06-15T06:50:09Z] editor probes complete
