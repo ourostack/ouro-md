@@ -22,15 +22,18 @@ final class ReleaseUpdateTests: XCTestCase {
         XCTAssertEqual(OuroMDRelease.appName, "Ouro MD")
         XCTAssertEqual(OuroMDRelease.bundleIdentifier, "org.ourostack.ouro-md")
         XCTAssertEqual(OuroMDRelease.repository, "ourostack/ouro-md")
-        XCTAssertEqual(OuroMDRelease.version, "0.9.6")
-        XCTAssertEqual(OuroMDRelease.userAgent, "OuroMD/0.9.6")
+        // Version-agnostic: assert it's a real semver and the user-agent derives
+        // from it, so a version bump doesn't break these tests.
+        XCTAssertTrue(OuroMDRelease.version.range(of: #"^\d+\.\d+\.\d+$"#, options: .regularExpression) != nil,
+                      "version should be semver, got \(OuroMDRelease.version)")
+        XCTAssertEqual(OuroMDRelease.userAgent, "OuroMD/\(OuroMDRelease.version)")
     }
 
     func testDefaultConfigurationTargetsOuroMDGitHubReleases() {
         let configuration = ReleaseUpdateConfiguration()
 
         XCTAssertEqual(configuration.repository, "ourostack/ouro-md")
-        XCTAssertEqual(configuration.currentVersion, "0.9.6")
+        XCTAssertEqual(configuration.currentVersion, OuroMDRelease.version)
         XCTAssertEqual(
             configuration.releasesURL.absoluteString,
             "https://api.github.com/repos/ourostack/ouro-md/releases?per_page=10"
@@ -241,7 +244,7 @@ final class ReleaseUpdateTests: XCTestCase {
         XCTAssertEqual(request.httpMethod, "GET")
         XCTAssertEqual(request.url?.absoluteString, "https://api.github.com/repos/ourostack/ouro-md/releases?per_page=10")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/vnd.github+json")
-        XCTAssertEqual(request.value(forHTTPHeaderField: "User-Agent"), "OuroMD/0.9.6")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "User-Agent"), "OuroMD/\(OuroMDRelease.version)")
     }
 
     func testDefaultLoaderThrowsOnNonSuccessStatus() async {

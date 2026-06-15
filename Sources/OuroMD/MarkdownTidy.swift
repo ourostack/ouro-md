@@ -46,7 +46,24 @@ enum MarkdownTidy {
             prevBlank = false
             out.append(isTableSeparator(trimmed) ? expandTableSeparator(line) : line)
         }
-        return out.joined(separator: "\n")
+        return restoreFrontMatterBlankLine(out).joined(separator: "\n")
+    }
+
+    /// YAML front matter (`---` … `---` at the very top) is conventionally
+    /// followed by a blank line before the body. Vditor drops that blank line on
+    /// save; restore it so agent-authored docs (task cards, etc.) round-trip
+    /// without a churned diff. Only fires for genuine leading front matter.
+    private static func restoreFrontMatterBlankLine(_ lines: [String]) -> [String] {
+        guard lines.first == "---" else { return lines }
+        // Find the closing fence (first `---` after line 0).
+        guard let close = lines.dropFirst().firstIndex(of: "---") else { return lines }
+        let afterClose = close + 1
+        // Already at end, or already followed by a blank line — nothing to do.
+        guard afterClose < lines.count else { return lines }
+        if lines[afterClose].trimmingCharacters(in: .whitespaces).isEmpty { return lines }
+        var result = lines
+        result.insert("", at: afterClose)
+        return result
     }
 
     private static func isTableSeparator(_ trimmed: String) -> Bool {

@@ -53,6 +53,30 @@ final class MarkdownTidyTests: XCTestCase {
         XCTAssertEqual(MarkdownTidy.tidy(input), input)
     }
 
+    func testRestoresBlankLineAfterFrontMatter() {
+        // Vditor drops the conventional blank line between front matter and the
+        // body; tidy restores it so agent-authored docs round-trip cleanly.
+        let dropped = "---\ntitle: x\nstatus: done\n---\n# Heading\n\nBody"
+        let expected = "---\ntitle: x\nstatus: done\n---\n\n# Heading\n\nBody"
+        XCTAssertEqual(MarkdownTidy.tidy(dropped), expected)
+    }
+
+    func testFrontMatterWithExistingBlankLineUnchanged() {
+        let input = "---\ntitle: x\n---\n\n# Heading\n\nBody"
+        XCTAssertEqual(MarkdownTidy.tidy(input), input)
+    }
+
+    func testFrontMatterOnlyNoBodyUnchanged() {
+        let input = "---\ntitle: x\n---\n"
+        XCTAssertEqual(MarkdownTidy.tidy(input), input)
+    }
+
+    func testMidDocumentTripleDashNotTreatedAsFrontMatter() {
+        // A `---` that isn't at the very top is a thematic break, untouched.
+        let input = "# Title\n\nText.\n\n---\n\nMore."
+        XCTAssertEqual(MarkdownTidy.tidy(input), input)
+    }
+
     func testRoundTripProbePreservesOriginalWhenOnlyKnownEditorNormalizationChanged() {
         let original = """
         ### Tables line up
