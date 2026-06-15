@@ -1,0 +1,85 @@
+name: Release
+
+# Cuts a GitHub release automatically when the version bumps on main.
+# To ship: bump VERSION in make-app.sh + OuroMDRelease.swift, merge to main —
+# this builds the app, packages the zip + manifest, and publishes v<VERSION>.
+# It no-ops if a release for that version already exists, so ordinary merges
+# (docs, refactors) don't trigger anything.
+#
+# Manual dry run: Actions -> Release -> "Run workflow" with dry_run=true builds
+# and packages on a real runner and uploads the artifacts to the run WITHOUT
+# publishing a release — used to verify the pipeline.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'make-app.sh'
+      - 'Package.swift'
+      - 'Package.resolved'
+      - 'Sources/**'
+      - 'web/**'
+      - 'Resources/**'
+      - 'scripts/package-release.sh'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Build + package only; do not publish a release'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version
+        id: ver
+        run: |
+          version="$(grep '^VERSION=' make-app.sh | sed 's/^VERSION="\(.*\)"/\1/')"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Version: $version"
+
+      - name: Check if release already exists
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v${{ steps.ver.outputs.version }}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Release v${{ steps.ver.outputs.version }} already exists — nothing to do."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Package release artifact
+        if: steps.check.outputs.exists == 'false'
+        env:
+          # Embeds telemetry when the secret is set; otherwise ships without it.
+          OURO_MD_POSTHOG_KEY: ${{ secrets.OURO_MD_POSTHOG_KEY }}
+          OURO_MD_ALLOW_UNCONFIGURED_TELEMETRY: '1'
+        run: ./scripts/package-release.sh
+
+      - name: Upload artifacts to the run (always, for inspection / dry run)
+        if: steps.check.outputs.exists == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ouro-md-${{ steps.ver.outputs.version }}
+          path: dist/Ouro-MD-${{ steps.ver.outputs.version }}.*
+
+      - name: Publish release
+        if: steps.check.outputs.exists == 'false' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.ver.outputs.version }}" \
+            "dist/Ouro-MD-${{ steps.ver.outputs.version }}.zip" \
+            "dist/Ouro-MD-${{ steps.ver.outputs.version }}.manifest.json" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Ouro MD ${{ steps.ver.outputs.version }}" \
+            --generate-notes
