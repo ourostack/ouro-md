@@ -19,7 +19,7 @@ final class AlertMarkerTester: NSObject, WKScriptMessageHandler, WKNavigationDel
 
         webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 800, height: 600), configuration: configuration)
         webView.navigationDelegate = self
-        guard let indexURL = Bundle.module.url(forResource: "index", withExtension: "html", subdirectory: "web") else {
+        guard let indexURL = OuroResources.web("index", "html") else {
             FileHandle.standardError.write(Data("alerttest: index.html not found\n".utf8)); exit(1)
         }
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
@@ -129,6 +129,24 @@ final class AlertMarkerTester: NSObject, WKScriptMessageHandler, WKNavigationDel
       function record(name, ok, snap) {
         results.push({ name: name, ok: !!ok, detail: (snap || snapshot(name)).detail });
       }
+      function pushUndoSnapshot() {
+        var ed = window.__ouroEditor;
+        try {
+          if (ed && ed.vditor && ed.vditor.undo) {
+            ed.vditor.undo.addToUndoStack(ed.vditor);
+          }
+        } catch (e) {}
+      }
+      async function editorUndo() {
+        window.ouro.undo();
+        await delay(500);
+        return snapshot("alert-undo");
+      }
+      async function editorRedo() {
+        window.ouro.redo();
+        await delay(500);
+        return snapshot("alert-redo");
+      }
 
       var doc = [
         "# Alerts",
@@ -188,12 +206,24 @@ final class AlertMarkerTester: NSObject, WKScriptMessageHandler, WKNavigationDel
         focused.markerRevealed && focused.labelHidden && focused.sourcePreserved,
         focused);
 
+      pushUndoSnapshot();
       document.execCommand("insertText", false, " Edited");
       await delay(500);
+      pushUndoSnapshot();
+      await delay(250);
       var edited = snapshot("edited");
       record("editing alert body preserves marker",
         edited.sourcePreserved && edited.value.indexOf("An alert. Edited") !== -1,
         edited);
+
+      var alertUndo = await editorUndo();
+      var alertRedo = await editorRedo();
+      record("alert body undo/redo preserves marker",
+        alertUndo.hasAlert && alertUndo.hasMarker && alertUndo.value.indexOf("An alert. Edited") === -1 &&
+        alertUndo.value.indexOf("> [!NOTE]") !== -1 &&
+        alertRedo.hasAlert && alertRedo.hasMarker && alertRedo.value.indexOf("An alert. Edited") !== -1 &&
+        alertRedo.sourcePreserved,
+        { detail: "undo=" + alertUndo.detail + " redo=" + alertRedo.detail });
 
       var firstEditor = window.__ouroEditor;
       window.ouro.setMode("sv");

@@ -67,10 +67,20 @@ jobs:
       - name: Package release artifact
         if: steps.check.outputs.exists == 'false' || (github.event_name == 'workflow_dispatch' && inputs.dry_run)
         env:
-          # Embeds telemetry when the secret is set; otherwise ships without it.
+          # Production releases fail closed when telemetry is not configured.
+          # Dry-run dispatches may build without secrets for fork/inspection use.
           OURO_MD_POSTHOG_KEY: ${{ secrets.OURO_MD_POSTHOG_KEY }}
-          OURO_MD_ALLOW_UNCONFIGURED_TELEMETRY: '1'
+          OURO_MD_POSTHOG_HOST: ${{ secrets.OURO_MD_POSTHOG_HOST }}
+          OURO_MD_ALLOW_UNCONFIGURED_TELEMETRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
         run: ./scripts/package-release.sh
+
+      - name: Verify packaged app probes
+        if: steps.check.outputs.exists == 'false' || (github.event_name == 'workflow_dispatch' && inputs.dry_run)
+        run: |
+          ./OuroMD.app/Contents/MacOS/ouro-md --bundleprobe
+          ./OuroMD.app/Contents/MacOS/ouro-md --renderprobe
+          ./OuroMD.app/Contents/MacOS/ouro-md --alerttest
+          OURO_UNDO_STRESS_CYCLES=10 ./OuroMD.app/Contents/MacOS/ouro-md --undotest
 
       - name: Upload artifacts to the run (always, for inspection / dry run)
         if: steps.check.outputs.exists == 'false' || (github.event_name == 'workflow_dispatch' && inputs.dry_run)
