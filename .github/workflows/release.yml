@@ -14,6 +14,7 @@ on:
   push:
     branches: [main]
     paths:
+      - '.github/workflows/release.yml'
       - 'make-app.sh'
       - 'Package.swift'
       - 'Package.resolved'
@@ -21,6 +22,8 @@ on:
       - 'web/**'
       - 'Resources/**'
       - 'scripts/package-release.sh'
+      - 'scripts/verify-release-version.sh'
+      - 'scripts/verify-packaged-app.sh'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -31,9 +34,17 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   release:
     runs-on: macos-14
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -48,7 +59,7 @@ jobs:
       - name: Read version
         id: ver
         run: |
-          version="$(grep '^VERSION=' make-app.sh | sed 's/^VERSION="\(.*\)"/\1/')"
+          version="$(./scripts/verify-release-version.sh --print)"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Version: $version"
 
@@ -76,11 +87,7 @@ jobs:
 
       - name: Verify packaged app probes
         if: steps.check.outputs.exists == 'false' || (github.event_name == 'workflow_dispatch' && inputs.dry_run)
-        run: |
-          ./OuroMD.app/Contents/MacOS/ouro-md --bundleprobe
-          ./OuroMD.app/Contents/MacOS/ouro-md --renderprobe
-          ./OuroMD.app/Contents/MacOS/ouro-md --alerttest
-          OURO_UNDO_STRESS_CYCLES=10 ./OuroMD.app/Contents/MacOS/ouro-md --undotest
+        run: ./scripts/verify-packaged-app.sh OuroMD.app
 
       - name: Upload artifacts to the run (always, for inspection / dry run)
         if: steps.check.outputs.exists == 'false' || (github.event_name == 'workflow_dispatch' && inputs.dry_run)

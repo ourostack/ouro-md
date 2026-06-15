@@ -76,14 +76,23 @@ For install or update problems, see
 ### Cutting a release (maintainers)
 
 ```sh
-./scripts/package-release.sh    # build → dist/Ouro-MD-<version>.zip + .manifest.json
-gh release create v<version> dist/Ouro-MD-<version>.zip dist/Ouro-MD-<version>.manifest.json \
-  --repo ourostack/ouro-md --target "$(git rev-parse HEAD)" \
-  --title "Ouro MD <version>"
+./scripts/check-release-secrets.sh          # confirms GitHub release telemetry secrets exist
+./scripts/verify-release-version.sh         # make-app.sh / OuroMDRelease.swift / README agree
 ```
 
-The installer and in-app updater always pull the newest published release, so
-publishing a new version is how users get the update.
+To ship: bump `VERSION` in `make-app.sh`, `OuroMDRelease.version`, and this
+README status line, then merge to `main`. The Release workflow builds the app,
+requires embedded PostHog telemetry for production publishes, runs packaged-app
+probes, uploads the zip/manifest, and publishes `v<VERSION>`. It no-ops when that
+tag already exists. Use workflow dispatch with `dry_run=true` to build/probe on a
+GitHub macOS runner without publishing.
+
+For a local package smoke:
+
+```sh
+./scripts/package-release.sh
+./scripts/verify-packaged-app.sh OuroMD.app
+```
 
 Release builds can embed anonymous PostHog telemetry by setting
 `OURO_MD_POSTHOG_KEY` and, optionally, `OURO_MD_POSTHOG_HOST` before packaging.
