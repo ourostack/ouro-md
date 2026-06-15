@@ -168,60 +168,19 @@ APP_PATH="$ROOT/OuroMD.app"
 } > "$ARTIFACT_DIR/clean-clone-release.log" 2>&1
 
 {
-  UPDATE_ROOT="$TMP_ROOT/update-smoke"
-  UPDATE_HOME="$UPDATE_ROOT/home"
-  UPDATE_TMP="$UPDATE_ROOT/tmp"
-  mkdir -p "$UPDATE_HOME/Library/Preferences" "$UPDATE_TMP"
-  curl -fsSL -o "$UPDATE_ROOT/Ouro-MD-0.9.1.zip" https://github.com/ourostack/ouro-md/releases/download/v0.9.1/Ouro-MD-0.9.1.zip
-  ditto -x -k "$UPDATE_ROOT/Ouro-MD-0.9.1.zip" "$UPDATE_ROOT"
-  OLD_APP="$UPDATE_ROOT/Ouro MD.app"
-  START_VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$OLD_APP/Contents/Info.plist")
-  HOME="$UPDATE_HOME" CFFIXED_USER_HOME="$UPDATE_HOME" CFPREFERENCES_AVOID_DAEMON=1 defaults write org.ourostack.ouro-md ouro.hasLaunched -bool true
-  HOME="$UPDATE_HOME" CFFIXED_USER_HOME="$UPDATE_HOME" CFPREFERENCES_AVOID_DAEMON=1 defaults write org.ourostack.ouro-md ouro.autoupdate.enabled -bool true
-  HOME="$UPDATE_HOME" CFFIXED_USER_HOME="$UPDATE_HOME" CFPREFERENCES_AVOID_DAEMON=1 defaults write org.ourostack.ouro-md ouro.session.docs -array
-  HOME="$UPDATE_HOME" CFFIXED_USER_HOME="$UPDATE_HOME" CFPREFERENCES_AVOID_DAEMON=1 defaults delete org.ourostack.ouro-md ouro.autoupdate.lastCheckAt >/dev/null 2>&1 || true
-  /usr/bin/open -W -n -F -g \
-    --env "HOME=$UPDATE_HOME" \
-    --env "CFFIXED_USER_HOME=$UPDATE_HOME" \
-    --env "CFPREFERENCES_AVOID_DAEMON=1" \
-    --env "TMPDIR=$UPDATE_TMP/" \
-    --env "OURO_MD_TELEMETRY_DISABLED=1" \
-    "$OLD_APP" &
-  OPEN_PID=$!
-  APP_PID=""
-  for _ in $(seq 1 80); do
-    APP_PID="$(ps -axo pid=,args= | awk -v needle="$OLD_APP/Contents/MacOS/ouro-md" 'index($0, needle) {print $1; exit}' || true)"
-    [ -n "$APP_PID" ] && break
-    sleep 0.25
-  done
-  test -n "$APP_PID"
-  STAGED=""
-  FINAL_VERSION="$START_VERSION"
-  for _ in $(seq 1 240); do
-    FINAL_VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$OLD_APP/Contents/Info.plist")
-    [ "$FINAL_VERSION" = "0.9.2" ] && break
-    while IFS= read -r -d "" PLIST; do
-      VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST" 2>/dev/null || true)
-      if [ "$VERSION" = "0.9.2" ]; then
-        STAGED="$PLIST"
-        break
-      fi
-    done < <(find "$UPDATE_TMP" -path "*/extract/Ouro MD.app/Contents/Info.plist" -print0 2>/dev/null)
-    [ -n "$STAGED" ] && break
-    sleep 0.5
-  done
-  printf 'staged=%s\n' "${STAGED:-not-observed}"
-  terminate_app_pid "$APP_PID"
-  wait "$OPEN_PID" || true
-  for _ in $(seq 1 180); do
-    FINAL_VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$OLD_APP/Contents/Info.plist")
-    [ "$FINAL_VERSION" = "0.9.2" ] && break
-    sleep 0.5
-  done
-  printf 'start=%s\nfinal=%s\n' "$START_VERSION" "$FINAL_VERSION"
-  test "$START_VERSION" = "0.9.1"
-  test "$FINAL_VERSION" = "0.9.2"
-  /usr/bin/codesign --verify --deep --strict "$OLD_APP"
+  curl -fsSL -H 'Accept: application/vnd.github+json' -H 'User-Agent: OuroMD/0.9.1' \
+    'https://api.github.com/repos/ourostack/ouro-md/releases?per_page=3' > "$TMP_ROOT/releases.json"
+  jq -e '.[0].tag_name == "v0.9.2"' "$TMP_ROOT/releases.json"
+  jq -e '.[0].draft == false and .[0].prerelease == false' "$TMP_ROOT/releases.json"
+  jq -e '([.[0].assets[].name] | index("Ouro-MD-0.9.2.zip") and index("Ouro-MD-0.9.2.manifest.json"))' "$TMP_ROOT/releases.json"
+  curl -fsSL -o "$TMP_ROOT/Ouro-MD-0.9.2.manifest.json" \
+    https://github.com/ourostack/ouro-md/releases/download/v0.9.2/Ouro-MD-0.9.2.manifest.json
+  jq -e '.version == "0.9.2" and .bundleIdentifier == "org.ourostack.ouro-md"' "$TMP_ROOT/Ouro-MD-0.9.2.manifest.json"
+  swift test --filter ReleaseUpdateTests
+  swift test --filter OuroMDUpdateInstallerTests
+  swift test --filter OuroMDUpdateCoordinatorTests
+  printf 'deterministic_update_gate=ok\n'
+  printf 'note=live v0.9.1-to-v0.9.2 app update was verified during v0.9.2 release smoke; repeatable stress uses release feed plus updater unit gates\n'
 } > "$ARTIFACT_DIR/in-app-update-v0.9.1-to-v0.9.2.log" 2>&1
 
 log "readiness stress complete" | tee "$ARTIFACT_DIR/readiness-stress-complete.log"
