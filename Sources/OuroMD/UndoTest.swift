@@ -24,7 +24,7 @@ final class UndoTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
 
         webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 800, height: 600), configuration: configuration)
         webView.navigationDelegate = self
-        guard let indexURL = Bundle.module.url(forResource: "index", withExtension: "html", subdirectory: "web") else {
+        guard let indexURL = OuroResources.web("index", "html") else {
             FileHandle.standardError.write(Data("undotest: index.html not found\n".utf8)); exit(1)
         }
         // Host the web view in an off-screen key window so it can take focus and

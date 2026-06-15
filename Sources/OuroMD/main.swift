@@ -23,6 +23,28 @@ if hasFlag("--version") {
     print("ouro-md \(OuroCLI.version)")
     exit(0)
 }
+if hasFlag("--bundleprobe") {
+    // Diagnostic: print where Bundle.main resolves + whether the SwiftPM
+    // resource bundle is findable, WITHOUT touching Bundle.module (which
+    // fatalErrors when it can't find the bundle). Used to debug packaging.
+    let main = Bundle.main
+    print("bundleURL:    \(main.bundleURL.path)")
+    print("resourceURL:  \(main.resourceURL?.path ?? "nil")")
+    print("executableURL:\(main.executableURL?.path ?? "nil")")
+    let name = "ouro-md_OuroMD.bundle"
+    for (label, base) in [("bundleURL", main.bundleURL), ("resourceURL", main.resourceURL ?? main.bundleURL)] {
+        let candidate = base.appendingPathComponent(name).path
+        print("  \(label)/\(name): \(FileManager.default.fileExists(atPath: candidate) ? "EXISTS" : "missing")  (\(candidate))")
+    }
+    // Exercise the actual resolver the app uses — this is the real go/no-go.
+    if let web = OuroResources.web("index", "html") {
+        print("OuroResources.web(index.html): FOUND  (\(web.path))")
+        exit(0)
+    } else {
+        print("OuroResources.web(index.html): NOT FOUND")
+        exit(1)
+    }
+}
 if hasFlag("--list-themes") {
     for theme in ThemeStore.shared.themes {
         print("\(theme.id)\t\(theme.displayName)")
