@@ -68,3 +68,17 @@ jobs:
           printf '# T\n\n| a | b |\n| - | - |\n| 1 | 2 |\n' > /tmp/rt.md
           run --roundtrip /tmp/rt.md --out /tmp/rt-out.md
           OURO_SELFTEST=1 run
+
+  coverage:
+    name: Coverage
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v5
+      - name: Select newest Xcode (Swift 6.0+)
+        run: |
+          latest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"
+          [ -n "$latest" ] || latest="$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
+          sudo xcode-select -s "$latest/Contents/Developer"
+          swift --version
+      - name: Enforce 100% line+region coverage on OuroMDCore
+        run: ./scripts/check-coverage.sh
