@@ -1,12 +1,11 @@
-[2026-06-15T06:01:14Z] strict plain 2500-section roundtrip
-  551429 worker/tasks/2026-06-14-2236-doing-human-use-readiness/large-roundtrip-fixture.md
+
+[2026-06-15T06:36:21Z] large-roundtrip-doc bytes=  551429
+[0/1] Planning build
 Building for debugging...
 [0/3] Write swift-version--58304C5D6DBC2206.txt
 Build of product 'ouro-md' complete! (0.22s)
-real 64.36
-user 0.81
-sys 0.46
-  551429 worker/tasks/2026-06-14-2236-doing-human-use-readiness/large-roundtrip-fixture.md
-  551429 worker/tasks/2026-06-14-2236-doing-human-use-readiness/large-doc-roundtrip.md
- 1102858 total
-[2026-06-15T06:02:19Z] strict plain roundtrip ok
+real 43.38
+user 0.65
+sys 0.25
+
+[2026-06-15T06:37:05Z] large roundtrip cmp ok

@@ -1,0 +1,10 @@
+
+[2026-06-15T06:37:05Z] large-render-doc bytes= 3949125
+Building for debugging...
+[0/3] Write swift-version--58304C5D6DBC2206.txt
+Build of product 'ouro-md' complete! (0.15s)
+real 4.22
+user 3.68
+sys 0.13
+
+[2026-06-15T06:37:09Z] render html bytes= 10949675

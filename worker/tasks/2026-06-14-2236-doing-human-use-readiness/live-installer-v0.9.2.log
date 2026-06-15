@@ -1,0 +1,12 @@
+[1;36m▸[0m Finding the latest Ouro MD release…
+[1;36m▸[0m Downloading Ouro-MD-0.9.2.zip…
+[1;36m▸[0m Checksum verified.
+[1;36m▸[0m Extracting…
+[1;36m▸[0m Installed Ouro MD 0.9.2 → /tmp/ouro-md-readiness.t9aq0h/live-install/Ouro MD.app
+
+Next:
+  • Open a markdown file:  open -a "Ouro MD" some-file.md
+  • Add a shell alias:     alias md='open -a "Ouro MD"'    (then:  md file.md)
+  • Or just double-click any .md in Finder.
+0.9.2
+org.ourostack.ouro-md

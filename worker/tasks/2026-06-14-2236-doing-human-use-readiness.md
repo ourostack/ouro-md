@@ -16,7 +16,7 @@ Execute the human-use readiness sweep described in the planning doc, patch reach
   - Output: local payload audit, focused tests, and any production telemetry patches required.
   - Acceptance: events are content-free, opt-out safe, useful for dogfood debugging, and tested.
 
-- [ ] Unit 2 - Synthetic stress harness
+- [x] Unit 2 - Synthetic stress harness
   - Output: repeatable stress script/fixtures for large folders, large docs, rendering, editor commands, install/update, first-run, accessibility, and release reproduction.
   - Acceptance: harness runs locally and stores logs/artifacts under this task directory.
 
@@ -31,7 +31,7 @@ Execute the human-use readiness sweep described in the planning doc, patch reach
 ## Completion Criteria
 
 - [x] Unit 1 complete.
-- [ ] Unit 2 complete.
+- [x] Unit 2 complete.
 - [ ] Unit 3 complete.
 - [ ] Unit 4 complete.
 
@@ -43,3 +43,4 @@ Execute the human-use readiness sweep described in the planning doc, patch reach
 
 - 2026-06-14 22:36 Created doing doc and artifact plan.
 - 2026-06-14 22:42 Unit 1 complete: added content-free save/open/rename/reload telemetry codes and focused payload/no-leak tests; addressed telemetry reviewer findings.
+- 2026-06-14 23:41 Unit 2 complete: added and ran `scripts/readiness-stress.sh`; artifacts cover large folder, large editor roundtrip, large render, screenshot smoke, editor lifecycle, first-run, accessibility, live installer, clean-clone release packaging, and deterministic update checks. Recorded multi-megabyte live-editor roundtrip as a known non-v1 limit.

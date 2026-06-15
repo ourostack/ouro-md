@@ -1,0 +1,21 @@
+==> Building (release)…
+[0/1] Planning build
+Building for production...
+[0/2] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.27s)
+==> Assembling OuroMD.app…
+==> Telemetry: disabled (set OURO_MD_POSTHOG_KEY or VITE_POSTHOG_KEY to configure)
+==> Ad-hoc signing…
+==> Done: /Users/arimendelow/Projects/ouro-md/OuroMD.app
+    Launch with:  open OuroMD.app
+{
+    NSNavPanelExpandedSizeForOpenMode = "{880, 448}";
+    NSOSPLastRootDirectory = {length = 768, bytes = 0x626f6f6b 00030000 00000510 40000000 ... 90010000 00000000 };
+    "NSWindow Frame OuroMainWindow" = "828 458 1080 832 0 0 2056 1290 ";
+    "ouro.autoupdate.enabled" = 1;
+    "ouro.autoupdate.lastCheckAt" = "2026-06-15 06:30:30 +0000";
+    "ouro.hasLaunched" = 1;
+    "ouro.session.docs" =     (
+    );
+    "ouro.telemetry.distinctID" = "ouro-md-3d7a20be-0af4-4279-896e-f5bc01872d21";
+}
