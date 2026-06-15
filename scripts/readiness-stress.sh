@@ -26,7 +26,7 @@ terminate_app_pid() {
     fi
     sleep 0.25
   done
-  kill "$pid" 2>/dev/null || true
+  kill -9 "$pid" 2>/dev/null || true
 }
 
 make_large_doc() {
