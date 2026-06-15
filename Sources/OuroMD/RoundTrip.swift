@@ -44,7 +44,7 @@ final class RoundTripper: NSObject, WKScriptMessageHandler, WKNavigationDelegate
         webView.evaluateJavaScript("window.ouro.setValue(\(RoundTripper.js(input)))", completionHandler: nil)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             self.webView.evaluateJavaScript("window.ouro.getValue()") { result, _ in
-                let output = AppModel.tidyMarkdown((result as? String) ?? "")
+                let output = AppModel.tidyMarkdown((result as? String) ?? "", preserving: self.input)
                 if let outURL = self.outURL {
                     try? output.write(to: outURL, atomically: true, encoding: .utf8)
                 } else {

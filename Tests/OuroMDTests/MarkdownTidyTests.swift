@@ -33,4 +33,24 @@ final class MarkdownTidyTests: XCTestCase {
         let input = "# H\n\n- a\n- b\n\n> quote\n\ntext"
         XCTAssertEqual(AppModel.tidyMarkdown(input), input)
     }
+
+    func testPreservesOriginalWhenOnlyKnownEditorNormalizationChanged() {
+        let original = """
+        ### Tables line up
+
+
+        | Theme      | Mood             | Type  |
+        | :--------- | :--------------- | :---- |
+        | Quartz     | calm daylight    | sans  |
+        """
+        let editorOutput = """
+        ### Tables line up
+
+        | Theme      | Mood             | Type  |
+        | :--- | :--- | :--- |
+        | Quartz     | calm daylight    | sans  |
+        """
+
+        XCTAssertEqual(AppModel.tidyMarkdown(editorOutput, preserving: original), original)
+    }
 }

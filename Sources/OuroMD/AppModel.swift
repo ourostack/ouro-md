@@ -122,7 +122,15 @@ final class AppModel: ObservableObject {
     /// diff: re-expand collapsed table separators (`| - |` → `| --- |`) and
     /// collapse runs of blank lines that the table renderer introduces. Content
     /// inside fenced code blocks is left untouched.
-    static func tidyMarkdown(_ markdown: String) -> String {
+    static func tidyMarkdown(_ markdown: String, preserving original: String? = nil) -> String {
+        let tidied = normalizedMarkdown(markdown)
+        if let original, normalizedMarkdown(original) == tidied {
+            return original
+        }
+        return tidied
+    }
+
+    private static func normalizedMarkdown(_ markdown: String) -> String {
         let lines = markdown.components(separatedBy: "\n")
         var out: [String] = []
         var inFence = false
@@ -392,7 +400,7 @@ final class AppModel: ObservableObject {
         bridge.getMarkdown { [weak self] markdown in
             guard let self else { completion(false); return }
             guard let markdown else { completion(false); return }
-            let tidied = AppModel.tidyMarkdown(markdown)
+            let tidied = AppModel.tidyMarkdown(markdown, preserving: self.lastLoadedContent)
             // Resolve symlinks so an atomic write updates the real file rather
             // than replacing the link with a regular file.
             let target = url.resolvingSymlinksInPath()
