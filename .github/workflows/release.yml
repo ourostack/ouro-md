@@ -37,6 +37,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Select newest Xcode (needs Swift 6.0+)
+        run: |
+          latest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"
+          if [ -z "$latest" ]; then latest="$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"; fi
+          echo "Selecting $latest"
+          sudo xcode-select -s "$latest/Contents/Developer"
+          swift --version
+
       - name: Read version
         id: ver
         run: |
