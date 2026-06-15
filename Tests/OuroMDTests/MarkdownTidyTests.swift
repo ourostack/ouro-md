@@ -1,4 +1,5 @@
 import XCTest
+@testable import OuroMDCore
 @testable import OuroMD
 
 final class MarkdownTidyTests: XCTestCase {
@@ -74,6 +75,17 @@ final class MarkdownTidyTests: XCTestCase {
     func testMidDocumentTripleDashNotTreatedAsFrontMatter() {
         // A `---` that isn't at the very top is a thematic break, untouched.
         let input = "# Title\n\nText.\n\n---\n\nMore."
+        XCTAssertEqual(MarkdownTidy.tidy(input), input)
+    }
+    func testUnclosedFrontMatterFenceLeftUnchanged() {
+        // Opening `---` with no closing fence is not front matter; leave it be.
+        let input = "---\ntitle: x\nbody with no closing fence"
+        XCTAssertEqual(MarkdownTidy.tidy(input), input)
+    }
+    func testFrontMatterClosingFenceAtEndOfDocumentUnchanged() {
+        // Closing `---` is the final line (no trailing newline, nothing after):
+        // there is no body to separate, so nothing is inserted.
+        let input = "---\ntitle: x\n---"
         XCTAssertEqual(MarkdownTidy.tidy(input), input)
     }
 

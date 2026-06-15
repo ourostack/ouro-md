@@ -1,4 +1,5 @@
 import Foundation
+import OuroMDCore
 
 enum ReleaseUpdateStatus: String, Codable, Equatable, Sendable {
     case current

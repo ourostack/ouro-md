@@ -2,9 +2,9 @@ import Foundation
 
 /// Builds self-contained HTML documents and provides HTML-escaping helpers.
 /// Used by the headless `--render` path and by HTML/PDF export.
-enum HTMLDocument {
+public enum HTMLDocument {
     /// Escapes text for use in HTML element content.
-    static func escape(_ s: String) -> String {
+    public static func escape(_ s: String) -> String {
         var out = ""
         out.reserveCapacity(s.count)
         for ch in s {
@@ -19,12 +19,12 @@ enum HTMLDocument {
     }
 
     /// Escapes text for use inside a double-quoted HTML attribute.
-    static func escapeAttr(_ s: String) -> String {
+    public static func escapeAttr(_ s: String) -> String {
         escape(s).replacingOccurrences(of: "\"", with: "&quot;")
     }
 
     /// Wraps rendered body HTML in a complete, theme-styled HTML document.
-    static func wrap(body: String, css: String, title: String) -> String {
+    public static func wrap(body: String, css: String, title: String) -> String {
         """
         <!DOCTYPE html>
         <html lang="en">
@@ -46,7 +46,7 @@ enum HTMLDocument {
         """
     }
 
-    static let baseReset = """
+    public static let baseReset = """
     *,*::before,*::after{box-sizing:border-box}
     html{-webkit-text-size-adjust:100%}
     body{margin:0}

@@ -1,4 +1,5 @@
 import Foundation
+import OuroMDCore
 import Markdown
 
 /// Renders Markdown to HTML using swift-markdown's CommonMark + GFM parser.

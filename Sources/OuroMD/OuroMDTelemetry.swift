@@ -1,4 +1,5 @@
 import Combine
+import OuroMDCore
 import Foundation
 
 enum OuroMDTelemetryValue: Encodable, Equatable, Sendable {

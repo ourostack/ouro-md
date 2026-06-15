@@ -1,18 +1,18 @@
 import Foundation
 
-enum MarkdownTidy {
+public enum MarkdownTidy {
     /// Undo the only two things the editor normalizes on a markdown round-trip
     /// (verified: everything else is byte-identical) so saving doesn't churn the
     /// diff: re-expand collapsed table separators (`| - |` -> `| --- |`) and
     /// collapse runs of blank lines that the table renderer introduces. Content
     /// inside fenced code blocks is left untouched.
-    static func tidy(_ markdown: String) -> String {
+    public static func tidy(_ markdown: String) -> String {
         normalized(markdown)
     }
 
     /// Used only by the headless round-trip probe, where the caller knows no
     /// human edit occurred between load and readback.
-    static func roundTripProbeOutput(_ markdown: String, preserving original: String) -> String {
+    public static func roundTripProbeOutput(_ markdown: String, preserving original: String) -> String {
         let tidied = normalized(markdown)
         if normalized(original) == tidied {
             return original

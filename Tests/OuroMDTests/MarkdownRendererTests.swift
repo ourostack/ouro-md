@@ -1,5 +1,6 @@
 import XCTest
 @testable import OuroMD
+import OuroMDCore
 
 final class MarkdownRendererTests: XCTestCase {
     private func render(_ markdown: String) -> String {
