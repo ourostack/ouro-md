@@ -57,9 +57,11 @@ run_logged "$ARTIFACT_DIR/large-workspace.log" swift test --filter FolderBrowser
 
 ROUNDTRIP_DOC="$ARTIFACT_DIR/large-roundtrip-fixture.md"
 RENDER_DOC="$ARTIFACT_DIR/large-render-fixture.md"
+VISUAL_DOC="$ARTIFACT_DIR/render-visual-fixture.md"
 ROUNDTRIP_OUT="$ARTIFACT_DIR/large-doc-roundtrip.md"
 make_large_doc "$ROUNDTRIP_DOC" 2500 0
 make_large_doc "$RENDER_DOC" 18000 1
+make_large_doc "$VISUAL_DOC" 200 1
 {
   log "large-roundtrip-doc bytes=$(wc -c < "$ROUNDTRIP_DOC")"
   /usr/bin/time -p swift run ouro-md --roundtrip "$ROUNDTRIP_DOC" --out "$ROUNDTRIP_OUT"
@@ -80,7 +82,7 @@ RENDER_HTML="$ARTIFACT_DIR/render-fixture.html"
 
 RENDER_PNG="$ARTIFACT_DIR/render-fixture.png"
 {
-  /usr/bin/time -p swift run ouro-md --shoot "$ROUNDTRIP_DOC" --out "$RENDER_PNG" --width 1000 --height 1300
+  /usr/bin/time -p swift run ouro-md --shoot "$VISUAL_DOC" --out "$RENDER_PNG" --width 1000 --height 1300
   test -s "$RENDER_PNG"
   sips -g pixelWidth -g pixelHeight "$RENDER_PNG"
 } > "$ARTIFACT_DIR/render-fixture-screenshot.log" 2>&1
