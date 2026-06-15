@@ -690,12 +690,11 @@ final class AppModel: ObservableObject {
         guard let folder = mountedFolder else { folderTree = []; folderFlat = []; return }
         let sort = folderSort
         folderScanQueue.async { [weak self] in
-            let tree = FolderScanner.tree(at: folder, sort: sort)
-            let flat = FolderScanner.flatList(at: folder, sort: sort)
+            let snapshot = FolderScanner.snapshot(at: folder, sort: sort)
             DispatchQueue.main.async {
                 guard let self, self.mountedFolder == folder else { return }
-                self.folderTree = tree
-                self.folderFlat = flat
+                self.folderTree = snapshot.tree
+                self.folderFlat = snapshot.flat
             }
         }
     }

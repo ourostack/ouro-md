@@ -13,6 +13,11 @@ struct FolderNode: Identifiable, Hashable {
     var children: [FolderNode]?
 }
 
+struct FolderScanSnapshot: Equatable {
+    var tree: [FolderNode]
+    var flat: [FolderNode]
+}
+
 enum FolderSort: String, CaseIterable {
     case natural, name, modified, created
 
@@ -45,16 +50,23 @@ enum FolderScanner {
 
     /// Recursive tree of openable files + the directories that contain them.
     static func tree(at folder: URL, sort: FolderSort) -> [FolderNode] {
-        var budget = maxFiles
-        return scan(folder, sort: sort, budget: &budget)
+        snapshot(at: folder, sort: sort).tree
     }
 
     /// Flat list of every openable file under the folder (List/"Articles" view).
     static func flatList(at folder: URL, sort: FolderSort) -> [FolderNode] {
-        var out: [FolderNode] = []
+        snapshot(at: folder, sort: sort).flat
+    }
+
+    /// Tree + flat views from one filesystem traversal. The sidebar needs both
+    /// views at the same time, so this avoids scanning large folders twice.
+    static func snapshot(at folder: URL, sort: FolderSort) -> FolderScanSnapshot {
         var budget = maxFiles
-        collect(folder, into: &out, budget: &budget, depth: 0)
-        return sortNodes(out, sort: sort, groupDirs: false)
+        let raw = scan(folder, sort: sort, budget: &budget)
+        return FolderScanSnapshot(
+            tree: raw.tree,
+            flat: sortNodes(raw.flat, sort: sort, groupDirs: false)
+        )
     }
 
     // MARK: - internals
@@ -66,12 +78,15 @@ enum FolderScanner {
         .isDirectoryKey, .isSymbolicLinkKey, .contentModificationDateKey, .creationDateKey, .fileSizeKey
     ]
 
-    private static func scan(_ dir: URL, sort: FolderSort, budget: inout Int, depth: Int = 0) -> [FolderNode] {
-        guard budget > 0, depth < maxDepth else { return [] }
+    private static func scan(_ dir: URL, sort: FolderSort, budget: inout Int, depth: Int = 0) -> FolderScanSnapshot {
+        guard budget > 0, depth < maxDepth else { return FolderScanSnapshot(tree: [], flat: []) }
         let fm = FileManager.default
         guard let entries = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: scanKeys,
-                                                        options: [.skipsHiddenFiles]) else { return [] }
-        var nodes: [FolderNode] = []
+                                                        options: [.skipsHiddenFiles]) else {
+            return FolderScanSnapshot(tree: [], flat: [])
+        }
+        var treeNodes: [FolderNode] = []
+        var flatNodes: [FolderNode] = []
         for url in entries {
             let name = url.lastPathComponent
             if name == "node_modules" { continue }
@@ -81,40 +96,25 @@ enum FolderScanner {
             let mtime = values?.contentModificationDate ?? .distantPast
             let ctime = values?.creationDate ?? .distantPast
             if isDir {
-                let children = scan(url, sort: sort, budget: &budget, depth: depth + 1)
-                if !children.isEmpty {
-                    nodes.append(FolderNode(url: url, name: name, isDirectory: true,
-                                            modified: mtime, created: ctime, children: children))
+                let child = scan(url, sort: sort, budget: &budget, depth: depth + 1)
+                flatNodes.append(contentsOf: child.flat)
+                if !child.tree.isEmpty {
+                    treeNodes.append(FolderNode(url: url, name: name, isDirectory: true,
+                                                modified: mtime, created: ctime, children: child.tree))
                 }
             } else if canOpen(url), (values?.fileSize ?? 0) <= maxFileBytes {
                 budget -= 1
-                nodes.append(FolderNode(url: url, name: name, isDirectory: false,
-                                        modified: mtime, created: ctime, children: nil))
+                let node = FolderNode(url: url, name: name, isDirectory: false,
+                                      modified: mtime, created: ctime, children: nil)
+                treeNodes.append(node)
+                flatNodes.append(node)
                 if budget <= 0 { break }
             }
         }
-        return sortNodes(nodes, sort: sort, groupDirs: true)
-    }
-
-    private static func collect(_ dir: URL, into out: inout [FolderNode], budget: inout Int, depth: Int) {
-        guard budget > 0, depth < maxDepth else { return }
-        let fm = FileManager.default
-        guard let entries = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: scanKeys,
-                                                        options: [.skipsHiddenFiles]) else { return }
-        for url in entries {
-            if url.lastPathComponent == "node_modules" { continue }
-            let values = try? url.resourceValues(forKeys: Set(scanKeys))
-            if values?.isSymbolicLink ?? false { continue }
-            if values?.isDirectory ?? false {
-                collect(url, into: &out, budget: &budget, depth: depth + 1)
-            } else if canOpen(url), (values?.fileSize ?? 0) <= maxFileBytes {
-                budget -= 1
-                out.append(FolderNode(url: url, name: url.lastPathComponent, isDirectory: false,
-                                      modified: values?.contentModificationDate ?? .distantPast,
-                                      created: values?.creationDate ?? .distantPast, children: nil))
-                if budget <= 0 { return }
-            }
-        }
+        return FolderScanSnapshot(
+            tree: sortNodes(treeNodes, sort: sort, groupDirs: true),
+            flat: flatNodes
+        )
     }
 
     private static func sortNodes(_ nodes: [FolderNode], sort: FolderSort, groupDirs: Bool) -> [FolderNode] {

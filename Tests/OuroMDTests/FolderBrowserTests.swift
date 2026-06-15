@@ -44,6 +44,16 @@ final class FolderBrowserTests: XCTestCase {
         XCTAssertEqual(names, ["alpha.md", "beta.md", "gamma.md", "notes.txt"])
     }
 
+    func testSnapshotProvidesTreeAndFlatViewsFromOneAPI() {
+        let snapshot = FolderScanner.snapshot(at: root, sort: .name)
+
+        XCTAssertEqual(snapshot.tree, FolderScanner.tree(at: root, sort: .name))
+        XCTAssertEqual(snapshot.flat, FolderScanner.flatList(at: root, sort: .name))
+        XCTAssertEqual(snapshot.flat.map(\.name), ["alpha.md", "beta.md", "gamma.md", "notes.txt"])
+        XCTAssertEqual(snapshot.tree.first?.name, "sub")
+        XCTAssertEqual(snapshot.tree.first?.children?.map(\.name), ["gamma.md"])
+    }
+
     func testSymlinkCycleDoesNotCrashOrRecurse() {
         // A symlink loop (cyc/loop -> cyc) must not be followed (no stack overflow).
         let fm = FileManager.default
