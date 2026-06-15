@@ -16,19 +16,51 @@
   /* The native window owns the chrome; keep the editor toolbar hidden for a
      distraction-free, content-first surface. */
   .vditor-toolbar { display: none !important; }
-  /* GitHub-style alert callouts (> [!NOTE] …). */
-  .vditor-reset blockquote.ouro-alert { border-left-width: 4px !important; }
-  .vditor-reset blockquote.ouro-alert > p:first-child { font-weight: 600; }
-  .vditor-reset blockquote.ouro-alert-note { border-left-color: #0969da !important; }
-  .vditor-reset blockquote.ouro-alert-note > p:first-child { color: #0969da; }
-  .vditor-reset blockquote.ouro-alert-tip { border-left-color: #1a7f37 !important; }
-  .vditor-reset blockquote.ouro-alert-tip > p:first-child { color: #1a7f37; }
-  .vditor-reset blockquote.ouro-alert-important { border-left-color: #8250df !important; }
-  .vditor-reset blockquote.ouro-alert-important > p:first-child { color: #8250df; }
-  .vditor-reset blockquote.ouro-alert-warning { border-left-color: #9a6700 !important; }
-  .vditor-reset blockquote.ouro-alert-warning > p:first-child { color: #9a6700; }
-  .vditor-reset blockquote.ouro-alert-caution { border-left-color: #cf222e !important; }
-  .vditor-reset blockquote.ouro-alert-caution > p:first-child { color: #cf222e; }
+  /* GitHub-style alert callouts (> [!NOTE] ...). */
+  .vditor-reset blockquote.ouro-alert {
+    --ouro-alert-color: #59636e;
+    border-left-width: 4px !important;
+  }
+  .vditor-reset blockquote.ouro-alert::before {
+    color: var(--ouro-alert-color);
+    content: attr(data-ouro-alert-label);
+    display: block;
+    font-weight: 700;
+    margin-bottom: 0.35em;
+  }
+  .vditor-reset blockquote.ouro-alert .ouro-alert-marker {
+    font-size: 0 !important;
+    line-height: 0 !important;
+    opacity: 0;
+    user-select: text;
+  }
+  .vditor-reset blockquote.ouro-alert.ouro-callout-editing::before { display: none; }
+  .vditor-reset blockquote.ouro-alert.ouro-callout-editing .ouro-alert-marker {
+    font-size: inherit !important;
+    line-height: inherit !important;
+    opacity: 0.6;
+    user-select: text;
+  }
+  .vditor-reset blockquote.ouro-alert-note {
+    --ouro-alert-color: #0969da;
+    border-left-color: #0969da !important;
+  }
+  .vditor-reset blockquote.ouro-alert-tip {
+    --ouro-alert-color: #1a7f37;
+    border-left-color: #1a7f37 !important;
+  }
+  .vditor-reset blockquote.ouro-alert-important {
+    --ouro-alert-color: #8250df;
+    border-left-color: #8250df !important;
+  }
+  .vditor-reset blockquote.ouro-alert-warning {
+    --ouro-alert-color: #9a6700;
+    border-left-color: #9a6700 !important;
+  }
+  .vditor-reset blockquote.ouro-alert-caution {
+    --ouro-alert-color: #cf222e;
+    border-left-color: #cf222e !important;
+  }
 </style>
 <!-- Swapped at runtime by the native app to apply the active theme. -->
 <style id="ouro-theme"></style>

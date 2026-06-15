@@ -12,6 +12,12 @@ enum OuroCLI {
       ouro-md --render FILE [opts]   Render FILE to a self-contained HTML document
                                      on stdout (no window).
       ouro-md --list-themes          List available themes and exit.
+      ouro-md --roundtrip FILE       Load FILE through the live editor and print
+                                     the Markdown value returned by Vditor.
+      ouro-md --renderprobe          Verify live rich-rendering support.
+      ouro-md --alerttest            Verify alert-callout marker display safety.
+      ouro-md --wraptest             Verify editor typing quality-of-life hooks.
+      ouro-md --undotest             Verify editor undo/redo routing.
       ouro-md --help | --version
 
     RENDER OPTIONS

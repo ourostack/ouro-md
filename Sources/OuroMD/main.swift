@@ -67,6 +67,10 @@ if hasFlag("--wraptest") {
     WrapTester().run()
 }
 
+if hasFlag("--alerttest") {
+    AlertMarkerTester().run()
+}
+
 if hasFlag("--renderprobe") {
     RenderProbe().run()
 }
