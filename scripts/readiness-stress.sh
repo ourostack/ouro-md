@@ -112,25 +112,17 @@ APP_PATH="$ROOT/OuroMD.app"
   FIRST_HOME="$TMP_ROOT/first-home"
   FIRST_TMP="$TMP_ROOT/first-tmp"
   mkdir -p "$FIRST_HOME/Library/Preferences" "$FIRST_TMP"
-  /usr/bin/open -W -n -F -g \
-    --env "HOME=$FIRST_HOME" \
-    --env "CFFIXED_USER_HOME=$FIRST_HOME" \
-    --env "CFPREFERENCES_AVOID_DAEMON=1" \
-    --env "TMPDIR=$FIRST_TMP/" \
-    --env "OURO_MD_TELEMETRY_DISABLED=1" \
-    "$APP_PATH" &
-  OPEN_PID=$!
-  APP_PID=""
-  for _ in $(seq 1 80); do
-    APP_PID="$(ps -axo pid=,args= | awk -v needle="$APP_PATH/Contents/MacOS/ouro-md" 'index($0, needle) {print $1; exit}' || true)"
-    [ -n "$APP_PID" ] && break
-    sleep 0.25
-  done
-  test -n "$APP_PID"
+  HOME="$FIRST_HOME" \
+    CFFIXED_USER_HOME="$FIRST_HOME" \
+    CFPREFERENCES_AVOID_DAEMON=1 \
+    TMPDIR="$FIRST_TMP/" \
+    OURO_MD_TELEMETRY_DISABLED=1 \
+    "$APP_PATH/Contents/MacOS/ouro-md" &
+  APP_PID=$!
   sleep 5
   HOME="$FIRST_HOME" CFFIXED_USER_HOME="$FIRST_HOME" CFPREFERENCES_AVOID_DAEMON=1 defaults read org.ourostack.ouro-md
   terminate_app_pid "$APP_PID"
-  wait "$OPEN_PID" || true
+  wait "$APP_PID" || true
 } > "$ARTIFACT_DIR/first-run.log" 2>&1
 
 {
@@ -138,25 +130,17 @@ APP_PATH="$ROOT/OuroMD.app"
   AX_HOME="$TMP_ROOT/ax-home"
   AX_TMP="$TMP_ROOT/ax-tmp"
   mkdir -p "$AX_HOME/Library/Preferences" "$AX_TMP"
-  /usr/bin/open -W -n -F -g \
-    --env "HOME=$AX_HOME" \
-    --env "CFFIXED_USER_HOME=$AX_HOME" \
-    --env "CFPREFERENCES_AVOID_DAEMON=1" \
-    --env "TMPDIR=$AX_TMP/" \
-    --env "OURO_MD_TELEMETRY_DISABLED=1" \
-    "$APP_PATH" &
-  OPEN_PID=$!
-  APP_PID=""
-  for _ in $(seq 1 80); do
-    APP_PID="$(ps -axo pid=,args= | awk -v needle="$APP_PATH/Contents/MacOS/ouro-md" 'index($0, needle) {print $1; exit}' || true)"
-    [ -n "$APP_PID" ] && break
-    sleep 0.25
-  done
-  test -n "$APP_PID"
+  HOME="$AX_HOME" \
+    CFFIXED_USER_HOME="$AX_HOME" \
+    CFPREFERENCES_AVOID_DAEMON=1 \
+    TMPDIR="$AX_TMP/" \
+    OURO_MD_TELEMETRY_DISABLED=1 \
+    "$APP_PATH/Contents/MacOS/ouro-md" &
+  APP_PID=$!
   sleep 4
   osascript -e 'tell application "System Events" to tell first process whose unix id is '"$APP_PID"' to get {name, role, description} of UI elements of window 1' || true
   terminate_app_pid "$APP_PID"
-  wait "$OPEN_PID" || true
+  wait "$APP_PID" || true
 } > "$ARTIFACT_DIR/accessibility-ax.log" 2>&1
 
 {
