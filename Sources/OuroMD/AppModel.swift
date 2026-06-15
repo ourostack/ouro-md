@@ -333,7 +333,7 @@ final class AppModel: ObservableObject {
         if !isDirty, let previousURL {
             writeOriginalFileBytes(from: previousURL, to: url, completion: finish)
         } else {
-            writeMarkdown(to: url, allowCleanNoOp: false, useLastLoadedWhenClean: true, completion: finish)
+            writeMarkdown(to: url, allowCleanNoOp: false, completion: finish)
         }
     }
 
@@ -352,7 +352,6 @@ final class AppModel: ObservableObject {
     private func writeMarkdown(
         to url: URL,
         allowCleanNoOp: Bool = true,
-        useLastLoadedWhenClean: Bool = false,
         completion: @escaping (Bool) -> Void
     ) {
         let target = url.resolvingSymlinksInPath()
@@ -362,10 +361,6 @@ final class AppModel: ObservableObject {
                currentURL.resolvingSymlinksInPath() == target,
                AppModel.readText(at: target) == lastLoadedContent {
                 completion(true)
-                return
-            }
-            if useLastLoadedWhenClean {
-                writeResolvedMarkdown(lastLoadedContent, to: target, displayURL: url, completion: completion)
                 return
             }
         }

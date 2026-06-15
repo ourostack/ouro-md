@@ -1,0 +1,104 @@
+[0/1] Planning build
+Building for debugging...
+[0/7] Write sources
+[2/7] Write swift-version--58304C5D6DBC2206.txt
+[4/9] Compiling OuroMD MarkdownRenderer.swift
+[5/9] Emitting module OuroMD
+[5/10] Write Objects.LinkFileList
+[6/10] Linking ouro-md
+[7/10] Applying ouro-md
+[9/24] Compiling OuroMDTests OuroMDUpdateInstallerTests.swift
+[10/24] Compiling OuroMDTests OutlineTreeTests.swift
+[11/24] Compiling OuroMDTests FileWatcherTests.swift
+[12/24] Compiling OuroMDTests FolderBrowserTests.swift
+[13/24] Compiling OuroMDTests MarkdownRendererTests.swift
+[14/24] Compiling OuroMDTests MarkdownTidyTests.swift
+[15/24] Compiling OuroMDTests TerminationSaveCoordinatorTests.swift
+[16/24] Compiling OuroMDTests OuroMDTelemetryTests.swift
+[17/24] Compiling OuroMDTests OuroMDUpdateCoordinatorTests.swift
+[18/24] Emitting module OuroMDTests
+[19/24] Compiling OuroMDTests ReleaseUpdateTests.swift
+[20/24] Compiling OuroMDTests AppModelReloadTests.swift
+[21/24] Compiling OuroMDTests ContentSearcherTests.swift
+[22/24] Compiling OuroMDTests OuroMDUpdateTests.swift
+[23/25] Compiling OuroMDTests UndoRedoRoutingTests.swift
+[24/27] Compiling ouro_mdPackageTests runner.swift
+[25/27] Emitting module ouro_mdPackageTests
+[25/27] Write Objects.LinkFileList
+[26/27] Linking ouro-mdPackageTests
+Build complete! (4.78s)
+Test Suite 'Selected tests' started at 2026-06-14 21:25:29.590.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 21:25:29.591.
+Test Suite 'MarkdownRendererTests' started at 2026-06-14 21:25:29.591.
+Test Case '-[OuroMDTests.MarkdownRendererTests testBlockQuote]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testBlockQuote]' passed (0.003 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testBoldAndItalic]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testBoldAndItalic]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testBrokenOrUnknownFootnoteReferencesAreLeftAsText]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testBrokenOrUnknownFootnoteReferencesAreLeftAsText]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testDocumentWrap]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testDocumentWrap]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testDuplicateFootnoteDefinitionsDoNotCrash]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testDuplicateFootnoteDefinitionsDoNotCrash]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testFencedCodeBlock]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testFencedCodeBlock]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteContinuationsAreRendered]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteContinuationsAreRendered]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteDefinitionsInsideCodeBlocksRemainCode]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteDefinitionsInsideCodeBlocksRemainCode]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteMultiParagraphContinuationRendersInsideFootnote]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteMultiParagraphContinuationRendersInsideFootnote]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteReferencesInsideFencedCodeAreLeftAlone]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteReferencesInsideFencedCodeAreLeftAlone]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteReferencesInsideIndentedCodeAreLeftAlone]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteReferencesInsideIndentedCodeAreLeftAlone]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteReferencesInsideInlineCodeOrEscapesAreLeftAlone]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testFootnoteReferencesInsideInlineCodeOrEscapesAreLeftAlone]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testFootnotesRenderAsBacklinkedSection]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testFootnotesRenderAsBacklinkedSection]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testHeading]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testHeading]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testHeadingHasSlugID]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testHeadingHasSlugID]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testHeadingSlugCollapsesRuns]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testHeadingSlugCollapsesRuns]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testHTMLEscaping]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testHTMLEscaping]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testImageAlt]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testImageAlt]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testImageSourcesAreEscapedOrInlined]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testImageSourcesAreEscapedOrInlined]' passed (0.005 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testInlineCode]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testInlineCode]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testLineBreaksAndRawHTMLPassThrough]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testLineBreaksAndRawHTMLPassThrough]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testLink]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testLink]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testLongFencesCanContainShorterFenceExamples]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testLongFencesCanContainShorterFenceExamples]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testOrderedList]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testOrderedList]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testRepeatedFootnoteReferencesUseUniqueAnchorIDs]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testRepeatedFootnoteReferencesUseUniqueAnchorIDs]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testStrikethrough]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testStrikethrough]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testTable]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testTable]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testTaskList]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testTaskList]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testThematicBreak]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testThematicBreak]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testThemeStore]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testThemeStore]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.MarkdownRendererTests testUnorderedList]' started.
+Test Case '-[OuroMDTests.MarkdownRendererTests testUnorderedList]' passed (0.000 seconds).
+Test Suite 'MarkdownRendererTests' passed at 2026-06-14 21:25:29.606.
+	 Executed 31 tests, with 0 failures (0 unexpected) in 0.014 (0.015) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 21:25:29.606.
+	 Executed 31 tests, with 0 failures (0 unexpected) in 0.014 (0.015) seconds
+Test Suite 'Selected tests' passed at 2026-06-14 21:25:29.606.
+	 Executed 31 tests, with 0 failures (0 unexpected) in 0.014 (0.016) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

@@ -136,6 +136,16 @@ final class MarkdownRendererTests: XCTestCase {
         XCTAssertFalse(html.contains("[^alpha]:"))
     }
 
+    func testRepeatedFootnoteReferencesUseUniqueAnchorIDs() {
+        let html = render("One[^a] two[^a].\n\n[^a]: footnote")
+
+        XCTAssertTrue(html.contains("id=\"fnref-a\""))
+        XCTAssertTrue(html.contains("id=\"fnref-a-2\""))
+        XCTAssertEqual(html.components(separatedBy: "class=\"footnote-ref\"").count - 1, 2)
+        XCTAssertTrue(html.contains("href=\"#fnref-a\""))
+        XCTAssertTrue(html.contains("href=\"#fnref-a-2\""))
+    }
+
     func testFootnoteContinuationsAreRendered() {
         let html = render("Body[^a].\n\n[^a]: first\n    second\n\tthird")
 

@@ -26,7 +26,11 @@ enum MarkdownRenderer {
             var visitor = HTMLVisitor(baseDirectory: baseDirectory)
             let body = visitor.visit(document).trimmingCharacters(in: .whitespacesAndNewlines)
             html += "<li id=\"fn-\(HTMLDocument.escapeAttr(footnote.id))\">\(body) "
-            html += "<a href=\"#fnref-\(HTMLDocument.escapeAttr(footnote.id))\" class=\"footnote-backref\">&#8617;</a></li>\n"
+            let refs = footnote.referenceIDs.isEmpty ? ["fnref-\(footnote.id)"] : footnote.referenceIDs
+            html += refs.map {
+                "<a href=\"#\(HTMLDocument.escapeAttr($0))\" class=\"footnote-backref\">&#8617;</a>"
+            }.joined(separator: " ")
+            html += "</li>\n"
         }
         html += "</ol>\n</section>\n"
         return html
@@ -37,6 +41,7 @@ private struct RenderedFootnote: Equatable {
     var label: String
     var id: String
     var markdown: String
+    var referenceIDs: [String]
 }
 
 private enum FootnotePreprocessor {
@@ -73,9 +78,14 @@ private enum FootnotePreprocessor {
             numbersByLabel: numbersByLabel
         )
         let footnotes = extracted.definitions.map {
-            RenderedFootnote(label: $0.label, id: idsByLabel[$0.label] ?? $0.label, markdown: $0.markdown)
+            RenderedFootnote(
+                label: $0.label,
+                id: idsByLabel[$0.label] ?? $0.label,
+                markdown: $0.markdown,
+                referenceIDs: referenced.referenceIDsByLabel[$0.label] ?? []
+            )
         }
-        return Output(markdown: referenced, footnotes: footnotes)
+        return Output(markdown: referenced.markdown, footnotes: footnotes)
     }
 
     private static func extractDefinitions(_ markdown: String) -> (markdownWithoutDefinitions: String, definitions: [Definition]) {
@@ -186,9 +196,11 @@ private enum FootnotePreprocessor {
         in markdown: String,
         idsByLabel: [String: String],
         numbersByLabel: [String: Int]
-    ) -> String {
+    ) -> (markdown: String, referenceIDsByLabel: [String: [String]]) {
         var output: [String] = []
         var activeFence: Fence?
+        var referenceCounts: [String: Int] = [:]
+        var referenceIDsByLabel: [String: [String]] = [:]
         for line in markdown.components(separatedBy: "\n") {
             if let fence = parseFence(line) {
                 if let existing = activeFence {
@@ -203,15 +215,23 @@ private enum FootnotePreprocessor {
             }
             output.append((activeFence != nil || indentationWidth(line) >= 4)
                 ? line
-                : replaceReferences(inLine: line, idsByLabel: idsByLabel, numbersByLabel: numbersByLabel))
+                : replaceReferences(
+                    inLine: line,
+                    idsByLabel: idsByLabel,
+                    numbersByLabel: numbersByLabel,
+                    referenceCounts: &referenceCounts,
+                    referenceIDsByLabel: &referenceIDsByLabel
+                ))
         }
-        return output.joined(separator: "\n")
+        return (output.joined(separator: "\n"), referenceIDsByLabel)
     }
 
     private static func replaceReferences(
         inLine line: String,
         idsByLabel: [String: String],
-        numbersByLabel: [String: Int]
+        numbersByLabel: [String: Int],
+        referenceCounts: inout [String: Int],
+        referenceIDsByLabel: inout [String: [String]]
     ) -> String {
         var out = ""
         var index = line.startIndex
@@ -243,7 +263,11 @@ private enum FootnotePreprocessor {
                 if let close = line[labelStart...].firstIndex(of: "]") {
                     let label = String(line[labelStart..<close])
                     if let id = idsByLabel[label], let number = numbersByLabel[label] {
-                        out += "<sup id=\"fnref-\(HTMLDocument.escapeAttr(id))\"><a href=\"#fn-\(HTMLDocument.escapeAttr(id))\" class=\"footnote-ref\">\(number)</a></sup>"
+                        let count = (referenceCounts[label] ?? 0) + 1
+                        referenceCounts[label] = count
+                        let referenceID = count == 1 ? "fnref-\(id)" : "fnref-\(id)-\(count)"
+                        referenceIDsByLabel[label, default: []].append(referenceID)
+                        out += "<sup id=\"\(HTMLDocument.escapeAttr(referenceID))\"><a href=\"#fn-\(HTMLDocument.escapeAttr(id))\" class=\"footnote-ref\">\(number)</a></sup>"
                     } else {
                         out += line[index...close]
                     }
