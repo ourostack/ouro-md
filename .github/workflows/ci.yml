@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  swift-test:
+    name: Swift tests
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select newest Xcode (Swift 6.0+)
+        run: |
+          latest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"
+          [ -n "$latest" ] || latest="$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
+          sudo xcode-select -s "$latest/Contents/Developer"
+          swift --version
+      - name: Run tests
+        run: swift test
+
+  app-bundle:
+    name: App bundle
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select newest Xcode (Swift 6.0+)
+        run: |
+          latest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"
+          [ -n "$latest" ] || latest="$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
+          sudo xcode-select -s "$latest/Contents/Developer"
+          swift --version
+      - name: Build the app bundle
+        run: ./make-app.sh
+      - name: Verify resources resolve from the packaged app (guards launch crash)
+        run: |
+          # The .app must find its web resources from Contents/Resources even when
+          # the build tree's .build path is gone — i.e. on any machine but this one.
+          mv .build .build_hidden
+          ./OuroMD.app/Contents/MacOS/ouro-md --bundleprobe
+          mv .build_hidden .build
+
+  native-scenario-verifier:
+    name: Native scenario verifier
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select newest Xcode (Swift 6.0+)
+        run: |
+          latest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"
+          [ -n "$latest" ] || latest="$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
+          sudo xcode-select -s "$latest/Contents/Developer"
+          swift --version
+      - name: Build
+        run: swift build
+      - name: Run headless editor harnesses
+        run: |
+          set -e
+          run() { perl -e 'alarm 90; exec @ARGV' .build/debug/ouro-md "$@"; }
+          run --undotest
+          run --wraptest
+          run --renderprobe
+          printf '# T\n\n| a | b |\n| - | - |\n| 1 | 2 |\n' > /tmp/rt.md
+          run --roundtrip /tmp/rt.md --out /tmp/rt-out.md
+          OURO_SELFTEST=1 run
