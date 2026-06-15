@@ -10,7 +10,7 @@ final class UndoRedoRoutingTests: XCTestCase {
 
         MenuBuilder.install(into: app, target: delegate)
 
-        let editMenu = app.mainMenu?.item(withTitle: "Edit")?.submenu
+        let editMenu = app.mainMenu?.items.compactMap(\.submenu).first { $0.title == "Edit" }
         let undo = editMenu?.item(withTitle: "Undo")
         let redo = editMenu?.item(withTitle: "Redo")
         XCTAssertEqual(undo?.action, #selector(AppDelegate.undoEdit(_:)))
@@ -74,11 +74,16 @@ final class UndoRedoRoutingTests: XCTestCase {
 }
 
 private final class NativeTextView: NSTextView {
-    private let testUndoManager: UndoManager
+    private var testUndoManager: UndoManager
 
     init(undoManager: UndoManager) {
         self.testUndoManager = undoManager
-        super.init(frame: .zero)
+        super.init(frame: .zero, textContainer: nil)
+    }
+
+    override init(frame frameRect: NSRect, textContainer container: NSTextContainer?) {
+        self.testUndoManager = UndoManager()
+        super.init(frame: frameRect, textContainer: container)
     }
 
     @available(*, unavailable)

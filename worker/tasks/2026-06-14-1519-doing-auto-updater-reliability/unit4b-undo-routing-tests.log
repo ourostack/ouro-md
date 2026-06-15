@@ -1,0 +1,32 @@
+[0/1] Planning build
+Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/5] Emitting module OuroMDTests
+[4/5] Compiling OuroMDTests UndoRedoRoutingTests.swift
+[4/6] Write Objects.LinkFileList
+[5/6] Linking ouro-mdPackageTests
+Build complete! (1.58s)
+Test Suite 'Selected tests' started at 2026-06-14 17:02:34.909.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 17:02:34.910.
+Test Suite 'UndoRedoRoutingTests' started at 2026-06-14 17:02:34.910.
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testRedoDoesNotFallThroughWhenNativeTextViewHasEmptyStack]' started.
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testRedoDoesNotFallThroughWhenNativeTextViewHasEmptyStack]' passed (0.037 seconds).
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoAndRedoFallBackWhenResponderIsNotNativeTextView]' started.
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoAndRedoFallBackWhenResponderIsNotNativeTextView]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoAndRedoMenuItemsTargetNativeAppDelegateSelectors]' started.
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoAndRedoMenuItemsTargetNativeAppDelegateSelectors]' passed (0.021 seconds).
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoAndRedoUseNativeTextViewManagerWhenAvailable]' started.
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoAndRedoUseNativeTextViewManagerWhenAvailable]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoDoesNotFallThroughWhenNativeTextViewHasEmptyStack]' started.
+Test Case '-[OuroMDTests.UndoRedoRoutingTests testUndoDoesNotFallThroughWhenNativeTextViewHasEmptyStack]' passed (0.000 seconds).
+Test Suite 'UndoRedoRoutingTests' passed at 2026-06-14 17:02:34.970.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.060 (0.060) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 17:02:34.970.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.060 (0.060) seconds
+Test Suite 'Selected tests' passed at 2026-06-14 17:02:34.970.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.060 (0.061) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

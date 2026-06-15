@@ -165,20 +165,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func printDocument(_ sender: Any?) { frontController?.printDocument() }
     @objc func undoEdit(_ sender: Any?) {
-        if let textView = NSApp.keyWindow?.firstResponder as? NSTextView,
-           let undoManager = textView.undoManager, undoManager.canUndo {
-            undoManager.undo()
-            return
+        UndoRedoCommandRouter.performUndo(firstResponder: NSApp.keyWindow?.firstResponder) {
+            model.undo()
         }
-        model.undo()
     }
     @objc func redoEdit(_ sender: Any?) {
-        if let textView = NSApp.keyWindow?.firstResponder as? NSTextView,
-           let undoManager = textView.undoManager, undoManager.canRedo {
-            undoManager.redo()
-            return
+        UndoRedoCommandRouter.performRedo(firstResponder: NSApp.keyWindow?.firstResponder) {
+            model.redo()
         }
-        model.redo()
     }
 
     private var prefsWindow: NSWindow?

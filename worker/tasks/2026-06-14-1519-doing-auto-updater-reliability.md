@@ -107,7 +107,7 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 **What**: Expand the headless undo harness and/or add native unit seams to fail on multi-step undo/redo, redo invalidation after a new edit, empty-stack no-op safety, behavior across Vditor mode rebuilds, native menu selector forwarding, and native text-field focus preservation.
 **Acceptance**: Expanded tests fail before implementation or harness changes because current proof does not cover the new cases.
 
-### ⬜ Unit 4b: Undo/Redo Bulletproofing - Implementation
+### ✅ Unit 4b: Undo/Redo Bulletproofing - Implementation
 **What**: Adjust undo/redo bridge/menu behavior only as required by Unit 4a; otherwise make the harness prove the existing implementation is correct.
 **Acceptance**: Expanded undo/redo tests pass and existing `--undotest` remains green.
 
@@ -169,3 +169,4 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - 2026-06-14 16:48 Unit 3b complete: added `OuroMDUpdateCoordinator`, launch-time throttled background staging, install-on-quit/manual install routing, `Check for Updates...`, preferences opt-out, and main-actor UI lifecycle hooks; `swift test --filter OuroMDUpdateCoordinatorTests`, `swift test`, and `swift build` passed with evidence in `unit3b-*.log` (pre-existing weak `MockBridge` warnings remain routed to Unit 5)
 - 2026-06-14 16:56 Unit 3b review fix complete: cold reviewer found stale staged manual install, re-entrant manual apply, in-flight manual check race, missing install-error prompt, and main-actor staging risk; added red regressions in `unit3b-review-red-coordinator-tests.log`, then coalesced update checks, version-matched staged reuse, single-use manual apply, install failure prompts, and detached production staging with green evidence in `unit3b-review-fix-*.log`
 - 2026-06-14 17:02 Unit 4a complete: added native undo/redo routing tests for menu selectors, native text-view empty-stack preservation, native manager forwarding, and web-editor fallback; saved expected missing-router red log to `unit4a-red-undo-routing-tests.log`; expanded `--undotest` to cover multi-step undo/redo, redo invalidation, empty-stack no-op, and post-mode-rebuild behavior, which already passes with evidence in `unit4a-red-undotest.log`
+- 2026-06-14 17:03 Unit 4b complete: added `UndoRedoCommandRouter` and routed AppDelegate undo/redo through it so focused native text views consume shortcuts even with empty undo stacks; `swift test --filter UndoRedoRoutingTests`, `swift test`, `swift build`, and `swift run ouro-md --undotest` passed with evidence in `unit4b-*.log`
