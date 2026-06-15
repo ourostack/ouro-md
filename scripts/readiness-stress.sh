@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ARTIFACT_DIR="${1:-$ROOT/worker/tasks/2026-06-14-2236-doing-human-use-readiness}"
-SOURCE_VERSION="$(sed -n 's/.*static let version = "\(.*\)"/\1/p' "$ROOT/Sources/OuroMD/OuroMDRelease.swift")"
+SOURCE_VERSION="$(sed -n 's/.*static let version = "\(.*\)"/\1/p' "$ROOT/Sources/OuroMDCore/OuroMDRelease.swift")"
 EXPECTED_LIVE_VERSION="${OURO_MD_EXPECTED_LIVE_VERSION:-$SOURCE_VERSION}"
 UPDATE_FROM_VERSION="${OURO_MD_UPDATE_FROM_VERSION:-0.9.1}"
 EXPECTED_LIVE_TAG="v$EXPECTED_LIVE_VERSION"

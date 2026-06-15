@@ -21,6 +21,8 @@ jobs:
           [ -n "$latest" ] || latest="$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
           sudo xcode-select -s "$latest/Contents/Developer"
           swift --version
+      - name: Verify release version contract
+        run: ./scripts/verify-release-version.sh
       - name: Run tests
         run: swift test
 
