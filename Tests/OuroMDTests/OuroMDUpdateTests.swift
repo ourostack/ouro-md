@@ -81,6 +81,19 @@ final class OuroMDUpdateTests: XCTestCase {
         XCTAssertEqual(result, .failure(.badAssetURL))
     }
 
+    func testPlanRejectsPlainHTTPAssetURLs() {
+        let assets = [
+            ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.zip", downloadURL: "http://example.com/app.zip", size: 10),
+            ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.manifest.json", downloadURL: "https://example.com/manifest.json", size: 10),
+        ]
+
+        let result = OuroMDUpdatePlanner.plan(
+            from: snapshot(status: .updateAvailable, latest: "0.10.0", assets: assets)
+        )
+
+        XCTAssertEqual(result, .failure(.badAssetURL))
+    }
+
     private func manifest(
         sha: String = "abc123",
         bytes: Int = 7_400_000,

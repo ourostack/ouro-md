@@ -1,55 +1,19 @@
 ==> Building (release)…
+[0/1] Planning build
 Building for production...
-[0/41] Write swift-version--58304C5D6DBC2206.txt
-[1/41] Copying web
-[2/41] Compiling cmark-gfm syntax_extension.c
-[3/41] Compiling cmark-gfm-extensions ext_scanners.c
-[3/41] Compiling cmark-gfm-extensions core-extensions.c
-[5/41] Compiling cmark-gfm xml.c
-[6/41] Compiling cmark-gfm-extensions tasklist.c
-[7/41] Compiling cmark-gfm-extensions strikethrough.c
-[8/41] Compiling cmark-gfm plugin.c
-[9/41] Compiling cmark-gfm registry.c
-[10/41] Compiling cmark-gfm references.c
-[11/41] Compiling cmark-gfm plaintext.c
-[11/41] Compiling cmark-gfm render.c
-[13/41] Compiling cmark-gfm map.c
-[14/41] Compiling cmark-gfm-extensions table.c
-[15/41] Compiling cmark-gfm linked_list.c
-[16/41] Compiling cmark-gfm man.c
-[17/41] Compiling cmark-gfm latex.c
-[18/41] Compiling cmark-gfm-extensions tagfilter.c
-[19/41] Compiling cmark-gfm node.c
-[20/41] Compiling cmark-gfm houdini_html_e.c
-[21/41] Compiling cmark-gfm iterator.c
-[22/41] Compiling cmark-gfm houdini_href_e.c
-[23/41] Compiling cmark-gfm html.c
-[24/41] Compiling cmark-gfm footnotes.c
-[25/41] Compiling cmark-gfm houdini_html_u.c
-[26/41] Compiling cmark-gfm-extensions autolink.c
-[26/41] Write sources
-[29/41] Compiling cmark-gfm cmark_ctype.c
-[30/41] Compiling cmark-gfm cmark.c
-[31/41] Compiling CAtomic CAtomic.c
-[32/41] Compiling cmark-gfm arena.c
-[33/41] Compiling cmark-gfm commonmark.c
-[34/41] Compiling cmark-gfm buffer.c
-[35/41] Compiling cmark-gfm blocks.c
-[36/41] Compiling cmark-gfm inlines.c
-[37/41] Compiling cmark-gfm scanners.c
-[38/41] Compiling cmark-gfm utf8.c
-[40/42] Compiling Markdown ChildIndexPath.swift
-[41/43] Compiling OuroMD AppDelegate.swift
-[41/43] Write Objects.LinkFileList
-[42/43] Linking ouro-md
-Build complete! (22.39s)
+[0/3] Write sources
+[1/3] Write swift-version--58304C5D6DBC2206.txt
+[3/4] Compiling OuroMD AppDelegate.swift
+[3/5] Write Objects.LinkFileList
+[4/5] Linking ouro-md
+Build complete! (7.78s)
 ==> Assembling OuroMD.app…
 ==> Ad-hoc signing…
 ==> Done: /Users/arimendelow/Projects/ouro-md/OuroMD.app
     Launch with:  open OuroMD.app
 ==> Archiving Ouro MD.app -> dist/Ouro-MD-0.9.1.zip
 ==> Wrote dist/Ouro-MD-0.9.1.manifest.json
-    version 0.9.1 (build 0.9.1) · 7163700 bytes · sha256 8227f38294dea0eabcb759581c4989613157dd924914aedfc53986a4677c815e
+    version 0.9.1 (build 0.9.1) · 7165037 bytes · sha256 e6939d29c8e31f4a2756e7fe5e55d63c6cdd0a53dd835c387c46f5bec3c000ad
 
 Publish with:
   gh release create v0.9.1 "dist/Ouro-MD-0.9.1.zip" "dist/Ouro-MD-0.9.1.manifest.json" \

@@ -238,9 +238,13 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
         await coordinator.installReleaseUpdate(destinationBundle: destination)
         coordinator.applyStagedUpdateOnQuitIfNeeded(destinationBundle: destination)
 
-        XCTAssertEqual(relaunchApplications, [staged])
+        XCTAssertTrue(relaunchApplications.isEmpty)
         XCTAssertTrue(didTerminate)
         XCTAssertTrue(quitApplications.isEmpty)
+        XCTAssertEqual(coordinator.installStatus, "Ready to install 0.10.0 after Ouro MD quits...")
+
+        XCTAssertTrue(coordinator.applyPendingManualUpdateAndRelaunchIfNeeded())
+        XCTAssertEqual(relaunchApplications, [staged])
         XCTAssertEqual(coordinator.installStatus, "Installing 0.10.0 and relaunching...")
     }
 
@@ -259,6 +263,9 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
 
         await coordinator.installReleaseUpdate(destinationBundle: URL(fileURLWithPath: "/tmp/Ouro MD.app"))
 
+        XCTAssertTrue(relaunchApplications.isEmpty)
+        XCTAssertEqual(coordinator.installStatus, "Ready to install 0.10.0 after Ouro MD quits...")
+        XCTAssertTrue(coordinator.applyPendingManualUpdateAndRelaunchIfNeeded())
         XCTAssertEqual(relaunchApplications, [staged])
         XCTAssertEqual(coordinator.installStatus, "Installing 0.10.0 and relaunching...")
     }
@@ -285,6 +292,8 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
         await coordinator.installReleaseUpdate(destinationBundle: URL(fileURLWithPath: "/tmp/Ouro MD.app"))
 
         XCTAssertEqual(stagedVersions, ["0.10.0", "0.11.0"])
+        XCTAssertTrue(relaunchVersions.isEmpty)
+        XCTAssertTrue(coordinator.applyPendingManualUpdateAndRelaunchIfNeeded())
         XCTAssertEqual(relaunchVersions, ["0.11.0"])
     }
 
@@ -303,9 +312,28 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
         await coordinator.installReleaseUpdate(destinationBundle: URL(fileURLWithPath: "/tmp/Ouro MD.app"))
         await coordinator.installReleaseUpdate(destinationBundle: URL(fileURLWithPath: "/tmp/Ouro MD.app"))
 
-        XCTAssertEqual(relaunchApplications, [staged])
+        XCTAssertTrue(relaunchApplications.isEmpty)
         XCTAssertEqual(terminateCount, 1)
         XCTAssertTrue(coordinator.isInstalling)
+    }
+
+    func testCancelPendingManualInstallPreventsLaterApply() async {
+        let staged = stagedUpdate(version: "0.10.0")
+        var relaunchApplications: [OuroMDUpdateInstaller.Staged] = []
+        let coordinator = makeCoordinator(
+            checker: { self.updateSnapshot() },
+            stageUpdate: { _, _ in staged },
+            applyAndRelaunch: { staged, _ in relaunchApplications.append(staged) }
+        )
+        await coordinator.runAutoUpdateCheckIfDue()
+        await coordinator.installReleaseUpdate(destinationBundle: URL(fileURLWithPath: "/tmp/Ouro MD.app"))
+
+        coordinator.cancelPendingManualInstall()
+
+        XCTAssertFalse(coordinator.isInstalling)
+        XCTAssertNil(coordinator.installStatus)
+        XCTAssertFalse(coordinator.applyPendingManualUpdateAndRelaunchIfNeeded())
+        XCTAssertTrue(relaunchApplications.isEmpty)
     }
 
     func testManualCheckAwaitsInFlightLaunchCheckBeforePrompting() async {

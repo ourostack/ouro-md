@@ -52,6 +52,8 @@ final class OuroMDUpdateCoordinator: ObservableObject {
     private let now: @MainActor () -> Date
     private var inFlightCheck: InFlightCheck?
     private var pendingStagedUpdate: OuroMDUpdateInstaller.Staged?
+    private var pendingManualUpdate: OuroMDUpdateInstaller.Staged?
+    private var pendingManualDestinationBundle: URL?
     private var isApplyingManualUpdate = false
     private var autoUpdateCheckStartedThisSession = false
 
@@ -251,6 +253,29 @@ final class OuroMDUpdateCoordinator: ObservableObject {
         applyOnQuit(staged, destinationBundle)
     }
 
+    @discardableResult
+    func applyPendingManualUpdateAndRelaunchIfNeeded() -> Bool {
+        guard let staged = pendingManualUpdate,
+              let destinationBundle = pendingManualDestinationBundle else {
+            return false
+        }
+        pendingManualUpdate = nil
+        pendingManualDestinationBundle = nil
+        installStatus = "Installing \(staged.version) and relaunching..."
+        applyAndRelaunch(staged, destinationBundle)
+        return true
+    }
+
+    func cancelPendingManualInstall() {
+        guard let staged = pendingManualUpdate else { return }
+        pendingManualUpdate = nil
+        pendingManualDestinationBundle = nil
+        isApplyingManualUpdate = false
+        isInstalling = false
+        installStatus = nil
+        try? FileManager.default.removeItem(at: staged.stagingRoot)
+    }
+
     private func stagePendingUpdate(from snapshot: ReleaseUpdateSnapshot) async {
         guard case let .success(plan) = OuroMDUpdatePlanner.plan(from: snapshot) else { return }
         if let staged = pendingStagedUpdate, staged.version == plan.version { return }
@@ -272,9 +297,10 @@ final class OuroMDUpdateCoordinator: ObservableObject {
         installError = nil
         updatePrompt = nil
         clearPendingStagedUpdate()
-        installStatus = "Installing \(staged.version) and relaunching..."
+        pendingManualUpdate = staged
+        pendingManualDestinationBundle = destinationBundle
+        installStatus = "Ready to install \(staged.version) after Ouro MD quits..."
         isApplyingManualUpdate = true
-        applyAndRelaunch(staged, destinationBundle)
         terminate()
     }
 

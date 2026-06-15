@@ -66,7 +66,7 @@ enum OuroMDUpdatePlanner {
     private static func validHTTPURL(_ value: String) -> URL? {
         guard let url = URL(string: value),
               let scheme = url.scheme?.lowercased(),
-              (scheme == "https" || scheme == "http"),
+              scheme == "https",
               url.host != nil
         else {
             return nil

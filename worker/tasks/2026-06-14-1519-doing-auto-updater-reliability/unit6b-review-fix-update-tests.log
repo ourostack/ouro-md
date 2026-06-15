@@ -1,0 +1,52 @@
+Another instance of SwiftPM (PID: 53592) is already running using '/Users/arimendelow/Projects/ouro-md/.build', waiting until that process has finished execution...Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.15s)
+Test Suite 'Selected tests' started at 2026-06-14 17:31:39.603.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-14 17:31:39.604.
+Test Suite 'OuroMDUpdateTests' started at 2026-06-14 17:31:39.604.
+Test Case '-[OuroMDTests.OuroMDUpdateTests testAutoUpdatePolicyChecksAfterInterval]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateTests testAutoUpdatePolicyChecksAfterInterval]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateTests testAutoUpdatePolicyChecksWhenNeverCheckedBefore]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateTests testAutoUpdatePolicyChecksWhenNeverCheckedBefore]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateTests testAutoUpdatePolicySkipsWhenDisabled]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateTests testAutoUpdatePolicySkipsWhenDisabled]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateTests testAutoUpdatePolicyThrottlesWithinInterval]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateTests testAutoUpdatePolicyThrottlesWithinInterval]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateTests testManifestDecodesFromReleaseJSON]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateTests testManifestDecodesFromReleaseJSON]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateTests testPlanFailsWhenArchiveMissing]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateTests testPlanFailsWhenArchiveMissing]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateTests testPlanFailsWhenAssetURLIsInvalid]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateTests testPlanFailsWhenAssetURLIsInvalid]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateTests testPlanFailsWhenManifestMissing]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateTests testPlanFailsWhenManifestMissing]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateTests testPlanFailsWhenNotAnUpdate]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateTests testPlanFailsWhenNotAnUpdate]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateTests testPlanPicksZipAndManifestAssets]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateTests testPlanPicksZipAndManifestAssets]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateTests testPlanRejectsPlainHTTPAssetURLs]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateTests testPlanRejectsPlainHTTPAssetURLs]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateTests testVerifyFailsOnBundleIdentifierMismatch]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateTests testVerifyFailsOnBundleIdentifierMismatch]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateTests testVerifyFailsOnByteCountMismatch]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateTests testVerifyFailsOnByteCountMismatch]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateTests testVerifyFailsOnSHAMismatch]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateTests testVerifyFailsOnSHAMismatch]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateTests testVerifyFailsWhenArchiveNameDiffersFromManifest]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateTests testVerifyFailsWhenArchiveNameDiffersFromManifest]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateTests testVerifyFailsWhenNotNewerThanCurrent]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateTests testVerifyFailsWhenNotNewerThanCurrent]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateTests testVerifyFailsWhenVersionCannotBeCompared]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateTests testVerifyFailsWhenVersionCannotBeCompared]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDUpdateTests testVerifyPassesWhenEverythingMatches]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateTests testVerifyPassesWhenEverythingMatches]' passed (0.000 seconds).
+Test Suite 'OuroMDUpdateTests' passed at 2026-06-14 17:31:39.608.
+	 Executed 18 tests, with 0 failures (0 unexpected) in 0.003 (0.003) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-14 17:31:39.608.
+	 Executed 18 tests, with 0 failures (0 unexpected) in 0.003 (0.003) seconds
+Test Suite 'Selected tests' passed at 2026-06-14 17:31:39.608.
+	 Executed 18 tests, with 0 failures (0 unexpected) in 0.003 (0.004) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

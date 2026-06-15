@@ -90,7 +90,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         saveSession()
-        updateCoordinator.applyStagedUpdateOnQuitIfNeeded()
+        if !updateCoordinator.applyPendingManualUpdateAndRelaunchIfNeeded() {
+            updateCoordinator.applyStagedUpdateOnQuitIfNeeded()
+        }
     }
 
     // MARK: - Session restoration
@@ -219,6 +221,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .alertSecondButtonReturn:
             return .terminateNow
         default:
+            updateCoordinator.cancelPendingManualInstall()
             return .terminateCancel
         }
     }
