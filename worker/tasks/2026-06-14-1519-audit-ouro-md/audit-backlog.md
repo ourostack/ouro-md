@@ -16,9 +16,9 @@
 **Recommended lane**: planner-required
 **Suggested supporting skills**: work-planner, work-doer
 **Verification**: Add pure unit tests for release snapshot/planning/verification; run `swift test`; run a safe staged-install harness or dry-run for app extraction and identity checks.
-**Status**: open
-**Linked work**: ../2026-06-14-1519-planning-auto-updater-reliability.md
-**Notes**: Mirror Workbench's `ReleaseUpdate.swift`, `WorkbenchUpdate.swift`, and `WorkbenchUpdateInstaller.swift`, adapted for `Ouro MD.app` and `org.ourostack.ouro-md`.
+**Status**: in_progress
+**Linked work**: ../2026-06-14-1519-doing-auto-updater-reliability.md
+**Notes**: Implemented on branch `worker/ouro-md-auto-updater` with pure release/update logic, installer/stager verification, app coordinator, menu/preferences hooks, and reviewer-driven race fixes. Keep non-terminal until merge, published release, and live installer smoke complete.
 
 ---
 
@@ -34,9 +34,9 @@
 **Recommended lane**: planner-required
 **Suggested supporting skills**: work-planner, work-doer
 **Verification**: Expand headless harness coverage for multi-step undo/redo, redo invalidation after new edit, empty-stack no-op, menu selector path, and focus/native-control routing where feasible.
-**Status**: open
-**Linked work**: ../2026-06-14-1519-planning-auto-updater-reliability.md
-**Notes**: Existing route uses Vditor internals directly; tests should catch Vditor API drift.
+**Status**: in_progress
+**Linked work**: ../2026-06-14-1519-doing-auto-updater-reliability.md
+**Notes**: Implemented on branch `worker/ouro-md-auto-updater` with native shortcut routing tests, focused native text-view preservation, and expanded `--undotest` coverage for multi-step undo/redo, redo invalidation, empty stacks, and mode rebuilds. Keep non-terminal until merge/live verification completes.
 
 ---
 
@@ -51,10 +51,10 @@
 **Dependencies**: None
 **Recommended lane**: planner-required
 **Suggested supporting skills**: work-planner, work-doer
-**Verification**: `swift run ouro-md --version` reports `0.9.0`; README install command uses `https://ouro.bot/ouro-md-install.sh`; package manifest still emits `0.9.0`.
-**Status**: open
-**Linked work**: ../2026-06-14-1519-planning-auto-updater-reliability.md
-**Notes**: Prefer a Swift `OuroMDRelease` descriptor that updater and CLI can share.
+**Verification**: `swift run ouro-md --version` reports the release version; README install command uses `https://ouro.bot/ouro-md-install.sh`; package manifest emits the same release version.
+**Status**: in_progress
+**Linked work**: ../2026-06-14-1519-doing-auto-updater-reliability.md
+**Notes**: Implemented on branch `worker/ouro-md-auto-updater` with shared `OuroMDRelease` truth and release version `0.9.1`. Keep non-terminal until merged main is packaged and the published manifest is verified.
 
 ---
 
@@ -70,9 +70,9 @@
 **Recommended lane**: inch-worm-ready-after-reeval
 **Suggested supporting skills**: work-doer
 **Verification**: `swift test` passes with no warnings from weak mock bridge assignment.
-**Status**: open
-**Linked work**: ../2026-06-14-1519-planning-auto-updater-reliability.md
-**Notes**: This is small enough to include in the first reliability tranche.
+**Status**: in_progress
+**Linked work**: ../2026-06-14-1519-doing-auto-updater-reliability.md
+**Notes**: Implemented on branch `worker/ouro-md-auto-updater` by retaining weak mock bridges in tests. Keep non-terminal until final clean verification before merge/release.
 
 ---
 
@@ -88,9 +88,9 @@
 **Recommended lane**: planner-required
 **Suggested supporting skills**: work-planner, work-doer
 **Verification**: Updater pure logic and install staging live in separate files; AppDelegate/AppModel only expose minimal UI/action hooks.
-**Status**: open
-**Linked work**: ../2026-06-14-1519-planning-auto-updater-reliability.md
-**Notes**: Deeper AppModel extraction should wait until the updater lands and the new boundaries are visible.
+**Status**: in_progress
+**Linked work**: ../2026-06-14-1519-doing-auto-updater-reliability.md
+**Notes**: Implemented on branch `worker/ouro-md-auto-updater` by keeping updater release logic, installer/stager, and coordinator outside `AppModel.swift`; AppDelegate/MenuBuilder/Preferences received focused hooks only. Deeper AppModel extraction remains deferred.
 
 ---
 
@@ -124,8 +124,8 @@
 **Recommended lane**: inch-worm-ready-after-reeval
 **Suggested supporting skills**: work-doer
 **Verification**: README describes live pretty URL, current version, update behavior, and remaining signing/notarization limits accurately.
-**Status**: open
-**Linked work**: ../2026-06-14-1519-planning-auto-updater-reliability.md
-**Notes**: Include the doc refresh in the first tranche only where it is required to remove false version/install claims.
+**Status**: in_progress
+**Linked work**: ../2026-06-14-1519-doing-auto-updater-reliability.md
+**Notes**: Implemented on branch `worker/ouro-md-auto-updater` with README status/install/updater text and installer comments refreshed for the live pretty URL. Keep non-terminal until published release and live smoke confirm user-facing install behavior.
 
 ---

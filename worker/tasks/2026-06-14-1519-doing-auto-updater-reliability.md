@@ -123,7 +123,7 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 **What**: Fix weak mock bridge warning patterns, update README and `web/ouro-md-install.sh` comments for v0.9.0, pretty URL, and updater behavior, and keep package/install behavior unchanged.
 **Acceptance**: `swift test` emits no weak `MockBridge` warnings; docs and installer comments no longer claim the pretty URL is unwired or the app is v0.1.0.
 
-### ⬜ Unit 5c: Warning Cleanup And Documentation Truth - Coverage & Refactor
+### ✅ Unit 5c: Warning Cleanup And Documentation Truth - Coverage & Refactor
 **What**: Run warning-clean verification, ensure docs are accurate after updater behavior is known, and update audit backlog items with in-progress linked work/progress notes only.
 **Acceptance**: Warning output is clean; A-001/A-002/A-003/A-004/A-005/A-007 point at this doing doc/branch without terminal fixed dispositions before merge, release, and live smoke are complete.
 
@@ -173,3 +173,4 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - 2026-06-14 17:11 Unit 4c complete: cold reviewer found the mode-rebuild `--undotest` case could reuse a stale Vditor global; tightened the harness to wait for a replacement editor instance, seed synthetic inserts with pre/post undo snapshots, and fail explicitly on rebuild timeout; `swift run ouro-md --undotest`, `swift test --filter UndoRedoRoutingTests`, `swift test`, and `swift build` passed with evidence in `unit4c-*.log`
 - 2026-06-14 17:05 Unit 5a complete: forced a clean `swift test` baseline and reproduced weak `MockBridge` warnings at `AppModelReloadTests.swift` lines 96, 118, 141, 162, and 182; saved evidence to `unit5a-warning-baseline-swift-test.log`
 - 2026-06-14 17:07 Unit 5b complete: retained weak test bridges, bumped release/bundle truth to `0.9.1`, refreshed README installer/updater text, and removed stale pretty-URL comments; clean `swift test`, `swift build`, and `swift run ouro-md --version` passed with no warning/stale-string matches in `unit5b-*.log`
+- 2026-06-14 17:14 Unit 5c complete: linked audit backlog items A-001/A-002/A-003/A-004/A-005/A-007 to this doing doc and branch as `in_progress`, keeping them non-terminal until merge/release/live smoke; clean `swift test` passed and warning/stale-string scan logs are empty in `unit5c-*.log`
