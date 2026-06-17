@@ -75,6 +75,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         "| Done means shipped | A real person used my output for real work, not that I produced a draft that looks plausible at a glance but falls apart on contact with reality. |",
         "| Defined in markdown | I am defined in markdown, not code, which is exactly why my humans can reshape me by editing this single file at any time without a deploy or a release. |",
         "| Success is retention | My success is the team running real work through me and staying, not how often I happen to get pinged in a given week. |",
+        "| Long unbreakable token | https://example.com/a/very/long/path/segment/that/keeps/going/withoutanyspacesorbreakpointsatallxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx |",
         ""
     ].joined(separator: "\n")
 
