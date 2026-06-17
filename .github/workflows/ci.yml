@@ -67,6 +67,7 @@ jobs:
           run --undotest
           run --wraptest
           run --renderprobe
+          run --tablewraptest
           printf '# T\n\n| a | b |\n| - | - |\n| 1 | 2 |\n' > /tmp/rt.md
           run --roundtrip /tmp/rt.md --out /tmp/rt-out.md
           OURO_SELFTEST=1 run

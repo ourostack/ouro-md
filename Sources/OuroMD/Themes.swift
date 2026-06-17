@@ -213,11 +213,11 @@ private func readerCSS(_ p: Palette) -> String {
     li{margin:0.25em 0;}
     .task-list-item{list-style:none;}
     .task-list-item input{margin:0 .5em 0 -1.3em;vertical-align:middle;}
-    table{border-collapse:collapse;width:100%;text-align:left;}
+    table{border-collapse:collapse;width:100%;max-width:100%;table-layout:fixed;text-align:left;}
     table tr{border:1px solid \(p.cellBorder);}
     table tr:nth-child(2n),thead{background:\(p.tableFill);}
-    th{font-weight:bold;border:1px solid \(p.cellBorder);border-bottom:0;padding:6px 13px;}
-    td{border:1px solid \(p.cellBorder);padding:6px 13px;}
+    th{font-weight:bold;border:1px solid \(p.cellBorder);border-bottom:0;padding:6px 13px;white-space:normal;overflow-wrap:break-word;word-break:break-word;}
+    td{border:1px solid \(p.cellBorder);padding:6px 13px;white-space:normal;overflow-wrap:break-word;word-break:break-word;}
     img{max-width:100%;}
     """
 }
@@ -294,12 +294,12 @@ private func editorCSS(_ p: Palette) -> String {
     .vditor-reset li{margin:0.25em 0;}
 
     /* Tables (Github exact): #dfe2e5 borders, #f8f8f8 header + even rows, 6px 13px cells. */
-    .vditor-reset table{border-collapse:collapse!important;margin:0.8em 0!important;width:100%!important;display:table!important;table-layout:auto;text-align:left;}
+    .vditor-reset table{border-collapse:collapse!important;margin:0.8em 0!important;width:100%!important;max-width:100%!important;display:table!important;table-layout:fixed!important;text-align:left;}
     .vditor-reset table tr{border:1px solid \(p.cellBorder)!important;background:\(p.bg)!important;}
     .vditor-reset table tr:nth-child(2n){background:\(p.tableFill)!important;}
     .vditor-reset table thead,.vditor-reset table thead tr,.vditor-reset table th{background:\(p.tableFill)!important;}
-    .vditor-reset table th{font-weight:bold;border:1px solid \(p.cellBorder)!important;border-bottom:0!important;padding:6px 13px!important;color:\(p.fg)!important;}
-    .vditor-reset table td{border:1px solid \(p.cellBorder)!important;padding:6px 13px!important;color:\(p.fg)!important;background:transparent!important;}
+    .vditor-reset table th{font-weight:bold;border:1px solid \(p.cellBorder)!important;border-bottom:0!important;padding:6px 13px!important;color:\(p.fg)!important;white-space:normal!important;overflow-wrap:break-word!important;word-break:break-word!important;}
+    .vditor-reset table td{border:1px solid \(p.cellBorder)!important;padding:6px 13px!important;color:\(p.fg)!important;background:transparent!important;white-space:normal!important;overflow-wrap:break-word!important;word-break:break-word!important;}
 
     .vditor-reset img{max-width:100%;}
 

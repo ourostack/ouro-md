@@ -36,6 +36,11 @@ protocol EditorBridge: AnyObject {
 final class AppModel: ObservableObject {
     private(set) var currentURL: URL?
     private(set) var isDirty = false
+    /// The open file was deleted or moved on disk while we held it. The buffer is
+    /// kept and the chrome shows a "deleted" marker. It is deliberately NOT marked
+    /// as a normal unsaved edit, but close/quit still prompt and a save re-creates
+    /// the file, so the in-memory copy is never lost silently.
+    private(set) var deletedOnDisk = false
     private(set) var isReady = false
     private(set) var themeID: String
     private(set) var mode = "ir"
@@ -204,6 +209,7 @@ final class AppModel: ObservableObject {
     func loadWelcome() {
         currentURL = nil
         lastLoadedContent = nil
+        deletedOnDisk = false
         pushMarkdown(Welcome.markdown)
         isDirty = false
         onChromeUpdate?()
@@ -529,6 +535,7 @@ final class AppModel: ObservableObject {
     /// rewriting it). Safe to call repeatedly; re-targets the current URL.
     private func startWatching() {
         stopWatching()
+        deletedOnDisk = false
         guard let url = currentURL else { return }
         let watcher = FileWatcher(url: url) { [weak self] in
             self?.handleExternalChange()
@@ -538,6 +545,7 @@ final class AppModel: ObservableObject {
     }
 
     private func stopWatching() {
+        deletedOnDisk = false
         fileWatcher?.stop()
         fileWatcher = nil
     }
@@ -546,12 +554,22 @@ final class AppModel: ObservableObject {
     private func handleExternalChange() {
         guard let url = currentURL else { return }
         guard let disk = AppModel.readText(at: url) else {
-            // File was deleted or moved out from under us — keep the buffer as
-            // an unsaved copy rather than blanking the reader's view.
-            isDirty = true
-            onChromeUpdate?()
-            captureTelemetry("ouro_md_document_external_change_unreadable")
+            // Unreadable: possibly the momentary gap during an atomic save,
+            // possibly a real deletion/move. Confirm before declaring it gone.
+            confirmDeletionIfStillMissing(url)
             return
+        }
+        reconcileExternalContent(disk, url: url)
+    }
+
+    /// Applies on-disk content the watcher surfaced. Clears a prior "deleted"
+    /// flag if the file has returned, then live-reloads (or flags a conflict when
+    /// the reader has unsaved edits).
+    private func reconcileExternalContent(_ disk: String, url: URL) {
+        if deletedOnDisk {
+            deletedOnDisk = false
+            onChromeUpdate?()
+            captureTelemetry("ouro_md_document_restored_on_disk")
         }
         // Our own save (or no real change) — nothing to do.
         guard disk != lastLoadedContent else { return }
@@ -571,6 +589,25 @@ final class AppModel: ObservableObject {
             }
             bridge.reloadMarkdown(disk)   // preserves scroll position
             captureTelemetry("ouro_md_document_external_reload_completed")
+        }
+    }
+
+    /// A watcher fire found the file unreadable. Distinguish a real deletion/move
+    /// from the momentary gap of an atomic save by re-checking after a short grace
+    /// period; only then surface it (VSCode-style: keep the buffer and mark the
+    /// document deleted — distinct from a normal unsaved edit. A save re-creates
+    /// the file and close/quit prompt, so the kept buffer is never lost silently).
+    private func confirmDeletionIfStillMissing(_ url: URL) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+            guard let self, self.currentURL == url else { return }
+            if let disk = AppModel.readText(at: url) {
+                self.reconcileExternalContent(disk, url: url)
+                return
+            }
+            guard !self.deletedOnDisk else { return }
+            self.deletedOnDisk = true
+            self.onChromeUpdate?()
+            self.captureTelemetry("ouro_md_document_deleted_on_disk")
         }
     }
 

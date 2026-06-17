@@ -80,6 +80,9 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         // exists on disk, a draggable proxy icon). Left-aligned in windowed mode
         // and full screen, matching every other macOS document app.
         window.title = model.windowTitle
+        // VSCode-style deleted marker: a subtitle beside the filename when the
+        // file has been removed/moved out from under us (the buffer is kept).
+        window.subtitle = model.deletedOnDisk ? "deleted" : ""
         window.representedURL = model.currentURL
         window.isDocumentEdited = model.isDirty
         window.appearance = NSAppearance(named: model.theme.uiMode == "dark" ? .darkAqua : .aqua)
@@ -222,10 +225,15 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-        guard model.isDirty else { return true }
+        guard model.isDirty || model.deletedOnDisk else { return true }
         let alert = NSAlert()
-        alert.messageText = "Do you want to save the changes made to \(model.windowTitle)?"
-        alert.informativeText = "Your changes will be lost if you don't save them."
+        if model.deletedOnDisk {
+            alert.messageText = "“\(model.windowTitle)” was deleted on disk."
+            alert.informativeText = "Save to recreate the file, or close to discard the kept copy."
+        } else {
+            alert.messageText = "Do you want to save the changes made to \(model.windowTitle)?"
+            alert.informativeText = "Your changes will be lost if you don't save them."
+        }
         alert.addButton(withTitle: "Save")
         alert.addButton(withTitle: "Don't Save")
         alert.addButton(withTitle: "Cancel")
