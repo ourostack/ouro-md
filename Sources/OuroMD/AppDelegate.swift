@@ -44,25 +44,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             return
         }
         observeUpdatePrompts()
-        let launchKind: String
         if let path = initialFilePath {
             openInitial(path)
-            launchKind = "file"
-        } else if restoreSession() {
-            launchKind = "restored_session"
+            captureLaunch("file")
         } else {
-            let firstRun = !defaults.bool(forKey: "ouro.hasLaunched")
-            defaults.set(true, forKey: "ouro.hasLaunched")
-            let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: true)
-            track(controller)
-            if firstRun { controller.model.loadWelcome() }
-            controller.show(cascadeFrom: nil)
-            launchKind = firstRun ? "first_run" : "new_document"
+            // A file launched from Finder / `open file.md` arrives via
+            // application(_:open:) around launch — NOT on the command line. Defer
+            // the restore/new-document fallback one runloop turn so that open can
+            // claim the launch; otherwise we spawn a blank window beside the
+            // opened document.
+            DispatchQueue.main.async { [weak self] in self?.completeLaunchFallback() }
         }
-        OuroMDTelemetry.shared.capture(
-            "ouro_md_app_launched",
-            properties: ["launch_kind": .string(launchKind)]
-        )
         Task { await updateCoordinator.runAutoUpdateCheckIfDue() }
     }
 
@@ -121,24 +113,73 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         defaults.set(frontController?.model.mountedFolder?.path, forKey: "ouro.session.folder")
     }
 
+    /// What an empty (no command-line file) launch should do, decided AFTER a
+    /// Finder/`open` document event has had a chance to land. If a document is
+    /// already open, we must not also spawn a window.
+    enum LaunchFallback: Equatable { case openedDocument, restoreSession, newDocument }
+
+    nonisolated static func resolveLaunchFallback(documentAlreadyOpen: Bool, hasRestorableSession: Bool) -> LaunchFallback {
+        if documentAlreadyOpen { return .openedDocument }
+        return hasRestorableSession ? .restoreSession : .newDocument
+    }
+
+    private func completeLaunchFallback() {
+        switch AppDelegate.resolveLaunchFallback(
+            documentAlreadyOpen: !controllers.isEmpty,
+            hasRestorableSession: hasRestorableSession()
+        ) {
+        case .openedDocument:
+            captureLaunch("opened_file")
+        case .restoreSession:
+            performRestoreSession()
+            captureLaunch("restored_session")
+        case .newDocument:
+            let firstRun = !defaults.bool(forKey: "ouro.hasLaunched")
+            defaults.set(true, forKey: "ouro.hasLaunched")
+            let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: true)
+            track(controller)
+            if firstRun { controller.model.loadWelcome() }
+            controller.show(cascadeFrom: nil)
+            captureLaunch(firstRun ? "first_run" : "new_document")
+        }
+    }
+
+    private func captureLaunch(_ kind: String) {
+        OuroMDTelemetry.shared.capture(
+            "ouro_md_app_launched",
+            properties: ["launch_kind": .string(kind)]
+        )
+    }
+
+    /// The previously-open documents + mounted folder that still exist on disk.
+    private func restorableSession() -> (docs: [String], folder: URL?) {
+        let fm = FileManager.default
+        let docs = (defaults.array(forKey: "ouro.session.docs") as? [String] ?? []).filter { fm.fileExists(atPath: $0) }
+        let folder = defaults.string(forKey: "ouro.session.folder")
+            .flatMap { fm.fileExists(atPath: $0) ? URL(fileURLWithPath: $0) : nil }
+        return (docs, folder)
+    }
+
+    private func hasRestorableSession() -> Bool {
+        let session = restorableSession()
+        return !session.docs.isEmpty || session.folder != nil
+    }
+
     /// Reopens the previously-open documents (one window each) and folder.
     /// Returns false if there was nothing to restore.
     @discardableResult
-    private func restoreSession() -> Bool {
-        let fm = FileManager.default
-        let docs = (defaults.array(forKey: "ouro.session.docs") as? [String] ?? []).filter { fm.fileExists(atPath: $0) }
-        let folderPath = defaults.string(forKey: "ouro.session.folder")
-        let folder = folderPath.flatMap { fm.fileExists(atPath: $0) ? URL(fileURLWithPath: $0) : nil }
-        guard !docs.isEmpty || folder != nil else { return false }
+    private func performRestoreSession() -> Bool {
+        let session = restorableSession()
+        guard !session.docs.isEmpty || session.folder != nil else { return false }
 
         var previous: NSWindow?
-        for path in docs {
+        for path in session.docs {
             let controller = DocumentWindowController(filePath: path, selfTest: false, useAutosave: previous == nil)
             track(controller)
             controller.show(cascadeFrom: previous)
             previous = controller.window
         }
-        if let folder {
+        if let folder = session.folder {
             if let first = controllers.first {
                 first.model.openFolder(folder)
             } else {
@@ -233,7 +274,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        let dirty = controllers.filter { $0.model.isDirty }
+        let dirty = controllers.filter { $0.model.isDirty || $0.model.deletedOnDisk }
         guard !dirty.isEmpty else { return .terminateNow }
         let alert = NSAlert()
         alert.messageText = dirty.count == 1 ? "You have unsaved changes." : "You have unsaved changes in \(dirty.count) windows."

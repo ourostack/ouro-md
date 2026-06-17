@@ -67,6 +67,10 @@ if hasFlag("--wraptest") {
     WrapTester().run()
 }
 
+if hasFlag("--tablewraptest") {
+    TableWrapTester().run()
+}
+
 if hasFlag("--alerttest") {
     AlertMarkerTester().run()
 }

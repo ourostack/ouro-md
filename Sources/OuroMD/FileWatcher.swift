@@ -19,14 +19,21 @@ final class FileWatcher {
 
     deinit { stop() }
 
-    func start() {
+    func start() { start(notifyOnAcquire: false) }
+
+    /// `notifyOnAcquire` fires `onChange` once the watch is (re)established after
+    /// the file had been missing — so a delete-then-recreate (e.g. an agent that
+    /// removes a file before rewriting it) is reconciled instead of leaving the
+    /// reader on a stale "deleted" view.
+    private func start(notifyOnAcquire: Bool) {
         stop()
         fd = open(url.path, O_EVTONLY)
         guard fd >= 0 else {
-            // File may be momentarily absent (mid-rename); retry shortly.
+            // File may be momentarily absent (mid-rename) or genuinely gone;
+            // retry, and notify once it returns.
             queue.asyncAfter(deadline: .now() + 0.2) { [weak self] in
                 guard let self, self.source == nil else { return }
-                self.start()
+                self.start(notifyOnAcquire: true)
             }
             return
         }
@@ -44,6 +51,9 @@ final class FileWatcher {
         }
         source = src
         src.resume()
+        if notifyOnAcquire {
+            DispatchQueue.main.async { [weak self] in self?.onChange() }
+        }
     }
 
     func stop() {
@@ -64,9 +74,9 @@ final class FileWatcher {
         queue.asyncAfter(deadline: .now() + 0.12, execute: work)
 
         // Atomic replace unlinks the watched inode — re-establish the watch on
-        // the new file once the rename has settled.
+        // the new file once the rename has settled, notifying when it returns.
         if !flags.intersection([.delete, .rename, .revoke]).isEmpty {
-            queue.asyncAfter(deadline: .now() + 0.15) { [weak self] in self?.start() }
+            queue.asyncAfter(deadline: .now() + 0.15) { [weak self] in self?.start(notifyOnAcquire: true) }
         }
     }
 }
