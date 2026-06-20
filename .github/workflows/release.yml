@@ -22,6 +22,7 @@ on:
       - 'web/**'
       - 'Resources/**'
       - 'scripts/package-release.sh'
+      - 'scripts/release-policy.sh'
       - 'scripts/verify-release-version.sh'
       - 'scripts/verify-packaged-app.sh'
   workflow_dispatch:
@@ -44,6 +45,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Select newest Xcode (needs Swift 6.0+)
         run: |
@@ -60,12 +63,18 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Version: $version"
 
+      - name: Verify release freshness policy
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./scripts/release-policy.sh freshness --mode main
+
       - name: Check if release already exists
         id: check
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view "v${{ steps.ver.outputs.version }}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+          exists="$(./scripts/release-policy.sh release-exists --version "${{ steps.ver.outputs.version }}")"
+          if [ "$exists" = "true" ]; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
             echo "Release v${{ steps.ver.outputs.version }} already exists — nothing to do."
           else
@@ -81,10 +90,6 @@ jobs:
           OURO_MD_POSTHOG_HOST: ${{ secrets.OURO_MD_POSTHOG_HOST }}
           OURO_MD_ALLOW_UNCONFIGURED_TELEMETRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
         run: ./scripts/package-release.sh
-
-      - name: Verify packaged app probes
-        if: steps.check.outputs.exists == 'false' || (github.event_name == 'workflow_dispatch' && inputs.dry_run)
-        run: ./scripts/verify-packaged-app.sh OuroMD.app
 
       - name: Upload artifacts to the run (always, for inspection / dry run)
         if: steps.check.outputs.exists == 'false' || (github.event_name == 'workflow_dispatch' && inputs.dry_run)
@@ -105,3 +110,9 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "Ouro MD ${{ steps.ver.outputs.version }}" \
             --generate-notes
+
+      - name: Verify published release and installer
+        if: steps.check.outputs.exists == 'false' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./scripts/release-policy.sh verify-published --version "${{ steps.ver.outputs.version }}" --sha "$GITHUB_SHA"

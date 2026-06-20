@@ -4,6 +4,15 @@ import OuroMDCore
 /// Command-line entry points: headless render, theme listing, help, version.
 enum OuroCLI {
     static let version = OuroMDRelease.version
+    static var gitSHA: String? {
+        let raw = Bundle.main.object(forInfoDictionaryKey: "OuroMDGitSHA") as? String
+        guard let raw, !raw.isEmpty, raw != "unknown" else { return nil }
+        return raw
+    }
+    static var versionDescription: String {
+        if let gitSHA { return "\(version) (\(gitSHA))" }
+        return version
+    }
 
     static let helpText = """
     ouro-md — a minimalist, themable, native macOS Markdown editor.

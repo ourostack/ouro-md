@@ -20,7 +20,7 @@ if hasFlag("--help") || hasFlag("-h") {
     exit(0)
 }
 if hasFlag("--version") {
-    print("ouro-md \(OuroCLI.version)")
+    print("ouro-md \(OuroCLI.versionDescription)")
     exit(0)
 }
 if hasFlag("--bundleprobe") {

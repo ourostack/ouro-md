@@ -15,6 +15,8 @@ jobs:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - name: Select newest Xcode (Swift 6.0+)
         run: |
           latest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"
@@ -23,6 +25,12 @@ jobs:
           swift --version
       - name: Verify release version contract
         run: ./scripts/verify-release-version.sh
+      - name: Verify release freshness policy
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./scripts/release-policy.sh freshness
+      - name: Scan source policy
+        run: ./scripts/release-policy.sh scan .
       - name: Run tests
         run: swift test
 
@@ -31,6 +39,8 @@ jobs:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - name: Select newest Xcode (Swift 6.0+)
         run: |
           latest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"
@@ -39,19 +49,18 @@ jobs:
           swift --version
       - name: Build the app bundle
         run: ./make-app.sh
-      - name: Verify resources resolve from the packaged app (guards launch crash)
-        run: |
-          # The .app must find its web resources from Contents/Resources even when
-          # the build tree's .build path is gone — i.e. on any machine but this one.
-          mv .build .build_hidden
-          ./OuroMD.app/Contents/MacOS/ouro-md --bundleprobe
-          mv .build_hidden .build
+      - name: Verify packaged app probes
+        env:
+          OURO_MD_ALLOW_UNCONFIGURED_TELEMETRY: "1"
+        run: ./scripts/verify-packaged-app.sh OuroMD.app
 
   native-scenario-verifier:
     name: Native scenario verifier
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - name: Select newest Xcode (Swift 6.0+)
         run: |
           latest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"
@@ -68,6 +77,8 @@ jobs:
           run --wraptest
           run --renderprobe
           run --tablewraptest
+          run --tablewraptest --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
+          run --tablewraptest --tablewrap-width 1400 --tablewrap-height 5000 --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
           printf '# T\n\n| a | b |\n| - | - |\n| 1 | 2 |\n' > /tmp/rt.md
           run --roundtrip /tmp/rt.md --out /tmp/rt-out.md
           OURO_SELFTEST=1 run
@@ -77,6 +88,8 @@ jobs:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - name: Select newest Xcode (Swift 6.0+)
         run: |
           latest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"
