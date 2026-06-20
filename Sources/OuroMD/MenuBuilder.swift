@@ -48,8 +48,7 @@ enum MenuBuilder {
         let menu = NSMenu()
         item.submenu = menu
 
-        menu.addItem(withTitle: "About Ouro MD",
-                     action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        add(menu, "About Ouro MD", #selector(AppDelegate.showAbout(_:)), "", target)
         menu.addItem(.separator())
         let settings = add(menu, "Settings…", #selector(AppDelegate.showPreferences(_:)), ",", target)
         settings.keyEquivalentModifierMask = [.command]

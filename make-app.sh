@@ -12,7 +12,8 @@ APP="${APP_NAME}.app"
 CONFIG="release"
 BIN_NAME="ouro-md"
 BUNDLE_ID="org.ourostack.ouro-md"
-VERSION="0.9.8"
+VERSION="0.9.9"
+GIT_SHA="${OURO_MD_GIT_SHA:-$(git rev-parse --short=12 HEAD 2>/dev/null || printf unknown)}"
 POSTHOG_KEY="${OURO_MD_POSTHOG_KEY:-${VITE_POSTHOG_KEY:-}}"
 POSTHOG_HOST="${OURO_MD_POSTHOG_HOST:-${VITE_POSTHOG_HOST:-https://us.i.posthog.com}}"
 POSTHOG_DISABLED="${OURO_MD_TELEMETRY_DISABLED:-${VITE_POSTHOG_DISABLED:-}}"
@@ -55,6 +56,7 @@ cat > "${APP}/Contents/Info.plist" <<PLIST
     <key>CFBundleIdentifier</key><string>${BUNDLE_ID}</string>
     <key>CFBundleVersion</key><string>${VERSION}</string>
     <key>CFBundleShortVersionString</key><string>${VERSION}</string>
+    <key>OuroMDGitSHA</key><string>${GIT_SHA}</string>
     <key>CFBundleExecutable</key><string>${BIN_NAME}</string>
     <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>CFBundlePackageType</key><string>APPL</string>

@@ -118,6 +118,11 @@ JSON
 
 echo "==> Wrote ${manifest_path}"
 echo "    version ${version} (build ${build}) · ${bytes} bytes · sha256 ${sha256}"
+OURO_MD_EXPECT_GIT_SHA="$git_sha" ./scripts/release-policy.sh verify-local \
+  --version "$version" \
+  --sha "$git_sha" \
+  --zip "$archive_path" \
+  --manifest "$manifest_path"
 echo
 echo "Publish with:"
 echo "  gh release create v${version} \"${archive_path}\" \"${manifest_path}\" \\"

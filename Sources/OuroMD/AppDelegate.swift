@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import OuroMDCore
 import SwiftUI
 
 @MainActor
@@ -304,6 +305,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     }
 
     // MARK: - Menu actions
+
+    @objc func showAbout(_ sender: Any?) {
+        let build = OuroCLI.gitSHA.map { "Build \($0)" } ?? "Source build"
+        let credits = NSAttributedString(string: "Independent software.\n\(build)")
+        NSApp.orderFrontStandardAboutPanel(options: [
+            .applicationName: OuroMDRelease.appName,
+            .applicationVersion: OuroCLI.versionDescription,
+            .version: OuroMDRelease.version,
+            .credits: credits
+        ])
+    }
 
     @objc func checkForUpdates(_ sender: Any?) {
         Task { await updateCoordinator.checkForUpdatesAndPromptInstall() }
