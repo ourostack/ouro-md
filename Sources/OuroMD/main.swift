@@ -68,7 +68,9 @@ if hasFlag("--wraptest") {
 }
 
 if hasFlag("--tablewraptest") {
-    TableWrapTester().run()
+    let width = Double(argValue("--tablewrap-width") ?? "") ?? 480
+    let height = Double(argValue("--tablewrap-height") ?? "") ?? 640
+    TableWrapTester(markdownPath: argValue("--tablewrap-file"), viewportWidth: CGFloat(width), viewportHeight: CGFloat(height)).run()
 }
 
 if hasFlag("--alerttest") {

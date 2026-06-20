@@ -22,7 +22,7 @@ struct SearchResult: Identifiable, Hashable {
 
 /// Streams whole-folder content-search results off the main thread. New
 /// searches cancel in-flight ones. Filename hits rank first, then by match
-/// count — Typora-like behavior, dependency-free (no bundled ripgrep).
+/// count, without a bundled external search binary.
 final class ContentSearcher {
     private let queue = DispatchQueue(label: "md.ouro.contentsearch", qos: .userInitiated)
     private var current: DispatchWorkItem?

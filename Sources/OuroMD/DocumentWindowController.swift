@@ -12,6 +12,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
     private var wordCountPopover: NSPopover?
     private var renamePopover: NSPopover?
     private var renameField: NSTextField?
+    var openDocumentFromTitleClickHandler: (() -> Void)?
 
     /// `onBecomeKey` lets the app re-point menu state at the active window.
     var onBecomeKey: ((DocumentWindowController) -> Void)?
@@ -44,9 +45,9 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         super.init()
 
         window.delegate = self
-        // Click the title (or its proxy icon) to rename, like a native document
-        // window. The window subclass discriminates a click from a title drag.
-        window.onTitleClicked = { [weak self] in self?.presentRename() }
+        // Click the title (or its proxy icon) to open a document, while the
+        // window subclass still distinguishes clicks from title-bar drags.
+        window.onTitleClicked = { [weak self] in self?.openDocumentFromTitleClick() }
         window.titleHitView = { [weak self] in self?.nativeTitleField() }
         model.onChromeUpdate = { [weak self] in
             Task { @MainActor in self?.syncChrome() }
@@ -90,7 +91,15 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         MenuBuilder.refreshDynamicState(model: model)
     }
 
-    // MARK: - Click-to-rename
+    // MARK: - Title click / rename
+
+    func openDocumentFromTitleClick() {
+        if let handler = openDocumentFromTitleClickHandler {
+            handler()
+            return
+        }
+        model.openPanel()
+    }
 
     /// Presents an inline rename popover anchored on the title. Untitled
     /// documents have no file yet, so we route to Save As — that panel is the
@@ -249,9 +258,9 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
     }
 }
 
-/// A document window whose title is click-to-rename. AppKit only provides the
-/// editable title popover to `NSDocument`-based windows, so we detect a click on
-/// the title text ourselves — while preserving the ability to drag the window by
+/// A document window whose title click is app-defined. AppKit only provides
+/// richer title actions to `NSDocument`-based windows, so we detect a click on
+/// the title text ourselves while preserving the ability to drag the window by
 /// its title bar (a drag past a small threshold moves the window instead).
 final class DocumentWindow: NSWindow {
     var onTitleClicked: (() -> Void)?
@@ -269,7 +278,7 @@ final class DocumentWindow: NSWindow {
             return
         }
 
-        // Distinguish a click (rename) from a drag (move the window). Track the
+        // Distinguish a click from a drag. Track the
         // mouse until it is released; treat motion past a few points as a drag.
         let startMouse = NSEvent.mouseLocation
         let startOrigin = frame.origin

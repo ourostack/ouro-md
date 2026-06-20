@@ -1,11 +1,10 @@
 import AppKit
-import CoreGraphics
 import WebKit
 
 /// Headless `--shoot` mode: renders the editor in an off-screen web view (no
-/// window) and writes a PNG of the rendered Markdown via `createPDF` +
-/// CoreGraphics rasterization. Captures only the app's own content — never the
-/// screen — so it is safe and Space-independent.
+/// window) and writes a PNG of the rendered Markdown from WebKit's viewport
+/// snapshot API. Captures only the app's own content — never the screen — so it
+/// is safe and Space-independent.
 final class Snapshotter: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     private let fileURL: URL
     private let outURL: URL
@@ -54,43 +53,27 @@ final class Snapshotter: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
     }
 
     private func capture() {
-        let pdfConfig = WKPDFConfiguration()
-        pdfConfig.rect = NSRect(origin: .zero, size: size)
-        webView.createPDF(configuration: pdfConfig) { [weak self] result in
+        webView.evaluateJavaScript("document.querySelectorAll('.vditor-reset table').forEach(function(t){t.scrollLeft=0})") { [weak self] _, _ in
             guard let self else { return }
-            switch result {
-            case .success(let data):
-                self.rasterize(pdfData: data)
-            case .failure(let error):
-                self.fail("createPDF failed: \(error.localizedDescription)")
+            let config = WKSnapshotConfiguration()
+            config.rect = NSRect(origin: .zero, size: self.size)
+            self.webView.takeSnapshot(with: config) { [weak self] image, error in
+                guard let self else { return }
+                if let error {
+                    self.fail("snapshot failed: \(error.localizedDescription)")
+                }
+                guard let image else { self.fail("snapshot returned no image") }
+                self.write(image: image)
             }
         }
     }
 
-    private func rasterize(pdfData: Data) {
-        guard let provider = CGDataProvider(data: pdfData as CFData),
-              let document = CGPDFDocument(provider),
-              let page = document.page(at: 1) else {
-            fail("could not read rendered PDF")
+    private func write(image: NSImage) {
+        guard let data = image.tiffRepresentation,
+              let rep = NSBitmapImageRep(data: data),
+              let png = rep.representation(using: .png, properties: [:]) else {
+            fail("could not encode PNG")
         }
-        let box = page.getBoxRect(.mediaBox)
-        let scale: CGFloat = 2
-        let width = Int(box.width * scale)
-        let height = Int(box.height * scale)
-        guard width > 0, height > 0,
-              let context = CGContext(data: nil, width: width, height: height,
-                                      bitsPerComponent: 8, bytesPerRow: 0,
-                                      space: CGColorSpaceCreateDeviceRGB(),
-                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
-            fail("could not create bitmap context")
-        }
-        context.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
-        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
-        context.scaleBy(x: scale, y: scale)
-        context.drawPDFPage(page)
-        guard let cgImage = context.makeImage() else { fail("could not rasterize PDF") }
-        let rep = NSBitmapImageRep(cgImage: cgImage)
-        guard let png = rep.representation(using: .png, properties: [:]) else { fail("could not encode PNG") }
         do {
             try png.write(to: outURL)
             print(outURL.path)

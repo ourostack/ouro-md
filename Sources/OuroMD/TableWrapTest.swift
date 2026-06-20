@@ -2,18 +2,26 @@ import AppKit
 import WebKit
 
 /// Headless `--tablewraptest`: loads the live editor in a deliberately narrow
-/// window, applies the real theme, renders a table with long cell content, and
-/// fails if the table (or the page) overflows horizontally. Guards the "wide
-/// tables wrap to the editor width instead of forcing a horizontal scrollbar"
-/// behaviour. The theme stylesheet (where the table rules live) is applied the
-/// same way the app does — via `window.ouro.setTheme` — so this exercises the
-/// shipped CSS, not Vditor's defaults.
+/// window, applies the real theme, renders dogfood-shaped tables, and fails if
+/// tables drag the whole document horizontally or collapse long/code cells into
+/// unreadable slivers. Truly wide tables should scroll inside their own table
+/// box. The theme stylesheet is applied the same way the app does — via
+/// `window.ouro.setTheme` — so this exercises the shipped CSS, not Vditor's
+/// defaults.
 final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     private var webView: WKWebView!
-    // Narrow on purpose: a non-wrapping wide table cannot fit here, so a pass
-    // proves the cells actually wrap.
-    private static let viewportWidth: CGFloat = 480
+    private let markdownPath: String?
+    private let viewportWidth: CGFloat
+    private let viewportHeight: CGFloat
+    // Narrow on purpose: wide tables cannot fit here unless their own scroll
+    // container absorbs the overflow.
     private let theme = ThemeStore.shared.defaultTheme
+
+    init(markdownPath: String? = nil, viewportWidth: CGFloat = 480, viewportHeight: CGFloat = 640) {
+        self.markdownPath = markdownPath
+        self.viewportWidth = viewportWidth
+        self.viewportHeight = viewportHeight
+    }
 
     func run() -> Never {
         let app = NSApplication.shared
@@ -25,7 +33,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         configuration.userContentController = controller
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
 
-        let frame = NSRect(x: 0, y: 0, width: Self.viewportWidth, height: 640)
+        let frame = NSRect(x: 0, y: 0, width: viewportWidth, height: viewportHeight)
         webView = WKWebView(frame: frame, configuration: configuration)
         webView.navigationDelegate = self
         guard let indexURL = OuroResources.web("index", "html") else {
@@ -50,46 +58,152 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         if type == "ready" {
             let codeTheme = theme.uiMode == "dark" ? "github-dark" : "github"
             webView.evaluateJavaScript("window.ouro.setTheme(\(jsLiteral(theme.uiMode)),\(jsLiteral(theme.editorCSS)),\(jsLiteral(codeTheme)))", completionHandler: nil)
-            webView.evaluateJavaScript("window.ouro.setValue(\(jsLiteral(Self.wideTableMarkdown)))", completionHandler: nil)
+            webView.evaluateJavaScript("window.ouro.setValue(\(jsLiteral(markdown)))", completionHandler: nil)
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self] in
                 self?.webView.evaluateJavaScript(Self.measureScript, completionHandler: nil)
             }
         } else if type == "tablewrap" {
-            let hasTable = (body["hasTable"] as? Bool) ?? false
+            let tableCount = (body["tableCount"] as? Int) ?? 0
             let pageOverflow = (body["pageOverflow"] as? Double) ?? .infinity
-            let tableOverflow = (body["tableOverflow"] as? Double) ?? .infinity
+            let clippedCount = (body["clippedCount"] as? Int) ?? .max
+            let collapsedLongCellCount = (body["collapsedLongCellCount"] as? Int) ?? .max
+            let collapsedCodeCellCount = (body["collapsedCodeCellCount"] as? Int) ?? .max
+            let initialScrolledCount = (body["initialScrolledCount"] as? Int) ?? .max
+            let scrollableCount = (body["scrollableCount"] as? Int) ?? 0
+            let tableDetails = (body["tableDetails"] as? [[String: Any]]) ?? []
             // Allow a couple of px for sub-pixel rounding.
             let tolerance = 2.0
             let pageOK = pageOverflow <= tolerance
-            let tableOK = tableOverflow <= tolerance
-            print("table present: \(hasTable ? "yes ✓" : "NO ✗")")
-            print(String(format: "page horizontal overflow: %.1fpx %@", pageOverflow, pageOK ? "✓" : "✗ (table did not wrap)"))
-            print(String(format: "table horizontal overflow: %.1fpx %@", tableOverflow, tableOK ? "✓" : "✗ (cells did not wrap)"))
-            exit(hasTable && pageOK && tableOK ? 0 : 1)
+            let tableCountOK = tableCount >= 8
+            let clippedOK = clippedCount == 0
+            let longCellsOK = collapsedLongCellCount == 0
+            let codeCellsOK = collapsedCodeCellCount == 0
+            let initialScrollOK = initialScrolledCount == 0
+            let scrollRequired = viewportWidth <= 800
+            let scrollOK = !scrollRequired || scrollableCount > 0
+            print("tables present: \(tableCount) \(tableCountOK ? "✓" : "✗ (expected at least 8)")")
+            print(String(format: "page horizontal overflow: %.1fpx %@", pageOverflow, pageOK ? "✓" : "✗ (table escaped its own scroll)"))
+            print("tables clipped by viewport: \(clippedCount) \(clippedOK ? "✓" : "✗")")
+            let scrollFailure = scrollRequired ? "✗ (wide tables were squeezed instead)" : "✗"
+            print("tables with own horizontal scroll: \(scrollableCount) \(scrollOK ? "✓" : scrollFailure)")
+            print("tables initially scrolled sideways: \(initialScrolledCount) \(initialScrollOK ? "✓" : "✗")")
+            print("collapsed long cells: \(collapsedLongCellCount) \(longCellsOK ? "✓" : "✗")")
+            print("collapsed code cells: \(collapsedCodeCellCount) \(codeCellsOK ? "✓" : "✗")")
+            for detail in tableDetails {
+                let index = (detail["index"] as? Int) ?? -1
+                let width = (detail["clientWidth"] as? Double) ?? 0
+                let scroll = (detail["scrollOverflow"] as? Double) ?? 0
+                let scrollLeft = (detail["scrollLeft"] as? Double) ?? 0
+                let minLong = (detail["minLongCellWidth"] as? Double) ?? 0
+                let minCode = (detail["minCodeCellWidth"] as? Double) ?? 0
+                print(String(format: "table %02d width %.1fpx scroll %.1fpx left %.1fpx min-long %.1fpx min-code %.1fpx",
+                             index + 1, width, scroll, scrollLeft, minLong, minCode))
+            }
+            exit(tableCountOK && pageOK && clippedOK && scrollOK && initialScrollOK && longCellsOK && codeCellsOK ? 0 : 1)
         }
     }
 
-    private static let wideTableMarkdown = [
-        "| Commitment | How I carry it |",
-        "| - | - |",
-        "| Done means shipped | A real person used my output for real work, not that I produced a draft that looks plausible at a glance but falls apart on contact with reality. |",
-        "| Defined in markdown | I am defined in markdown, not code, which is exactly why my humans can reshape me by editing this single file at any time without a deploy or a release. |",
-        "| Success is retention | My success is the team running real work through me and staying, not how often I happen to get pinged in a given week. |",
-        "| Long unbreakable token | https://example.com/a/very/long/path/segment/that/keeps/going/withoutanyspacesorbreakpointsatallxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx |",
-        ""
-    ].joined(separator: "\n")
+    private var markdown: String {
+        if let markdownPath,
+           let text = try? String(contentsOf: URL(fileURLWithPath: markdownPath), encoding: .utf8) {
+            return text
+        }
+        return Self.dogfoodShapedMarkdown
+    }
+
+    private static let dogfoodShapedMarkdown = """
+    # Dogfood Tables
+
+    | Unit | Worker-owned tests/checks | Orchestrator-only integration | Notes |
+    | - | - | - | - |
+    | 1 | `Tests/SpoonjoyCoreTests/NativeAPIExpansionTests.swift` | Project membership, scenario metadata | Ownership table with medium path cells. |
+    | 2 | `Tests/SpoonjoyCoreTests/APITransportTests.swift` | Shared app state wiring | Transport surface. |
+
+    | Endpoint | Contract |
+    | - | - |
+    | `/api/native/siri/full-access/session/start` | Starts a full-access session and returns enough metadata for native callers. |
+    | `/api/native/siri/full-access/session/finish` | Commits queued state, returns conflict markers, and keeps idempotency metadata stable. |
+
+    | Artifact | Repository | Producer | Verification consumer |
+    | - | - | - | - |
+    | `/Users/example/Projects/spoonjoy-apple/tasks/2026-06-16-1754-planning-siri-full-access-parity/web-product-surface-audit.md` | spoonjoy-apple | Planning pass before doing conversion | Unit 0 baseline must verify the file exists. |
+
+    | Source | Destination | Safety |
+    | - | - | - |
+    | `Sources/SpoonjoyCore/AppState/NativeLiveStore.swift` | `Sources/SpoonjoyApp/AppShell/SessionCoordinator.swift` | Keep shell coordination thin and prove every store mutation is covered by unit tests. |
+
+    | Case | Native client | Web/product parity | Verification notes |
+    | - | - | - | - |
+    | Full-access session recovery | The native client should recover from an interrupted session by reading persisted operation metadata and replaying only the safe subset of queued work. | The web workflow already treats committed-but-incomplete state as recoverable and must not generate duplicate side effects. | This row is intentionally prose-heavy so a beautiful table wraps normal language while keeping the table itself wider than the editor column when useful. |
+    | Conflict handling | The client must preserve local edits, expose conflict summaries, and avoid deleting user-entered text when the server reports a stale revision. | The current product copy emphasizes explicit conflict handling over silent replacement. | Another long prose cell exercises multi-column wrapping without shrinking each column into a vertical ribbon. |
+
+    | Long code path | Consumer |
+    | - | - |
+    | `Sources/SpoonjoyCoreTests/NativeFullAccessSessionRecoveryAndConflictProjectionTests.swift` | `scripts/capture-native-screenshot-simulator.sh`, `scripts/smoke-macos.sh`, screenshot blocker/design-review artifact contract |
+
+    | Question | Answer |
+    | - | - |
+    | Should a gigantic two-column prose table force the entire document sideways? | No. The table should use as much viewport width as it can, then provide its own horizontal scroll while surrounding prose keeps the document stable and readable. This is deliberately long enough to expose table layout policies that look fine for tiny examples but fail under real doing-doc pressure. |
+
+    | Final audit | Evidence |
+    | - | - |
+    | Read-only dogfood file | The live doing document has eight tables with very different shapes, so this fallback fixture mirrors those shapes when the external dogfood file is unavailable. |
+    """
 
     private static let measureScript = #"""
     (function () {
       var de = document.documentElement;
-      var pageOverflow = de.scrollWidth - de.clientWidth;
-      var table = document.querySelector("#editor table");
-      var tableOverflow = table ? (table.scrollWidth - table.clientWidth) : -1;
+      var viewportWidth = de.clientWidth;
+      var pageOverflow = Math.max(de.scrollWidth, document.body.scrollWidth) - viewportWidth;
+      var tables = Array.prototype.slice.call(document.querySelectorAll("#editor table"));
+      var collapsedLongCellCount = 0;
+      var collapsedCodeCellCount = 0;
+      var initialScrolledCount = 0;
+      var clippedCount = 0;
+      var scrollableCount = 0;
+      var tableDetails = tables.map(function (table, index) {
+        var rect = table.getBoundingClientRect();
+        var scrollOverflow = table.scrollWidth - table.clientWidth;
+        var scrollLeft = table.scrollLeft || 0;
+        var cells = Array.prototype.slice.call(table.querySelectorAll("th,td"));
+        var longWidths = [];
+        var codeWidths = [];
+        cells.forEach(function (cell) {
+          var text = (cell.textContent || "").trim();
+          var width = cell.getBoundingClientRect().width;
+          if (text.length >= 24) { longWidths.push(width); }
+          if (cell.querySelector("code")) { codeWidths.push(width); }
+        });
+        var minLongCellWidth = longWidths.length ? Math.min.apply(Math, longWidths) : 0;
+        var minCodeCellWidth = codeWidths.length ? Math.min.apply(Math, codeWidths) : 0;
+        var clipped = rect.left < -2 || rect.right > viewportWidth + 2;
+        if (clipped) { clippedCount += 1; }
+        if (scrollOverflow > 2) { scrollableCount += 1; }
+        if (scrollLeft > 1) { initialScrolledCount += 1; }
+        if (minLongCellWidth > 0 && minLongCellWidth < 120) { collapsedLongCellCount += 1; }
+        if (minCodeCellWidth > 0 && minCodeCellWidth < 140) { collapsedCodeCellCount += 1; }
+        return {
+          index: index,
+          left: rect.left,
+          right: rect.right,
+          clientWidth: table.clientWidth,
+          scrollWidth: table.scrollWidth,
+          scrollOverflow: scrollOverflow,
+          scrollLeft: scrollLeft,
+          minLongCellWidth: minLongCellWidth,
+          minCodeCellWidth: minCodeCellWidth
+        };
+      });
       window.webkit.messageHandlers.ouro.postMessage({
         type: "tablewrap",
-        hasTable: !!table,
+        tableCount: tables.length,
         pageOverflow: pageOverflow,
-        tableOverflow: tableOverflow
+        clippedCount: clippedCount,
+        collapsedLongCellCount: collapsedLongCellCount,
+        collapsedCodeCellCount: collapsedCodeCellCount,
+        initialScrolledCount: initialScrolledCount,
+        scrollableCount: scrollableCount,
+        tableDetails: tableDetails
       });
     })();
     """#

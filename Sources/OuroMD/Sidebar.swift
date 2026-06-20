@@ -123,8 +123,8 @@ struct SidebarView: View {
     }
 }
 
-/// Typora-style file browser for the mounted folder: filename filter, tree or
-/// list view, and a footer showing the folder name + new-file + view toggle.
+/// File browser for the mounted folder: filename filter, tree or list view, and
+/// a footer showing the folder name + new-file + view toggle.
 struct FolderBrowserView: View {
     @ObservedObject var model: AppModel
 
