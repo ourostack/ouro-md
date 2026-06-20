@@ -8,6 +8,8 @@
   var ready = false;
   var dirty = false;
   var qolInstalled = false;
+  var resetTableScrollPending = false;
+  var resetTablesSeen = (typeof WeakSet === "function") ? new WeakSet() : null;
   var state = { mode: "ir", value: "", outline: false, uiTheme: "classic", focus: false, typewriter: false, codeTheme: "github" };
 
   function post(type, extra) {
@@ -46,7 +48,7 @@
 
   // --- Editor quality-of-life: wrap-the-selection behaviours --------------
   // Typing a paired character (or pasting a URL) while text is selected should
-  // *wrap* the selection rather than replace it, like Typora / code editors.
+  // *wrap* the selection rather than replace it, like familiar code editors.
 
   var WRAP_PAIRS = { '"': '"', "'": "'", "`": "`", "(": ")", "[": "]", "{": "}", "*": "*", "_": "_" };
 
@@ -180,7 +182,7 @@
       }
     }, true);
 
-    // Paste a URL onto a selection -> [selection](url), like Typora.
+    // Paste a URL onto a selection -> [selection](url).
     document.addEventListener("paste", function (e) {
       if (!selectionInEditor()) { return; }
       var selected = selectedText();
@@ -478,6 +480,8 @@
     rewriteRelativeImages();
     styleAlerts();
     updateAlertEditing();
+    resetTableScrollIfNeeded();
+    resetNewTableScroll(document);
   }
 
   function schedulePostRender() {
@@ -485,6 +489,51 @@
       postRender();
       requestAnimationFrame(postRender);
     });
+  }
+
+  function queueTableScrollReset() {
+    resetTableScrollPending = true;
+  }
+
+  function resetTableScrollIfNeeded() {
+    if (!resetTableScrollPending) { return; }
+    resetTableScrollPending = false;
+    resetTablesSeen = (typeof WeakSet === "function") ? new WeakSet() : null;
+    resetAllTableScroll();
+    requestAnimationFrame(resetAllTableScroll);
+  }
+
+  function tableWasReset(table) {
+    return resetTablesSeen ? resetTablesSeen.has(table) : !!table.__ouroTableScrollReset;
+  }
+
+  function markTableReset(table) {
+    if (resetTablesSeen) { resetTablesSeen.add(table); }
+    table.__ouroTableScrollReset = true;
+  }
+
+  function resetAllTableScroll() {
+    var tables = document.querySelectorAll(".vditor-reset table");
+    for (var i = 0; i < tables.length; i++) {
+      tables[i].scrollLeft = 0;
+      markTableReset(tables[i]);
+    }
+  }
+
+  function resetNewTableScroll(root) {
+    var tables = [];
+    if (root && root.matches && root.matches(".vditor-reset table")) {
+      tables.push(root);
+    }
+    if (root && root.querySelectorAll) {
+      var nested = root.querySelectorAll(".vditor-reset table");
+      for (var i = 0; i < nested.length; i++) { tables.push(nested[i]); }
+    }
+    for (var j = 0; j < tables.length; j++) {
+      if (tableWasReset(tables[j])) { continue; }
+      tables[j].scrollLeft = 0;
+      markTableReset(tables[j]);
+    }
   }
 
   function rewriteRelativeImages() {
@@ -577,6 +626,7 @@
     setValue: function (md) {
       state.value = (md == null) ? "" : md;
       if (vditor && ready) { vditor.setValue(state.value, true); }
+      queueTableScrollReset();
       schedulePostRender();
       dirty = false;
       postCount(state.value);
@@ -588,6 +638,7 @@
       var prevY = scroller ? scroller.scrollTop : window.scrollY;
       state.value = (md == null) ? "" : md;
       if (vditor && ready) { vditor.setValue(state.value, true); }
+      queueTableScrollReset();
       schedulePostRender();
       dirty = false;
       postCount(state.value);

@@ -19,9 +19,8 @@ struct Theme: Identifiable {
 /// Color + type tokens for a built-in theme. Both stylesheets are generated
 /// from these so the standalone export and the live editor stay in sync.
 ///
-/// The default theme ("quartz") carries the exact values from Typora's Github
-/// theme (its active theme): see the parity spec. The remaining themes are
-/// ouro-original recolorings of the same structure.
+/// The default theme ("quartz") carries a GitHub-style light document palette.
+/// The remaining themes are ouro-original recolorings of the same structure.
 private struct Palette {
     let id: String
     let displayName: String
@@ -41,18 +40,16 @@ private struct Palette {
     let marker: String        // IR syntax markers / md-tag
     let selection: String     // text selection background
     let sidebarBg: String     // sidebar / outline background
-    /// Apply the CodeMirror `cm-s-inner` light syntax palette (Typora's code
-    /// colors). Dark themes keep Vditor's bundled dark hljs theme instead.
+    /// Apply the editor's light syntax palette. Dark themes keep Vditor's
+    /// bundled dark hljs theme instead.
     let lightCodeSyntax: Bool
 }
 
 private enum Fonts {
-    /// Global body font (Typora Github-theme stack). "Open Sans" is bundled (Apache-2.0).
+    /// Global body font. "Open Sans" is bundled (Apache-2.0).
     static let sans = #""Open Sans", "Clear Sans", "Helvetica Neue", Helvetica, Arial, "Segoe UI Emoji", sans-serif"#
-    /// Global code font. Typora's stack leads with Windows faces (Consolas where
-    /// present); on macOS those are absent, so we lead the fallback with Menlo —
-    /// a medium-weight system mono that matches Typora's rendered weight and
-    /// avoids the thin "Courier New".
+    /// Global code font. Menlo leads the macOS fallback to avoid the thin
+    /// rendering of Courier-style monospace faces.
     static let mono = #""Lucida Console", Consolas, Menlo, Monaco, monospace"#
     /// Global root font size.
     static let size = "16px"
@@ -88,7 +85,7 @@ final class ThemeStore {
 
     private static func builtIns() -> [Theme] {
         let palettes = [
-            // Quartz — exact replica of Typora's Github theme (the parity target).
+            // Quartz — GitHub-style light document theme.
             Palette(id: "quartz", displayName: "Quartz", uiMode: "classic",
                     bg: "#ffffff", fg: "#333333", faint: "#777777", accent: "#4183c4",
                     headingRule: "#eeeeee", hrColor: "#e7e7e7", quoteBar: "#dfe2e5",
@@ -149,12 +146,12 @@ final class ThemeStore {
     }
 }
 
-// MARK: - Code syntax palette (CodeMirror `cm-s-inner`, Typora's default)
+// MARK: - Code syntax palette (CodeMirror `cm-s-inner`)
 
-/// highlight.js token overrides matching Typora's CodeMirror `cm-s-inner`
-/// palette. Vditor renders fences with highlight.js, so we re-map hljs classes
-/// to CodeMirror's exact colors. Colors only — the block background/border come
-/// from the per-theme rules so warm/cool light themes keep their own surface.
+/// highlight.js token overrides matching the CodeMirror `cm-s-inner` palette.
+/// Vditor renders fences with highlight.js, so we re-map hljs classes to those
+/// colors. Colors only — the block background/border come from the per-theme
+/// rules so warm/cool light themes keep their own surface.
 private func codeSyntaxCSS(_ p: Palette) -> String {
     guard p.lightCodeSyntax else { return "" }
     return """
@@ -187,7 +184,7 @@ private func readerCSS(_ p: Palette) -> String {
     html{font-size:\(Fonts.size);}
     body{background:\(p.bg);color:\(p.fg);font-family:\(Fonts.sans);line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;margin:0;}
     ::selection{background:\(p.selection);}
-    .markdown-body{max-width:860px;margin:0 auto;padding:30px 30px 100px;}
+    .markdown-body{max-width:860px;margin:0 auto;padding:30px 30px 100px;--ouro-table-viewport:calc(100vw - 24px);}
     @media (min-width:1400px){.markdown-body{max-width:1024px;}}
     @media (min-width:1800px){.markdown-body{max-width:1200px;}}
     .markdown-body>:first-child{margin-top:0;}
@@ -198,7 +195,7 @@ private func readerCSS(_ p: Palette) -> String {
     h4{font-size:1.25em;}
     h5{font-size:1em;}
     h6{font-size:1em;color:\(p.faint);}
-    p,blockquote,ul,ol,dl,table{margin:0.8em 0;}
+    p,blockquote,ul,ol,dl{margin:0.8em 0;}
     a{color:\(p.accent);text-decoration:none;}
     a:hover{text-decoration:underline;}
     strong{font-weight:bold;}
@@ -213,28 +210,31 @@ private func readerCSS(_ p: Palette) -> String {
     li{margin:0.25em 0;}
     .task-list-item{list-style:none;}
     .task-list-item input{margin:0 .5em 0 -1.3em;vertical-align:middle;}
-    table{border-collapse:collapse;width:100%;max-width:100%;table-layout:auto;text-align:left;}
+    table{border-collapse:collapse;display:block;overflow-x:auto;width:max-content;min-width:100%;max-width:var(--ouro-table-viewport);margin:0.8em 0;margin-left:min(0px, calc((100% - var(--ouro-table-viewport)) / 2));margin-right:min(0px, calc((100% - var(--ouro-table-viewport)) / 2));table-layout:auto;text-align:left;-webkit-overflow-scrolling:touch;}
     table tr{border:1px solid \(p.cellBorder);}
     table tr:nth-child(2n),thead{background:\(p.tableFill);}
-    th{font-weight:bold;border:1px solid \(p.cellBorder);border-bottom:0;padding:6px 13px;white-space:normal;overflow-wrap:break-word;word-break:break-word;}
-    td{border:1px solid \(p.cellBorder);padding:6px 13px;white-space:normal;overflow-wrap:break-word;word-break:break-word;}
+    th{font-weight:bold;border:1px solid \(p.cellBorder);border-bottom:0;padding:6px 13px;white-space:normal;overflow-wrap:normal;word-break:normal;vertical-align:top;min-width:16rem;max-width:42rem;}
+    td{border:1px solid \(p.cellBorder);padding:6px 13px;white-space:normal;overflow-wrap:normal;word-break:normal;vertical-align:top;min-width:16rem;max-width:42rem;}
+    th:has(code),td:has(code){max-width:none;}
+    td code,th code{white-space:nowrap;}
     img{max-width:100%;}
     """
 }
 
 /// Live-editor CSS, injected into the Vditor surface. Targets `.vditor-reset`
-/// (Typora's `#write` equivalent) and re-skins Vditor to the Github theme.
+/// and re-skins Vditor to the app's document themes.
 private func editorCSS(_ p: Palette) -> String {
     """
     html,body{background:\(p.bg);margin:0;height:100%;}
     .vditor{border:none!important;background:\(p.bg)!important;height:auto!important;min-height:100vh;--panel-background-color:\(p.bg)!important;--textarea-background-color:\(p.bg)!important;--toolbar-background-color:\(p.bg)!important;--resize-background-color:\(p.bg)!important;}
     .vditor-toolbar{display:none!important;}
+    .vditor{overflow:visible!important;}
     .vditor-content{background:\(p.bg)!important;height:auto!important;overflow:visible!important;width:100%!important;}
     .vditor-ir,.vditor-wysiwyg,.vditor-sv{height:auto!important;overflow:visible!important;width:100%!important;padding:0!important;box-sizing:border-box;}
 
     /* Content column — centered, responsive max-width (Github theme). Width is
        global across themes; a theme changes type + color, never the measure. */
-    .vditor-reset{color:\(p.fg)!important;font-family:\(Fonts.sans)!important;font-size:\(Fonts.size)!important;line-height:1.6!important;max-width:860px!important;margin:0 auto!important;padding:30px 30px 100px!important;-webkit-font-smoothing:antialiased;caret-color:\(p.accent);box-sizing:border-box;}
+    .vditor-reset{color:\(p.fg)!important;font-family:\(Fonts.sans)!important;font-size:\(Fonts.size)!important;line-height:1.6!important;max-width:860px!important;margin:0 auto!important;padding:30px 30px 100px!important;-webkit-font-smoothing:antialiased;caret-color:\(p.accent);box-sizing:border-box;overflow:visible!important;--ouro-table-viewport:calc(100vw - 24px);}
     @media (min-width:1400px){.vditor-reset{max-width:1024px!important;}}
     @media (min-width:1800px){.vditor-reset{max-width:1200px!important;}}
 
@@ -266,7 +266,7 @@ private func editorCSS(_ p: Palette) -> String {
     .vditor-reset pre>code,.vditor-reset pre code.hljs{background:\(p.codeBlockBg)!important;font-family:\(Fonts.mono)!important;font-size:0.9em!important;padding:8px 10px!important;border:none!important;border-radius:3px;display:block;line-height:1.5;color:\(p.fg);}
 
     /* IR blocks: show only the rendered preview; hide raw source + fence
-       markers until the block is focused for editing (Typora-like reading view). */
+       markers until the block is focused for editing. */
     .vditor-reset .vditor-ir__node:not(.vditor-ir__node--expand) .vditor-ir__marker--pre,
     .vditor-reset .vditor-ir__node:not(.vditor-ir__node--expand) [data-type="code-block-open-marker"],
     .vditor-reset .vditor-ir__node:not(.vditor-ir__node--expand) [data-type="code-block-close-marker"],
@@ -294,12 +294,14 @@ private func editorCSS(_ p: Palette) -> String {
     .vditor-reset li{margin:0.25em 0;}
 
     /* Tables (Github exact): #dfe2e5 borders, #f8f8f8 header + even rows, 6px 13px cells. */
-    .vditor-reset table{border-collapse:collapse!important;margin:0.8em 0!important;width:100%!important;max-width:100%!important;display:table!important;table-layout:auto;text-align:left;}
+    .vditor-reset table{border-collapse:collapse!important;display:block!important;overflow-x:auto!important;width:max-content!important;min-width:100%!important;max-width:var(--ouro-table-viewport)!important;margin:0.8em 0!important;margin-left:min(0px, calc((100% - var(--ouro-table-viewport)) / 2))!important;margin-right:min(0px, calc((100% - var(--ouro-table-viewport)) / 2))!important;table-layout:auto;text-align:left;-webkit-overflow-scrolling:touch;}
     .vditor-reset table tr{border:1px solid \(p.cellBorder)!important;background:\(p.bg)!important;}
     .vditor-reset table tr:nth-child(2n){background:\(p.tableFill)!important;}
     .vditor-reset table thead,.vditor-reset table thead tr,.vditor-reset table th{background:\(p.tableFill)!important;}
-    .vditor-reset table th{font-weight:bold;border:1px solid \(p.cellBorder)!important;border-bottom:0!important;padding:6px 13px!important;color:\(p.fg)!important;white-space:normal!important;overflow-wrap:break-word!important;word-break:break-word!important;}
-    .vditor-reset table td{border:1px solid \(p.cellBorder)!important;padding:6px 13px!important;color:\(p.fg)!important;background:transparent!important;white-space:normal!important;overflow-wrap:break-word!important;word-break:break-word!important;}
+    .vditor-reset table th{font-weight:bold;border:1px solid \(p.cellBorder)!important;border-bottom:0!important;padding:6px 13px!important;color:\(p.fg)!important;white-space:normal!important;overflow-wrap:normal!important;word-break:normal!important;vertical-align:top!important;min-width:16rem;max-width:42rem;}
+    .vditor-reset table td{border:1px solid \(p.cellBorder)!important;padding:6px 13px!important;color:\(p.fg)!important;background:transparent!important;white-space:normal!important;overflow-wrap:normal!important;word-break:normal!important;vertical-align:top!important;min-width:16rem;max-width:42rem;}
+    .vditor-reset table th:has(code),.vditor-reset table td:has(code){max-width:none!important;}
+    .vditor-reset table td code,.vditor-reset table th code{white-space:nowrap!important;}
 
     .vditor-reset img{max-width:100%;}
 

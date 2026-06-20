@@ -33,15 +33,14 @@ enum FolderSort: String, CaseIterable {
 }
 
 /// Recursively scans a mounted folder into file/dir nodes, off the main thread.
-/// Mirrors Typora's finder worker: a fixed set of openable extensions, dotfiles
-/// and `node_modules` skipped, oversized files ignored, empty dirs pruned.
+/// Uses a fixed set of openable extensions, skips dotfiles and `node_modules`,
+/// ignores oversized files, and prunes empty dirs.
 enum FolderScanner {
     static let supportedExtensions: Set<String> = [
         "md", "markdown", "mmd", "mkd", "mdwn", "mdown", "mdx",
         "mdtxt", "mdtext", "txt", "text", "apib", "rmd", "qmd"
     ]
-    /// Safety caps so a huge tree can't wedge the UI (Typora switches to tree
-    /// view past a similar threshold).
+    /// Safety caps so a huge tree can't wedge the UI.
     static let maxFiles = 5000
     private static let maxFileBytes = 2_000_000
 

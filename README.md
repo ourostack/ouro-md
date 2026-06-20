@@ -185,8 +185,8 @@ a shared palette; custom CSS is applied to both.
 
 ## Architecture
 
-ouro-md is a native SwiftUI/AppKit shell around a WKWebView editing surface —
-the same architecture Typora-style editors use, made to feel like a Mac app.
+ouro-md is a native SwiftUI/AppKit shell around a WKWebView editing surface,
+with document chrome, menus, file handling, and validation built for macOS.
 
 - **Swift shell** (`Sources/OuroMD/*.swift`) — window, menu bar, file model
   (open/save/dirty tracking), theming, export, and the JS bridge.
@@ -210,5 +210,4 @@ readiness checklist and known non-goals.
 ## License
 
 ouro-md is released under the [MIT License](LICENSE). Third-party components and
-attributions are listed in [NOTICE](NOTICE). ouro-md is an independent project
-and is not affiliated with or derived from Typora.
+attributions are listed in [NOTICE](NOTICE). ouro-md is an independent project.

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Word-count popover content (Typora-style "Toggle Word Count").
+/// Word-count popover content for the status/menu command.
 struct WordCountView: View {
     @ObservedObject var model: AppModel
 

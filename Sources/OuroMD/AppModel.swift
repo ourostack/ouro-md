@@ -173,8 +173,8 @@ final class AppModel: ObservableObject {
         charCount = chars
     }
 
-    /// Typora-style auto-save: silently persists a titled document a moment
-    /// after the last edit, so the user never has to press ⌘S.
+    /// Auto-save silently persists a titled document a moment after the last
+    /// edit, so the user rarely has to press ⌘S.
     private func scheduleAutosave() {
         guard autoSaveEnabled, currentURL != nil else { return }
         autosaveItem?.cancel()
@@ -701,7 +701,7 @@ final class AppModel: ObservableObject {
 
     private func applyThemeToEditor() {
         // Light themes use the bundled "github" hljs base; the editor CSS then
-        // overrides token colors to Typora's CodeMirror (cm-s-inner) palette.
+        // overrides token colors to the editor's light syntax palette.
         let codeTheme = theme.uiMode == "dark" ? "github-dark" : "github"
         bridge?.applyTheme(uiMode: theme.uiMode, css: theme.editorCSS, codeTheme: codeTheme)
     }
@@ -882,7 +882,7 @@ final class AppModel: ObservableObject {
     }
 
     /// Files matching the current filename filter (fuzzy: space-separated terms
-    /// matched as an ordered subsequence — Typora's quick-find behavior).
+    /// matched as an ordered subsequence for quick narrowing).
     var filteredFolderFiles: [FolderNode] {
         let query = folderFilter.trimmingCharacters(in: .whitespaces)
         guard !query.isEmpty else { return folderFlat }

@@ -18,11 +18,17 @@ enum OuroCLI {
       ouro-md --renderprobe          Verify live rich-rendering support.
       ouro-md --alerttest            Verify alert-callout marker display safety.
       ouro-md --wraptest             Verify editor typing quality-of-life hooks.
+      ouro-md --tablewraptest        Verify table layout and table-local scrolling.
       ouro-md --undotest             Verify editor undo/redo routing.
       ouro-md --help | --version
 
     RENDER OPTIONS
       --theme NAME                   Theme to embed (default: quartz).
+
+    TABLE PROBE OPTIONS
+      --tablewrap-file FILE          Markdown file to dogfood.
+      --tablewrap-width PX           Viewport width (default: 480).
+      --tablewrap-height PX          Viewport height (default: 640).
 
     THEMES
       Built-in: quartz (light), graphite (dark), manuscript (sepia serif),
