@@ -102,6 +102,11 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 
 - Existing CI already has Swift tests, app bundle verification, native scenario verifier, coverage, release version/freshness, source policy, table/code/visual/search/UI probes, and packaged-app verification.
 - Prior release-freshness lesson: run `./scripts/release-policy.sh freshness` before PRs touching app/release-affecting paths.
+- Explorer findings folded into scope:
+  - CI/release: bump `actions/upload-artifact` to v6, add `scripts/pr-preflight.sh`, add XCTest timing/slow-test budget reporting, upload visual artifacts on failure, and optionally smoke the hosted installer URL.
+  - Native UI: add file/open and image transfer harnesses, AX/focus/contrast/reduced-motion checks, real title click-vs-drag decision coverage, and first-frame launch smoke.
+  - Updater: add dirty-doc install quit-cancel coverage, structured/cancellable progress, retry recovery, live older-to-latest update harness, and stronger rollback/one-line installer restoration assertions.
+  - Coverage matrix: items 3, 4, 15, 17, and 23 are missing today; most others are partial and must be made CI-visible.
 - Initial implementation units:
   - Unit 0: discovery/review convergence and exact coverage matrix.
   - Unit 1: CI local preflight, slow-test budget/annotation, artifact plumbing, Node 20 cleanup.
