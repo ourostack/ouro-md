@@ -140,7 +140,10 @@ final class UndoRedoRoutingTests: XCTestCase {
         XCTAssertTrue(delegate.validateMenuItem(recent))
 
         let clearRecent = NSMenuItem(title: "Clear Recent", action: #selector(AppDelegate.clearRecentDocuments(_:)), keyEquivalent: "")
-        XCTAssertEqual(delegate.validateMenuItem(clearRecent), !NSDocumentController.shared.recentDocumentURLs.isEmpty)
+        delegate.recentDocumentURLsProvider = { [] }
+        XCTAssertFalse(delegate.validateMenuItem(clearRecent))
+        delegate.recentDocumentURLsProvider = { [URL(fileURLWithPath: "/tmp/example.md")] }
+        XCTAssertTrue(delegate.validateMenuItem(clearRecent))
 
         let unknown = NSMenuItem(title: "Unknown", action: Selector(("unknownCommand:")), keyEquivalent: "")
         XCTAssertTrue(delegate.validateMenuItem(unknown))

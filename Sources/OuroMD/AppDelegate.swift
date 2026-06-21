@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private var updateCancellables: Set<AnyCancellable> = []
     private var undoRedoShortcutMonitor: UndoRedoShortcutMonitor?
     private var updateProgressWindow: NSWindow?
+    var recentDocumentURLsProvider: () -> [URL] = { NSDocumentController.shared.recentDocumentURLs }
 
     private var isSelfTest: Bool { ProcessInfo.processInfo.environment["OURO_SELFTEST"] == "1" }
 
@@ -451,7 +452,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         case #selector(openRecent(_:)):
             return menuItem.representedObject is URL
         case #selector(clearRecentDocuments(_:)):
-            return !NSDocumentController.shared.recentDocumentURLs.isEmpty
+            return !recentDocumentURLsProvider().isEmpty
         case #selector(renameDocument(_:)):
             return hasEditor && model.currentURL != nil
         case #selector(installUpdateAndRelaunch(_:)):
