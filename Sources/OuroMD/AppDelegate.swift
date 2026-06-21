@@ -361,6 +361,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     @objc func toggleSidebar(_ sender: Any?) { frontController?.toggleSidebar() }
     @objc func showOutlineSidebar(_ sender: Any?) { frontController?.revealSidebar(mode: .outline) }
     @objc func showFileTreeSidebar(_ sender: Any?) { frontController?.revealSidebar(mode: .files) }
+    @objc func showSearchSidebar(_ sender: Any?) { frontController?.revealSidebar(mode: .search) }
     @objc func toggleSourceMode(_ sender: Any?) {
         model.setMode(model.mode == "sv" ? "ir" : "sv")
         syncChrome()

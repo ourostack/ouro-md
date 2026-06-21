@@ -585,6 +585,37 @@ final class AppModelReloadTests: XCTestCase {
         assertTelemetryDoesNotLeak(recorder.events, forbidden: [url.path, url.lastPathComponent])
     }
 
+    func testInitialUnreadableFileShowsErrorAndLoadsWelcome() {
+        let url = tempFile()
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let model = AppModel()
+        let recorder = recordTelemetry(on: model)
+        let bridge = MockBridge()
+        var errorMessage = ""
+        model.bridge = bridge
+        model.presentErrorHandler = { message, _ in errorMessage = message }
+        model.editorDidBecomeReady()
+
+        XCTAssertFalse(model.loadInitialFile(url.path))
+
+        XCTAssertEqual(errorMessage, "Could not open \(url.lastPathComponent)")
+        XCTAssertNil(model.currentURL)
+        XCTAssertEqual(model.windowTitle, "Untitled")
+        XCTAssertTrue(bridge.current.contains("# Welcome to Ouro MD"))
+        assertTelemetry(
+            recorder.events,
+            contains: "ouro_md_document_open_failed",
+            properties: [
+                "source": .string("launch"),
+                "code": .string("unreadable"),
+                "markdown_type": .bool(true),
+            ]
+        )
+        assertTelemetryDoesNotLeak(recorder.events, forbidden: [url.path])
+    }
+
     /// Click-to-rename renames the file on disk and re-points the model at it.
     func testRenameMovesFileAndRetargetsModel() {
         let dir = FileManager.default.temporaryDirectory

@@ -183,7 +183,7 @@ enum MenuBuilder {
         outlineMI.keyEquivalentModifierMask = [.command, .control]
         let fileTreeMI = add(menu, "File Tree", #selector(AppDelegate.showFileTreeSidebar(_:)), "3", target)
         fileTreeMI.keyEquivalentModifierMask = [.command, .control]
-        let searchMI = add(menu, "Search", #selector(AppDelegate.performFind(_:)), "f", target)
+        let searchMI = add(menu, "Search", #selector(AppDelegate.showSearchSidebar(_:)), "f", target)
         searchMI.keyEquivalentModifierMask = [.command, .shift]
 
         menu.addItem(.separator())
