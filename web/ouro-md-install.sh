@@ -17,10 +17,16 @@
 #   OURO_MD_INSTALL_DIR  install destination dir  (default: /Applications, falling
 #                                                  back to ~/Applications)
 #   OURO_MD_NO_OPEN=1    don't open the app after installing
+#   GH_TOKEN/GITHUB_TOKEN optional GitHub API token for release lookup
 set -euo pipefail
 
 REPO="${OURO_MD_REPO:-ourostack/ouro-md}"
-API="https://api.github.com/repos/${REPO}/releases?per_page=1"
+API="https://api.github.com/repos/${REPO}/releases/latest"
+github_token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
+api_curl_args=(-fsSL -H "Accept: application/vnd.github+json" -H "User-Agent: OuroMDInstaller/1")
+if [ -n "$github_token" ]; then
+  api_curl_args+=(-H "Authorization: Bearer $github_token")
+fi
 
 say()  { printf '\033[1;36m▸\033[0m %s\n' "$1"; }
 warn() { printf '\033[1;33m!\033[0m %s\n' "$1" >&2; }
@@ -38,7 +44,7 @@ if [ -z "${OURO_MD_INSTALL_DIR:-}" ] && ! { [ -d "$INSTALL_DIR" ] && [ -w "$INST
 fi
 
 say "Finding the latest Ouro MD release…"
-rel="$(curl -fsSL "$API")" || die "couldn't reach the GitHub release API."
+rel="$(curl "${api_curl_args[@]}" "$API")" || die "couldn't reach the GitHub release API."
 
 # Pull the asset URLs out of the (newest) release object without jq.
 zip_url="$(printf '%s' "$rel" | grep -o '"browser_download_url": *"[^"]*\.zip"' | sed 's/.*"\(https[^"]*\)"/\1/' | head -1)"
