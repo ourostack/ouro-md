@@ -82,8 +82,10 @@ struct OuroMDUpdateInstaller: Sendable {
         do {
             try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
 
+            try Task.checkCancellation()
             await progress("Downloading release manifest...")
             let manifestData = try await load(plan.manifestURL)
+            try Task.checkCancellation()
             let manifest: OuroMDUpdateManifest
             do {
                 manifest = try JSONDecoder().decode(OuroMDUpdateManifest.self, from: manifestData)
@@ -93,10 +95,12 @@ struct OuroMDUpdateInstaller: Sendable {
 
             await progress("Downloading \(plan.archiveName)...")
             let archiveData = try await load(plan.archiveURL)
+            try Task.checkCancellation()
             let archiveURL = root.appendingPathComponent(plan.archiveName)
             try archiveData.write(to: archiveURL)
 
             await progress("Verifying download...")
+            try Task.checkCancellation()
             let sha = Self.sha256Hex(archiveData)
             if let failure = OuroMDUpdateVerification.verify(
                 manifest: manifest,
@@ -110,6 +114,7 @@ struct OuroMDUpdateInstaller: Sendable {
             }
 
             await progress("Expanding update...")
+            try Task.checkCancellation()
             let extractRoot = root.appendingPathComponent("extract", isDirectory: true)
             try fileManager.createDirectory(at: extractRoot, withIntermediateDirectories: true)
             let unzip = try await processRunner(
@@ -118,6 +123,7 @@ struct OuroMDUpdateInstaller: Sendable {
                     arguments: ["-x", "-k", archiveURL.path, extractRoot.path]
                 )
             )
+            try Task.checkCancellation()
             guard unzip.status == 0 else {
                 throw InstallError.unzipFailed(unzip.stderr.isEmpty ? "ditto exited \(unzip.status)" : unzip.stderr)
             }
@@ -130,12 +136,14 @@ struct OuroMDUpdateInstaller: Sendable {
             try verifyStagedApp(appURL, manifest: manifest)
 
             await progress("Checking signature...")
+            try Task.checkCancellation()
             let codesign = try await processRunner(
                 ProcessInvocation(
                     executablePath: "/usr/bin/codesign",
                     arguments: ["--verify", "--deep", "--strict", appURL.path]
                 )
             )
+            try Task.checkCancellation()
             guard codesign.status == 0 else {
                 throw InstallError.codesignFailed(
                     codesign.stderr.isEmpty ? "codesign exited \(codesign.status)" : codesign.stderr
@@ -272,26 +280,106 @@ struct OuroMDUpdateInstaller: Sendable {
     }
 
     private static let defaultProcessRunner: @Sendable (ProcessInvocation) async throws -> ProcessResult = { invocation in
-        try await withCheckedThrowingContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                let process = Process()
-                process.executableURL = URL(fileURLWithPath: invocation.executablePath)
-                process.arguments = invocation.arguments
-                let errorPipe = Pipe()
-                process.standardError = errorPipe
-                process.standardOutput = Pipe()
-                do {
-                    try process.run()
-                } catch {
-                    continuation.resume(throwing: error)
-                    return
+        let state = ProcessRunnerState()
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                guard state.setContinuation(continuation) else { return }
+                DispatchQueue.global(qos: .userInitiated).async {
+                    let process = Process()
+                    process.executableURL = URL(fileURLWithPath: invocation.executablePath)
+                    process.arguments = invocation.arguments
+                    let errorPipe = Pipe()
+                    process.standardError = errorPipe
+                    process.standardOutput = Pipe()
+                    do {
+                        try process.run()
+                    } catch {
+                        state.finish(.failure(error))
+                        return
+                    }
+                    guard state.setProcess(process) else { return }
+                    let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+                    process.waitUntilExit()
+                    let stderr = String(data: errorData, encoding: .utf8)?
+                        .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                    state.finish(.success(ProcessResult(status: process.terminationStatus, stderr: stderr)))
                 }
-                let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-                process.waitUntilExit()
-                let stderr = String(data: errorData, encoding: .utf8)?
-                    .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-                continuation.resume(returning: ProcessResult(status: process.terminationStatus, stderr: stderr))
             }
+        } onCancel: {
+            state.cancel()
+        }
+    }
+
+    private final class ProcessRunnerState: @unchecked Sendable {
+        private let lock = NSLock()
+        private var continuation: CheckedContinuation<ProcessResult, Error>?
+        private var process: Process?
+        private var isFinished = false
+
+        func setContinuation(_ continuation: CheckedContinuation<ProcessResult, Error>) -> Bool {
+            lock.lock()
+            if isFinished {
+                lock.unlock()
+                continuation.resume(throwing: CancellationError())
+                return false
+            }
+            self.continuation = continuation
+            lock.unlock()
+            return true
+        }
+
+        func setProcess(_ process: Process) -> Bool {
+            lock.lock()
+            if isFinished {
+                lock.unlock()
+                process.terminate()
+                return false
+            }
+            self.process = process
+            lock.unlock()
+            return true
+        }
+
+        func finish(_ result: Result<ProcessResult, Error>) {
+            let pending = takeContinuation()
+            switch (pending, result) {
+            case let (.some(continuation), .success(value)):
+                continuation.resume(returning: value)
+            case let (.some(continuation), .failure(error)):
+                continuation.resume(throwing: error)
+            case (.none, _):
+                break
+            }
+        }
+
+        func cancel() {
+            let pending: CheckedContinuation<ProcessResult, Error>?
+            let activeProcess: Process?
+            lock.lock()
+            if isFinished {
+                lock.unlock()
+                return
+            }
+            isFinished = true
+            pending = continuation
+            continuation = nil
+            activeProcess = process
+            lock.unlock()
+            activeProcess?.terminate()
+            pending?.resume(throwing: CancellationError())
+        }
+
+        private func takeContinuation() -> CheckedContinuation<ProcessResult, Error>? {
+            lock.lock()
+            if isFinished {
+                lock.unlock()
+                return nil
+            }
+            isFinished = true
+            let pending = continuation
+            continuation = nil
+            lock.unlock()
+            return pending
         }
     }
 

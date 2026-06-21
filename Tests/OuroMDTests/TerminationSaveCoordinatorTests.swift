@@ -117,4 +117,64 @@ final class TerminationSaveCoordinatorTests: XCTestCase {
         XCTAssertEqual(replies, [false])
         XCTAssertTrue(didCancel)
     }
+
+    func testSaveFailureCancelsPendingManualUpdateBeforeQuitReply() async {
+        let replied = expectation(description: "termination reply")
+        var replies: [Bool] = []
+        var didApply = false
+        let destination = URL(fileURLWithPath: "/tmp/Ouro MD.app")
+        let staged = OuroMDUpdateInstaller.Staged(
+            appURL: URL(fileURLWithPath: "/tmp/staged/Ouro MD.app"),
+            stagingRoot: URL(fileURLWithPath: "/tmp/staged"),
+            version: "0.10.0"
+        )
+        let suiteName = "TerminationSaveCoordinatorTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+        let coordinator = OuroMDUpdateCoordinator(
+            defaults: defaults,
+            checker: {
+                ReleaseUpdateSnapshot(
+                    status: .updateAvailable,
+                    currentVersion: "0.9.0",
+                    latestVersion: "0.10.0",
+                    tagName: "v0.10.0",
+                    htmlURL: "https://github.com/ourostack/ouro-md/releases/tag/v0.10.0",
+                    assets: [
+                        ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.zip", downloadURL: "https://example.test/Ouro-MD-0.10.0.zip", size: 100),
+                        ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.manifest.json", downloadURL: "https://example.test/Ouro-MD-0.10.0.manifest.json", size: 50),
+                    ],
+                    detail: "Version 0.10.0 is available."
+                )
+            },
+            stageUpdate: { _, _ in staged },
+            applyAndRelaunch: { _, _ in didApply = true },
+            terminate: {}
+        )
+        await coordinator.checkForReleaseUpdate()
+        await coordinator.installReleaseUpdate(destinationBundle: destination)
+        XCTAssertTrue(coordinator.isInstalling)
+
+        TerminationSaveCoordinator.saveAll(
+            [{ $0(false) }],
+            timeout: nil,
+            onCancel: { coordinator.cancelPendingManualInstall() },
+            reply: {
+                replies.append($0)
+                replied.fulfill()
+            }
+        )
+
+        await fulfillment(of: [replied], timeout: 1)
+
+        XCTAssertEqual(replies, [false])
+        XCTAssertFalse(coordinator.applyPendingManualUpdateAndRelaunchIfNeeded())
+        XCTAssertFalse(didApply)
+        XCTAssertEqual(coordinator.installProgress.phase, .cancelled)
+        XCTAssertTrue(coordinator.installProgress.canRetry)
+    }
+
 }

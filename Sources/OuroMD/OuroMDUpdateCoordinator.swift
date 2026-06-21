@@ -24,6 +24,38 @@ enum OuroMDUpdatePrompt: Equatable {
     }
 }
 
+enum OuroMDInstallPhase: Equatable {
+    case idle
+    case preparing
+    case staging
+    case ready
+    case applying
+    case cancelled
+    case failed
+}
+
+struct OuroMDInstallProgress: Equatable {
+    var phase: OuroMDInstallPhase
+    var title: String
+    var detail: String
+    var fraction: Double?
+    var canCancel: Bool
+    var canRetry: Bool
+
+    var isVisible: Bool {
+        phase != .idle
+    }
+
+    static let idle = OuroMDInstallProgress(
+        phase: .idle,
+        title: "",
+        detail: "",
+        fraction: nil,
+        canCancel: false,
+        canRetry: false
+    )
+}
+
 @MainActor
 final class OuroMDUpdateCoordinator: ObservableObject {
     static let autoUpdateEnabledDefaultsKey = "ouro.autoupdate.enabled"
@@ -35,6 +67,7 @@ final class OuroMDUpdateCoordinator: ObservableObject {
     @Published private(set) var isInstalling = false
     @Published private(set) var installStatus: String?
     @Published private(set) var installError: String?
+    @Published private(set) var installProgress = OuroMDInstallProgress.idle
     @Published private(set) var stagedUpdateVersion: String?
     @Published var updatePrompt: OuroMDUpdatePrompt?
     @Published private(set) var autoUpdateEnabled: Bool {
@@ -57,6 +90,8 @@ final class OuroMDUpdateCoordinator: ObservableObject {
     private var pendingManualDestinationBundle: URL?
     private var isApplyingManualUpdate = false
     private var autoUpdateCheckStartedThisSession = false
+    private var manualInstallTask: Task<Void, Never>?
+    private var manualInstallToken: UUID?
 
     private final class InFlightCheck {
         let task: Task<ReleaseUpdateSnapshot, Never>
@@ -72,9 +107,7 @@ final class OuroMDUpdateCoordinator: ObservableObject {
             await ReleaseUpdateChecker().check()
         },
         stageUpdate: @escaping (OuroMDUpdatePlan, @escaping @Sendable (String) async -> Void) async throws -> OuroMDUpdateInstaller.Staged = { plan, progress in
-            try await Task.detached(priority: .utility) {
-                try await OuroMDUpdateInstaller().stage(plan: plan, progress: progress)
-            }.value
+            try await OuroMDUpdateInstaller().stage(plan: plan, progress: progress)
         },
         applyAndRelaunch: @escaping @MainActor (OuroMDUpdateInstaller.Staged, URL) -> Void = {
             OuroMDUpdateInstaller.applyAndRelaunch(staged: $0, destinationBundle: $1)
@@ -190,6 +223,44 @@ final class OuroMDUpdateCoordinator: ObservableObject {
         }
     }
 
+    func startInstallReleaseUpdate(destinationBundle: URL = Bundle.main.bundleURL) {
+        guard manualInstallTask == nil, !isInstalling else {
+            telemetry("ouro_md_update_install_ignored", ["reason": .string("already_installing")])
+            return
+        }
+        let token = UUID()
+        manualInstallToken = token
+        let task = Task { [weak self] in
+            guard let self else { return }
+            await self.installReleaseUpdate(destinationBundle: destinationBundle, token: token)
+            await MainActor.run {
+                if self.manualInstallToken == token {
+                    self.manualInstallTask = nil
+                    self.manualInstallToken = nil
+                }
+            }
+        }
+        manualInstallTask = task
+    }
+
+    func cancelInstall() {
+        if pendingManualUpdate != nil {
+            manualInstallTask?.cancel()
+            manualInstallTask = nil
+            manualInstallToken = nil
+            cancelPendingManualInstall()
+            return
+        }
+        if let task = manualInstallTask, !task.isCancelled {
+            task.cancel()
+            manualInstallTask = nil
+            manualInstallToken = nil
+            setInstallCancelled(code: "stage_cancelled")
+            return
+        }
+        cancelPendingManualInstall()
+    }
+
     private func discardStagedUpdateIfMismatched(with snapshot: ReleaseUpdateSnapshot) {
         guard let staged = pendingStagedUpdate else { return }
         guard snapshot.status == .updateAvailable,
@@ -227,6 +298,11 @@ final class OuroMDUpdateCoordinator: ObservableObject {
     }
 
     func installReleaseUpdate(destinationBundle: URL = Bundle.main.bundleURL) async {
+        await installReleaseUpdate(destinationBundle: destinationBundle, token: nil)
+    }
+
+    private func installReleaseUpdate(destinationBundle: URL, token: UUID?) async {
+        guard isCurrentInstall(token) else { return }
         guard !isInstalling else {
             telemetry("ouro_md_update_install_ignored", ["reason": .string("already_installing")])
             return
@@ -257,13 +333,40 @@ final class OuroMDUpdateCoordinator: ObservableObject {
         isInstalling = true
         installError = nil
         updatePrompt = nil
-        installStatus = "Starting..."
+        setInstallStatus(
+            "Starting...",
+            phase: .preparing,
+            title: "Preparing Update",
+            fraction: 0.05,
+            canCancel: true,
+            canRetry: false
+        )
         do {
+            try Task.checkCancellation()
             let staged = try await stageUpdate(plan) { status in
-                await MainActor.run { self.installStatus = status }
+                await MainActor.run {
+                    guard self.isCurrentInstall(token) else { return }
+                    self.setInstallStatus(
+                        status,
+                        phase: .staging,
+                        title: "Installing Update",
+                        fraction: Self.fraction(for: status),
+                        canCancel: true,
+                        canRetry: false
+                    )
+                }
+            }
+            try Task.checkCancellation()
+            guard isCurrentInstall(token) else {
+                try? FileManager.default.removeItem(at: staged.stagingRoot)
+                return
             }
             applyStagedUpdateManually(staged, destinationBundle: destinationBundle)
+        } catch is CancellationError {
+            guard isCurrentInstall(token) else { return }
+            setInstallCancelled(code: "stage_cancelled")
         } catch {
+            guard isCurrentInstall(token) else { return }
             setInstallFailure((error as? LocalizedError)?.errorDescription ?? error.localizedDescription, code: "stage_failed")
         }
     }
@@ -286,7 +389,14 @@ final class OuroMDUpdateCoordinator: ObservableObject {
         }
         pendingManualUpdate = nil
         pendingManualDestinationBundle = nil
-        installStatus = "Installing \(staged.version) and relaunching..."
+        setInstallStatus(
+            "Installing \(staged.version) and relaunching...",
+            phase: .applying,
+            title: "Applying Update",
+            fraction: 1,
+            canCancel: false,
+            canRetry: false
+        )
         telemetry("ouro_md_update_apply_and_relaunch", ["version": .string(staged.version)])
         applyAndRelaunch(staged, destinationBundle)
         return true
@@ -298,7 +408,16 @@ final class OuroMDUpdateCoordinator: ObservableObject {
         pendingManualDestinationBundle = nil
         isApplyingManualUpdate = false
         isInstalling = false
-        installStatus = nil
+        installStatus = "Update cancelled."
+        installError = nil
+        installProgress = OuroMDInstallProgress(
+            phase: .cancelled,
+            title: "Update Cancelled",
+            detail: "Update cancelled. You can try again.",
+            fraction: nil,
+            canCancel: false,
+            canRetry: true
+        )
         try? FileManager.default.removeItem(at: staged.stagingRoot)
         telemetry("ouro_md_update_install_cancelled", ["version": .string(staged.version)])
     }
@@ -328,7 +447,14 @@ final class OuroMDUpdateCoordinator: ObservableObject {
         clearPendingStagedUpdate()
         pendingManualUpdate = staged
         pendingManualDestinationBundle = destinationBundle
-        installStatus = "Ready to install \(staged.version) after Ouro MD quits..."
+        setInstallStatus(
+            "Ready to install \(staged.version) after Ouro MD quits...",
+            phase: .ready,
+            title: "Ready to Install",
+            fraction: 1,
+            canCancel: true,
+            canRetry: false
+        )
         isApplyingManualUpdate = true
         telemetry("ouro_md_update_install_scheduled", ["version": .string(staged.version)])
         terminate()
@@ -343,8 +469,66 @@ final class OuroMDUpdateCoordinator: ObservableObject {
         installError = detail
         installStatus = nil
         isInstalling = false
+        installProgress = OuroMDInstallProgress(
+            phase: .failed,
+            title: "Update Failed",
+            detail: detail,
+            fraction: nil,
+            canCancel: false,
+            canRetry: true
+        )
         updatePrompt = .failed(detail: detail)
         telemetry("ouro_md_update_install_failed", ["code": .string(code)])
+    }
+
+    private func setInstallCancelled(code: String) {
+        guard isInstalling || manualInstallTask != nil || pendingManualUpdate != nil else { return }
+        isInstalling = false
+        installError = nil
+        installStatus = "Update cancelled."
+        installProgress = OuroMDInstallProgress(
+            phase: .cancelled,
+            title: "Update Cancelled",
+            detail: "Update cancelled. You can try again.",
+            fraction: nil,
+            canCancel: false,
+            canRetry: true
+        )
+        updatePrompt = nil
+        telemetry("ouro_md_update_install_cancelled", ["reason": .string(code)])
+    }
+
+    private func isCurrentInstall(_ token: UUID?) -> Bool {
+        guard let token else { return true }
+        return manualInstallToken == token
+    }
+
+    private func setInstallStatus(
+        _ status: String,
+        phase: OuroMDInstallPhase,
+        title: String,
+        fraction: Double?,
+        canCancel: Bool,
+        canRetry: Bool
+    ) {
+        installStatus = status
+        installProgress = OuroMDInstallProgress(
+            phase: phase,
+            title: title,
+            detail: status,
+            fraction: fraction,
+            canCancel: canCancel,
+            canRetry: canRetry
+        )
+    }
+
+    private static func fraction(for status: String) -> Double? {
+        if status.localizedCaseInsensitiveContains("manifest") { return 0.15 }
+        if status.localizedCaseInsensitiveContains("downloading") { return 0.35 }
+        if status.localizedCaseInsensitiveContains("verifying") { return 0.65 }
+        if status.localizedCaseInsensitiveContains("expanding") { return 0.8 }
+        if status.localizedCaseInsensitiveContains("signature") { return 0.9 }
+        return nil
     }
 
     private func trackUpdateCheck(_ snapshot: ReleaseUpdateSnapshot, trigger: String) {

@@ -114,31 +114,67 @@ struct UpdateProgressView: View {
     @ObservedObject var updateCoordinator: OuroMDUpdateCoordinator
 
     var body: some View {
+        let progress = updateCoordinator.installProgress
         VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                if updateCoordinator.installError == nil {
-                    ProgressView()
-                        .controlSize(.small)
-                        .accessibilityLabel("Update progress")
-                } else {
-                    Image(systemName: "exclamationmark.triangle")
-                        .foregroundStyle(.red)
-                        .accessibilityHidden(true)
-                }
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(updateCoordinator.installError == nil ? "Installing Update" : "Update Failed")
+            HStack(alignment: .top, spacing: 12) {
+                progressIcon(progress)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(progress.title.isEmpty ? "Installing Update" : progress.title)
                         .font(.system(size: 13, weight: .semibold))
-                    Text(updateCoordinator.installError ?? updateCoordinator.installStatus ?? "Preparing update...")
+                    Text(progress.detail.isEmpty ? "Preparing update..." : progress.detail)
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
-                        .lineLimit(2)
+                        .lineLimit(3)
+                    if let fraction = progress.fraction {
+                        ProgressView(value: fraction)
+                            .accessibilityLabel("Update progress")
+                            .accessibilityValue("\(Int((fraction * 100).rounded())) percent")
+                    }
+                }
+            }
+            if progress.canCancel || progress.canRetry {
+                HStack(spacing: 8) {
+                    Spacer()
+                    if progress.canCancel {
+                        Button("Cancel") { updateCoordinator.cancelInstall() }
+                            .controlSize(.small)
+                            .accessibilityLabel("Cancel update")
+                    }
+                    if progress.canRetry {
+                        Button("Retry") { updateCoordinator.startInstallReleaseUpdate() }
+                            .controlSize(.small)
+                            .keyboardShortcut(.defaultAction)
+                            .accessibilityLabel("Retry update")
+                    }
                 }
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(updateCoordinator.installError == nil ? "Installing update" : "Update failed")
-        .accessibilityValue(updateCoordinator.installError ?? updateCoordinator.installStatus ?? "Preparing update")
+        .accessibilityLabel(progress.title.isEmpty ? "Installing update" : progress.title)
+        .accessibilityValue(progress.detail.isEmpty ? "Preparing update" : progress.detail)
         .padding(18)
-        .frame(width: 380, alignment: .leading)
+        .frame(width: 400, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private func progressIcon(_ progress: OuroMDInstallProgress) -> some View {
+        switch progress.phase {
+        case .failed:
+            Image(systemName: "exclamationmark.triangle")
+                .foregroundStyle(.red)
+                .accessibilityHidden(true)
+        case .cancelled:
+            Image(systemName: "xmark.circle")
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+        case .ready:
+            Image(systemName: "checkmark.circle")
+                .foregroundStyle(.green)
+                .accessibilityHidden(true)
+        default:
+            ProgressView()
+                .controlSize(.small)
+                .accessibilityLabel("Update progress")
+        }
     }
 }
