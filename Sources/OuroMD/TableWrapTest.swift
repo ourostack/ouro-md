@@ -68,6 +68,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             let clippedCount = (body["clippedCount"] as? Int) ?? .max
             let collapsedLongCellCount = (body["collapsedLongCellCount"] as? Int) ?? .max
             let collapsedCodeCellCount = (body["collapsedCodeCellCount"] as? Int) ?? .max
+            let imbalancedTableCount = (body["imbalancedTableCount"] as? Int) ?? .max
             let initialScrolledCount = (body["initialScrolledCount"] as? Int) ?? .max
             let scrollableCount = (body["scrollableCount"] as? Int) ?? 0
             let tableDetails = (body["tableDetails"] as? [[String: Any]]) ?? []
@@ -78,6 +79,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             let clippedOK = clippedCount == 0
             let longCellsOK = collapsedLongCellCount == 0
             let codeCellsOK = collapsedCodeCellCount == 0
+            let balanceOK = imbalancedTableCount == 0
             let initialScrollOK = initialScrolledCount == 0
             let scrollRequired = viewportWidth <= 800
             let scrollOK = !scrollRequired || scrollableCount > 0
@@ -89,6 +91,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             print("tables initially scrolled sideways: \(initialScrolledCount) \(initialScrollOK ? "✓" : "✗")")
             print("collapsed long cells: \(collapsedLongCellCount) \(longCellsOK ? "✓" : "✗")")
             print("collapsed code cells: \(collapsedCodeCellCount) \(codeCellsOK ? "✓" : "✗")")
+            print("imbalanced sparse tables: \(imbalancedTableCount) \(balanceOK ? "✓" : "✗")")
             for detail in tableDetails {
                 let index = (detail["index"] as? Int) ?? -1
                 let width = (detail["clientWidth"] as? Double) ?? 0
@@ -96,10 +99,11 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
                 let scrollLeft = (detail["scrollLeft"] as? Double) ?? 0
                 let minLong = (detail["minLongCellWidth"] as? Double) ?? 0
                 let minCode = (detail["minCodeCellWidth"] as? Double) ?? 0
-                print(String(format: "table %02d width %.1fpx scroll %.1fpx left %.1fpx min-long %.1fpx min-code %.1fpx",
-                             index + 1, width, scroll, scrollLeft, minLong, minCode))
+                let columnRatio = (detail["columnRatio"] as? Double) ?? 0
+                print(String(format: "table %02d width %.1fpx scroll %.1fpx left %.1fpx min-long %.1fpx min-code %.1fpx column-ratio %.2f",
+                             index + 1, width, scroll, scrollLeft, minLong, minCode, columnRatio))
             }
-            exit(tableCountOK && pageOK && clippedOK && scrollOK && initialScrollOK && longCellsOK && codeCellsOK ? 0 : 1)
+            exit(tableCountOK && pageOK && clippedOK && scrollOK && initialScrollOK && longCellsOK && codeCellsOK && balanceOK ? 0 : 1)
         }
     }
 
@@ -161,10 +165,23 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
       var initialScrolledCount = 0;
       var clippedCount = 0;
       var scrollableCount = 0;
+      var imbalancedTableCount = 0;
       var tableDetails = tables.map(function (table, index) {
         var rect = table.getBoundingClientRect();
         var scrollOverflow = table.scrollWidth - table.clientWidth;
         var scrollLeft = table.scrollLeft || 0;
+        var rows = Array.prototype.slice.call(table.querySelectorAll("tr"));
+        var columnWidths = [];
+        for (var r = 0; r < rows.length; r++) {
+          var rowCells = Array.prototype.slice.call(rows[r].children || []);
+          if (rowCells.length > columnWidths.length) {
+            columnWidths = rowCells.map(function (cell) { return cell.getBoundingClientRect().width; });
+          }
+        }
+        var columnCount = columnWidths.length;
+        var minColumnWidth = columnWidths.length ? Math.min.apply(Math, columnWidths) : 0;
+        var maxColumnWidth = columnWidths.length ? Math.max.apply(Math, columnWidths) : 0;
+        var columnRatio = minColumnWidth > 0 ? maxColumnWidth / minColumnWidth : 0;
         var cells = Array.prototype.slice.call(table.querySelectorAll("th,td"));
         var longWidths = [];
         var codeWidths = [];
@@ -182,6 +199,9 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         if (scrollLeft > 1) { initialScrolledCount += 1; }
         if (minLongCellWidth > 0 && minLongCellWidth < 120) { collapsedLongCellCount += 1; }
         if (minCodeCellWidth > 0 && minCodeCellWidth < 140) { collapsedCodeCellCount += 1; }
+        if (columnCount >= 2 && columnCount <= 4 && table.clientWidth >= Math.min(900, viewportWidth - 24) && columnRatio > 2.25) {
+          imbalancedTableCount += 1;
+        }
         return {
           index: index,
           left: rect.left,
@@ -191,7 +211,9 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
           scrollOverflow: scrollOverflow,
           scrollLeft: scrollLeft,
           minLongCellWidth: minLongCellWidth,
-          minCodeCellWidth: minCodeCellWidth
+          minCodeCellWidth: minCodeCellWidth,
+          columnCount: columnCount,
+          columnRatio: columnRatio
         };
       });
       window.webkit.messageHandlers.ouro.postMessage({
@@ -201,6 +223,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         clippedCount: clippedCount,
         collapsedLongCellCount: collapsedLongCellCount,
         collapsedCodeCellCount: collapsedCodeCellCount,
+        imbalancedTableCount: imbalancedTableCount,
         initialScrolledCount: initialScrolledCount,
         scrollableCount: scrollableCount,
         tableDetails: tableDetails
