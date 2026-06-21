@@ -269,9 +269,13 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func loadInitialFile(_ path: String) {
+    @discardableResult
+    func loadInitialFile(_ path: String) -> Bool {
         let url = URL(fileURLWithPath: path)
         guard let text = AppModel.readText(at: url) else {
+            presentError("Could not open \(url.lastPathComponent)",
+                         NSError(domain: "ouro-md", code: 2, userInfo: [NSLocalizedDescriptionKey: "The file isn't a readable text document, or its encoding isn't supported."]))
+            loadWelcome()
             captureTelemetry(
                 "ouro_md_document_open_failed",
                 properties: [
@@ -280,7 +284,7 @@ final class AppModel: ObservableObject {
                     "markdown_type": .bool(Self.isMarkdownURL(url)),
                 ]
             )
-            return
+            return false
         }
         currentURL = url
         lastLoadedContent = text
@@ -297,6 +301,7 @@ final class AppModel: ObservableObject {
                 "markdown_type": .bool(Self.isMarkdownURL(url)),
             ]
         )
+        return true
     }
 
     /// Renames the open file on disk to `rawName` (a bare filename in the same

@@ -23,6 +23,23 @@ final class UndoRedoRoutingTests: XCTestCase {
         XCTAssertTrue(redo?.keyEquivalentModifierMask.contains(.shift) == true)
     }
 
+    func testViewSearchMenuTargetsSidebarSearch() {
+        let app = NSApplication.shared
+        let previousMenu = app.mainMenu
+        defer { app.mainMenu = previousMenu }
+        let delegate = AppDelegate()
+
+        MenuBuilder.install(into: app, target: delegate)
+
+        let viewMenu = app.mainMenu?.items.compactMap(\.submenu).first { $0.title == "View" }
+        let search = viewMenu?.item(withTitle: "Search")
+        XCTAssertEqual(search?.action, #selector(AppDelegate.showSearchSidebar(_:)))
+        XCTAssertTrue(search?.target === delegate)
+        XCTAssertEqual(search?.keyEquivalent, "f")
+        XCTAssertTrue(search?.keyEquivalentModifierMask.contains(.command) == true)
+        XCTAssertTrue(search?.keyEquivalentModifierMask.contains(.shift) == true)
+    }
+
     func testShortcutParserRecognizesMacUndoRedoKeystrokes() {
         XCTAssertEqual(
             UndoRedoCommandRouter.command(for: keyEvent("z", modifiers: [.command])),
