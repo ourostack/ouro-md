@@ -29,6 +29,14 @@ final class UISurfaceTester {
         searchModel.runFolderSearch()
         waitUntil(timeout: 5) { !searchModel.searching && !searchModel.searchResults.isEmpty }
 
+        let statusModel = AppModel()
+        statusModel.setCounts(words: 123, chars: 456)
+        statusModel.showCommandPalette()
+        statusModel.commandPaletteQuery = "export"
+        let editorFitModel = AppModel()
+        editorFitModel.showCommandPalette()
+        editorFitModel.commandPaletteQuery = "export"
+
         let updateCoordinator = OuroMDUpdateCoordinator()
         let installingCoordinator = makeInstallingUpdateCoordinator()
         let prefsSize = fittingSize(
@@ -38,6 +46,10 @@ final class UISurfaceTester {
         let searchSize = fittingSize(
             SidebarView(model: searchModel),
             constrainedTo: NSSize(width: 300, height: 640)
+        )
+        let editorSize = fittingSize(
+            EditorPane(model: editorFitModel),
+            constrainedTo: NSSize(width: 520, height: 420)
         )
         let installingTask = Task {
             await installingCoordinator.checkForReleaseUpdate()
@@ -73,6 +85,11 @@ final class UISurfaceTester {
         let searchResultsOK = !searchModel.searchResults.isEmpty && searchModel.searchError == nil
         let prefsOK = prefsSize.width <= 520 && prefsSize.height <= 350
         let searchOK = searchSize.width <= 380 && searchSize.height <= 700
+        let editorOK = editorSize.width <= 560 && editorSize.height <= 460
+        let statusPaletteOK = statusModel.wordCount == 123
+            && statusModel.charCount == 456
+            && statusModel.commandPaletteVisible
+            && containsAll(Set(statusModel.commandPaletteItems.map(\.title)), ["Export HTML", "Export PDF"])
         let installingOK = installingCoordinator.installStatus?.contains("Downloading") == true || installingCoordinator.installError != nil
         let progressOK = installingSize.width <= 420 && installingSize.height <= 160 && failedSize.width <= 420 && failedSize.height <= 180
         let axOK = containsAll(prefsLabels, ["Light", "Dark"])
@@ -81,6 +98,8 @@ final class UISurfaceTester {
 
         print(String(format: "preferences fitting size: %.1fx%.1f %@", prefsSize.width, prefsSize.height, prefsOK ? "✓" : "✗"))
         print(String(format: "search sidebar fitting size: %.1fx%.1f %@", searchSize.width, searchSize.height, searchOK ? "✓" : "✗"))
+        print(String(format: "editor palette/status fitting size: %.1fx%.1f %@", editorSize.width, editorSize.height, editorOK ? "✓" : "✗"))
+        print("status/palette semantic state: \(statusPaletteOK ? "✓" : "✗")")
         print(String(format: "update progress fitting size: installing %.1fx%.1f failed %.1fx%.1f %@", installingSize.width, installingSize.height, failedSize.width, failedSize.height, progressOK ? "✓" : "✗"))
         print("invalid regex visible state: \(regexErrorOK ? "✓" : "✗")")
         print("search result row state: \(searchResultsOK ? "✓" : "✗")")
@@ -95,7 +114,7 @@ final class UISurfaceTester {
         invalidModel.teardown()
         searchModel.teardown()
         try? FileManager.default.removeItem(at: root)
-        exit(regexErrorOK && searchResultsOK && prefsOK && searchOK && installingOK && progressOK && menuOK && axOK ? 0 : 1)
+        exit(regexErrorOK && searchResultsOK && prefsOK && searchOK && editorOK && statusPaletteOK && installingOK && progressOK && menuOK && axOK ? 0 : 1)
     }
 
     private func fittingSize<Content: View>(_ view: Content, constrainedTo size: NSSize) -> NSSize {
@@ -108,8 +127,18 @@ final class UISurfaceTester {
     private func accessibilityLabels<Content: View>(_ view: Content, constrainedTo size: NSSize) -> Set<String> {
         let host = NSHostingController(rootView: view)
         host.view.frame = NSRect(origin: .zero, size: size)
+        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
+                              styleMask: [.titled],
+                              backing: .buffered,
+                              defer: false)
+        window.contentView = host.view
+        window.setFrameOrigin(NSPoint(x: -30000, y: -30000))
+        window.makeKeyAndOrderFront(nil)
+        RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.05))
         host.view.layoutSubtreeIfNeeded()
-        return collectAccessibilityLabels(from: host.view)
+        let labels = collectAccessibilityLabels(from: host.view)
+        window.orderOut(nil)
+        return labels
     }
 
     private func collectAccessibilityLabels(from root: Any?) -> Set<String> {
@@ -124,7 +153,8 @@ final class UISurfaceTester {
         if let help = object.accessibilityHelp?(), !help.isEmpty {
             labels.insert(help)
         }
-        let children = (object.accessibilityChildren?() ?? []) + (object.accessibilityVisibleChildren?() ?? [])
+        let children = (object.accessibilityChildren?() ?? [])
+            + (object.accessibilityVisibleChildren?() ?? [])
         for child in children {
             labels.formUnion(collectAccessibilityLabels(from: child))
         }
@@ -158,6 +188,7 @@ final class UISurfaceTester {
         }
         return file.item(withTitle: "Open…")?.keyEquivalent == "o"
             && file.item(withTitle: "Open Recent")?.submenu?.title == "Open Recent"
+            && edit.item(withTitle: "Command Palette…")?.keyEquivalent == "p"
             && edit.item(withTitle: "Find")?.submenu?.item(withTitle: "Find…")?.keyEquivalent == "f"
             && view.item(withTitle: "Search")?.action == #selector(AppDelegate.showSearchSidebar(_:))
     }

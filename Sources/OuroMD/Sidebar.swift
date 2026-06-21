@@ -433,14 +433,118 @@ struct EditorPane: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
+        ZStack {
             EditorWebView(model: model)
-            if model.findVisible {
-                FindBar(model: model)
-                    .padding([.top, .trailing], 10)
+            VStack {
+                HStack {
+                    Spacer()
+                    if model.findVisible {
+                        FindBar(model: model)
+                            .padding([.top, .trailing], 10)
+                    }
+                }
+                Spacer()
+                HStack {
+                    Spacer()
+                    DocumentStatusBar(model: model)
+                        .padding([.trailing, .bottom], 10)
+                }
+            }
+            if model.commandPaletteVisible {
+                GeometryReader { proxy in
+                    CommandPaletteView(model: model)
+                        .frame(width: min(420, max(280, proxy.size.width - 32)))
+                        .position(x: proxy.size.width / 2, y: min(max(170, proxy.size.height * 0.36), proxy.size.height / 2))
+                }
             }
         }
         .frame(minWidth: 400, minHeight: 320)
+    }
+}
+
+struct DocumentStatusBar: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text("\(model.wordCount) words")
+            Text("\(model.charCount) chars")
+            Text(model.mode == "sv" ? "Source" : "Rich")
+            Text(model.theme.displayName)
+            if model.isDirty { Text("Edited") }
+        }
+        .font(.system(size: 11))
+        .monospacedDigit()
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
+        .overlay(RoundedRectangle(cornerRadius: 6).stroke(.quaternary, lineWidth: 1))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Document status")
+        .accessibilityValue("\(model.wordCount) words, \(model.charCount) characters, \(model.mode == "sv" ? "Source" : "Rich"), \(model.theme.displayName)\(model.isDirty ? ", edited" : "")")
+    }
+}
+
+struct CommandPaletteView: View {
+    @ObservedObject var model: AppModel
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "command")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                TextField("Command", text: Binding(get: { model.commandPaletteQuery }, set: { model.commandPaletteQuery = $0 }))
+                    .textFieldStyle(.plain)
+                    .focused($focused)
+                    .onSubmit { runFirst() }
+                    .accessibilityLabel("Command")
+                Button { model.closeCommandPalette() } label: {
+                    Image(systemName: "xmark")
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Close command palette")
+            }
+            Divider()
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 2) {
+                    ForEach(model.commandPaletteItems) { item in
+                        Button {
+                            model.performCommandPaletteItem(item)
+                        } label: {
+                            HStack {
+                                Text(item.title)
+                                    .font(.system(size: 12, weight: .medium))
+                                    .lineLimit(1)
+                                Spacer()
+                            }
+                            .contentShape(Rectangle())
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 5)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(item.title)
+                    }
+                }
+            }
+            .frame(maxHeight: 260)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(.quaternary, lineWidth: 1))
+        .shadow(radius: 10)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Command palette")
+        .onAppear { focused = true }
+        .onExitCommand { model.closeCommandPalette() }
+    }
+
+    private func runFirst() {
+        guard let first = model.commandPaletteItems.first else { return }
+        model.performCommandPaletteItem(first)
     }
 }
 
