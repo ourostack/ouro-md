@@ -23,6 +23,7 @@ usage:
   scripts/release-policy.sh freshness [--mode auto|pr|main] [--base-ref REF] [--repo OWNER/REPO]
   scripts/release-policy.sh release-exists --version X.Y.Z [--repo OWNER/REPO]
   scripts/release-policy.sh scan [PATH...]
+  scripts/release-policy.sh selftest-pr-base
   scripts/release-policy.sh verify-local --version X.Y.Z --sha SHA --zip ZIP --manifest MANIFEST
   scripts/release-policy.sh verify-published [--repo OWNER/REPO] [--version X.Y.Z] [--sha SHA]
 USAGE
@@ -222,11 +223,69 @@ resolve_commit() {
   git rev-parse "$1^{commit}" 2>/dev/null || printf '%s\n' "$1"
 }
 
+resolve_pr_base_ref() {
+  local base_ref="$1"
+  local candidate="$base_ref"
+  local fetch_branch=""
+
+  case "$base_ref" in
+    origin/*)
+      candidate="$base_ref"
+      fetch_branch="${base_ref#origin/}"
+      ;;
+    refs/remotes/origin/*)
+      candidate="$base_ref"
+      fetch_branch="${base_ref#refs/remotes/origin/}"
+      ;;
+    refs/heads/*)
+      fetch_branch="${base_ref#refs/heads/}"
+      candidate="origin/$fetch_branch"
+      ;;
+    refs/*)
+      candidate="$base_ref"
+      ;;
+    *)
+      if [[ "$base_ref" =~ ^[0-9a-fA-F]{7,40}$ ]]; then
+        candidate="$base_ref"
+      else
+        fetch_branch="$base_ref"
+        candidate="origin/$fetch_branch"
+      fi
+      ;;
+  esac
+
+  if [[ -n "$fetch_branch" ]]; then
+    git fetch --no-tags origin "$fetch_branch" >/dev/null 2>&1 || true
+  fi
+
+  if git rev-parse --verify --quiet "$candidate^{commit}" >/dev/null; then
+    printf '%s\n' "$candidate"
+    return 0
+  fi
+  if [[ "$candidate" != "$base_ref" ]] && git rev-parse --verify --quiet "$base_ref^{commit}" >/dev/null; then
+    printf '%s\n' "$base_ref"
+    return 0
+  fi
+
+  fail "could not resolve PR base ref '$base_ref' (tried '$candidate')"
+}
+
 changed_files_for_pr() {
   local base_ref="$1"
-  git fetch --no-tags origin "$base_ref" >/dev/null 2>&1 || true
+  local resolved_base committed
+  if ! resolved_base="$(resolve_pr_base_ref "$base_ref")"; then
+    return 1
+  fi
+  if ! git merge-base "$resolved_base" HEAD >/dev/null 2>&1; then
+    echo "error: could not compute merge base between '$resolved_base' and HEAD" >&2
+    return 1
+  fi
+  if ! committed="$(git diff --name-only "$resolved_base"...HEAD)"; then
+    echo "error: could not diff PR base '$resolved_base' against HEAD" >&2
+    return 1
+  fi
   {
-    git diff --name-only "origin/${base_ref}"...HEAD
+    printf '%s\n' "$committed"
     git diff --name-only
     git diff --cached --name-only
   } | sort -u
@@ -290,7 +349,9 @@ freshness_mode() {
 
   if [[ "$mode" == "pr" ]]; then
     local changed relevant
-    changed="$(changed_files_for_pr "$base_ref")"
+    if ! changed="$(changed_files_for_pr "$base_ref")"; then
+      exit 1
+    fi
     relevant="$(printf '%s\n' "$changed" | filter_release_relevant || true)"
     if [[ -z "$relevant" ]]; then
       echo "release freshness: no app/release-affecting paths changed"
@@ -394,6 +455,23 @@ scan_mode() {
     fail "artifact policy scan failed"
   fi
   echo "release policy scan ok"
+}
+
+selftest_pr_base_mode() {
+  mkdir -p .build
+
+  local ref
+  for ref in main origin/main refs/heads/main refs/remotes/origin/main; do
+    changed_files_for_pr "$ref" >/dev/null \
+      || fail "PR base selftest failed to resolve '$ref'"
+  done
+
+  local missing="origin/__ouro-md-missing-pr-base"
+  if changed_files_for_pr "$missing" >/dev/null 2>.build/ouro-release-policy-selftest.err; then
+    fail "PR base selftest unexpectedly resolved missing ref '$missing'"
+  fi
+
+  echo "release policy PR base selftest ok"
 }
 
 release_exists_mode() {
@@ -577,6 +655,7 @@ case "$cmd" in
   freshness) freshness_mode "$@" ;;
   release-exists) release_exists_mode "$@" ;;
   scan) scan_mode "$@" ;;
+  selftest-pr-base) selftest_pr_base_mode "$@" ;;
   verify-local) verify_local_mode "$@" ;;
   verify-published) verify_published_mode "$@" ;;
   *) usage ;;
