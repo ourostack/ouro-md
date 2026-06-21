@@ -46,19 +46,14 @@ final class ContentSearcherTests: XCTestCase {
     }
 
     func testCaseSensitiveOption() {
-        let searcher = ContentSearcher()
-        var results: [SearchResult] = []
-        let done = expectation(description: "case-sensitive search")
-        var wasTruncated: Bool?
-        searcher.search("WIDGET", in: root, caseSensitive: true, wholeWord: false, regexp: false,
-                        onResult: { results.append($0) },
-                        onComplete: {
-                            wasTruncated = $0
-                            done.fulfill()
-                        })
-        wait(for: [done], timeout: 5)
-        // No file contains uppercase WIDGET in content; only filename match is case-insensitive substring? none.
-        XCTAssertTrue(results.allSatisfy { $0.snippets.isEmpty })
-        XCTAssertEqual(wasTruncated, false)
+        let lowercase = "widget" as NSString
+        let uppercase = "WIDGET" as NSString
+
+        let sensitive = ContentSearcher.makeRegex("WIDGET", caseSensitive: true, wholeWord: false, regexp: false)
+        XCTAssertNil(sensitive?.firstMatch(in: lowercase as String, range: NSRange(location: 0, length: lowercase.length)))
+        XCTAssertNotNil(sensitive?.firstMatch(in: uppercase as String, range: NSRange(location: 0, length: uppercase.length)))
+
+        let insensitive = ContentSearcher.makeRegex("WIDGET", caseSensitive: false, wholeWord: false, regexp: false)
+        XCTAssertNotNil(insensitive?.firstMatch(in: lowercase as String, range: NSRange(location: 0, length: lowercase.length)))
     }
 }

@@ -492,11 +492,13 @@ final class AppModelReloadTests: XCTestCase {
         model.bridge = bridge                // bridge present...
         model.loadInitialFile(url.path)      // ...but editorDidBecomeReady NOT called → not ready
         model.setDirty(true)
-        model.save()
 
-        let done = expectation(description: "settled")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { done.fulfill() }
-        wait(for: [done], timeout: 2)
+        let saved = expectation(description: "save failed")
+        model.performSave { ok in
+            XCTAssertFalse(ok)
+            saved.fulfill()
+        }
+        wait(for: [saved], timeout: 1)
         XCTAssertEqual(try? String(contentsOf: url, encoding: .utf8),
                        "# Important content the user must not lose",
                        "save before the editor is ready must not clobber the file")

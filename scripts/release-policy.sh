@@ -114,6 +114,56 @@ filter_release_relevant() {
   done
 }
 
+stream_has_needle() {
+  local needle="$1"
+  if command -v rg >/dev/null 2>&1; then
+    LC_ALL=C rg -a -i -q -- "$needle"
+  else
+    LC_ALL=C grep -a -i -q -- "$needle"
+  fi
+}
+
+content_paths_with_needle() {
+  local path="$1"
+  local needle="$2"
+
+  if command -v rg >/dev/null 2>&1; then
+    rg -l -a -i --hidden --no-ignore --no-messages --glob '!.git/**' -- "$needle" "$path"
+    return
+  fi
+
+  python3 - "$needle" "$path" <<'PY'
+import os
+import sys
+
+needle = sys.argv[1].encode("utf-8").lower()
+root = sys.argv[2]
+matches = []
+
+def contains_needle(path):
+    try:
+        with open(path, "rb") as fh:
+            return needle in fh.read().lower()
+    except OSError:
+        return False
+
+if os.path.isdir(root):
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [name for name in dirnames if name != ".git"]
+        for filename in filenames:
+            path = os.path.join(dirpath, filename)
+            if contains_needle(path):
+                matches.append(path)
+else:
+    if contains_needle(root):
+        matches.append(root)
+
+for match in matches:
+    print(match)
+sys.exit(0 if matches else 1)
+PY
+}
+
 release_list_json() {
   local repo="$1"
   gh release list --repo "$repo" --limit 100 --json tagName,isDraft,isPrerelease,isLatest
@@ -293,16 +343,16 @@ scan_path() {
       echo "zip archive is unreadable or malformed: $path" >&2
       failed=1
     fi
-    if unzip -p "$path" 2>/dev/null | LC_ALL=C rg -a -i -q -- "$needle"; then
+    if unzip -p "$path" 2>/dev/null | stream_has_needle "$needle"; then
       echo "forbidden legacy brand token found inside zip: $path" >&2
       failed=1
     fi
-    if unzip -Z1 "$path" 2>/dev/null | LC_ALL=C rg -i -q -- "$needle"; then
+    if unzip -Z1 "$path" 2>/dev/null | stream_has_needle "$needle"; then
       echo "forbidden legacy brand token found in zip filename: $path" >&2
       failed=1
     fi
   else
-    if rg -l -a -i --hidden --no-ignore --no-messages --glob '!.git/**' -- "$needle" "$path"; then
+    if content_paths_with_needle "$path" "$needle"; then
       failed=1
     fi
   fi
@@ -315,7 +365,7 @@ scan_path() {
   else
     local name
     name="$(basename "$path")"
-    if printf '%s\n' "$name" | LC_ALL=C rg -i -q -- "$needle"; then
+    if printf '%s\n' "$name" | stream_has_needle "$needle"; then
       echo "forbidden legacy brand token found in filename: $path" >&2
       failed=1
     fi
