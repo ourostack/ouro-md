@@ -47,6 +47,9 @@ final class ContentSearcherTests: XCTestCase {
         if let notes = results.first(where: { $0.name == "notes.md" }) {
             XCTAssertGreaterThan(notes.snippets.first?.matchLength ?? 0, 0)
             XCTAssertEqual(notes.parent, root.lastPathComponent)
+            XCTAssertEqual(notes.snippets.first?.sourceMatchStart, 4)
+            XCTAssertEqual(notes.snippets.first?.matchedText.lowercased(), "widget")
+            XCTAssertEqual(notes.snippets.first?.matchOrdinal, 0)
         }
         let readmeParents = Set(results.filter { $0.name == "README.md" }.map(\.parent))
         XCTAssertEqual(readmeParents, Set([root.lastPathComponent, "guides"]))
@@ -62,5 +65,50 @@ final class ContentSearcherTests: XCTestCase {
 
         let insensitive = ContentSearcher.makeRegex("WIDGET", caseSensitive: false, wholeWord: false, regexp: false)
         XCTAssertNotNil(insensitive?.firstMatch(in: lowercase as String, range: NSRange(location: 0, length: lowercase.length)))
+    }
+
+    func testInvalidRegularExpressionReportsValidationError() {
+        let error = ContentSearcher.regexError("(", caseSensitive: false, wholeWord: false, regexp: true)
+
+        XCTAssertNotNil(error)
+        XCTAssertNil(ContentSearcher.makeRegex("(", caseSensitive: false, wholeWord: false, regexp: true))
+        XCTAssertNil(ContentSearcher.regexError("(", caseSensitive: false, wholeWord: false, regexp: false))
+    }
+
+    func testTruncatedSnippetKeepsSourceCoordinates() {
+        let longPrefix = String(repeating: "a", count: 140)
+        let path = root.appendingPathComponent("long.md")
+        try? "\(longPrefix)needle trailing context\n".write(to: path, atomically: true, encoding: .utf8)
+
+        let searcher = ContentSearcher()
+        var results: [SearchResult] = []
+        let done = expectation(description: "search complete")
+        searcher.search("needle", in: root, caseSensitive: false, wholeWord: false, regexp: false,
+                        onResult: { results.append($0) },
+                        onComplete: { _ in done.fulfill() })
+        wait(for: [done], timeout: 30)
+
+        let snippet = results.first { $0.name == "long.md" }?.snippets.first
+        XCTAssertEqual(snippet?.sourceMatchStart, 140)
+        XCTAssertEqual(snippet?.sourceMatchLength, 6)
+        XCTAssertEqual(snippet?.matchedText, "needle")
+        XCTAssertNotEqual(snippet?.matchStart, snippet?.sourceMatchStart)
+    }
+
+    func testMatchOrdinalCountsEarlierOccurrencesOnSameLine() {
+        let path = root.appendingPathComponent("ordinals.md")
+        try? "needle needle\nneedle later\n".write(to: path, atomically: true, encoding: .utf8)
+
+        let searcher = ContentSearcher()
+        var results: [SearchResult] = []
+        let done = expectation(description: "search complete")
+        searcher.search("needle", in: root, caseSensitive: false, wholeWord: false, regexp: false,
+                        onResult: { results.append($0) },
+                        onComplete: { _ in done.fulfill() })
+        wait(for: [done], timeout: 30)
+
+        let snippets = results.first { $0.name == "ordinals.md" }?.snippets
+        XCTAssertEqual(snippets?.map(\.lineNumber), [1, 2])
+        XCTAssertEqual(snippets?.map(\.matchOrdinal), [0, 2])
     }
 }

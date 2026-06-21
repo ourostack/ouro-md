@@ -108,6 +108,11 @@ fi
 "$exe" --alerttest
 "$exe" --wraptest
 "$exe" --codewraptest
+"$exe" --visualqatest
+"$exe" --visualqatest --visualqa-file Tests/Fixtures/dogfood-visual-surface.md
+"$exe" --visualqatest --theme graphite --visualqa-file Tests/Fixtures/dogfood-visual-surface.md
+"$exe" --searchrevealtest
+"$exe" --uisurfacetest
 "$exe" --tablewraptest
 "$exe" --tablewraptest --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
 "$exe" --tablewraptest --tablewrap-width 1000 --tablewrap-height 1300 --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md

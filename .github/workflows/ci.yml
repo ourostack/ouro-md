@@ -77,6 +77,11 @@ jobs:
           run --wraptest
           run --renderprobe
           run --codewraptest
+          run --visualqatest
+          run --visualqatest --visualqa-file Tests/Fixtures/dogfood-visual-surface.md
+          run --visualqatest --theme graphite --visualqa-file Tests/Fixtures/dogfood-visual-surface.md
+          run --searchrevealtest
+          run --uisurfacetest
           run --tablewraptest
           run --tablewraptest --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
           run --tablewraptest --tablewrap-width 1000 --tablewrap-height 1300 --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md

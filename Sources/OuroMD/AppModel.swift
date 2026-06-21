@@ -10,7 +10,7 @@ protocol EditorBridge: AnyObject {
     func reloadMarkdown(_ markdown: String)
     func getMarkdown(_ completion: @escaping (String?) -> Void)
     func getHTML(_ completion: @escaping (String?) -> Void)
-    func applyTheme(uiMode: String, css: String, codeTheme: String)
+    func applyTheme(uiMode: String, css: String, codeTheme: String, background: String)
     func setMode(_ mode: String)
     func setOutline(_ on: Bool)
     func setFocusMode(_ on: Bool)
@@ -18,6 +18,17 @@ protocol EditorBridge: AnyObject {
     func setAutoPair(_ on: Bool)
     func scrollToHeading(_ index: Int)
     func find(_ query: String, backward: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool)
+    func revealSearchMatch(
+        lineNumber: Int,
+        sourceColumn: Int,
+        sourceLength: Int,
+        matchOrdinal: Int,
+        matchedText: String,
+        query: String,
+        caseSensitive: Bool,
+        wholeWord: Bool,
+        regexp: Bool
+    )
     func replace(_ query: String, with replacement: String, all: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool, completion: @escaping (Int) -> Void)
     func clearFind()
     func execCommand(_ command: String)
@@ -43,6 +54,8 @@ final class AppModel: ObservableObject {
     private(set) var deletedOnDisk = false
     private(set) var isReady = false
     private(set) var themeID: String
+    private(set) var lastLightThemeID: String
+    private(set) var lastDarkThemeID: String
     private(set) var mode = "ir"
     private(set) var showOutline = false
     private(set) var focusMode = false
@@ -79,6 +92,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var searchResults: [SearchResult] = []
     @Published private(set) var searching = false
     @Published private(set) var searchWasTruncated = false
+    @Published private(set) var searchError: String?
     @Published var searchCaseSensitive = false
     @Published var searchWholeWord = false
     @Published var searchRegexp = false
@@ -102,14 +116,36 @@ final class AppModel: ObservableObject {
     private let contentSearcher = ContentSearcher()
 
     init() {
-        themeID = UserDefaults.standard.string(forKey: "ouro.theme") ?? "quartz"
-        sidebarVisible = UserDefaults.standard.bool(forKey: "ouro.sidebar")
-        autoSaveEnabled = UserDefaults.standard.object(forKey: "ouro.autosave") as? Bool ?? true
-        autoPairEnabled = UserDefaults.standard.object(forKey: "ouro.autopair") as? Bool ?? true
-        zoom = UserDefaults.standard.object(forKey: "ouro.zoom") as? Double ?? 1.0
-        if let raw = UserDefaults.standard.string(forKey: "ouro.sidebarMode"), let mode = SidebarMode(rawValue: raw) {
+        let storedThemeID = defaults.string(forKey: "ouro.theme") ?? "quartz"
+        let storedTheme = ThemeStore.shared.theme(id: storedThemeID)
+        themeID = storedTheme.id
+        lastLightThemeID = Self.rememberedThemeID(
+            defaults: defaults,
+            key: "ouro.theme.lastLight",
+            uiMode: "classic",
+            fallback: storedTheme.uiMode == "dark" ? "quartz" : storedTheme.id
+        )
+        lastDarkThemeID = Self.rememberedThemeID(
+            defaults: defaults,
+            key: "ouro.theme.lastDark",
+            uiMode: "dark",
+            fallback: storedTheme.uiMode == "dark" ? storedTheme.id : "graphite"
+        )
+        defaults.set(lastLightThemeID, forKey: "ouro.theme.lastLight")
+        defaults.set(lastDarkThemeID, forKey: "ouro.theme.lastDark")
+        sidebarVisible = defaults.bool(forKey: "ouro.sidebar")
+        autoSaveEnabled = defaults.object(forKey: "ouro.autosave") as? Bool ?? true
+        autoPairEnabled = defaults.object(forKey: "ouro.autopair") as? Bool ?? true
+        zoom = defaults.object(forKey: "ouro.zoom") as? Double ?? 1.0
+        if let raw = defaults.string(forKey: "ouro.sidebarMode"), let mode = SidebarMode(rawValue: raw) {
             sidebarMode = mode
         }
+    }
+
+    private static func rememberedThemeID(defaults: UserDefaults, key: String, uiMode: String, fallback: String) -> String {
+        guard let id = defaults.string(forKey: key) else { return fallback }
+        let theme = ThemeStore.shared.theme(id: id)
+        return theme.uiMode == uiMode ? theme.id : fallback
     }
 
     var theme: Theme { ThemeStore.shared.theme(id: themeID) }
@@ -239,6 +275,10 @@ final class AppModel: ObservableObject {
     }
 
     func open(url: URL) {
+        open(url: url, afterOpen: nil)
+    }
+
+    private func open(url: URL, afterOpen: (() -> Void)?) {
         confirmDiscard { [weak self] in
             guard let self else { return }
             guard let text = AppModel.readText(at: url) else {
@@ -266,6 +306,7 @@ final class AppModel: ObservableObject {
                 "ouro_md_document_opened",
                 properties: ["markdown_type": .bool(Self.isMarkdownURL(url))]
             )
+            afterOpen?()
         }
     }
 
@@ -698,17 +739,38 @@ final class AppModel: ObservableObject {
     // MARK: - View / theme / format
 
     func setTheme(id: String) {
-        themeID = id
-        defaults.set(id, forKey: "ouro.theme")
+        let selected = ThemeStore.shared.theme(id: id)
+        themeID = selected.id
+        rememberAppearanceTheme(selected)
+        defaults.set(selected.id, forKey: "ouro.theme")
         applyThemeToEditor()
         onChromeUpdate?()
+    }
+
+    func setAppearance(_ value: String) {
+        let wantsDark = value == "dark"
+        let preferred = wantsDark ? lastDarkThemeID : lastLightThemeID
+        let expectedMode = wantsDark ? "dark" : "classic"
+        let fallback = wantsDark ? "graphite" : "quartz"
+        let preferredTheme = ThemeStore.shared.theme(id: preferred)
+        setTheme(id: preferredTheme.uiMode == expectedMode ? preferredTheme.id : fallback)
+    }
+
+    private func rememberAppearanceTheme(_ theme: Theme) {
+        if theme.uiMode == "dark" {
+            lastDarkThemeID = theme.id
+            defaults.set(theme.id, forKey: "ouro.theme.lastDark")
+        } else {
+            lastLightThemeID = theme.id
+            defaults.set(theme.id, forKey: "ouro.theme.lastLight")
+        }
     }
 
     private func applyThemeToEditor() {
         // Light themes use the bundled "github" hljs base; the editor CSS then
         // overrides token colors to the editor's light syntax palette.
         let codeTheme = theme.uiMode == "dark" ? "github-dark" : "github"
-        bridge?.applyTheme(uiMode: theme.uiMode, css: theme.editorCSS, codeTheme: codeTheme)
+        bridge?.applyTheme(uiMode: theme.uiMode, css: theme.editorCSS, codeTheme: codeTheme, background: theme.backgroundHex)
     }
 
     func setMode(_ newMode: String) {
@@ -989,12 +1051,25 @@ final class AppModel: ObservableObject {
 
     func runFolderSearch() {
         let query = searchQuery
+        let trimmed = query.trimmingCharacters(in: .whitespaces)
         searchResults = []
         searchWasTruncated = false
+        searchError = nil
         guard let folder = mountedFolder ?? currentURL?.deletingLastPathComponent(),
-              !query.trimmingCharacters(in: .whitespaces).isEmpty else {
+              !trimmed.isEmpty else {
             searching = false
             contentSearcher.cancel()
+            return
+        }
+        if let error = ContentSearcher.regexError(
+            trimmed,
+            caseSensitive: searchCaseSensitive,
+            wholeWord: searchWholeWord,
+            regexp: searchRegexp
+        ) {
+            searching = false
+            contentSearcher.cancel()
+            searchError = "Invalid regular expression: \(error)"
             return
         }
         if mountedFolder == nil { mountedFolder = folder }
@@ -1017,7 +1092,45 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func openSearchResult(_ url: URL) { openFile(url) }
+    func openSearchResult(_ result: SearchResult) {
+        if let snippet = result.snippets.first {
+            openSearchResult(result, snippet: snippet)
+        } else {
+            openFile(result.url)
+        }
+    }
+
+    func openSearchResult(_ result: SearchResult, snippet: SearchSnippet) {
+        let reveal: () -> Void = { [weak self] in
+            self?.revealSearchResult(snippet)
+        }
+        if result.url == currentURL {
+            reveal()
+        } else {
+            open(url: result.url, afterOpen: reveal)
+        }
+    }
+
+    private func revealSearchResult(_ snippet: SearchSnippet) {
+        let query = searchQuery.trimmingCharacters(in: .whitespaces)
+        findVisible = true
+        findQuery = query
+        findCaseSensitive = searchCaseSensitive
+        findWholeWord = searchWholeWord
+        findRegexp = searchRegexp
+        findStatus = "Line \(snippet.lineNumber)"
+        bridge?.revealSearchMatch(
+            lineNumber: snippet.lineNumber,
+            sourceColumn: snippet.sourceMatchStart,
+            sourceLength: snippet.sourceMatchLength,
+            matchOrdinal: snippet.matchOrdinal,
+            matchedText: snippet.matchedText,
+            query: query,
+            caseSensitive: searchCaseSensitive,
+            wholeWord: searchWholeWord,
+            regexp: searchRegexp
+        )
+    }
 
     // MARK: - Helpers
 

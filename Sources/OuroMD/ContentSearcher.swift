@@ -8,6 +8,10 @@ struct SearchSnippet: Identifiable, Hashable {
     let text: String
     let matchStart: Int
     let matchLength: Int
+    let sourceMatchStart: Int
+    let sourceMatchLength: Int
+    let matchedText: String
+    let matchOrdinal: Int
 }
 
 /// A file with at least one content match, plus whether the filename matched.
@@ -43,7 +47,8 @@ final class ContentSearcher {
                 onComplete: @escaping (Bool) -> Void) {
         cancel()
         let trimmed = query.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty, let regex = Self.makeRegex(trimmed, caseSensitive: caseSensitive, wholeWord: wholeWord, regexp: regexp) else {
+        guard !trimmed.isEmpty,
+              let regex = Self.makeRegex(trimmed, caseSensitive: caseSensitive, wholeWord: wholeWord, regexp: regexp) else {
             onComplete(false); return
         }
         let nameQuery = trimmed.lowercased()
@@ -74,16 +79,23 @@ final class ContentSearcher {
 
     private static func matches(in text: String, regex: NSRegularExpression) -> [SearchSnippet] {
         var out: [SearchSnippet] = []
+        var ordinal = 0
         let lines = text.components(separatedBy: "\n")
         for (i, line) in lines.enumerated() {
             if out.count >= maxMatchesPerFile { break }
             let ns = line as NSString
             guard ns.length > 0 else { continue }
-            let m = regex.firstMatch(in: line, options: [], range: NSRange(location: 0, length: ns.length))
-            guard let match = m else { continue }
+            let lineMatches = regex.matches(in: line, options: [], range: NSRange(location: 0, length: ns.length))
+            guard let match = lineMatches.first else { continue }
             let (snippet, start) = truncate(ns, around: match.range)
+            let matchedText = match.range.length > 0 ? ns.substring(with: match.range) : ""
             out.append(SearchSnippet(lineNumber: i + 1, text: snippet,
-                                     matchStart: start, matchLength: match.range.length))
+                                      matchStart: start, matchLength: match.range.length,
+                                      sourceMatchStart: match.range.location,
+                                      sourceMatchLength: match.range.length,
+                                      matchedText: matchedText,
+                                      matchOrdinal: ordinal))
+            ordinal += lineMatches.count
         }
         return out
     }
@@ -102,10 +114,23 @@ final class ContentSearcher {
     }
 
     static func makeRegex(_ query: String, caseSensitive: Bool, wholeWord: Bool, regexp: Bool) -> NSRegularExpression? {
+        try? makeRegexOrThrow(query, caseSensitive: caseSensitive, wholeWord: wholeWord, regexp: regexp)
+    }
+
+    static func regexError(_ query: String, caseSensitive: Bool, wholeWord: Bool, regexp: Bool) -> String? {
+        do {
+            _ = try makeRegexOrThrow(query, caseSensitive: caseSensitive, wholeWord: wholeWord, regexp: regexp)
+            return nil
+        } catch {
+            return error.localizedDescription
+        }
+    }
+
+    private static func makeRegexOrThrow(_ query: String, caseSensitive: Bool, wholeWord: Bool, regexp: Bool) throws -> NSRegularExpression {
         var pattern = regexp ? query : NSRegularExpression.escapedPattern(for: query)
         if wholeWord { pattern = "\\b" + pattern + "\\b" }
         var options: NSRegularExpression.Options = []
         if !caseSensitive { options.insert(.caseInsensitive) }
-        return try? NSRegularExpression(pattern: pattern, options: options)
+        return try NSRegularExpression(pattern: pattern, options: options)
     }
 }

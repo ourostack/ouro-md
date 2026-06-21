@@ -10,11 +10,17 @@ struct EditorWebView: NSViewRepresentable {
     func makeNSView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
         let controller = WKUserContentController()
+        controller.addUserScript(WKUserScript(
+            source: Self.initialThemeBootstrapScript(for: model.theme),
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true
+        ))
         controller.add(context.coordinator, name: "ouro")
         configuration.userContentController = controller
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
+        Self.applyLayerBackground(model.theme.backgroundHex, to: webView)
         webView.navigationDelegate = context.coordinator
         webView.allowsMagnification = true
         webView.allowsBackForwardNavigationGestures = false
@@ -30,7 +36,68 @@ struct EditorWebView: NSViewRepresentable {
         return webView
     }
 
-    func updateNSView(_ nsView: WKWebView, context: Context) {}
+    func updateNSView(_ nsView: WKWebView, context: Context) {
+        Self.applyLayerBackground(model.theme.backgroundHex, to: nsView)
+    }
+
+    static func initialThemeBootstrapScript(for theme: Theme) -> String {
+        let codeTheme = theme.uiMode == "dark" ? "github-dark" : "github"
+        return """
+        (function () {
+          var theme = {
+            uiMode: \(Coordinator.jsString(theme.uiMode)),
+            codeTheme: \(Coordinator.jsString(codeTheme)),
+            background: \(Coordinator.jsString(theme.backgroundHex)),
+            css: \(Coordinator.jsString(theme.editorCSS))
+          };
+          window.__ouroInitialTheme = theme;
+          function backgroundCSS(background) {
+            return "html,body,#editor,.vditor,.vditor-content{background:" + background + " !important;background-color:" + background + " !important;}";
+          }
+          function setBackground(el) {
+            if (!el || !el.style) { return; }
+            el.style.setProperty("background", theme.background, "important");
+            el.style.setProperty("background-color", theme.background, "important");
+          }
+          function ensureInitialBackgroundStyle() {
+            var target = document.head || document.documentElement;
+            var tag = document.getElementById("ouro-initial-background");
+            if (!tag && target) {
+              tag = document.createElement("style");
+              tag.id = "ouro-initial-background";
+              target.appendChild(tag);
+            }
+            if (tag) { tag.textContent = backgroundCSS(theme.background); }
+          }
+          setBackground(document.documentElement);
+          ensureInitialBackgroundStyle();
+          function applyInitialTheme() {
+            var target = document.head || document.documentElement;
+            var tag = document.getElementById("ouro-theme");
+            if (!tag && target) {
+              tag = document.createElement("style");
+              tag.id = "ouro-theme";
+              target.appendChild(tag);
+            }
+            if (tag) { tag.textContent = theme.css; }
+            ensureInitialBackgroundStyle();
+            setBackground(document.body);
+            var editor = document.getElementById("editor");
+            setBackground(editor);
+          }
+          applyInitialTheme();
+          if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", applyInitialTheme, { once: true });
+          }
+        })();
+        """
+    }
+
+    private static func applyLayerBackground(_ hex: String, to webView: WKWebView) {
+        guard let background = NSColor(hex: hex) else { return }
+        webView.wantsLayer = true
+        webView.layer?.backgroundColor = background.cgColor
+    }
 
     final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate, EditorBridge {
         let model: AppModel
@@ -118,8 +185,11 @@ struct EditorWebView: NSViewRepresentable {
             }
         }
 
-        func applyTheme(uiMode: String, css: String, codeTheme: String) {
-            eval("window.ouro && window.ouro.setTheme(\(Coordinator.jsString(uiMode)),\(Coordinator.jsString(css)),\(Coordinator.jsString(codeTheme)))")
+        func applyTheme(uiMode: String, css: String, codeTheme: String, background: String) {
+            if let webView {
+                EditorWebView.applyLayerBackground(background, to: webView)
+            }
+            eval("window.ouro && window.ouro.setTheme(\(Coordinator.jsString(uiMode)),\(Coordinator.jsString(css)),\(Coordinator.jsString(codeTheme)),\(Coordinator.jsString(background)))")
         }
 
         func setMode(_ mode: String) {
@@ -149,6 +219,23 @@ struct EditorWebView: NSViewRepresentable {
         func find(_ query: String, backward: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool) {
             let opts = "{backward:\(backward),caseSensitive:\(caseSensitive),wholeWord:\(wholeWord),regexp:\(regexp)}"
             eval("window.ouro && window.ouro.find(\(Coordinator.jsString(query)),\(opts))")
+        }
+
+        func revealSearchMatch(
+            lineNumber: Int,
+            sourceColumn: Int,
+            sourceLength: Int,
+            matchOrdinal: Int,
+            matchedText: String,
+            query: String,
+            caseSensitive: Bool,
+            wholeWord: Bool,
+            regexp: Bool
+        ) {
+            let opts = """
+            {lineNumber:\(lineNumber),sourceColumn:\(sourceColumn),sourceLength:\(sourceLength),matchOrdinal:\(matchOrdinal),matchedText:\(Coordinator.jsString(matchedText)),query:\(Coordinator.jsString(query)),caseSensitive:\(caseSensitive),wholeWord:\(wholeWord),regexp:\(regexp)}
+            """
+            eval("window.ouro && window.ouro.revealSearchMatch(\(opts))")
         }
 
         func replace(_ query: String, with replacement: String, all: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool, completion: @escaping (Int) -> Void) {

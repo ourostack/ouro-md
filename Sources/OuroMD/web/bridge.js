@@ -10,7 +10,8 @@
   var qolInstalled = false;
   var resetTableScrollPending = false;
   var resetTablesSeen = (typeof WeakSet === "function") ? new WeakSet() : null;
-  var state = { mode: "ir", value: "", outline: false, uiTheme: "classic", focus: false, typewriter: false, codeTheme: "github" };
+  var initialTheme = window.__ouroInitialTheme || {};
+  var state = { mode: "ir", value: "", outline: false, uiTheme: initialTheme.uiMode || "classic", focus: false, typewriter: false, codeTheme: initialTheme.codeTheme || "github" };
 
   function post(type, extra) {
     try {
@@ -19,6 +20,33 @@
       window.webkit.messageHandlers.ouro.postMessage(msg);
     } catch (e) { /* not running inside the app */ }
   }
+
+  function themeBackgroundCSS(background) {
+    return "html,body,#editor,.vditor,.vditor-content{background:" + background + " !important;background-color:" + background + " !important;}";
+  }
+
+  function setImportantBackground(el, background) {
+    if (!el || !el.style || !background) { return; }
+    el.style.setProperty("background", background, "important");
+    el.style.setProperty("background-color", background, "important");
+  }
+
+  function applyThemeBackground(background) {
+    if (!background) { return; }
+    var target = document.head || document.documentElement;
+    var tag = document.getElementById("ouro-initial-background");
+    if (!tag && target) {
+      tag = document.createElement("style");
+      tag.id = "ouro-initial-background";
+      target.appendChild(tag);
+    }
+    if (tag) { tag.textContent = themeBackgroundCSS(background); }
+    setImportantBackground(document.documentElement, background);
+    setImportantBackground(document.body, background);
+    setImportantBackground(document.getElementById("editor"), background);
+  }
+
+  applyThemeBackground(initialTheme.background || "");
 
   function setDirty(d) {
     if (d === dirty) { return; }
@@ -606,6 +634,95 @@
     document.execCommand("insertText", false, text);
   }
 
+  function textNodesUnder(root) {
+    if (!root) { return []; }
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        if (!node.nodeValue || !node.nodeValue.trim()) { return NodeFilter.FILTER_REJECT; }
+        var parent = node.parentElement;
+        if (parent && parent.closest && parent.closest("script,style")) { return NodeFilter.FILTER_REJECT; }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var nodes = [];
+    while (walker.nextNode()) { nodes.push(walker.currentNode); }
+    return nodes;
+  }
+
+  function activeEditorRoot() {
+    if (vditor && vditor.vditor) {
+      var mode = vditor.vditor.currentMode || state.mode;
+      var surface = vditor.vditor[mode] && vditor.vditor[mode].element;
+      if (surface) { return surface; }
+    }
+    var roots = document.querySelectorAll("#editor .vditor-reset");
+    for (var i = 0; i < roots.length; i++) {
+      if ((roots[i].textContent || "").trim()) { return roots[i]; }
+    }
+    return document.querySelector(".vditor-reset") || document.getElementById("editor") || document.body;
+  }
+
+  function selectTextRange(node, start, length) {
+    if (!node || length <= 0) { return false; }
+    var range = document.createRange();
+    range.setStart(node, start);
+    range.setEnd(node, start + length);
+    var sel = window.getSelection();
+    if (!sel) { return false; }
+    sel.removeAllRanges();
+    sel.addRange(range);
+    var rect = range.getBoundingClientRect();
+    var el = node.parentElement || node.parentNode;
+    if (el && el.scrollIntoView) {
+      el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+    } else if (rect && rect.top) {
+      window.scrollTo({ top: Math.max(0, window.scrollY + rect.top - 120), behavior: "smooth" });
+    }
+    return true;
+  }
+
+  function revealTextOccurrence(text, ordinal, caseSensitive) {
+    if (!text) { return false; }
+    var root = activeEditorRoot();
+    var needle = caseSensitive ? text : text.toLowerCase();
+    var seen = 0;
+    var nodes = textNodesUnder(root);
+    for (var n = 0; n < nodes.length; n++) {
+      var raw = nodes[n].nodeValue || "";
+      var haystack = caseSensitive ? raw : raw.toLowerCase();
+      var index = haystack.indexOf(needle);
+      while (index !== -1) {
+        if (seen === ordinal) { return selectTextRange(nodes[n], index, text.length); }
+        seen += 1;
+        index = haystack.indexOf(needle, index + Math.max(1, needle.length));
+      }
+    }
+    return false;
+  }
+
+  function revealSearchOccurrence(query, opts, ordinal) {
+    if (!query) { return false; }
+    var re = buildSearchRegex(query, opts, true);
+    if (!re) { return false; }
+    var root = activeEditorRoot();
+    var seen = 0;
+    var nodes = textNodesUnder(root);
+    for (var n = 0; n < nodes.length; n++) {
+      var raw = nodes[n].nodeValue || "";
+      re.lastIndex = 0;
+      var match;
+      while ((match = re.exec(raw)) !== null) {
+        var value = match[0] || "";
+        if (value.length > 0) {
+          if (seen === ordinal) { return selectTextRange(nodes[n], match.index, value.length); }
+          seen += 1;
+        }
+        if (match.index === re.lastIndex) { re.lastIndex += 1; }
+      }
+    }
+    return false;
+  }
+
   // Replaces the current line's text via fn(oldLine) -> newLine.
   function transformLine(fn) {
     var sel = window.getSelection();
@@ -668,9 +785,16 @@
     getHTML: function () {
       try { return vditor ? vditor.getHTML() : ""; } catch (e) { return ""; }
     },
-    setTheme: function (uiMode, css, codeTheme) {
+    setTheme: function (uiMode, css, codeTheme, background) {
       if (uiMode) { state.uiTheme = uiMode; }
       if (codeTheme) { state.codeTheme = codeTheme; }
+      background = background || (window.__ouroInitialTheme && window.__ouroInitialTheme.background) || "";
+      if (!window.__ouroInitialTheme) { window.__ouroInitialTheme = {}; }
+      window.__ouroInitialTheme.uiMode = state.uiTheme;
+      window.__ouroInitialTheme.codeTheme = state.codeTheme;
+      window.__ouroInitialTheme.background = background;
+      window.__ouroInitialTheme.css = css || "";
+      applyThemeBackground(background);
       var tag = document.getElementById("ouro-theme");
       if (tag) { tag.textContent = css || ""; }
       if (vditor) { try { vditor.setTheme(state.uiTheme, undefined, state.codeTheme); } catch (e) { /* ignore */ } }
@@ -761,6 +885,20 @@
       try {
         window.find(query, !!opts.caseSensitive, !!opts.backward, true, !!opts.wholeWord, false, false);
       } catch (e) { /* ignore */ }
+    },
+    revealSearchMatch: function (opts) {
+      opts = opts || {};
+      var ordinal = Math.max(0, opts.matchOrdinal || 0);
+      var text = opts.matchedText || "";
+      var query = opts.query || text;
+      var reveal = function () {
+        if (query && revealSearchOccurrence(query, opts, ordinal)) { return; }
+        if (text && revealTextOccurrence(text, 0, !!opts.caseSensitive)) { return; }
+        if (query) {
+          try { window.find(query, !!opts.caseSensitive, false, true, !!opts.wholeWord, false, false); } catch (e) { /* ignore */ }
+        }
+      };
+      requestAnimationFrame(function () { requestAnimationFrame(reveal); });
     },
     replaceNext: function (query, replacement, opts) { return doReplace(query, replacement, opts, false); },
     replaceAll: function (query, replacement, opts) { return doReplace(query, replacement, opts, true); },

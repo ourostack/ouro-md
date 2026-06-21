@@ -4,6 +4,23 @@ import XCTest
 
 @MainActor
 final class OuroMDUpdateCoordinatorTests: XCTestCase {
+    private actor AsyncGate {
+        private var isOpen = false
+        private var continuation: CheckedContinuation<Void, Never>?
+
+        func wait() async {
+            if isOpen { return }
+            await withCheckedContinuation { continuation = $0 }
+        }
+
+        func open() {
+            guard !isOpen else { return }
+            isOpen = true
+            continuation?.resume()
+            continuation = nil
+        }
+    }
+
     private var suiteName: String!
     private var defaults: UserDefaults!
 
@@ -283,6 +300,35 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
         XCTAssertTrue(coordinator.applyPendingManualUpdateAndRelaunchIfNeeded())
         XCTAssertEqual(relaunchApplications, [staged])
         XCTAssertEqual(coordinator.installStatus, "Installing 0.10.0 and relaunching...")
+    }
+
+    func testManualInstallExposesProgressWhileStageIsRunning() async {
+        let staged = stagedUpdate(version: "0.10.0")
+        let progressReached = expectation(description: "manual install reported progress")
+        let stageGate = AsyncGate()
+        let coordinator = makeCoordinator(
+            checker: { self.updateSnapshot() },
+            stageUpdate: { _, progress in
+                await progress("Downloading Ouro-MD-0.10.0.zip...")
+                progressReached.fulfill()
+                await stageGate.wait()
+                return staged
+            }
+        )
+        await coordinator.checkForReleaseUpdate()
+
+        let install = Task {
+            await coordinator.installReleaseUpdate(destinationBundle: URL(fileURLWithPath: "/tmp/Ouro MD.app"))
+        }
+        await fulfillment(of: [progressReached], timeout: 2)
+
+        XCTAssertTrue(coordinator.isInstalling)
+        XCTAssertNil(coordinator.installError)
+        XCTAssertEqual(coordinator.installStatus, "Downloading Ouro-MD-0.10.0.zip...")
+
+        await stageGate.open()
+        await install.value
+        XCTAssertEqual(coordinator.installStatus, "Ready to install 0.10.0 after Ouro MD quits...")
     }
 
     func testManualInstallRestagesWhenCheckedReleaseIsNewerThanPendingStage() async {
