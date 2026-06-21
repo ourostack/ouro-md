@@ -736,6 +736,10 @@ final class AppModel: ObservableObject {
         deletedOnDisk = true
         onChromeUpdate?()
     }
+
+    func reconcileExternalChangeForTesting() {
+        handleExternalChange()
+    }
     #endif
 
     /// The file changed on disk while the reader had unsaved edits — never
