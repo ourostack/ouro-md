@@ -81,6 +81,14 @@ new_dest="${dest}.update-new.$$"
 bak_dest="${dest}.update-bak.$$"
 rm -rf "$new_dest" "$bak_dest"
 
+restore_existing_install() {
+  if mv "$bak_dest" "$dest" 2>/dev/null; then
+    [ -d "$dest" ] || die "couldn't restore the previous install; restored path is not an app bundle at $dest."
+    return 0
+  fi
+  die "couldn't restore the previous install; backup remains at $bak_dest."
+}
+
 say "Preparing install…"
 ditto "$app_src" "$new_dest" || die "couldn't copy the new app into a staging location."
 xattr -cr "$new_dest" 2>/dev/null || true
@@ -98,13 +106,19 @@ if [ -d "$dest" ]; then
   say "Replacing existing install at $dest"
   mv "$dest" "$bak_dest" || die "couldn't move the existing app aside."
   if mv "$new_dest" "$dest"; then
+    if [ ! -d "$dest" ]; then
+      rm -rf "$dest"
+      restore_existing_install
+      die "new app was not a valid app bundle; restored the previous install."
+    fi
     rm -rf "$bak_dest"
   else
-    mv "$bak_dest" "$dest" 2>/dev/null || true
+    restore_existing_install
     die "couldn't move the new app into place; restored the previous install."
   fi
 else
   mv "$new_dest" "$dest" || die "couldn't move the new app into place."
+  [ -d "$dest" ] || { rm -rf "$dest"; die "new app was not a valid app bundle."; }
 fi
 
 # The download set the com.apple.quarantine xattr; the build is ad-hoc-signed

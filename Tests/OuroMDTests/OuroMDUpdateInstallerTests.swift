@@ -345,6 +345,45 @@ final class OuroMDUpdateInstallerTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: backupApp.path))
     }
 
+    func testApplyScriptRestoresBackupWhenReplacementIsNotAnAppBundle() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-apply-invalid-replacement-\(UUID().uuidString)", isDirectory: true)
+        let stagedFile = root.appendingPathComponent("staged/Ouro MD.app")
+        let destApp = root.appendingPathComponent("installed/Ouro MD.app", isDirectory: true)
+        let backupApp = URL(fileURLWithPath: destApp.path + ".update-bak", isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: stagedFile.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try FileManager.default.createDirectory(at: destApp, withIntermediateDirectories: true)
+        try Data("not an app bundle".utf8).write(to: stagedFile)
+        try Data("old".utf8).write(to: destApp.appendingPathComponent("old.txt"))
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let script = OuroMDUpdateInstaller.applyScript(
+            staged: OuroMDUpdateInstaller.Staged(
+                appURL: stagedFile,
+                stagingRoot: root.appendingPathComponent("staged", isDirectory: true),
+                version: "0.10.0"
+            ),
+            destinationBundle: destApp,
+            relaunch: false,
+            waitingForPID: 999_999
+        )
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/sh")
+        process.arguments = ["-c", script]
+        try process.run()
+        process.waitUntilExit()
+
+        XCTAssertNotEqual(process.terminationStatus, 0)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: destApp.appendingPathComponent("old.txt").path))
+        XCTAssertTrue(isDirectory(destApp))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: backupApp.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: destApp.path + ".update-new"))
+    }
+
     func testApplyScriptRunsInTemporaryDirectoryWithoutNestingUpdatedApp() throws {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("ouro-apply-script-\(UUID().uuidString)", isDirectory: true)
@@ -378,6 +417,17 @@ final class OuroMDUpdateInstallerTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: destApp.appendingPathComponent("Ouro MD.app").path))
         XCTAssertFalse(FileManager.default.fileExists(atPath: destApp.path + ".update-bak"))
         XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("staged").path))
+    }
+
+    func testOneLineInstallerRollbackDoesNotSwallowRestoreFailure() throws {
+        let scriptURL = packageRoot()
+            .appendingPathComponent("web/ouro-md-install.sh")
+        let script = try String(contentsOf: scriptURL, encoding: .utf8)
+
+        XCTAssertFalse(script.contains("mv \"$bak_dest\" \"$dest\" 2>/dev/null || true"))
+        XCTAssertTrue(script.contains("restore_existing_install()"))
+        XCTAssertTrue(script.contains("backup remains at $bak_dest"))
+        XCTAssertTrue(script.contains("[ ! -d \"$dest\" ]"))
     }
 
     func testInstallErrorDescriptionsAreUserReadable() {
@@ -444,6 +494,19 @@ final class OuroMDUpdateInstallerTests: XCTestCase {
 
     private func sha256Hex(_ data: Data) -> String {
         SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
+
+    private func isDirectory(_ url: URL) -> Bool {
+        var isDirectory: ObjCBool = false
+        let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
+        return exists && isDirectory.boolValue
+    }
+
+    private func packageRoot() -> URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
     }
 
     private enum ExpectedError {

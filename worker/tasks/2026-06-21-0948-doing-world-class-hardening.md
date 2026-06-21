@@ -76,7 +76,7 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 | 8 | Title/click/open flows | Extracted `TitleClickGesture`, tested title click open handler, click-vs-drag threshold, saved/renamed/deleted chrome states | `swift-test-budget --filter DocumentWindowControllerTests` passed | implemented |
 | 9 | Open Recent isolation | Injected recent URL provider and clear handler; tested populated/empty recent menu without `NSDocumentController.shared` global state | `swift-test-budget --filter UndoRedoRoutingTests` passed | implemented |
 | 10 | Multi-window regressions | Added active-controller tracking and tests for open routing, save/rename targeting, theme/sidebar/search independence, and menu validation | `swift-test-budget --filter AppDelegateWindowRoutingTests` passed | implemented |
-| 11 | Dirty doc + update install + quit cancel | Add coordinator/app-level cancellation tests | pending | pending |
+| 11 | Dirty doc + update install + quit cancel | `TerminationSaveCoordinatorTests/testSaveFailureCancelsPendingManualUpdateBeforeQuitReply` proves dirty save failure cancels scheduled update before quit reply and preserves retry state | `OURO_TEST_LOG=.build/unit3-focused.log OURO_TEST_TIMINGS=.build/unit3-focused.tsv ./scripts/swift-test-budget.sh --filter 'OuroMDUpdateCoordinatorTests|OuroMDUpdateInstallerTests|TerminationSaveCoordinatorTests'` | implemented |
 | 12 | Web crash/reload smoke | Add actual headless WebKit crash/reload probe | pending | pending |
 | 13 | Large folders/deep/unusual/symlink | Extend folder scanner/browser tests | pending | pending |
 | 14 | Folder search UX edge cases | Add truncation/cancel/binary/unreadable tests | pending | pending |
@@ -85,8 +85,8 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 | 17 | Print/PDF export probe | Add headless export probe with PDF validation | pending | pending |
 | 18 | HTML export snapshots all themes | Add render/export checks for each built-in theme | pending | pending |
 | 19 | Older-live to latest-live update e2e | Add script harness; run when feasible | pending | pending |
-| 20 | Rollback after backup creation | Strengthen installer/one-line rollback tests | pending | pending |
-| 21 | Cancellable/recoverable updater progress | Add structured progress/cancel/retry | pending | pending |
+| 20 | Rollback after backup creation | `OuroMDUpdateInstaller.applyScript` restores backup if the replacement is not a valid app bundle; `web/ouro-md-install.sh` no longer swallows restore failures | focused installer tests plus `bash -n web/ouro-md-install.sh scripts/*.sh` | implemented |
+| 21 | Cancellable/recoverable updater progress | `OuroMDUpdateCoordinator` owns manual install tasks with structured progress/cancel/retry; `UpdateProgressView` exposes Cancel/Retry controls | focused coordinator tests; `./scripts/run-native-scenarios.sh`; `--uisurfacetest` | implemented |
 | 22 | First-launch blank/empty gate | Add first-launch screenshot/pixel smoke | pending | pending |
 | 23 | Command palette/searchable actions | Implement and test action palette | pending | pending |
 | 24 | Compact document stats/status | Add status surface and tests | pending | pending |
@@ -122,12 +122,12 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 
 ### Unit 3: Updater Cancellable Progress And Rollback
 
-- [ ] Introduce structured install progress state.
-- [ ] Add install cancellation while staging is in-flight.
-- [ ] Render Cancel/Retry/status affordances in update progress.
-- [ ] Add dirty-doc install quit-cancel test that prevents apply and preserves retry.
-- [ ] Harden one-line installer rollback verification.
-- [ ] Add forced post-backup rollback test/harness for apply script.
+- [x] Introduce structured install progress state.
+- [x] Add install cancellation while staging is in-flight.
+- [x] Render Cancel/Retry/status affordances in update progress.
+- [x] Add dirty-doc install quit-cancel test that prevents apply and preserves retry.
+- [x] Harden one-line installer rollback verification.
+- [x] Add forced post-backup rollback test/harness for apply script.
 
 ### Unit 4: Editor, Search, Folder, Tables, Image Transfer, Export
 
@@ -170,3 +170,4 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 - 2026-06-21 10:02 Reshaped doing doc to the local template and made the evidence matrix mandatory after reviewer findings.
 - 2026-06-21 10:10 Completed Unit 1 harness layer: PR preflight, XCTest timing/budget wrapper, native scenario wrapper, visual failure artifacts, hosted installer check, CI/release wiring, and README notes. Validation: script syntax/diff check, source policy scan, filtered Swift timing wrapper, and shared native scenario wrapper passed.
 - 2026-06-21 10:25 Completed Unit 2 native UI/accessibility/open-flow layer. Validation: focused `DocumentWindowControllerTests|UndoRedoRoutingTests|AppDelegateWindowRoutingTests|ThemeAccessibilityTests` passed through `scripts/swift-test-budget.sh`; `./scripts/run-native-scenarios.sh` passed.
+- 2026-06-21 10:41 Completed Unit 3 updater/rollback layer. Validation: `bash -n web/ouro-md-install.sh scripts/*.sh`, `git diff --check`, focused `OuroMDUpdateCoordinatorTests|OuroMDUpdateInstallerTests|TerminationSaveCoordinatorTests`, `--uisurfacetest`, and `./scripts/run-native-scenarios.sh` passed.

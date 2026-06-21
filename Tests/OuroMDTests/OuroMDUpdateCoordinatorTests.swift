@@ -331,6 +331,78 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.installStatus, "Ready to install 0.10.0 after Ouro MD quits...")
     }
 
+    func testStartedManualInstallCanCancelInFlightStageAndRetry() async {
+        let progressReached = expectation(description: "manual install reported progress")
+        var stageCalls = 0
+        let coordinator = makeCoordinator(
+            checker: { self.updateSnapshot() },
+            stageUpdate: { _, progress in
+                stageCalls += 1
+                await progress("Downloading Ouro-MD-0.10.0.zip...")
+                if stageCalls == 1 {
+                    progressReached.fulfill()
+                    while !Task.isCancelled {
+                        try await Task.sleep(nanoseconds: 10_000_000)
+                    }
+                    throw CancellationError()
+                }
+                return self.stagedUpdate(version: "0.10.0")
+            }
+        )
+        await coordinator.checkForReleaseUpdate()
+
+        coordinator.startInstallReleaseUpdate(destinationBundle: URL(fileURLWithPath: "/tmp/Ouro MD.app"))
+        await fulfillment(of: [progressReached], timeout: 2)
+        coordinator.cancelInstall()
+
+        let didCancel = await waitUntil { coordinator.installProgress.phase == .cancelled }
+        XCTAssertTrue(didCancel)
+        XCTAssertFalse(coordinator.isInstalling)
+        XCTAssertNil(coordinator.installError)
+        XCTAssertNil(coordinator.updatePrompt)
+        XCTAssertEqual(coordinator.updateBadgeText, "Update 0.10.0")
+        XCTAssertTrue(coordinator.installProgress.canRetry)
+
+        coordinator.startInstallReleaseUpdate(destinationBundle: URL(fileURLWithPath: "/tmp/Ouro MD.app"))
+
+        let didRetry = await waitUntil { coordinator.installProgress.phase == .ready }
+        XCTAssertTrue(didRetry)
+        XCTAssertEqual(stageCalls, 2)
+        XCTAssertEqual(coordinator.installStatus, "Ready to install 0.10.0 after Ouro MD quits...")
+    }
+
+    func testFailedStartedManualInstallCanRetryWithoutAnotherCheck() async {
+        var stageCalls = 0
+        let coordinator = makeCoordinator(
+            checker: { self.updateSnapshot() },
+            stageUpdate: { _, _ in
+                stageCalls += 1
+                if stageCalls == 1 {
+                    throw OuroMDUpdateInstaller.InstallError.download("offline")
+                }
+                return self.stagedUpdate(version: "0.10.0")
+            }
+        )
+        await coordinator.checkForReleaseUpdate()
+
+        coordinator.startInstallReleaseUpdate(destinationBundle: URL(fileURLWithPath: "/tmp/Ouro MD.app"))
+
+        let didFail = await waitUntil { coordinator.installProgress.phase == .failed }
+        XCTAssertTrue(didFail)
+        XCTAssertEqual(coordinator.installError, "Download failed: offline")
+        XCTAssertEqual(coordinator.updatePrompt, .failed(detail: "Download failed: offline"))
+        XCTAssertTrue(coordinator.installProgress.canRetry)
+
+        coordinator.dismissUpdatePrompt(reason: "retry")
+        coordinator.startInstallReleaseUpdate(destinationBundle: URL(fileURLWithPath: "/tmp/Ouro MD.app"))
+
+        let didRetry = await waitUntil { coordinator.installProgress.phase == .ready }
+        XCTAssertTrue(didRetry)
+        XCTAssertEqual(stageCalls, 2)
+        XCTAssertNil(coordinator.installError)
+        XCTAssertNil(coordinator.updatePrompt)
+    }
+
     func testManualInstallRestagesWhenCheckedReleaseIsNewerThanPendingStage() async {
         var snapshots = [
             updateSnapshot(version: "0.10.0"),
@@ -392,7 +464,9 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
         coordinator.cancelPendingManualInstall()
 
         XCTAssertFalse(coordinator.isInstalling)
-        XCTAssertNil(coordinator.installStatus)
+        XCTAssertEqual(coordinator.installStatus, "Update cancelled.")
+        XCTAssertEqual(coordinator.installProgress.phase, .cancelled)
+        XCTAssertTrue(coordinator.installProgress.canRetry)
         XCTAssertFalse(coordinator.applyPendingManualUpdateAndRelaunchIfNeeded())
         XCTAssertTrue(relaunchApplications.isEmpty)
     }
@@ -595,5 +669,14 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
             stagingRoot: URL(fileURLWithPath: "/tmp/staged"),
             version: version
         )
+    }
+
+    private func waitUntil(timeout: TimeInterval = 2, condition: () -> Bool) async -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if condition() { return true }
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+        return condition()
     }
 }

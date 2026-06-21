@@ -78,12 +78,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
                 self?.presentUpdatePrompt(prompt)
             }
             .store(in: &updateCancellables)
-        updateCoordinator.$isInstalling
-            .combineLatest(updateCoordinator.$installStatus, updateCoordinator.$installError)
-            .sink { [weak self] state in
-                let isInstalling = state.0
-                let installError = state.2
-                if isInstalling || installError != nil {
+        updateCoordinator.$installProgress
+            .sink { [weak self] progress in
+                if progress.isVisible {
                     self?.showUpdateProgressWindow()
                 } else {
                     self?.closeUpdateProgressWindow()
@@ -106,7 +103,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         if prompt.isInstallable, response == .alertFirstButtonReturn {
             updateCoordinator.updatePrompt = nil
             showUpdateProgressWindow()
-            Task { await updateCoordinator.installReleaseUpdate() }
+            updateCoordinator.startInstallReleaseUpdate()
         } else if prompt.isInstallable {
             updateCoordinator.dismissUpdatePrompt(reason: "later")
         } else {
@@ -116,7 +113,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
     private func showUpdateProgressWindow() {
         if updateProgressWindow == nil {
-            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 380, height: 112),
+            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 420, height: 160),
                              styleMask: [.titled], backing: .buffered, defer: false)
             w.title = "Software Update"
             w.isReleasedWhenClosed = false
@@ -368,7 +365,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     }
 
     @objc func installUpdateAndRelaunch(_ sender: Any?) {
-        Task { await updateCoordinator.installReleaseUpdate() }
+        updateCoordinator.startInstallReleaseUpdate()
     }
 
     @objc func newDocument(_ sender: Any?) { model.newDocument() }
