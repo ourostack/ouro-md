@@ -13,6 +13,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
     private var renamePopover: NSPopover?
     private var renameField: NSTextField?
     var openDocumentFromTitleClickHandler: (() -> Void)?
+    var renamePresentationHandler: (() -> Void)?
 
     /// `onBecomeKey` lets the app re-point menu state at the active window.
     var onBecomeKey: ((DocumentWindowController) -> Void)?
@@ -105,6 +106,10 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
     /// documents have no file yet, so we route to Save As — that panel is the
     /// "name this document" affordance for an unsaved buffer.
     func presentRename() {
+        if let renamePresentationHandler {
+            renamePresentationHandler()
+            return
+        }
         guard model.currentURL != nil else { model.saveAs(); return }
         if let existing = renamePopover { existing.close(); return }
 
@@ -291,7 +296,7 @@ final class DocumentWindow: NSWindow {
                 let now = NSEvent.mouseLocation
                 let dx = now.x - startMouse.x
                 let dy = now.y - startMouse.y
-                if !didDrag && (dx * dx + dy * dy) < 9 { continue }
+                if !didDrag && !TitleClickGesture.isDrag(deltaX: dx, deltaY: dy) { continue }
                 didDrag = true
                 setFrameOrigin(NSPoint(x: startOrigin.x + dx, y: startOrigin.y + dy))
             default:
@@ -299,5 +304,13 @@ final class DocumentWindow: NSWindow {
             }
         }
         if !didDrag { onTitleClicked?() }
+    }
+}
+
+enum TitleClickGesture {
+    static let dragThresholdSquared: CGFloat = 9
+
+    static func isDrag(deltaX: CGFloat, deltaY: CGFloat) -> Bool {
+        (deltaX * deltaX + deltaY * deltaY) >= dragThresholdSquared
     }
 }

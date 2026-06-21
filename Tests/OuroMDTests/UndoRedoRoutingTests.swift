@@ -149,6 +149,42 @@ final class UndoRedoRoutingTests: XCTestCase {
         XCTAssertTrue(delegate.validateMenuItem(unknown))
     }
 
+    func testRecentMenuDelegateUsesInjectedRecentProvider() {
+        let delegate = AppDelegate()
+        let recentURL = URL(fileURLWithPath: "/tmp/injected-recent.md")
+        let menu = NSMenu(title: "Open Recent")
+        let recentDelegate = RecentMenuDelegate(target: delegate) { [recentURL] in [recentURL] }
+
+        recentDelegate.menuNeedsUpdate(menu)
+
+        XCTAssertEqual(menu.items.first?.title, "injected-recent.md")
+        XCTAssertEqual(menu.items.first?.representedObject as? URL, recentURL)
+        XCTAssertTrue(menu.items.first?.target === delegate)
+        XCTAssertEqual(menu.items.last?.title, "Clear Menu")
+    }
+
+    func testRecentMenuDelegateShowsEmptyStateFromInjectedProvider() {
+        let delegate = AppDelegate()
+        let menu = NSMenu(title: "Open Recent")
+        let recentDelegate = RecentMenuDelegate(target: delegate) { [] }
+
+        recentDelegate.menuNeedsUpdate(menu)
+
+        XCTAssertEqual(menu.items.count, 1)
+        XCTAssertEqual(menu.items.first?.title, "No Recent Documents")
+        XCTAssertFalse(menu.items.first?.isEnabled ?? true)
+    }
+
+    func testClearRecentDocumentsUsesInjectedHandler() {
+        let delegate = AppDelegate()
+        var cleared = false
+        delegate.clearRecentDocumentsHandler = { _ in cleared = true }
+
+        delegate.clearRecentDocuments(nil)
+
+        XCTAssertTrue(cleared)
+    }
+
     func testUndoDoesNotFallThroughWhenNativeTextViewHasEmptyStack() {
         let manager = RecordingUndoManager()
         let textView = NativeTextView(undoManager: manager)

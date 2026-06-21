@@ -36,20 +36,22 @@ struct PreferencesView: View {
                 .font(.system(size: 15, weight: .semibold))
 
             preferenceRow("Appearance") {
-                Picker("", selection: Binding(get: { appearanceSelection }, set: setAppearance(_:))) {
+                Picker("Appearance", selection: Binding(get: { appearanceSelection }, set: setAppearance(_:))) {
                     Text("Light").tag("light")
                     Text("Dark").tag("dark")
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
+                .accessibilityLabel("Appearance")
                 .frame(width: 180)
             }
 
             preferenceRow("Theme") {
-                Picker("", selection: Binding(get: { model.themeID }, set: { model.setTheme(id: $0) })) {
+                Picker("Theme", selection: Binding(get: { model.themeID }, set: { model.setTheme(id: $0) })) {
                     ForEach(ThemeStore.shared.themes) { Text($0.displayName).tag($0.id) }
                 }
                 .labelsHidden()
+                .accessibilityLabel("Theme")
                 .frame(width: 220)
             }
 
@@ -74,6 +76,8 @@ struct PreferencesView: View {
                 HStack(spacing: 10) {
                     Slider(value: Binding(get: { model.zoom }, set: { model.setTextScale($0) }), in: 0.7...2.0, step: 0.1)
                         .frame(width: 190)
+                        .accessibilityLabel("Text size")
+                        .accessibilityValue("\(Int((model.zoom * 100).rounded())) percent")
                     Text("\(Int((model.zoom * 100).rounded()))%")
                         .monospacedDigit()
                         .frame(width: 44, alignment: .trailing)
@@ -115,9 +119,11 @@ struct UpdateProgressView: View {
                 if updateCoordinator.installError == nil {
                     ProgressView()
                         .controlSize(.small)
+                        .accessibilityLabel("Update progress")
                 } else {
                     Image(systemName: "exclamationmark.triangle")
                         .foregroundStyle(.red)
+                        .accessibilityHidden(true)
                 }
                 VStack(alignment: .leading, spacing: 3) {
                     Text(updateCoordinator.installError == nil ? "Installing Update" : "Update Failed")
@@ -129,6 +135,9 @@ struct UpdateProgressView: View {
                 }
             }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(updateCoordinator.installError == nil ? "Installing update" : "Update failed")
+        .accessibilityValue(updateCoordinator.installError ?? updateCoordinator.installStatus ?? "Preparing update")
         .padding(18)
         .frame(width: 380, alignment: .leading)
     }

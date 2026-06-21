@@ -657,6 +657,13 @@ final class AppModel: ObservableObject {
         }
     }
 
+    #if DEBUG
+    func markDeletedOnDiskForTesting() {
+        deletedOnDisk = true
+        onChromeUpdate?()
+    }
+    #endif
+
     /// The file changed on disk while the reader had unsaved edits — never
     /// clobber silently; let them choose.
     private func presentExternalChangeConflict(diskContent: String, url: URL) {
