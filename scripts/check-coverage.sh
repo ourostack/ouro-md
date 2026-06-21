@@ -20,6 +20,15 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
+profile_dir=".build/ouro-coverage-profiles"
+mkdir -p "$profile_dir"
+cleanup_root_profraw() {
+  if [ -f default.profraw ]; then
+    mv -f default.profraw "$profile_dir/default.profraw"
+  fi
+}
+trap cleanup_root_profraw EXIT
+
 # CI runners default to an older toolchain; the package needs Swift 6.
 if [ -d /Applications ]; then
   latest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1 || true)"

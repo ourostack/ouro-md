@@ -10,6 +10,8 @@ cd "$ROOT"
 
 exe="${OURO_MD_EXE:-.build/debug/ouro-md}"
 timeout_seconds="${OURO_SCENARIO_TIMEOUT_SECONDS:-90}"
+mkdir -p .build/ouro-native-scenario-profiles
+export LLVM_PROFILE_FILE="${LLVM_PROFILE_FILE:-.build/ouro-native-scenario-profiles/default-%p.profraw}"
 
 fail() {
   echo "error: $*" >&2

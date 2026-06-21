@@ -11,6 +11,7 @@ base_ref="${OURO_PR_BASE_REF:-${GITHUB_BASE_REF:-main}}"
 
 ./scripts/verify-release-version.sh
 ./scripts/release-policy.sh freshness --mode pr --base-ref "$base_ref"
+./scripts/release-policy.sh selftest-pr-base
 ./scripts/release-policy.sh scan .
 ./scripts/check-signing-readiness.sh
 swift build
