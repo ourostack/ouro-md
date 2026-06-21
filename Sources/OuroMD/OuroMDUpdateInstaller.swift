@@ -183,8 +183,9 @@ struct OuroMDUpdateInstaller: Sendable {
         let dest = destinationBundle.path
         let lsregister = "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister"
         let reopen = relaunch ? "/usr/bin/open \"$DEST\"\n" : ""
+        let waitForExit = pid > 0 ? "while kill -0 \(pid) 2>/dev/null; do sleep 0.2; done" : ":"
         return """
-        while kill -0 \(pid) 2>/dev/null; do sleep 0.2; done
+        \(waitForExit)
         DEST=\(shellQuoted(dest))
         STAGED=\(shellQuoted(staged.appURL.path))
         STAGING_ROOT=\(shellQuoted(staged.stagingRoot.path))

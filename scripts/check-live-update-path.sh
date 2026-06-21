@@ -22,6 +22,10 @@ command -v curl >/dev/null 2>&1 || fail "curl is required"
 command -v jq >/dev/null 2>&1 || fail "jq is required"
 command -v ditto >/dev/null 2>&1 || fail "ditto is required"
 
+exe_version() {
+  "$1" --version 2>/dev/null | awk 'NR == 1 {print $2}'
+}
+
 github_token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
 github_api_headers=(-H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' -H "User-Agent: OuroMD/live-update-check")
 if [[ -n "$github_token" ]]; then
@@ -66,16 +70,47 @@ installed_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionStri
 [[ "$installed_version" == "$from_version" ]] || fail "older app version $installed_version did not match $from_version"
 
 exe="${OURO_MD_EXE:-.build/debug/ouro-md}"
+source_version="$(./scripts/verify-release-version.sh --print)"
 if [[ ! -x "$exe" ]]; then
   swift build
+else
+  current_exe_version="$(exe_version "$exe" || true)"
+  if [[ "$current_exe_version" != "$source_version" ]]; then
+    [[ -z "${OURO_MD_EXE:-}" ]] || fail "OURO_MD_EXE points at version ${current_exe_version:-unknown}, expected $source_version: $exe"
+    echo "==> rebuilding stale ouro-md executable (${current_exe_version:-unknown} -> $source_version)"
+    swift build
+  fi
 fi
 [[ -x "$exe" ]] || fail "ouro-md executable not found or not executable: $exe"
+current_exe_version="$(exe_version "$exe" || true)"
+[[ "$current_exe_version" == "$source_version" ]] || fail "ouro-md executable version ${current_exe_version:-unknown} did not match source version $source_version: $exe"
 
 echo "==> exercising live updater $from_version -> $latest_version"
+timeout_seconds="${OURO_MD_LIVE_UPDATE_TIMEOUT_SECONDS:-240}"
+timeout_marker="$tmp/live-update-timeout"
 "$exe" \
   --liveupdatetest \
   --live-update-from-version "$from_version" \
   --live-update-to-version "$latest_version" \
-  --live-update-destination "$dest"
+  --live-update-destination "$dest" &
+live_pid=$!
+(
+  sleep "$timeout_seconds"
+  if kill -0 "$live_pid" 2>/dev/null; then
+    touch "$timeout_marker"
+    kill "$live_pid" 2>/dev/null || true
+    sleep 2
+    kill -9 "$live_pid" 2>/dev/null || true
+  fi
+) &
+watchdog_pid=$!
+set +e
+wait "$live_pid"
+live_status=$?
+set -e
+kill "$watchdog_pid" 2>/dev/null || true
+wait "$watchdog_pid" 2>/dev/null || true
+[[ ! -e "$timeout_marker" ]] || fail "live updater timed out after ${timeout_seconds}s"
+[[ "$live_status" -eq 0 ]] || fail "live updater failed with status $live_status"
 
 echo "live update path verified: $from_version -> $latest_version"
