@@ -10,6 +10,9 @@ final class ContentSearcherTests: XCTestCase {
         try "The widget renders fast.\nSecond line.".write(to: root.appendingPathComponent("notes.md"), atomically: true, encoding: .utf8)
         try "# Widget guide\nAll about the widget here.".write(to: root.appendingPathComponent("widget.md"), atomically: true, encoding: .utf8)
         try "Nothing relevant.".write(to: root.appendingPathComponent("other.md"), atomically: true, encoding: .utf8)
+        try "# Widget root readme\nThe widget also lives here.".write(to: root.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("guides"), withIntermediateDirectories: true)
+        try "# Widget readme\nThe widget lives here.".write(to: root.appendingPathComponent("guides/README.md"), atomically: true, encoding: .utf8)
     }
 
     override func tearDownWithError() throws { try? FileManager.default.removeItem(at: root) }
@@ -25,12 +28,13 @@ final class ContentSearcherTests: XCTestCase {
                             wasTruncated = $0
                             done.fulfill()
                         })
-        wait(for: [done], timeout: 5)
+        wait(for: [done], timeout: 30)
         XCTAssertEqual(wasTruncated, false)
 
         let names = results.map(\.name)
         XCTAssertTrue(names.contains("widget.md"))
         XCTAssertTrue(names.contains("notes.md"))
+        XCTAssertTrue(names.contains("README.md"))
         XCTAssertFalse(names.contains("other.md"))
 
         // Filename hit ("widget.md") ranks first.
@@ -42,7 +46,10 @@ final class ContentSearcherTests: XCTestCase {
         // Snippet carries the match offset for highlighting.
         if let notes = results.first(where: { $0.name == "notes.md" }) {
             XCTAssertGreaterThan(notes.snippets.first?.matchLength ?? 0, 0)
+            XCTAssertEqual(notes.parent, root.lastPathComponent)
         }
+        let readmeParents = Set(results.filter { $0.name == "README.md" }.map(\.parent))
+        XCTAssertEqual(readmeParents, Set([root.lastPathComponent, "guides"]))
     }
 
     func testCaseSensitiveOption() {

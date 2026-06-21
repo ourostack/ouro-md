@@ -28,6 +28,7 @@ enum OuroCLI {
       ouro-md --alerttest            Verify alert-callout marker display safety.
       ouro-md --wraptest             Verify editor typing quality-of-life hooks.
       ouro-md --tablewraptest        Verify table layout and table-local scrolling.
+      ouro-md --codewraptest         Verify fenced code uses block-local scrolling.
       ouro-md --undotest             Verify editor undo/redo routing.
       ouro-md --help | --version
 
@@ -38,6 +39,8 @@ enum OuroCLI {
       --tablewrap-file FILE          Markdown file to dogfood.
       --tablewrap-width PX           Viewport width (default: 480).
       --tablewrap-height PX          Viewport height (default: 640).
+      --codewrap-width PX            Viewport width (default: 480).
+      --codewrap-height PX           Viewport height (default: 640).
 
     THEMES
       Built-in: quartz (light), graphite (dark), manuscript (sepia serif),

@@ -72,6 +72,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             let overlappingCodeCount = (body["overlappingCodeCount"] as? Int) ?? .max
             let initialScrolledCount = (body["initialScrolledCount"] as? Int) ?? .max
             let scrollableCount = (body["scrollableCount"] as? Int) ?? 0
+            let affordanceCount = (body["affordanceCount"] as? Int) ?? 0
             let tableDetails = (body["tableDetails"] as? [[String: Any]]) ?? []
             // Allow a couple of px for sub-pixel rounding.
             let tolerance = 2.0
@@ -85,11 +86,13 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             let initialScrollOK = initialScrolledCount == 0
             let scrollRequired = viewportWidth <= 800
             let scrollOK = !scrollRequired || scrollableCount > 0
+            let affordanceOK = scrollableCount == 0 || affordanceCount == scrollableCount
             print("tables present: \(tableCount) \(tableCountOK ? "✓" : "✗ (expected at least 8)")")
             print(String(format: "page horizontal overflow: %.1fpx %@", pageOverflow, pageOK ? "✓" : "✗ (table escaped its own scroll)"))
             print("tables clipped by viewport: \(clippedCount) \(clippedOK ? "✓" : "✗")")
             let scrollFailure = scrollRequired ? "✗ (wide tables were squeezed instead)" : "✗"
             print("tables with own horizontal scroll: \(scrollableCount) \(scrollOK ? "✓" : scrollFailure)")
+            print("scrollable tables with edge affordance: \(affordanceCount) \(affordanceOK ? "✓" : "✗")")
             print("tables initially scrolled sideways: \(initialScrolledCount) \(initialScrollOK ? "✓" : "✗")")
             print("collapsed long cells: \(collapsedLongCellCount) \(longCellsOK ? "✓" : "✗")")
             print("collapsed code cells: \(collapsedCodeCellCount) \(codeCellsOK ? "✓" : "✗")")
@@ -106,7 +109,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
                 print(String(format: "table %02d width %.1fpx scroll %.1fpx left %.1fpx min-long %.1fpx min-code %.1fpx column-ratio %.2f",
                              index + 1, width, scroll, scrollLeft, minLong, minCode, columnRatio))
             }
-            exit(tableCountOK && pageOK && clippedOK && scrollOK && initialScrollOK && longCellsOK && codeCellsOK && balanceOK && overlapOK ? 0 : 1)
+            exit(tableCountOK && pageOK && clippedOK && scrollOK && affordanceOK && initialScrollOK && longCellsOK && codeCellsOK && balanceOK && overlapOK ? 0 : 1)
         }
     }
 
@@ -168,6 +171,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
       var initialScrolledCount = 0;
       var clippedCount = 0;
       var scrollableCount = 0;
+      var affordanceCount = 0;
       var imbalancedTableCount = 0;
       var overlappingCodeCount = 0;
       var tableDetails = tables.map(function (table, index) {
@@ -206,7 +210,11 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         var minCodeCellWidth = codeWidths.length ? Math.min.apply(Math, codeWidths) : 0;
         var clipped = rect.left < -2 || rect.right > viewportWidth + 2;
         if (clipped) { clippedCount += 1; }
-        if (scrollOverflow > 2) { scrollableCount += 1; }
+        if (scrollOverflow > 2) {
+          scrollableCount += 1;
+          var style = window.getComputedStyle(table);
+          if (parseFloat(style.borderRightWidth || "0") >= 6) { affordanceCount += 1; }
+        }
         if (scrollLeft > 1) { initialScrolledCount += 1; }
         if (minLongCellWidth > 0 && minLongCellWidth < 120) { collapsedLongCellCount += 1; }
         if (minCodeCellWidth > 0 && minCodeCellWidth < 140) { collapsedCodeCellCount += 1; }
@@ -238,6 +246,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         overlappingCodeCount: overlappingCodeCount,
         initialScrolledCount: initialScrolledCount,
         scrollableCount: scrollableCount,
+        affordanceCount: affordanceCount,
         tableDetails: tableDetails
       });
     })();

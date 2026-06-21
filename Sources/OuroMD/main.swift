@@ -73,6 +73,12 @@ if hasFlag("--tablewraptest") {
     TableWrapTester(markdownPath: argValue("--tablewrap-file"), viewportWidth: CGFloat(width), viewportHeight: CGFloat(height)).run()
 }
 
+if hasFlag("--codewraptest") {
+    let width = Double(argValue("--codewrap-width") ?? "") ?? 480
+    let height = Double(argValue("--codewrap-height") ?? "") ?? 640
+    CodeWrapTester(viewportWidth: CGFloat(width), viewportHeight: CGFloat(height)).run()
+}
+
 if hasFlag("--alerttest") {
     AlertMarkerTester().run()
 }
