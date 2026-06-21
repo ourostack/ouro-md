@@ -21,15 +21,15 @@ final class ContentSearcherTests: XCTestCase {
         let searcher = ContentSearcher()
         var results: [SearchResult] = []
         let done = expectation(description: "search complete")
-        var wasTruncated: Bool?
+        var completion: SearchCompletion?
         searcher.search("widget", in: root, caseSensitive: false, wholeWord: false, regexp: false,
                         onResult: { results.append($0) },
                         onComplete: {
-                            wasTruncated = $0
+                            completion = $0
                             done.fulfill()
                         })
         wait(for: [done], timeout: 30)
-        XCTAssertEqual(wasTruncated, false)
+        XCTAssertEqual(completion, .empty)
 
         let names = results.map(\.name)
         XCTAssertTrue(names.contains("widget.md"))
@@ -110,5 +110,74 @@ final class ContentSearcherTests: XCTestCase {
         let snippets = results.first { $0.name == "ordinals.md" }?.snippets
         XCTAssertEqual(snippets?.map(\.lineNumber), [1, 2])
         XCTAssertEqual(snippets?.map(\.matchOrdinal), [0, 2])
+    }
+
+    func testBinaryAndUnreadableMarkdownFilesAreSkippedWithoutLeakingPaths() {
+        try? Data([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).write(to: root.appendingPathComponent("binary.md"))
+        let unreadable = root.appendingPathComponent("unreadable.md")
+        try? "widget but unreadable".write(to: unreadable, atomically: true, encoding: .utf8)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: unreadable.path)
+        defer {
+            try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: unreadable.path)
+        }
+
+        let searcher = ContentSearcher()
+        var results: [SearchResult] = []
+        var completion: SearchCompletion?
+        let done = expectation(description: "search complete")
+        searcher.search("widget", in: root, caseSensitive: false, wholeWord: false, regexp: false,
+                        onResult: { results.append($0) },
+                        onComplete: {
+                            completion = $0
+                            done.fulfill()
+                        })
+        wait(for: [done], timeout: 30)
+
+        XCTAssertEqual(completion?.skippedBinaryCount, 1)
+        XCTAssertEqual(completion?.skippedUnreadableCount, 1)
+        XCTAssertFalse(results.contains { $0.name == "binary.md" })
+        XCTAssertFalse(results.contains { $0.name == "unreadable.md" })
+    }
+
+    func testSearchCanBeCancelledBeforeCompletion() {
+        let searcher = ContentSearcher()
+        let didComplete = expectation(description: "cancelled search completed")
+        didComplete.isInverted = true
+
+        for i in 0..<1_200 {
+            let file = root.appendingPathComponent(String(format: "cancel-%04d.md", i))
+            try? "needle \(i)\n".write(to: file, atomically: true, encoding: .utf8)
+        }
+
+        searcher.search("needle", in: root, caseSensitive: false, wholeWord: false, regexp: false,
+                        onResult: { _ in },
+                        onComplete: { _ in didComplete.fulfill() })
+        searcher.cancel()
+
+        wait(for: [didComplete], timeout: 0.5)
+    }
+
+    func testAppModelPublishesSearchCancelAndSkippedFileUXState() {
+        try? Data([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).write(to: root.appendingPathComponent("binary.md"))
+        let model = AppModel()
+        model.openFolder(root)
+        model.searchQuery = "widget"
+
+        model.runFolderSearch()
+        model.cancelFolderSearch()
+
+        XCTAssertFalse(model.searching)
+        XCTAssertTrue(model.searchWasCancelled)
+
+        let done = expectation(description: "search with skipped files complete")
+        model.searchQuery = "widget"
+        model.runFolderSearch()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            if !model.searching { done.fulfill() }
+        }
+        wait(for: [done], timeout: 3)
+
+        XCTAssertEqual(model.searchSkippedBinaryCount, 1)
+        XCTAssertEqual(model.searchSkippedMessage, "Skipped 1 binary file")
     }
 }

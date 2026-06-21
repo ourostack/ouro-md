@@ -92,6 +92,9 @@ final class AppModel: ObservableObject {
     @Published private(set) var searchResults: [SearchResult] = []
     @Published private(set) var searching = false
     @Published private(set) var searchWasTruncated = false
+    @Published private(set) var searchWasCancelled = false
+    @Published private(set) var searchSkippedUnreadableCount = 0
+    @Published private(set) var searchSkippedBinaryCount = 0
     @Published private(set) var searchError: String?
     @Published var searchCaseSensitive = false
     @Published var searchWholeWord = false
@@ -1061,6 +1064,9 @@ final class AppModel: ObservableObject {
         let trimmed = query.trimmingCharacters(in: .whitespaces)
         searchResults = []
         searchWasTruncated = false
+        searchWasCancelled = false
+        searchSkippedUnreadableCount = 0
+        searchSkippedBinaryCount = 0
         searchError = nil
         guard let folder = mountedFolder ?? currentURL?.deletingLastPathComponent(),
               !trimmed.isEmpty else {
@@ -1084,10 +1090,20 @@ final class AppModel: ObservableObject {
         contentSearcher.search(query, in: folder,
                                caseSensitive: searchCaseSensitive, wholeWord: searchWholeWord, regexp: searchRegexp,
                                onResult: { [weak self] result in self?.appendSearchResult(result) },
-                               onComplete: { [weak self] isTruncated in
-                                   self?.searchWasTruncated = isTruncated
+                               onComplete: { [weak self] completion in
+                                   self?.searchWasTruncated = completion.isTruncated
+                                   self?.searchWasCancelled = completion.isCancelled
+                                   self?.searchSkippedUnreadableCount = completion.skippedUnreadableCount
+                                   self?.searchSkippedBinaryCount = completion.skippedBinaryCount
                                    self?.searching = false
                                })
+    }
+
+    func cancelFolderSearch() {
+        guard searching else { return }
+        contentSearcher.cancel()
+        searching = false
+        searchWasCancelled = true
     }
 
     private func appendSearchResult(_ result: SearchResult) {
@@ -1097,6 +1113,19 @@ final class AppModel: ObservableObject {
             if a.count != b.count { return a.count > b.count }
             return a.name.localizedStandardCompare(b.name) == .orderedAscending
         }
+    }
+
+    var searchSkippedMessage: String? {
+        let skipped = searchSkippedUnreadableCount + searchSkippedBinaryCount
+        guard skipped > 0 else { return nil }
+        var parts: [String] = []
+        if searchSkippedUnreadableCount > 0 {
+            parts.append("\(searchSkippedUnreadableCount) unreadable")
+        }
+        if searchSkippedBinaryCount > 0 {
+            parts.append("\(searchSkippedBinaryCount) binary")
+        }
+        return "Skipped \(parts.joined(separator: ", ")) file\(skipped == 1 ? "" : "s")"
     }
 
     func openSearchResult(_ result: SearchResult) {

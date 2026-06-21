@@ -32,6 +32,7 @@ OURO_MD_EXE="$exe" ./scripts/run-visual-qa.sh
 
 run --searchrevealtest
 run --uisurfacetest
+run --editorsurfacetest
 run --tablewraptest
 run --tablewraptest --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
 run --tablewraptest --tablewrap-width 1000 --tablewrap-height 1300 --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md

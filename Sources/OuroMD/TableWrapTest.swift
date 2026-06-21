@@ -70,9 +70,16 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             let collapsedCodeCellCount = (body["collapsedCodeCellCount"] as? Int) ?? .max
             let imbalancedTableCount = (body["imbalancedTableCount"] as? Int) ?? .max
             let overlappingCodeCount = (body["overlappingCodeCount"] as? Int) ?? .max
+            let overlappingInlineCount = (body["overlappingInlineCount"] as? Int) ?? .max
+            let collapsedEmptyCellCount = (body["collapsedEmptyCellCount"] as? Int) ?? .max
+            let invalidMetricCount = (body["invalidMetricCount"] as? Int) ?? .max
             let initialScrolledCount = (body["initialScrolledCount"] as? Int) ?? .max
             let scrollableCount = (body["scrollableCount"] as? Int) ?? 0
             let affordanceCount = (body["affordanceCount"] as? Int) ?? 0
+            let categories = (body["categories"] as? [String]) ?? []
+            let hasCenterAlignment = (body["hasCenterAlignment"] as? Bool) ?? false
+            let hasRightAlignment = (body["hasRightAlignment"] as? Bool) ?? false
+            let hasHugeTable = (body["hasHugeTable"] as? Bool) ?? false
             let tableDetails = (body["tableDetails"] as? [[String: Any]]) ?? []
             // Allow a couple of px for sub-pixel rounding.
             let tolerance = 2.0
@@ -81,13 +88,27 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             let clippedOK = clippedCount == 0
             let longCellsOK = collapsedLongCellCount == 0
             let codeCellsOK = collapsedCodeCellCount == 0
+            let emptyCellsOK = collapsedEmptyCellCount == 0
             let balanceOK = imbalancedTableCount == 0
             let overlapOK = overlappingCodeCount == 0
+            let inlineOverlapOK = overlappingInlineCount == 0
+            let metricsOK = invalidMetricCount == 0
             let initialScrollOK = initialScrolledCount == 0
             let scrollRequired = viewportWidth <= 800
             let scrollOK = !scrollRequired || scrollableCount > 0
             let affordanceOK = scrollableCount == 0 || affordanceCount == scrollableCount
+            let requiredCategories = ["empty", "alignment", "html", "url", "sparse", "long-code", "huge"]
+            let categoryGateApplies = markdownPath?.contains("dogfood-wide-tables") == true
+            let missingCategories = requiredCategories.filter { !categories.contains($0) }
+            let categoryOK = !categoryGateApplies || missingCategories.isEmpty
+            let alignmentOK = !categoryGateApplies || (hasCenterAlignment && hasRightAlignment)
+            let hugeOK = !categoryGateApplies || hasHugeTable
             print("tables present: \(tableCount) \(tableCountOK ? "✓" : "✗ (expected at least 8)")")
+            if categoryGateApplies {
+                print("pathological categories: \(categories.joined(separator: ",")) \(categoryOK ? "✓" : "✗ missing \(missingCategories.joined(separator: ","))")")
+                print("alignment matrix center/right: \(hasCenterAlignment)/\(hasRightAlignment) \(alignmentOK ? "✓" : "✗")")
+                print("huge table metrics present: \(hasHugeTable) \(hugeOK ? "✓" : "✗")")
+            }
             print(String(format: "page horizontal overflow: %.1fpx %@", pageOverflow, pageOK ? "✓" : "✗ (table escaped its own scroll)"))
             print("tables clipped by viewport: \(clippedCount) \(clippedOK ? "✓" : "✗")")
             let scrollFailure = scrollRequired ? "✗ (wide tables were squeezed instead)" : "✗"
@@ -96,20 +117,24 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             print("tables initially scrolled sideways: \(initialScrolledCount) \(initialScrollOK ? "✓" : "✗")")
             print("collapsed long cells: \(collapsedLongCellCount) \(longCellsOK ? "✓" : "✗")")
             print("collapsed code cells: \(collapsedCodeCellCount) \(codeCellsOK ? "✓" : "✗")")
+            print("collapsed empty cells: \(collapsedEmptyCellCount) \(emptyCellsOK ? "✓" : "✗")")
             print("imbalanced sparse tables: \(imbalancedTableCount) \(balanceOK ? "✓" : "✗")")
             print("code spilling across cells: \(overlappingCodeCount) \(overlapOK ? "✓" : "✗")")
+            print("inline elements spilling across cells: \(overlappingInlineCount) \(inlineOverlapOK ? "✓" : "✗")")
+            print("invalid table metrics: \(invalidMetricCount) \(metricsOK ? "✓" : "✗")")
             for detail in tableDetails {
                 let index = (detail["index"] as? Int) ?? -1
+                let category = (detail["category"] as? String) ?? ""
                 let width = (detail["clientWidth"] as? Double) ?? 0
                 let scroll = (detail["scrollOverflow"] as? Double) ?? 0
                 let scrollLeft = (detail["scrollLeft"] as? Double) ?? 0
                 let minLong = (detail["minLongCellWidth"] as? Double) ?? 0
                 let minCode = (detail["minCodeCellWidth"] as? Double) ?? 0
                 let columnRatio = (detail["columnRatio"] as? Double) ?? 0
-                print(String(format: "table %02d width %.1fpx scroll %.1fpx left %.1fpx min-long %.1fpx min-code %.1fpx column-ratio %.2f",
-                             index + 1, width, scroll, scrollLeft, minLong, minCode, columnRatio))
+                print(String(format: "table %02d %@width %.1fpx scroll %.1fpx left %.1fpx min-long %.1fpx min-code %.1fpx column-ratio %.2f",
+                             index + 1, category.isEmpty ? "" : "[\(category)] ", width, scroll, scrollLeft, minLong, minCode, columnRatio))
             }
-            exit(tableCountOK && pageOK && clippedOK && scrollOK && affordanceOK && initialScrollOK && longCellsOK && codeCellsOK && balanceOK && overlapOK ? 0 : 1)
+            exit(tableCountOK && categoryOK && alignmentOK && hugeOK && pageOK && clippedOK && scrollOK && affordanceOK && initialScrollOK && longCellsOK && codeCellsOK && emptyCellsOK && balanceOK && overlapOK && inlineOverlapOK && metricsOK ? 0 : 1)
         }
     }
 
@@ -168,17 +193,49 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
       var tables = Array.prototype.slice.call(document.querySelectorAll("#editor table"));
       var collapsedLongCellCount = 0;
       var collapsedCodeCellCount = 0;
+      var collapsedEmptyCellCount = 0;
       var initialScrolledCount = 0;
       var clippedCount = 0;
       var scrollableCount = 0;
       var affordanceCount = 0;
       var imbalancedTableCount = 0;
       var overlappingCodeCount = 0;
+      var overlappingInlineCount = 0;
+      var invalidMetricCount = 0;
+      var categories = {};
+      var hasCenterAlignment = false;
+      var hasRightAlignment = false;
+      var hasHugeTable = false;
+      var tableCategories = new Map();
+      function categoryFromHeading(text) {
+        text = (text || "").toLowerCase();
+        if (text.indexOf("empty") !== -1) { return "empty"; }
+        if (text.indexOf("alignment") !== -1) { return "alignment"; }
+        if (text.indexOf("inline html") !== -1) { return "html"; }
+        if (text.indexOf("url") !== -1) { return "url"; }
+        if (text.indexOf("sparse") !== -1) { return "sparse"; }
+        if (text.indexOf("long code") !== -1) { return "long-code"; }
+        if (text.indexOf("stress grid") !== -1) { return "huge"; }
+        return "";
+      }
+      var currentCategory = "";
+      Array.prototype.slice.call(document.querySelectorAll("#editor h2,#editor h3,#editor table")).forEach(function (el) {
+        if (/^H[23]$/.test(el.tagName)) {
+          currentCategory = categoryFromHeading(el.textContent || "");
+        } else if (el.tagName === "TABLE") {
+          tableCategories.set(el, currentCategory);
+          if (currentCategory) { categories[currentCategory] = true; }
+        }
+      });
       var tableDetails = tables.map(function (table, index) {
+        var category = tableCategories.get(table) || "";
         var rect = table.getBoundingClientRect();
         var scrollOverflow = table.scrollWidth - table.clientWidth;
         var scrollLeft = table.scrollLeft || 0;
         var rows = Array.prototype.slice.call(table.querySelectorAll("tr"));
+        if ([rect.left, rect.right, table.clientWidth, table.scrollWidth, scrollOverflow, scrollLeft].some(function (value) { return Number.isNaN(value); })) {
+          invalidMetricCount += 1;
+        }
         var columnWidths = [];
         for (var r = 0; r < rows.length; r++) {
           var rowCells = Array.prototype.slice.call(rows[r].children || []);
@@ -187,6 +244,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
           }
         }
         var columnCount = columnWidths.length;
+        if (category === "huge" && rows.length >= 10 && columnCount >= 10) { hasHugeTable = true; }
         var minColumnWidth = columnWidths.length ? Math.min.apply(Math, columnWidths) : 0;
         var maxColumnWidth = columnWidths.length ? Math.max.apply(Math, columnWidths) : 0;
         var columnRatio = minColumnWidth > 0 ? maxColumnWidth / minColumnWidth : 0;
@@ -196,13 +254,26 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         cells.forEach(function (cell) {
           var text = (cell.textContent || "").trim();
           var width = cell.getBoundingClientRect().width;
+          var height = cell.getBoundingClientRect().height;
+          if (category === "empty" && !text && (width < 24 || height < 18)) { collapsedEmptyCellCount += 1; }
           if (text.length >= 24) { longWidths.push(width); }
           if (cell.querySelector("code")) { codeWidths.push(width); }
+          if (category === "alignment") {
+            var align = (cell.getAttribute("align") || cell.style.textAlign || window.getComputedStyle(cell).textAlign || "").toLowerCase();
+            if (align === "center") { hasCenterAlignment = true; }
+            if (align === "right" || align === "end") { hasRightAlignment = true; }
+          }
           var cellRect = cell.getBoundingClientRect();
           Array.prototype.slice.call(cell.querySelectorAll("code")).forEach(function (code) {
             var codeRect = code.getBoundingClientRect();
             if (codeRect.left < cellRect.left - 2 || codeRect.right > cellRect.right + 2) {
               overlappingCodeCount += 1;
+            }
+          });
+          Array.prototype.slice.call(cell.querySelectorAll("a,kbd,span")).forEach(function (inline) {
+            var inlineRect = inline.getBoundingClientRect();
+            if (inlineRect.left < cellRect.left - 2 || inlineRect.right > cellRect.right + 2) {
+              overlappingInlineCount += 1;
             }
           });
         });
@@ -223,6 +294,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         }
         return {
           index: index,
+          category: category,
           left: rect.left,
           right: rect.right,
           clientWidth: table.clientWidth,
@@ -242,11 +314,18 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         clippedCount: clippedCount,
         collapsedLongCellCount: collapsedLongCellCount,
         collapsedCodeCellCount: collapsedCodeCellCount,
+        collapsedEmptyCellCount: collapsedEmptyCellCount,
         imbalancedTableCount: imbalancedTableCount,
         overlappingCodeCount: overlappingCodeCount,
+        overlappingInlineCount: overlappingInlineCount,
+        invalidMetricCount: invalidMetricCount,
         initialScrolledCount: initialScrolledCount,
         scrollableCount: scrollableCount,
         affordanceCount: affordanceCount,
+        categories: Object.keys(categories).sort(),
+        hasCenterAlignment: hasCenterAlignment,
+        hasRightAlignment: hasRightAlignment,
+        hasHugeTable: hasHugeTable,
         tableDetails: tableDetails
       });
     })();

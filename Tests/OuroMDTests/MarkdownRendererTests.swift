@@ -91,6 +91,24 @@ final class MarkdownRendererTests: XCTestCase {
         XCTAssertFalse(html.contains("class=\"ouro-code-only-cell\">Mixed prose"))
     }
 
+    func testPathologicalTableCellsRenderAlignmentHTMLURLsAndEmptyCells() {
+        let html = render("""
+        | Left | Center | Right | HTML | URL | Empty | Code |
+        | :--- | :---: | ---: | --- | --- | --- | --- |
+        | alpha | beta | 42 | <kbd>Cmd</kbd><br><span>Span</span> | https://example.com/very/long/path |  | `Sources/OuroMD/LongPath.swift` |
+        """)
+
+        XCTAssertTrue(html.contains("<th style=\"text-align:left\">Left</th>"))
+        XCTAssertTrue(html.contains("<th style=\"text-align:center\">Center</th>"))
+        XCTAssertTrue(html.contains("<th style=\"text-align:right\">Right</th>"))
+        XCTAssertTrue(html.contains("<kbd>Cmd</kbd>"))
+        XCTAssertTrue(html.contains("<br>"))
+        XCTAssertTrue(html.contains("https://example.com/very/long/path"))
+        XCTAssertTrue(html.contains("<td></td>"))
+        XCTAssertTrue(html.contains("<td style=\"text-align:right\">42</td>"))
+        XCTAssertTrue(html.contains("<td class=\"ouro-code-only-cell\"><code>Sources/OuroMD/LongPath.swift</code></td>"))
+    }
+
     func testImageAlt() {
         let html = render("![the alt](pic.png)")
         XCTAssertTrue(html.contains("<img"))

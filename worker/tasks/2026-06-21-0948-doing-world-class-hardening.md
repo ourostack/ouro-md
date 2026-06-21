@@ -77,13 +77,13 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 | 9 | Open Recent isolation | Injected recent URL provider and clear handler; tested populated/empty recent menu without `NSDocumentController.shared` global state | `swift-test-budget --filter UndoRedoRoutingTests` passed | implemented |
 | 10 | Multi-window regressions | Added active-controller tracking and tests for open routing, save/rename targeting, theme/sidebar/search independence, and menu validation | `swift-test-budget --filter AppDelegateWindowRoutingTests` passed | implemented |
 | 11 | Dirty doc + update install + quit cancel | `TerminationSaveCoordinatorTests/testSaveFailureCancelsPendingManualUpdateBeforeQuitReply` proves dirty save failure cancels scheduled update before quit reply and preserves retry state | `OURO_TEST_LOG=.build/unit3-focused.log OURO_TEST_TIMINGS=.build/unit3-focused.tsv ./scripts/swift-test-budget.sh --filter 'OuroMDUpdateCoordinatorTests|OuroMDUpdateInstallerTests|TerminationSaveCoordinatorTests'` | implemented |
-| 12 | Web crash/reload smoke | Add actual headless WebKit crash/reload probe | pending | pending |
-| 13 | Large folders/deep/unusual/symlink | Extend folder scanner/browser tests | pending | pending |
-| 14 | Folder search UX edge cases | Add truncation/cancel/binary/unreadable tests | pending | pending |
-| 15 | Drag/drop file open + image paste/drop | Add file-open and JS image-transfer harness | pending | pending |
-| 16 | Pathological tables | Extend fixture with empty/aligned/HTML/URL cases and gate | pending | pending |
-| 17 | Print/PDF export probe | Add headless export probe with PDF validation | pending | pending |
-| 18 | HTML export snapshots all themes | Add render/export checks for each built-in theme | pending | pending |
+| 12 | Web crash/reload smoke | `--editorsurfacetest` loads the real WebKit editor, invokes the termination delegate, waits for a fresh ready event, and asserts recovered Markdown is restored | `./scripts/run-native-scenarios.sh` | implemented |
+| 13 | Large folders/deep/unusual/symlink | `FolderScanner` reports depth truncation/cancellation; tests cover deep cap, 5k budget, unusual names, duplicate basenames, and symlink traps | `swift-test-budget --filter 'FolderBrowserTests|ContentSearcherTests|FolderDisplayTests'` | implemented |
+| 14 | Folder search UX edge cases | Search now exposes Cancel, cancelled state, skipped binary/unreadable counts, and truncation; tests cover cancellation plus binary/unreadable skips without path leakage | `swift-test-budget --filter 'FolderBrowserTests|ContentSearcherTests|FolderDisplayTests'`; `--uisurfacetest` in native scenarios | implemented |
+| 15 | Drag/drop file open + image paste/drop | `EditorDropWebView` accepts Markdown/text file drops while images stay in JS; `--editorsurfacetest` synthesizes paste and drop image transfers and waits for data URI Markdown | `swift-test-budget --filter EditorWebViewTests`; `./scripts/run-native-scenarios.sh` | implemented |
+| 16 | Pathological tables | `dogfood-wide-tables.md` now includes empty, alignment, HTML, URL, sparse, long-code, and stress-grid tables; `--tablewraptest` gates category coverage and geometry/overflow at 448/1000/1400px | `swift-test-budget --filter 'MarkdownRendererTests|TableLayoutPolicyTests'`; `./scripts/run-native-scenarios.sh` | implemented |
+| 17 | Print/PDF export probe | `--editorsurfacetest` constructs a non-modal print operation and renders a PDF via WebKit, validating `%PDF` header and byte size | `./scripts/run-native-scenarios.sh` | implemented |
+| 18 | HTML export snapshots all themes | `--editorsurfacetest` writes standalone HTML exports for all built-in themes and checks document wrapper, theme CSS, table/body content, and inlined image data | `./scripts/run-native-scenarios.sh` | implemented |
 | 19 | Older-live to latest-live update e2e | Add script harness; run when feasible | pending | pending |
 | 20 | Rollback after backup creation | `OuroMDUpdateInstaller.applyScript` restores backup if the replacement is not a valid app bundle; `web/ouro-md-install.sh` no longer swallows restore failures | focused installer tests plus `bash -n web/ouro-md-install.sh scripts/*.sh` | implemented |
 | 21 | Cancellable/recoverable updater progress | `OuroMDUpdateCoordinator` owns manual install tasks with structured progress/cancel/retry; `UpdateProgressView` exposes Cancel/Retry controls | focused coordinator tests; `./scripts/run-native-scenarios.sh`; `--uisurfacetest` | implemented |
@@ -131,13 +131,13 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 
 ### Unit 4: Editor, Search, Folder, Tables, Image Transfer, Export
 
-- [ ] Extend large-folder/deep/unusual/symlink tests.
-- [ ] Add search truncation/cancel/binary/unreadable/permissions coverage.
-- [ ] Add `--imagetransfertest` or equivalent bridge transfer probe.
-- [ ] Extend pathological table fixture and table gate.
-- [ ] Add HTML export checks for all themes.
-- [ ] Add PDF/print export probe.
-- [ ] Add WebKit crash/reload headless smoke.
+- [x] Extend large-folder/deep/unusual/symlink tests.
+- [x] Add search truncation/cancel/binary/unreadable/permissions coverage.
+- [x] Add `--imagetransfertest` or equivalent bridge transfer probe.
+- [x] Extend pathological table fixture and table gate.
+- [x] Add HTML export checks for all themes.
+- [x] Add PDF/print export probe.
+- [x] Add WebKit crash/reload headless smoke.
 
 ### Unit 5: Product Polish
 
@@ -171,3 +171,4 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 - 2026-06-21 10:10 Completed Unit 1 harness layer: PR preflight, XCTest timing/budget wrapper, native scenario wrapper, visual failure artifacts, hosted installer check, CI/release wiring, and README notes. Validation: script syntax/diff check, source policy scan, filtered Swift timing wrapper, and shared native scenario wrapper passed.
 - 2026-06-21 10:25 Completed Unit 2 native UI/accessibility/open-flow layer. Validation: focused `DocumentWindowControllerTests|UndoRedoRoutingTests|AppDelegateWindowRoutingTests|ThemeAccessibilityTests` passed through `scripts/swift-test-budget.sh`; `./scripts/run-native-scenarios.sh` passed.
 - 2026-06-21 10:41 Completed Unit 3 updater/rollback layer. Validation: `bash -n web/ouro-md-install.sh scripts/*.sh`, `git diff --check`, focused `OuroMDUpdateCoordinatorTests|OuroMDUpdateInstallerTests|TerminationSaveCoordinatorTests`, `--uisurfacetest`, and `./scripts/run-native-scenarios.sh` passed.
+- 2026-06-21 10:57 Completed Unit 4 editor/search/folder/tables/export layer. Validation: focused `EditorWebViewTests`, focused `FolderBrowserTests|ContentSearcherTests|FolderDisplayTests`, focused `MarkdownRendererTests|TableLayoutPolicyTests`, `--editorsurfacetest`, dogfood tablewrap at 448/1000/1400px, `git diff --check`, and `./scripts/run-native-scenarios.sh` passed.

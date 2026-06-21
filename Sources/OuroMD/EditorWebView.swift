@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import WebKit
 
@@ -19,11 +20,13 @@ struct EditorWebView: NSViewRepresentable {
         configuration.userContentController = controller
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
 
-        let webView = WKWebView(frame: .zero, configuration: configuration)
+        let webView = EditorDropWebView(frame: .zero, configuration: configuration)
+        webView.model = model
         Self.applyLayerBackground(model.theme.backgroundHex, to: webView)
         webView.navigationDelegate = context.coordinator
         webView.allowsMagnification = true
         webView.allowsBackForwardNavigationGestures = false
+        webView.registerForDraggedTypes([.fileURL])
 
         context.coordinator.webView = webView
         model.bridge = context.coordinator
@@ -290,5 +293,29 @@ struct EditorWebView: NSViewRepresentable {
             }
             return "\"\""
         }
+    }
+}
+
+final class EditorDropWebView: WKWebView {
+    weak var model: AppModel?
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        Self.openableMarkdownURL(from: sender.draggingPasteboard) == nil ? super.draggingEntered(sender) : .copy
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        guard let url = Self.openableMarkdownURL(from: sender.draggingPasteboard) else {
+            return super.performDragOperation(sender)
+        }
+        model?.open(url: url)
+        return true
+    }
+
+    static func openableMarkdownURL(from pasteboard: NSPasteboard) -> URL? {
+        let options: [NSPasteboard.ReadingOptionKey: Any] = [
+            .urlReadingFileURLsOnly: true,
+        ]
+        let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: options) as? [URL] ?? []
+        return urls.first(where: FolderScanner.canOpen)
     }
 }
