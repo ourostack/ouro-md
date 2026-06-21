@@ -13,6 +13,7 @@ jobs:
   swift-test:
     name: Swift tests
     runs-on: macos-14
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
         with:
@@ -32,11 +33,20 @@ jobs:
       - name: Scan source policy
         run: ./scripts/release-policy.sh scan .
       - name: Run tests
-        run: swift test
+        run: ./scripts/swift-test-budget.sh
+      - name: Upload Swift test timings
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: swift-test-timings
+          path: |
+            .build/ouro-swift-test.log
+            .build/ouro-test-timings.tsv
 
   app-bundle:
     name: App bundle
     runs-on: macos-14
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
         with:
@@ -57,6 +67,7 @@ jobs:
   native-scenario-verifier:
     name: Native scenario verifier
     runs-on: macos-14
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
         with:
@@ -70,29 +81,20 @@ jobs:
       - name: Build
         run: swift build
       - name: Run headless editor harnesses
-        run: |
-          set -e
-          run() { perl -e 'alarm 90; exec @ARGV' .build/debug/ouro-md "$@"; }
-          run --undotest
-          run --wraptest
-          run --renderprobe
-          run --codewraptest
-          run --visualqatest
-          run --visualqatest --visualqa-file Tests/Fixtures/dogfood-visual-surface.md
-          run --visualqatest --theme graphite --visualqa-file Tests/Fixtures/dogfood-visual-surface.md
-          run --searchrevealtest
-          run --uisurfacetest
-          run --tablewraptest
-          run --tablewraptest --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
-          run --tablewraptest --tablewrap-width 1000 --tablewrap-height 1300 --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
-          run --tablewraptest --tablewrap-width 1400 --tablewrap-height 5000 --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
-          printf '# T\n\n| a | b |\n| - | - |\n| 1 | 2 |\n' > /tmp/rt.md
-          run --roundtrip /tmp/rt.md --out /tmp/rt-out.md
-          OURO_SELFTEST=1 run
+        env:
+          OURO_VISUAL_ARTIFACT_DIR: ${{ runner.temp }}/ouro-md-artifacts/visual-qa
+        run: ./scripts/run-native-scenarios.sh
+      - name: Upload visual QA artifacts
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: native-scenario-visual-artifacts
+          path: ${{ runner.temp }}/ouro-md-artifacts
 
   coverage:
     name: Coverage
     runs-on: macos-14
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
         with:
@@ -105,3 +107,12 @@ jobs:
           swift --version
       - name: Enforce 100% line+region coverage on OuroMDCore
         run: ./scripts/check-coverage.sh
+      - name: Upload coverage test timings
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: coverage-test-timings
+          path: |
+            .build/ouro-coverage-swift-test.log
+            .build/ouro-coverage-test-timings.tsv
+            .build/ouro-coverage.json

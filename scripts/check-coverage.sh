@@ -28,7 +28,9 @@ if [ -d /Applications ]; then
 fi
 
 echo "==> swift test --enable-code-coverage"
-swift test --enable-code-coverage
+OURO_TEST_LOG="${OURO_TEST_LOG:-.build/ouro-coverage-swift-test.log}" \
+  OURO_TEST_TIMINGS="${OURO_TEST_TIMINGS:-.build/ouro-coverage-test-timings.tsv}" \
+  ./scripts/swift-test-budget.sh --enable-code-coverage
 
 bin="$(find .build -name 'ouro-mdPackageTests' -type f -path '*MacOS*' ! -path '*dSYM*' | head -1)"
 prof="$(find .build -name 'default.profdata' | head -1)"
