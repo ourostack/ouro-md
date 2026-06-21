@@ -24,15 +24,15 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 
 ## Completion Criteria
 
-- [ ] The evidence matrix below has all 25 rows closed with one of: implemented, test/probe-covered, or hard-exception.
-- [ ] Every non-hard-exception row records concrete evidence: changed file(s), test/probe name, and the validation command that passed.
-- [ ] New or changed probes run in both local/package verification and CI when the behavior can be exercised in those environments.
-- [ ] CI produces durable debugging artifacts/annotations for slow tests and visual failures.
-- [ ] `swift test` passes.
-- [ ] `./scripts/check-coverage.sh` passes with 100% line and region coverage for `OuroMDCore`.
-- [ ] Native scenario verification passes against SwiftPM output.
-- [ ] Packaged app verification passes against the `.app` bundle.
-- [ ] PR preflight passes locally.
+- [x] The evidence matrix below has all 25 rows closed with one of: implemented, test/probe-covered, or hard-exception.
+- [x] Every non-hard-exception row records concrete evidence: changed file(s), test/probe name, and the validation command that passed.
+- [x] New or changed probes run in both local/package verification and CI when the behavior can be exercised in those environments.
+- [x] CI produces durable debugging artifacts/annotations for slow tests and visual failures.
+- [x] `swift test` passes.
+- [x] `./scripts/check-coverage.sh` passes with 100% line and region coverage for `OuroMDCore`.
+- [x] Native scenario verification passes against SwiftPM output.
+- [x] Packaged app verification passes against the `.app` bundle.
+- [x] PR preflight passes locally.
 - [ ] App-affecting changes are version-bumped, released, and verified from GitHub releases, unless the final evidence matrix records why release publication is non-applicable or blocked by a hard exception.
 - [ ] Main is green after merge.
 - [ ] No stale PR, branch, or worktree from this run remains.
@@ -66,10 +66,10 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 
 | # | Criterion | Evidence | Validation | Status |
 |---|---|---|---|---|
-| 1 | Local PR preflight mirrors freshness/source policy | `scripts/pr-preflight.sh` runs release version, freshness, source scan, build, timed tests, coverage, and native scenarios; README maintainer section points to it | `bash -n ...`; `./scripts/release-policy.sh scan .`; final full `./scripts/pr-preflight.sh` in Unit 6 | implemented, final full run pending |
+| 1 | Local PR preflight mirrors freshness/source policy | `scripts/pr-preflight.sh` runs release version, freshness, source scan, build, timed tests, coverage, and native scenarios; README maintainer section points to it | `bash -n ...`; `./scripts/release-policy.sh scan .`; final full `./scripts/pr-preflight.sh` passed in Unit 6 | implemented |
 | 2 | Node 20 warning handled | `.github/workflows/ci.yml` and `.github/workflows/release.yml` use `actions/upload-artifact@v6` | `rg -n "upload-artifact@v5|upload-artifact@v6"` shows only v6 | implemented |
-| 3 | Slowest-test annotations/artifact | `scripts/swift-test-budget.sh` prints slowest XCTest cases, writes `.build/ouro-test-timings.tsv`, and CI uploads timing artifacts | `OURO_TEST_LOG=.build/unit1-swift-test.log OURO_TEST_TIMINGS=.build/unit1-test-timings.tsv ./scripts/swift-test-budget.sh --filter ReleaseUpdateTests/testReleaseDescriptorMatchesCurrentDistribution` | implemented |
-| 4 | Individual XCTest runtime budget | `scripts/swift-test-budget.sh` fails when any XCTest exceeds `OURO_TEST_MAX_SECONDS` | same filtered wrapper run validated timing parse; full suite budget runs in Unit 6 | implemented, full-suite budget pending |
+| 3 | Slowest-test annotations/artifact | `scripts/swift-test-budget.sh` prints slowest XCTest cases, writes `.build/ouro-test-timings.tsv`, and CI uploads timing artifacts | `OURO_TEST_LOG=.build/unit1-swift-test.log OURO_TEST_TIMINGS=.build/unit1-test-timings.tsv ./scripts/swift-test-budget.sh --filter ReleaseUpdateTests/testReleaseDescriptorMatchesCurrentDistribution`; final full `./scripts/pr-preflight.sh` printed slowest XCTest cases | implemented |
+| 4 | Individual XCTest runtime budget | `scripts/swift-test-budget.sh` fails when any XCTest exceeds `OURO_TEST_MAX_SECONDS` | filtered wrapper run validated timing parse; final full `./scripts/pr-preflight.sh` ran the full timed suite, 239 tests, 0 failures | implemented |
 | 5 | Visual QA screenshots on failure | `scripts/run-visual-qa.sh` captures PNG artifacts with `--shoot`; CI uploads `${{ runner.temp }}/ouro-md-artifacts` on native scenario failure | `OURO_VISUAL_ARTIFACT_DIR=.build/unit1-visual-artifacts ./scripts/run-native-scenarios.sh` | implemented |
 | 6 | Visual QA covers prefs/search/update/menu | `UISurfaceTest` now covers Preferences, search sidebar, update progress installing/error states, and menu topology; native scenario runner calls it | `./scripts/run-native-scenarios.sh`; focused `--uisurfacetest` passed | implemented |
 | 7 | Accessibility audit | Added explicit SwiftUI labels for Preferences/sidebar/find/update surfaces, headless exposed-label checks, WCAG contrast tests, and reduced-motion CSS guard | `swift-test-budget --filter ThemeAccessibilityTests`; `--uisurfacetest` passed | implemented |
@@ -148,12 +148,12 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 
 ### Unit 6: Verification, Review, Merge, Release
 
-- [ ] Run `git diff --check`.
-- [ ] Run targeted tests/probes for each changed unit.
-- [ ] Run `swift test`.
-- [ ] Run `./scripts/check-coverage.sh`.
-- [ ] Run app bundle verification.
-- [ ] Run PR preflight.
+- [x] Run `git diff --check`.
+- [x] Run targeted tests/probes for each changed unit.
+- [x] Run `swift test`.
+- [x] Run `./scripts/check-coverage.sh`.
+- [x] Run app bundle verification.
+- [x] Run PR preflight.
 - [ ] Run final sub-agent implementation reviewer gate.
 - [ ] Push branch and open PR.
 - [ ] Wait for PR CI.
@@ -175,3 +175,4 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 - 2026-06-21 11:15 Completed Unit 5 product polish layer. Validation: focused `CommandPaletteTests|UndoRedoRoutingTests`, `--firstlaunchtest`, `--uisurfacetest`, signing readiness normal/fail-closed checks, `git diff --check`, script syntax checks, and `./scripts/run-native-scenarios.sh` passed.
 - 2026-06-21 11:23 Closed evidence row 19 with a permanent live-update gate. Validation: `bash -n scripts/check-live-update-path.sh`, `swift build`, `git diff --check`, and `./scripts/check-live-update-path.sh` passed against published releases `0.9.14 -> 0.9.15`.
 - 2026-06-21 11:28 Bumped app version to 0.9.16 for app-affecting changes after confirming latest published release is v0.9.15.
+- 2026-06-21 11:43 Completed local Unit 6 gates. Validation: `git diff --check`, focused unit probes, full timed XCTest through `scripts/swift-test-budget.sh` (239 tests, 0 failures), `./scripts/check-coverage.sh` (100% `OuroMDCore` line + region coverage), `OURO_VISUAL_ARTIFACT_DIR=.build/unit6-visual-artifacts ./scripts/run-native-scenarios.sh`, packaged `.app` verification, live update path check, and final `./scripts/pr-preflight.sh` all passed.
