@@ -120,6 +120,19 @@ if hasFlag("--firstlaunchtest") {
     }
 }
 
+if hasFlag("--liveupdatetest") {
+    guard let fromVersion = argValue("--live-update-from-version"),
+          let destination = argValue("--live-update-destination") else {
+        FileHandle.standardError.write(Data("ouro-md: --liveupdatetest requires --live-update-from-version and --live-update-destination\n".utf8))
+        exit(2)
+    }
+    LiveUpdateTester(
+        fromVersion: fromVersion,
+        expectedToVersion: argValue("--live-update-to-version"),
+        destinationBundle: URL(fileURLWithPath: destination)
+    ).run()
+}
+
 if hasFlag("--roundtrip") {
     guard let path = argValue("--roundtrip") else {
         FileHandle.standardError.write(Data("ouro-md: --roundtrip requires a FILE path\n".utf8))

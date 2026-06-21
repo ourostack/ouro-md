@@ -95,6 +95,7 @@ For a local package smoke:
 ./scripts/package-release.sh
 ./scripts/verify-packaged-app.sh OuroMD.app
 ./scripts/check-hosted-installer.sh         # smoke the public one-line installer URL
+./scripts/check-live-update-path.sh         # smoke older published release -> latest updater path
 ```
 
 Release builds can embed anonymous PostHog telemetry by setting

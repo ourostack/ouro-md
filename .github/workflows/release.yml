@@ -23,6 +23,7 @@ on:
       - 'Resources/**'
       - 'scripts/package-release.sh'
       - 'scripts/check-hosted-installer.sh'
+      - 'scripts/check-live-update-path.sh'
       - 'scripts/check-signing-readiness.sh'
       - 'scripts/pr-preflight.sh'
       - 'scripts/release-policy.sh'
@@ -128,3 +129,4 @@ jobs:
         run: |
           ./scripts/release-policy.sh verify-published --version "${{ steps.ver.outputs.version }}" --sha "$GITHUB_SHA"
           OURO_MD_EXPECT_VERSION="${{ steps.ver.outputs.version }}" ./scripts/check-hosted-installer.sh
+          OURO_MD_LIVE_UPDATE_TO_VERSION="${{ steps.ver.outputs.version }}" ./scripts/check-live-update-path.sh
