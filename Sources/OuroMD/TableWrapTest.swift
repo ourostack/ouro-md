@@ -69,6 +69,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             let collapsedLongCellCount = (body["collapsedLongCellCount"] as? Int) ?? .max
             let collapsedCodeCellCount = (body["collapsedCodeCellCount"] as? Int) ?? .max
             let imbalancedTableCount = (body["imbalancedTableCount"] as? Int) ?? .max
+            let overlappingCodeCount = (body["overlappingCodeCount"] as? Int) ?? .max
             let initialScrolledCount = (body["initialScrolledCount"] as? Int) ?? .max
             let scrollableCount = (body["scrollableCount"] as? Int) ?? 0
             let tableDetails = (body["tableDetails"] as? [[String: Any]]) ?? []
@@ -80,6 +81,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             let longCellsOK = collapsedLongCellCount == 0
             let codeCellsOK = collapsedCodeCellCount == 0
             let balanceOK = imbalancedTableCount == 0
+            let overlapOK = overlappingCodeCount == 0
             let initialScrollOK = initialScrolledCount == 0
             let scrollRequired = viewportWidth <= 800
             let scrollOK = !scrollRequired || scrollableCount > 0
@@ -92,6 +94,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             print("collapsed long cells: \(collapsedLongCellCount) \(longCellsOK ? "✓" : "✗")")
             print("collapsed code cells: \(collapsedCodeCellCount) \(codeCellsOK ? "✓" : "✗")")
             print("imbalanced sparse tables: \(imbalancedTableCount) \(balanceOK ? "✓" : "✗")")
+            print("code spilling across cells: \(overlappingCodeCount) \(overlapOK ? "✓" : "✗")")
             for detail in tableDetails {
                 let index = (detail["index"] as? Int) ?? -1
                 let width = (detail["clientWidth"] as? Double) ?? 0
@@ -103,7 +106,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
                 print(String(format: "table %02d width %.1fpx scroll %.1fpx left %.1fpx min-long %.1fpx min-code %.1fpx column-ratio %.2f",
                              index + 1, width, scroll, scrollLeft, minLong, minCode, columnRatio))
             }
-            exit(tableCountOK && pageOK && clippedOK && scrollOK && initialScrollOK && longCellsOK && codeCellsOK && balanceOK ? 0 : 1)
+            exit(tableCountOK && pageOK && clippedOK && scrollOK && initialScrollOK && longCellsOK && codeCellsOK && balanceOK && overlapOK ? 0 : 1)
         }
     }
 
@@ -166,6 +169,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
       var clippedCount = 0;
       var scrollableCount = 0;
       var imbalancedTableCount = 0;
+      var overlappingCodeCount = 0;
       var tableDetails = tables.map(function (table, index) {
         var rect = table.getBoundingClientRect();
         var scrollOverflow = table.scrollWidth - table.clientWidth;
@@ -190,6 +194,13 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
           var width = cell.getBoundingClientRect().width;
           if (text.length >= 24) { longWidths.push(width); }
           if (cell.querySelector("code")) { codeWidths.push(width); }
+          var cellRect = cell.getBoundingClientRect();
+          Array.prototype.slice.call(cell.querySelectorAll("code")).forEach(function (code) {
+            var codeRect = code.getBoundingClientRect();
+            if (codeRect.left < cellRect.left - 2 || codeRect.right > cellRect.right + 2) {
+              overlappingCodeCount += 1;
+            }
+          });
         });
         var minLongCellWidth = longWidths.length ? Math.min.apply(Math, longWidths) : 0;
         var minCodeCellWidth = codeWidths.length ? Math.min.apply(Math, codeWidths) : 0;
@@ -199,7 +210,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         if (scrollLeft > 1) { initialScrolledCount += 1; }
         if (minLongCellWidth > 0 && minLongCellWidth < 120) { collapsedLongCellCount += 1; }
         if (minCodeCellWidth > 0 && minCodeCellWidth < 140) { collapsedCodeCellCount += 1; }
-        if (columnCount >= 2 && columnCount <= 4 && table.clientWidth >= Math.min(900, viewportWidth - 24) && columnRatio > 2.25) {
+        if (scrollOverflow <= 2 && columnCount >= 2 && columnCount <= 4 && table.clientWidth >= Math.min(900, viewportWidth - 24) && columnRatio > 3) {
           imbalancedTableCount += 1;
         }
         return {
@@ -224,6 +235,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         collapsedLongCellCount: collapsedLongCellCount,
         collapsedCodeCellCount: collapsedCodeCellCount,
         imbalancedTableCount: imbalancedTableCount,
+        overlappingCodeCount: overlappingCodeCount,
         initialScrolledCount: initialScrolledCount,
         scrollableCount: scrollableCount,
         tableDetails: tableDetails

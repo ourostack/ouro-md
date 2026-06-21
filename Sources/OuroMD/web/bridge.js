@@ -480,8 +480,23 @@
     rewriteRelativeImages();
     styleAlerts();
     updateAlertEditing();
+    annotateCodeOnlyTableCells();
     resetTableScrollIfNeeded();
     resetNewTableScroll(document);
+  }
+
+  function annotateCodeOnlyTableCells() {
+    var cells = document.querySelectorAll(".vditor-reset th,.vditor-reset td");
+    for (var i = 0; i < cells.length; i++) {
+      var cell = cells[i];
+      cell.classList.remove("ouro-code-only-cell");
+      if (!cell.children || cell.children.length !== 1) { continue; }
+      var only = cell.firstElementChild;
+      if (!only || !only.matches || !only.matches("code")) { continue; }
+      if ((cell.textContent || "").trim() === (only.textContent || "").trim()) {
+        cell.classList.add("ouro-code-only-cell");
+      }
+    }
   }
 
   function schedulePostRender() {

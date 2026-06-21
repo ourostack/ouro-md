@@ -417,7 +417,7 @@ private struct HTMLVisitor: MarkupVisitor {
         var html = "<table>\n<thead>\n<tr>\n"
         let headCells = table.head.children.compactMap { $0 as? Table.Cell }
         for (index, cell) in headCells.enumerated() {
-            html += "<th\(styleFor(index))>\(renderChildren(cell))</th>\n"
+            html += "<th\(styleFor(index))\(codeOnlyClass(for: cell))>\(renderChildren(cell))</th>\n"
         }
         html += "</tr>\n</thead>\n"
 
@@ -428,7 +428,7 @@ private struct HTMLVisitor: MarkupVisitor {
                 html += "<tr>\n"
                 let cells = row.children.compactMap { $0 as? Table.Cell }
                 for (index, cell) in cells.enumerated() {
-                    html += "<td\(styleFor(index))>\(renderChildren(cell))</td>\n"
+                    html += "<td\(styleFor(index))\(codeOnlyClass(for: cell))>\(renderChildren(cell))</td>\n"
                 }
                 html += "</tr>\n"
             }
@@ -436,6 +436,11 @@ private struct HTMLVisitor: MarkupVisitor {
         }
         html += "</table>\n"
         return html
+    }
+
+    private func codeOnlyClass(for cell: Table.Cell) -> String {
+        let children = Array(cell.children)
+        return children.count == 1 && children[0] is InlineCode ? " class=\"ouro-code-only-cell\"" : ""
     }
 
     // MARK: - Helpers

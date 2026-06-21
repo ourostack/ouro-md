@@ -211,20 +211,12 @@ private func readerCSS(_ p: Palette) -> String {
     .task-list-item{list-style:none;}
     .task-list-item input{margin:0 .5em 0 -1.3em;vertical-align:middle;}
     table{border-collapse:collapse;display:block;overflow-x:auto;width:max-content;min-width:100%;max-width:var(--ouro-table-viewport);margin:0.8em 0;margin-left:min(0px, calc((100% - var(--ouro-table-viewport)) / 2));margin-right:min(0px, calc((100% - var(--ouro-table-viewport)) / 2));table-layout:auto;text-align:left;-webkit-overflow-scrolling:touch;}
-    table:has(tr>:nth-child(2):last-child){display:grid;grid-template-columns:repeat(2,minmax(18rem,1fr));width:var(--ouro-table-viewport);}
-    table:has(tr>:nth-child(3):last-child){display:grid;grid-template-columns:repeat(3,minmax(16rem,1fr));width:var(--ouro-table-viewport);}
-    table:has(tr>:nth-child(4):last-child){display:grid;grid-template-columns:repeat(4,minmax(14rem,1fr));width:var(--ouro-table-viewport);}
-    table:has(tr>:nth-child(2):last-child) thead,table:has(tr>:nth-child(2):last-child) tbody,table:has(tr>:nth-child(2):last-child) tr,table:has(tr>:nth-child(3):last-child) thead,table:has(tr>:nth-child(3):last-child) tbody,table:has(tr>:nth-child(3):last-child) tr,table:has(tr>:nth-child(4):last-child) thead,table:has(tr>:nth-child(4):last-child) tbody,table:has(tr>:nth-child(4):last-child) tr{display:contents;}
-    table:has(tr>:nth-child(2):last-child) th,table:has(tr>:nth-child(3):last-child) th,table:has(tr>:nth-child(4):last-child) th{background:\(p.tableFill);border-top:1px solid \(p.cellBorder);border-right:1px solid \(p.cellBorder);border-bottom:1px solid \(p.cellBorder);border-left:0;}
-    table:has(tr>:nth-child(2):last-child) th:first-child,table:has(tr>:nth-child(2):last-child) td:first-child,table:has(tr>:nth-child(3):last-child) th:first-child,table:has(tr>:nth-child(3):last-child) td:first-child,table:has(tr>:nth-child(4):last-child) th:first-child,table:has(tr>:nth-child(4):last-child) td:first-child{border-left:1px solid \(p.cellBorder);}
-    table:has(tr>:nth-child(2):last-child) td,table:has(tr>:nth-child(3):last-child) td,table:has(tr>:nth-child(4):last-child) td{border-top:0;border-right:1px solid \(p.cellBorder);border-bottom:1px solid \(p.cellBorder);border-left:0;}
-    table:has(tr>:nth-child(2):last-child) tr:nth-child(2n)>td,table:has(tr>:nth-child(3):last-child) tr:nth-child(2n)>td,table:has(tr>:nth-child(4):last-child) tr:nth-child(2n)>td{background:\(p.tableFill);}
     table tr{border:1px solid \(p.cellBorder);}
     table tr:nth-child(2n),thead{background:\(p.tableFill);}
     th{font-weight:bold;border:1px solid \(p.cellBorder);border-bottom:0;padding:6px 13px;white-space:normal;overflow-wrap:normal;word-break:normal;vertical-align:top;min-width:16rem;max-width:42rem;}
     td{border:1px solid \(p.cellBorder);padding:6px 13px;white-space:normal;overflow-wrap:normal;word-break:normal;vertical-align:top;min-width:16rem;max-width:42rem;}
-    th:has(code),td:has(code){max-width:none;}
-    td code,th code{white-space:nowrap;}
+    th.ouro-code-only-cell,td.ouro-code-only-cell{min-width:max-content;max-width:none;}
+    td code,th code{white-space:nowrap;display:inline-block;max-width:100%;overflow-x:auto;vertical-align:bottom;}
     img{max-width:100%;}
     """
 }
@@ -303,21 +295,13 @@ private func editorCSS(_ p: Palette) -> String {
 
     /* Tables (Github exact): #dfe2e5 borders, #f8f8f8 header + even rows, 6px 13px cells. */
     .vditor-reset table{border-collapse:collapse!important;display:block!important;overflow-x:auto!important;width:max-content!important;min-width:100%!important;max-width:var(--ouro-table-viewport)!important;margin:0.8em 0!important;margin-left:min(0px, calc((100% - var(--ouro-table-viewport)) / 2))!important;margin-right:min(0px, calc((100% - var(--ouro-table-viewport)) / 2))!important;table-layout:auto;text-align:left;-webkit-overflow-scrolling:touch;}
-    .vditor-reset table:has(tr>:nth-child(2):last-child){display:grid!important;grid-template-columns:repeat(2,minmax(18rem,1fr));width:var(--ouro-table-viewport)!important;}
-    .vditor-reset table:has(tr>:nth-child(3):last-child){display:grid!important;grid-template-columns:repeat(3,minmax(16rem,1fr));width:var(--ouro-table-viewport)!important;}
-    .vditor-reset table:has(tr>:nth-child(4):last-child){display:grid!important;grid-template-columns:repeat(4,minmax(14rem,1fr));width:var(--ouro-table-viewport)!important;}
-    .vditor-reset table:has(tr>:nth-child(2):last-child) thead,.vditor-reset table:has(tr>:nth-child(2):last-child) tbody,.vditor-reset table:has(tr>:nth-child(2):last-child) tr,.vditor-reset table:has(tr>:nth-child(3):last-child) thead,.vditor-reset table:has(tr>:nth-child(3):last-child) tbody,.vditor-reset table:has(tr>:nth-child(3):last-child) tr,.vditor-reset table:has(tr>:nth-child(4):last-child) thead,.vditor-reset table:has(tr>:nth-child(4):last-child) tbody,.vditor-reset table:has(tr>:nth-child(4):last-child) tr{display:contents!important;}
-    .vditor-reset table:has(tr>:nth-child(2):last-child) th,.vditor-reset table:has(tr>:nth-child(3):last-child) th,.vditor-reset table:has(tr>:nth-child(4):last-child) th{background:\(p.tableFill)!important;border-top:1px solid \(p.cellBorder)!important;border-right:1px solid \(p.cellBorder)!important;border-bottom:1px solid \(p.cellBorder)!important;border-left:0!important;}
-    .vditor-reset table:has(tr>:nth-child(2):last-child) th:first-child,.vditor-reset table:has(tr>:nth-child(2):last-child) td:first-child,.vditor-reset table:has(tr>:nth-child(3):last-child) th:first-child,.vditor-reset table:has(tr>:nth-child(3):last-child) td:first-child,.vditor-reset table:has(tr>:nth-child(4):last-child) th:first-child,.vditor-reset table:has(tr>:nth-child(4):last-child) td:first-child{border-left:1px solid \(p.cellBorder)!important;}
-    .vditor-reset table:has(tr>:nth-child(2):last-child) td,.vditor-reset table:has(tr>:nth-child(3):last-child) td,.vditor-reset table:has(tr>:nth-child(4):last-child) td{border-top:0!important;border-right:1px solid \(p.cellBorder)!important;border-bottom:1px solid \(p.cellBorder)!important;border-left:0!important;}
-    .vditor-reset table:has(tr>:nth-child(2):last-child) tr:nth-child(2n)>td,.vditor-reset table:has(tr>:nth-child(3):last-child) tr:nth-child(2n)>td,.vditor-reset table:has(tr>:nth-child(4):last-child) tr:nth-child(2n)>td{background:\(p.tableFill)!important;}
     .vditor-reset table tr{border:1px solid \(p.cellBorder)!important;background:\(p.bg)!important;}
     .vditor-reset table tr:nth-child(2n){background:\(p.tableFill)!important;}
     .vditor-reset table thead,.vditor-reset table thead tr,.vditor-reset table th{background:\(p.tableFill)!important;}
     .vditor-reset table th{font-weight:bold;border:1px solid \(p.cellBorder)!important;border-bottom:0!important;padding:6px 13px!important;color:\(p.fg)!important;white-space:normal!important;overflow-wrap:normal!important;word-break:normal!important;vertical-align:top!important;min-width:16rem;max-width:42rem;}
     .vditor-reset table td{border:1px solid \(p.cellBorder)!important;padding:6px 13px!important;color:\(p.fg)!important;background:transparent!important;white-space:normal!important;overflow-wrap:normal!important;word-break:normal!important;vertical-align:top!important;min-width:16rem;max-width:42rem;}
-    .vditor-reset table th:has(code),.vditor-reset table td:has(code){max-width:none!important;}
-    .vditor-reset table td code,.vditor-reset table th code{white-space:nowrap!important;}
+    .vditor-reset table th.ouro-code-only-cell,.vditor-reset table td.ouro-code-only-cell{min-width:max-content!important;max-width:none!important;}
+    .vditor-reset table td code,.vditor-reset table th code{white-space:nowrap!important;display:inline-block!important;max-width:100%!important;overflow-x:auto!important;vertical-align:bottom!important;}
 
     .vditor-reset img{max-width:100%;}
 
