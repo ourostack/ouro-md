@@ -111,10 +111,12 @@ final class UndoRedoRoutingTests: XCTestCase {
         let save = NSMenuItem(title: "Save", action: #selector(AppDelegate.saveDocument(_:)), keyEquivalent: "")
         let rename = NSMenuItem(title: "Rename", action: #selector(AppDelegate.renameDocument(_:)), keyEquivalent: "")
         let undo = NSMenuItem(title: "Undo", action: #selector(AppDelegate.undoEdit(_:)), keyEquivalent: "")
+        let search = NSMenuItem(title: "Search", action: #selector(AppDelegate.showSearchSidebar(_:)), keyEquivalent: "")
 
         XCTAssertFalse(delegate.validateMenuItem(save))
         XCTAssertFalse(delegate.validateMenuItem(rename))
         XCTAssertFalse(delegate.validateMenuItem(undo))
+        XCTAssertFalse(delegate.validateMenuItem(search))
     }
 
     func testMenuValidationKeepsGlobalCommandsEnabledWithoutAWindow() {

@@ -78,6 +78,7 @@ jobs:
           run --renderprobe
           run --tablewraptest
           run --tablewraptest --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
+          run --tablewraptest --tablewrap-width 1000 --tablewrap-height 1300 --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
           run --tablewraptest --tablewrap-width 1400 --tablewrap-height 5000 --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
           printf '# T\n\n| a | b |\n| - | - |\n| 1 | 2 |\n' > /tmp/rt.md
           run --roundtrip /tmp/rt.md --out /tmp/rt-out.md

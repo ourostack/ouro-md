@@ -109,6 +109,7 @@ fi
 "$exe" --wraptest
 "$exe" --tablewraptest
 "$exe" --tablewraptest --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
+"$exe" --tablewraptest --tablewrap-width 1000 --tablewrap-height 1300 --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
 "$exe" --tablewraptest --tablewrap-width 1400 --tablewrap-height 5000 --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
 
 tmp_root="$(mktemp -d /tmp/ouro-md-packaged.XXXXXX)"
