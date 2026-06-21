@@ -169,15 +169,19 @@ final class ContentSearcherTests: XCTestCase {
         XCTAssertFalse(model.searching)
         XCTAssertTrue(model.searchWasCancelled)
 
-        let done = expectation(description: "search with skipped files complete")
         model.searchQuery = "widget"
         model.runFolderSearch()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            if !model.searching { done.fulfill() }
-        }
-        wait(for: [done], timeout: 3)
+        XCTAssertTrue(waitUntil(timeout: 10) { !model.searching })
 
         XCTAssertEqual(model.searchSkippedBinaryCount, 1)
         XCTAssertEqual(model.searchSkippedMessage, "Skipped 1 binary file")
+    }
+
+    private func waitUntil(timeout: TimeInterval, condition: () -> Bool) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition(), Date() < deadline {
+            RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.05))
+        }
+        return condition()
     }
 }
