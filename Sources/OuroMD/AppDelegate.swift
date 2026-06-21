@@ -7,6 +7,7 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     var initialFilePath: String?
     private var controllers: [DocumentWindowController] = []
+    private weak var activeController: DocumentWindowController?
     private lazy var fallbackModel = AppModel()
     private let defaults = UserDefaults.standard
     let updateCoordinator = OuroMDUpdateCoordinator()
@@ -14,12 +15,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private var undoRedoShortcutMonitor: UndoRedoShortcutMonitor?
     private var updateProgressWindow: NSWindow?
     var recentDocumentURLsProvider: () -> [URL] = { NSDocumentController.shared.recentDocumentURLs }
+    var clearRecentDocumentsHandler: (Any?) -> Void = { NSDocumentController.shared.clearRecentDocuments($0) }
 
     private var isSelfTest: Bool { ProcessInfo.processInfo.environment["OURO_SELFTEST"] == "1" }
 
     /// The window the user is acting on (key/main), else the last opened.
     var frontController: DocumentWindowController? {
         let app = NSApplication.shared
+        if let activeController, controllers.contains(where: { $0 === activeController }) { return activeController }
         if let key = app.keyWindow, let c = controllers.first(where: { $0.window === key }) { return c }
         if let main = app.mainWindow, let c = controllers.first(where: { $0.window === main }) { return c }
         return controllers.last
@@ -32,8 +35,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     /// Registers a window controller and ensures it's dropped when its window
     /// closes, so closed windows (and their watchers) don't leak.
     private func track(_ controller: DocumentWindowController) {
+        activeController = controller
+        controller.onBecomeKey = { [weak self] active in
+            self?.activeController = active
+        }
         controller.onClose = { [weak self] closed in
             self?.controllers.removeAll { $0 === closed }
+            if self?.activeController === closed {
+                self?.activeController = self?.controllers.last
+            }
         }
         controllers.append(controller)
     }
@@ -368,7 +378,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         if let url = sender.representedObject as? URL { model.open(url: url) }
     }
     @objc func clearRecentDocuments(_ sender: Any?) {
-        NSDocumentController.shared.clearRecentDocuments(sender)
+        clearRecentDocumentsHandler(sender)
     }
     @objc func saveDocument(_ sender: Any?) { model.save() }
     @objc func saveDocumentAs(_ sender: Any?) { model.saveAs() }

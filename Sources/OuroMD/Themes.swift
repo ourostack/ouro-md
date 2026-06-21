@@ -87,10 +87,10 @@ final class ThemeStore {
         let palettes = [
             // Quartz — GitHub-style light document theme.
             Palette(id: "quartz", displayName: "Quartz", uiMode: "classic",
-                    bg: "#ffffff", fg: "#333333", faint: "#777777", accent: "#4183c4",
+                    bg: "#ffffff", fg: "#333333", faint: "#666666", accent: "#21659f",
                     headingRule: "#eeeeee", hrColor: "#e7e7e7", quoteBar: "#dfe2e5",
                     cellBorder: "#dfe2e5", tableFill: "#f8f8f8", codeBlockBg: "#f8f8f8",
-                    inlineCodeBg: "#f3f4f4", codeBorder: "#e7eaed", marker: "#a7a7a7",
+                    inlineCodeBg: "#f3f4f4", codeBorder: "#e7eaed", marker: "#707070",
                     selection: "#b5d6fc", sidebarBg: "#fafafa",
                     lightCodeSyntax: true),
             // Graphite — ouro-original dark theme.
@@ -103,18 +103,18 @@ final class ThemeStore {
                     lightCodeSyntax: false),
             // Manuscript — ouro-original warm serif theme.
             Palette(id: "manuscript", displayName: "Manuscript", uiMode: "classic",
-                    bg: "#f5efe3", fg: "#43392c", faint: "#9a8a6c", accent: "#9a5b34",
+                    bg: "#f5efe3", fg: "#43392c", faint: "#6f624e", accent: "#8a4b25",
                     headingRule: "#ddd0b8", hrColor: "#ddd0b8", quoteBar: "#cdbd98",
                     cellBorder: "#ddd0b8", tableFill: "#ece2cd", codeBlockBg: "#ece2cd",
-                    inlineCodeBg: "#ece2cd", codeBorder: "#ddd0b8", marker: "#b5a585",
+                    inlineCodeBg: "#ece2cd", codeBorder: "#ddd0b8", marker: "#6f624e",
                     selection: "rgba(154,91,52,0.16)", sidebarBg: "#efe7d5",
                     lightCodeSyntax: true),
             // Newsprint — ouro-original cool serif theme.
             Palette(id: "newsprint", displayName: "Newsprint", uiMode: "classic",
-                    bg: "#fbfbf9", fg: "#2b2b2b", faint: "#777777", accent: "#1a1a1a",
+                    bg: "#fbfbf9", fg: "#2b2b2b", faint: "#666666", accent: "#1a1a1a",
                     headingRule: "#e3e3df", hrColor: "#e3e3df", quoteBar: "#cfcfca",
                     cellBorder: "#e3e3df", tableFill: "#efefec", codeBlockBg: "#efefec",
-                    inlineCodeBg: "#efefec", codeBorder: "#e3e3df", marker: "#9a9a9a",
+                    inlineCodeBg: "#efefec", codeBorder: "#e3e3df", marker: "#666666",
                     selection: "rgba(0,0,0,0.10)", sidebarBg: "#f3f3f0",
                     lightCodeSyntax: true)
         ]
@@ -318,6 +318,7 @@ private func editorCSS(_ p: Palette) -> String {
     /* Focus mode. */
     body.ouro-focus .vditor-reset>*{opacity:.3;transition:opacity .18s ease;}
     body.ouro-focus .vditor-reset>.ouro-active,body.ouro-focus .vditor-reset>.ouro-active *{opacity:1;}
+    @media (prefers-reduced-motion:reduce){body.ouro-focus .vditor-reset>*{transition:none!important;}}
 
     ::selection{background:\(p.selection);}
     .vditor-reset ::selection{background:\(p.selection);}

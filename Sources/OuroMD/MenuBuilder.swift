@@ -71,6 +71,7 @@ enum MenuBuilder {
 
     // MARK: - File menu
 
+    @MainActor
     private static func fileMenu(target: AppDelegate) -> NSMenuItem {
         let item = NSMenuItem()
         let menu = NSMenu(title: "File")
@@ -85,7 +86,9 @@ enum MenuBuilder {
 
         let openRecent = menu.addItem(withTitle: "Open Recent", action: nil, keyEquivalent: "")
         let recentMenu = NSMenu(title: "Open Recent")
-        let delegate = RecentMenuDelegate(target: target)
+        let delegate = RecentMenuDelegate(target: target) { [weak target] in
+            target?.recentDocumentURLsProvider() ?? []
+        }
         recentDelegate = delegate
         recentMenu.delegate = delegate
         openRecent.submenu = recentMenu
@@ -311,14 +314,19 @@ enum MenuBuilder {
 }
 
 /// Rebuilds the "Open Recent" submenu each time it opens.
+@MainActor
 final class RecentMenuDelegate: NSObject, NSMenuDelegate {
     private weak var target: AppDelegate?
+    private let recentsProvider: @MainActor () -> [URL]
 
-    init(target: AppDelegate) { self.target = target }
+    init(target: AppDelegate, recentsProvider: @escaping @MainActor () -> [URL]) {
+        self.target = target
+        self.recentsProvider = recentsProvider
+    }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
-        let recents = NSDocumentController.shared.recentDocumentURLs
+        let recents = recentsProvider()
         if recents.isEmpty {
             let empty = menu.addItem(withTitle: "No Recent Documents", action: nil, keyEquivalent: "")
             empty.isEnabled = false

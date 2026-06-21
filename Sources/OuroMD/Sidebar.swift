@@ -49,13 +49,14 @@ struct SidebarView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Picker("", selection: Binding(get: { model.sidebarMode }, set: { model.setSidebarMode($0) })) {
+            Picker("Sidebar section", selection: Binding(get: { model.sidebarMode }, set: { model.setSidebarMode($0) })) {
                 Text("Outline").tag(SidebarMode.outline)
                 Text("Files").tag(SidebarMode.files)
                 Text("Search").tag(SidebarMode.search)
             }
             .pickerStyle(.segmented)
             .labelsHidden()
+            .accessibilityLabel("Sidebar section")
             .padding(8)
             Divider()
             switch model.sidebarMode {
@@ -74,6 +75,7 @@ struct SidebarView: View {
                     Image(systemName: "line.3.horizontal.decrease").font(.system(size: 11)).foregroundStyle(.secondary)
                     TextField("Filter", text: Binding(get: { model.outlineFilter }, set: { model.outlineFilter = $0 }))
                         .textFieldStyle(.plain).font(.system(size: 12))
+                        .accessibilityLabel("Filter outline")
                 }
                 .padding(.horizontal, 8).padding(.vertical, 6)
                 Divider()
@@ -136,6 +138,7 @@ struct FolderBrowserView: View {
                     get: { model.folderFilter }, set: { model.folderFilter = $0 }))
                     .textFieldStyle(.plain)
                     .font(.system(size: 12))
+                    .accessibilityLabel("Search by file name")
                 if !model.folderFilter.isEmpty {
                     Button { model.folderFilter = "" } label: { Image(systemName: "xmark.circle.fill") }
                         .buttonStyle(.plain).foregroundStyle(.tertiary)
@@ -277,7 +280,13 @@ struct SearchPanelView: View {
                 TextField("Search text in folder", text: Binding(get: { model.searchQuery }, set: { model.searchQuery = $0 }))
                     .textFieldStyle(.plain).font(.system(size: 12)).focused($focused)
                     .onSubmit { model.runFolderSearch() }
-                if model.searching { ProgressView().controlSize(.small).scaleEffect(0.7) }
+                    .accessibilityLabel("Search text in folder")
+                if model.searching {
+                    ProgressView()
+                        .controlSize(.small)
+                        .scaleEffect(0.7)
+                        .accessibilityLabel("Searching folder")
+                }
             }
             .padding(.horizontal, 8).padding(.vertical, 6)
             HStack(spacing: 6) {
@@ -285,7 +294,9 @@ struct SearchPanelView: View {
                 opt("Word", model.searchWholeWord, "Whole Word") { model.searchWholeWord.toggle(); model.runFolderSearch() }
                 opt(".*", model.searchRegexp, "Regular Expression") { model.searchRegexp.toggle(); model.runFolderSearch() }
                 Spacer()
-                Button("Search") { model.runFolderSearch() }.controlSize(.small)
+                Button("Search") { model.runFolderSearch() }
+                    .controlSize(.small)
+                    .accessibilityLabel("Search folder")
             }
             .padding(.horizontal, 8).padding(.bottom, 6)
             Divider()
@@ -418,6 +429,7 @@ private struct FindBar: View {
                 TextField("Find", text: Binding(get: { model.findQuery }, set: { model.setFindQuery($0) }))
                     .textFieldStyle(.plain).frame(width: 150).focused($focused)
                     .onSubmit { model.findNext() }
+                    .accessibilityLabel("Find")
                 optionButton("Aa", isOn: model.findCaseSensitive, help: "Case Sensitive") { model.findCaseSensitive.toggle(); model.findNext() }
                 optionButton("Word", isOn: model.findWholeWord, help: "Whole Word") { model.findWholeWord.toggle(); model.findNext() }
                 Button { model.findPrev() } label: { Image(systemName: "chevron.up") }.buttonStyle(.plain)
@@ -435,6 +447,7 @@ private struct FindBar: View {
                     Image(systemName: "arrow.uturn.forward").foregroundStyle(.secondary).font(.system(size: 11))
                     TextField("Replace", text: Binding(get: { model.replaceText }, set: { model.replaceText = $0 }))
                         .textFieldStyle(.plain).frame(width: 150)
+                        .accessibilityLabel("Replace")
                     Button("Replace") { model.replaceNext() }.controlSize(.small)
                     Button("All") { model.replaceAll() }.controlSize(.small)
                 }

@@ -71,11 +71,11 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 | 3 | Slowest-test annotations/artifact | `scripts/swift-test-budget.sh` prints slowest XCTest cases, writes `.build/ouro-test-timings.tsv`, and CI uploads timing artifacts | `OURO_TEST_LOG=.build/unit1-swift-test.log OURO_TEST_TIMINGS=.build/unit1-test-timings.tsv ./scripts/swift-test-budget.sh --filter ReleaseUpdateTests/testReleaseDescriptorMatchesCurrentDistribution` | implemented |
 | 4 | Individual XCTest runtime budget | `scripts/swift-test-budget.sh` fails when any XCTest exceeds `OURO_TEST_MAX_SECONDS` | same filtered wrapper run validated timing parse; full suite budget runs in Unit 6 | implemented, full-suite budget pending |
 | 5 | Visual QA screenshots on failure | `scripts/run-visual-qa.sh` captures PNG artifacts with `--shoot`; CI uploads `${{ runner.temp }}/ouro-md-artifacts` on native scenario failure | `OURO_VISUAL_ARTIFACT_DIR=.build/unit1-visual-artifacts ./scripts/run-native-scenarios.sh` | implemented |
-| 6 | Visual QA covers prefs/search/update/menu | Extend `UISurfaceTest`/menu probes | pending | pending |
-| 7 | Accessibility audit | Add AX labels/focus/contrast/reduced-motion checks | pending | pending |
-| 8 | Title/click/open flows | Add title decision/open-state tests | pending | pending |
-| 9 | Open Recent isolation | Inject recents provider into menu delegate and tests | pending | pending |
-| 10 | Multi-window regressions | Add two-window model/app tests | pending | pending |
+| 6 | Visual QA covers prefs/search/update/menu | `UISurfaceTest` now covers Preferences, search sidebar, update progress installing/error states, and menu topology; native scenario runner calls it | `./scripts/run-native-scenarios.sh`; focused `--uisurfacetest` passed | implemented |
+| 7 | Accessibility audit | Added explicit SwiftUI labels for Preferences/sidebar/find/update surfaces, headless exposed-label checks, WCAG contrast tests, and reduced-motion CSS guard | `swift-test-budget --filter ThemeAccessibilityTests`; `--uisurfacetest` passed | implemented |
+| 8 | Title/click/open flows | Extracted `TitleClickGesture`, tested title click open handler, click-vs-drag threshold, saved/renamed/deleted chrome states | `swift-test-budget --filter DocumentWindowControllerTests` passed | implemented |
+| 9 | Open Recent isolation | Injected recent URL provider and clear handler; tested populated/empty recent menu without `NSDocumentController.shared` global state | `swift-test-budget --filter UndoRedoRoutingTests` passed | implemented |
+| 10 | Multi-window regressions | Added active-controller tracking and tests for open routing, save/rename targeting, theme/sidebar/search independence, and menu validation | `swift-test-budget --filter AppDelegateWindowRoutingTests` passed | implemented |
 | 11 | Dirty doc + update install + quit cancel | Add coordinator/app-level cancellation tests | pending | pending |
 | 12 | Web crash/reload smoke | Add actual headless WebKit crash/reload probe | pending | pending |
 | 13 | Large folders/deep/unusual/symlink | Extend folder scanner/browser tests | pending | pending |
@@ -113,12 +113,12 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 
 ### Unit 2: Native UI, Accessibility, Menus, Open Flows
 
-- [ ] Inject recents provider through `RecentMenuDelegate` and test without `NSDocumentController.shared`.
-- [ ] Extract/test title click-vs-drag decision.
-- [ ] Add app/file-open state tests for untitled, saved, renamed, and missing-file documents.
-- [ ] Add two-window tests for menu validation, theme/sidebar/search independence, save/rename targeting.
-- [ ] Extend `UISurfaceTest` for Preferences/search/update progress/menu layout and AX labels/actions/focus.
-- [ ] Add contrast and reduced-motion guardrails.
+- [x] Inject recents provider through `RecentMenuDelegate` and test without `NSDocumentController.shared`.
+- [x] Extract/test title click-vs-drag decision.
+- [x] Add app/file-open state tests for untitled, saved, renamed, and missing-file documents.
+- [x] Add two-window tests for menu validation, theme/sidebar/search independence, save/rename targeting.
+- [x] Extend `UISurfaceTest` for Preferences/search/update progress/menu layout and AX labels/actions/focus.
+- [x] Add contrast and reduced-motion guardrails.
 
 ### Unit 3: Updater Cancellable Progress And Rollback
 
@@ -169,3 +169,4 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 - 2026-06-21 09:55 Folded explorer findings into unit checklist and 25-row acceptance trace.
 - 2026-06-21 10:02 Reshaped doing doc to the local template and made the evidence matrix mandatory after reviewer findings.
 - 2026-06-21 10:10 Completed Unit 1 harness layer: PR preflight, XCTest timing/budget wrapper, native scenario wrapper, visual failure artifacts, hosted installer check, CI/release wiring, and README notes. Validation: script syntax/diff check, source policy scan, filtered Swift timing wrapper, and shared native scenario wrapper passed.
+- 2026-06-21 10:25 Completed Unit 2 native UI/accessibility/open-flow layer. Validation: focused `DocumentWindowControllerTests|UndoRedoRoutingTests|AppDelegateWindowRoutingTests|ThemeAccessibilityTests` passed through `scripts/swift-test-budget.sh`; `./scripts/run-native-scenarios.sh` passed.
