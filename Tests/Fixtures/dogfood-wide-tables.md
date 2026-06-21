@@ -46,14 +46,14 @@ rows, and tables that should scroll locally without pushing the whole document.
 | Command | Expected output | Owner |
 | --- | --- | --- |
 | `swift run ouro-md --tablewraptest --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md --tablewrap-width 1400 --tablewrap-height 5000` | no page overflow, table-local scroll only when needed, initial scroll offsets all zero | CI |
-| `./scripts/release-policy.sh verify-published --version 0.9.9 --sha <main-sha>` | latest release, manifest, zip, app, and installer all point at the same build | Release |
+| `./scripts/release-policy.sh verify-published --version 0.9.10 --sha <main-sha>` | latest release, manifest, zip, app, and installer all point at the same build | Release |
 
 ## Many Columns
 
 | Area | User signal | Source path | Bundle path | Release path | Probe | Owner |
 | --- | --- | --- | --- | --- | --- | --- |
-| Tables | Large document remains readable | `Sources/OuroMD/Themes.swift` | `OuroMD.app/Contents/Resources/ouro-md_OuroMD.bundle/web/index.html` | `dist/Ouro-MD-0.9.9.zip` | `--tablewraptest` | CI |
-| Title | Clicking title opens file picker | `Sources/OuroMD/DocumentWindowController.swift` | `OuroMD.app/Contents/MacOS/ouro-md` | `Ouro-MD-0.9.9.manifest.json` | `DocumentWindowControllerTests` | Swift tests |
+| Tables | Large document remains readable | `Sources/OuroMD/Themes.swift` | `OuroMD.app/Contents/Resources/ouro-md_OuroMD.bundle/web/index.html` | `dist/Ouro-MD-0.9.10.zip` | `--tablewraptest` | CI |
+| Title | Clicking title opens file picker | `Sources/OuroMD/DocumentWindowController.swift` | `OuroMD.app/Contents/MacOS/ouro-md` | `Ouro-MD-0.9.10.manifest.json` | `DocumentWindowControllerTests` | Swift tests |
 
 ## Narrow Prose
 
@@ -62,6 +62,16 @@ rows, and tables that should scroll locally without pushing the whole document.
 | no horizontal document overflow | only tables may scroll horizontally |
 | no collapsed code cells | path/code content should stay readable |
 | no initial table scroll offset | opening a document starts every table at the left edge |
+
+## Offline Queue Policy
+
+This table mirrors the sparse two-column shape from the live doing doc: one
+side is a dense list, the other is shorter prose. It should not render as a
+thin left ribbon beside a huge empty right column.
+
+| Queueable while offline | Online-only while offline |
+| --- | --- |
+| Recipe create/update/delete/fork; step create/update/delete/reorder; step ingredient add/delete; dependency edits; cookbook create/rename/delete/add/remove recipe; shopping item add/check/delete/add-from-recipe/clear-completed/clear-all; cook progress/checkoff/timer/scale changes; spoon create/update/delete/photo payload updates; cover upload/set-active/remove/archive/regenerate/from-spoon; capture draft create/edit/discard; import submit; profile display-field update; profile photo upload/remove after local media staging; notification preference update; APNs device registration/revocation after a device token exists; Siri writes that map to one of these queueable mutations. | OAuth sign-in/callback; token create; token revoke; OAuth connection disconnect; logout/session revoke; passkey/password/provider-link actions; APNs permission prompt; APNs device-token acquisition; production AASA/APNs/TestFlight validation; provider-generated cover regeneration or recipe import when the matching `ProviderSecret` blocker exists; destructive production operation approval. |
 
 ## Mixed Content
 
