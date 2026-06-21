@@ -244,11 +244,17 @@ final class AppModelReloadTests: XCTestCase {
         // Simulate the user editing, then an autosave-style write of that content.
         bridge.current = "# Original\n\nMy edit.\n"
         model.setDirty(true)
-        model.save()
+        let unexpectedReload = expectation(description: "own save reloaded")
+        unexpectedReload.isInverted = true
+        bridge.onReload = { _ in unexpectedReload.fulfill() }
 
-        let done = expectation(description: "settled")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { done.fulfill() }
-        wait(for: [done], timeout: 3)
+        let saved = expectation(description: "own save completed")
+        model.performSave { ok in
+            XCTAssertTrue(ok)
+            saved.fulfill()
+        }
+        wait(for: [saved], timeout: 2)
+        wait(for: [unexpectedReload], timeout: 1)
         XCTAssertTrue(bridge.reloads.isEmpty, "saving our own content should not trigger a reload")
     }
 
@@ -281,10 +287,12 @@ final class AppModelReloadTests: XCTestCase {
         """
         bridge.current = dirtyEditorOutput
         model.setDirty(true)
-        model.save()
 
         let done = expectation(description: "save settled")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { done.fulfill() }
+        model.performSave { ok in
+            XCTAssertTrue(ok)
+            done.fulfill()
+        }
         wait(for: [done], timeout: 2)
         XCTAssertEqual(try? String(contentsOf: url, encoding: .utf8), dirtyEditorOutput)
         assertTelemetry(
