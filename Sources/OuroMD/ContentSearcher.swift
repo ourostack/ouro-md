@@ -25,6 +25,20 @@ struct SearchResult: Identifiable, Hashable {
     var count: Int { snippets.count }
 }
 
+struct SearchCompletion: Equatable {
+    var isTruncated: Bool
+    var skippedUnreadableCount: Int
+    var skippedBinaryCount: Int
+    var isCancelled: Bool
+
+    static let empty = SearchCompletion(
+        isTruncated: false,
+        skippedUnreadableCount: 0,
+        skippedBinaryCount: 0,
+        isCancelled: false
+    )
+}
+
 /// Streams whole-folder content-search results off the main thread. New
 /// searches cancel in-flight ones. Filename hits rank first, then by match
 /// count, without a bundled external search binary.
@@ -44,25 +58,33 @@ final class ContentSearcher {
     func search(_ query: String, in folder: URL,
                 caseSensitive: Bool, wholeWord: Bool, regexp: Bool,
                 onResult: @escaping (SearchResult) -> Void,
-                onComplete: @escaping (Bool) -> Void) {
+                onComplete: @escaping (SearchCompletion) -> Void) {
         cancel()
         let trimmed = query.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty,
               let regex = Self.makeRegex(trimmed, caseSensitive: caseSensitive, wholeWord: wholeWord, regexp: regexp) else {
-            onComplete(false); return
+            onComplete(.empty); return
         }
         let nameQuery = trimmed.lowercased()
         var workItem: DispatchWorkItem!
         let work = DispatchWorkItem { [weak self] in
             guard self != nil else { return }
-            let snapshot = FolderScanner.snapshot(at: folder, sort: .name)
+            let snapshot = FolderScanner.snapshot(at: folder, sort: .name, shouldCancel: { workItem.isCancelled })
+            if snapshot.isCancelled { return }
             let files = snapshot.flat
+            var skippedUnreadableCount = 0
+            var skippedBinaryCount = 0
             for node in files {
                 if workItem.isCancelled { return }
                 let nameMatched = node.name.lowercased().contains(nameQuery)
                 var snippets: [SearchSnippet] = []
-                if let text = AppModel.readText(at: node.url), text.utf8.count <= Self.maxFileBytes {
+                switch Self.searchableText(at: node.url) {
+                case let .text(text):
                     snippets = Self.matches(in: text, regex: regex)
+                case .binary:
+                    skippedBinaryCount += 1
+                case .unreadable:
+                    skippedUnreadableCount += 1
                 }
                 guard nameMatched || !snippets.isEmpty else { continue }
                 let result = SearchResult(id: node.url, url: node.url, name: node.name,
@@ -70,11 +92,46 @@ final class ContentSearcher {
                                           nameMatched: nameMatched, snippets: snippets)
                 DispatchQueue.main.async { if !workItem.isCancelled { onResult(result) } }
             }
-            DispatchQueue.main.async { if !workItem.isCancelled { onComplete(snapshot.isTruncated) } }
+            DispatchQueue.main.async {
+                if !workItem.isCancelled {
+                    onComplete(SearchCompletion(
+                        isTruncated: snapshot.isTruncated,
+                        skippedUnreadableCount: skippedUnreadableCount,
+                        skippedBinaryCount: skippedBinaryCount,
+                        isCancelled: false
+                    ))
+                }
+            }
         }
         workItem = work
         current = work
         queue.async(execute: work)
+    }
+
+    private enum SearchableText {
+        case text(String)
+        case unreadable
+        case binary
+    }
+
+    private static func searchableText(at url: URL) -> SearchableText {
+        guard let text = AppModel.readText(at: url), text.utf8.count <= maxFileBytes else {
+            return .unreadable
+        }
+        return looksBinary(text) ? .binary : .text(text)
+    }
+
+    private static func looksBinary(_ text: String) -> Bool {
+        var controlCount = 0
+        var scalarCount = 0
+        for scalar in text.unicodeScalars {
+            scalarCount += 1
+            if scalar.value == 0 { return true }
+            if scalar.value < 32, scalar.value != 10, scalar.value != 13, scalar.value != 9 {
+                controlCount += 1
+            }
+        }
+        return controlCount > max(8, scalarCount / 100)
     }
 
     private static func matches(in text: String, regex: NSRegularExpression) -> [SearchSnippet] {

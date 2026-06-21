@@ -17,6 +17,7 @@ struct FolderScanSnapshot: Equatable {
     var tree: [FolderNode]
     var flat: [FolderNode]
     var isTruncated = false
+    var isCancelled = false
 }
 
 enum FolderSort: String, CaseIterable {
@@ -60,13 +61,18 @@ enum FolderScanner {
 
     /// Tree + flat views from one filesystem traversal. The sidebar needs both
     /// views at the same time, so this avoids scanning large folders twice.
-    static func snapshot(at folder: URL, sort: FolderSort) -> FolderScanSnapshot {
+    static func snapshot(
+        at folder: URL,
+        sort: FolderSort,
+        shouldCancel: () -> Bool = { false }
+    ) -> FolderScanSnapshot {
         var budget = maxFiles
-        let raw = scan(folder, sort: sort, budget: &budget)
+        let raw = scan(folder, sort: sort, budget: &budget, shouldCancel: shouldCancel)
         return FolderScanSnapshot(
             tree: raw.tree,
             flat: sortNodes(raw.flat, sort: sort, groupDirs: false),
-            isTruncated: raw.isTruncated
+            isTruncated: raw.isTruncated,
+            isCancelled: raw.isCancelled
         )
     }
 
@@ -79,8 +85,15 @@ enum FolderScanner {
         .isDirectoryKey, .isSymbolicLinkKey, .contentModificationDateKey, .creationDateKey, .fileSizeKey
     ]
 
-    private static func scan(_ dir: URL, sort: FolderSort, budget: inout Int, depth: Int = 0) -> FolderScanSnapshot {
-        guard depth < maxDepth else { return FolderScanSnapshot(tree: [], flat: []) }
+    private static func scan(
+        _ dir: URL,
+        sort: FolderSort,
+        budget: inout Int,
+        depth: Int = 0,
+        shouldCancel: () -> Bool
+    ) -> FolderScanSnapshot {
+        guard !shouldCancel() else { return FolderScanSnapshot(tree: [], flat: [], isCancelled: true) }
+        guard depth < maxDepth else { return FolderScanSnapshot(tree: [], flat: [], isTruncated: true) }
         guard budget > 0 else { return FolderScanSnapshot(tree: [], flat: [], isTruncated: true) }
         let fm = FileManager.default
         guard let entries = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: scanKeys,
@@ -90,6 +103,9 @@ enum FolderScanner {
         var treeNodes: [FolderNode] = []
         var flatNodes: [FolderNode] = []
         for url in entries {
+            if shouldCancel() {
+                return FolderScanSnapshot(tree: treeNodes, flat: flatNodes, isCancelled: true)
+            }
             let name = url.lastPathComponent
             if name == "node_modules" { continue }
             let values = try? url.resourceValues(forKeys: Set(scanKeys))
@@ -98,7 +114,7 @@ enum FolderScanner {
             let mtime = values?.contentModificationDate ?? .distantPast
             let ctime = values?.creationDate ?? .distantPast
             if isDir {
-                let child = scan(url, sort: sort, budget: &budget, depth: depth + 1)
+                let child = scan(url, sort: sort, budget: &budget, depth: depth + 1, shouldCancel: shouldCancel)
                 flatNodes.append(contentsOf: child.flat)
                 if !child.tree.isEmpty {
                     treeNodes.append(FolderNode(url: url, name: name, isDirectory: true,
@@ -109,6 +125,13 @@ enum FolderScanner {
                         tree: sortNodes(treeNodes, sort: sort, groupDirs: true),
                         flat: flatNodes,
                         isTruncated: true
+                    )
+                }
+                if child.isCancelled {
+                    return FolderScanSnapshot(
+                        tree: sortNodes(treeNodes, sort: sort, groupDirs: true),
+                        flat: flatNodes,
+                        isCancelled: true
                     )
                 }
             } else if canOpen(url), (values?.fileSize ?? 0) <= maxFileBytes {

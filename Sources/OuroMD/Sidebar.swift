@@ -286,6 +286,13 @@ struct SearchPanelView: View {
                         .controlSize(.small)
                         .scaleEffect(0.7)
                         .accessibilityLabel("Searching folder")
+                    Button { model.cancelFolderSearch() } label: {
+                        Image(systemName: "xmark.circle.fill")
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.tertiary)
+                    .help("Cancel Search")
+                    .accessibilityLabel("Cancel search")
                 }
             }
             .padding(.horizontal, 8).padding(.vertical, 6)
@@ -318,6 +325,25 @@ struct SearchPanelView: View {
                     .padding(.horizontal, 8)
                     .padding(.vertical, 5)
                     .accessibilityLabel("Search limited")
+                Divider()
+            }
+            if model.searchWasCancelled {
+                Label("Search cancelled", systemImage: "xmark.circle")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .accessibilityLabel("Search cancelled")
+                Divider()
+            }
+            if let message = model.searchSkippedMessage {
+                Label(message, systemImage: "exclamationmark.triangle")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .accessibilityLabel("Search skipped files")
+                    .accessibilityValue(message)
                 Divider()
             }
             results

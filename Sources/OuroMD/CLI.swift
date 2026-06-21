@@ -32,6 +32,7 @@ enum OuroCLI {
       ouro-md --visualqatest         Verify mixed visual document surfaces.
       ouro-md --searchrevealtest     Verify search result reveal semantics.
       ouro-md --uisurfacetest        Verify native Preferences/search surfaces.
+      ouro-md --editorsurfacetest    Verify editor transfer/recovery/export surfaces.
       ouro-md --undotest             Verify editor undo/redo routing.
       ouro-md --help | --version
 

@@ -86,6 +86,55 @@ final class FolderBrowserTests: XCTestCase {
         XCTAssertFalse(tree.contains { $0.name == "loop" }, "symlinks must be skipped")
     }
 
+    func testDeepTreeReportsTruncationAtDepthCap() throws {
+        var dir = root.appendingPathComponent("deep")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        for i in 0..<28 {
+            dir = dir.appendingPathComponent("level-\(i)")
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
+        try "# too deep".write(to: dir.appendingPathComponent("buried.md"), atomically: true, encoding: .utf8)
+
+        let snapshot = FolderScanner.snapshot(at: root.appendingPathComponent("deep"), sort: .name)
+
+        XCTAssertTrue(snapshot.isTruncated)
+        XCTAssertFalse(snapshot.isCancelled)
+        XCTAssertFalse(snapshot.flat.contains { $0.name == "buried.md" })
+    }
+
+    func testUnusualNamesDuplicateBasenamesAndSymlinkedMarkdownAreHandled() throws {
+        let fm = FileManager.default
+        let weird = root.appendingPathComponent("sp ace/[draft] #1")
+        try fm.createDirectory(at: weird, withIntermediateDirectories: true)
+        let unicode = weird.appendingPathComponent("Résumé 🧪 10.md")
+        let duplicateA = weird.appendingPathComponent("README.md")
+        let duplicateBDir = root.appendingPathComponent("other")
+        let outside = root.deletingLastPathComponent().appendingPathComponent("outside-\(UUID().uuidString).md")
+        try fm.createDirectory(at: duplicateBDir, withIntermediateDirectories: true)
+        try "# unicode".write(to: unicode, atomically: true, encoding: .utf8)
+        try "# a".write(to: duplicateA, atomically: true, encoding: .utf8)
+        try "# b".write(to: duplicateBDir.appendingPathComponent("readme.md"), atomically: true, encoding: .utf8)
+        try "# outside".write(to: outside, atomically: true, encoding: .utf8)
+        try? fm.createSymbolicLink(at: root.appendingPathComponent("linked.md"), withDestinationURL: outside)
+        defer { try? fm.removeItem(at: outside) }
+
+        let snapshot = FolderScanner.snapshot(at: root, sort: .name)
+        let names = Set(snapshot.flat.map(\.name))
+        let duplicateNames = FolderDisplay.duplicateNames(in: snapshot.flat)
+
+        XCTAssertTrue(names.contains("Résumé 🧪 10.md"))
+        XCTAssertTrue(names.contains("README.md"))
+        XCTAssertTrue(names.contains("readme.md"))
+        XCTAssertFalse(names.contains("linked.md"))
+        XCTAssertTrue(duplicateNames.contains("readme.md"))
+        let unicodeNode = try XCTUnwrap(snapshot.flat.first { $0.name == "Résumé 🧪 10.md" })
+        XCTAssertEqual(FolderDisplay.parentHint(unicodeNode.url, under: root), "sp ace/[draft] #1")
+        XCTAssertTrue(
+            FolderDisplay.accessibilityLabel(for: unicodeNode, under: root, includeParent: true)
+                .contains("Résumé 🧪 10.md")
+        )
+    }
+
     func testLargeWorkspaceBudgetSkipsOversizedHiddenAndSymlinkedFiles() throws {
         let fm = FileManager.default
         let large = root.appendingPathComponent("large")
