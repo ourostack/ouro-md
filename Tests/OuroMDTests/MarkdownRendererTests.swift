@@ -84,6 +84,13 @@ final class MarkdownRendererTests: XCTestCase {
         XCTAssertTrue(html.contains("text-align"))
     }
 
+    func testCodeOnlyTableCellsAreMarkedForIntrinsicWidth() {
+        let html = render("| Path | Notes |\n| --- | --- |\n| `Sources/OuroMD/MarkdownRenderer.swift` | Mixed prose with `shortCode` should wrap normally. |")
+
+        XCTAssertTrue(html.contains("<td class=\"ouro-code-only-cell\"><code>Sources/OuroMD/MarkdownRenderer.swift</code></td>"))
+        XCTAssertFalse(html.contains("class=\"ouro-code-only-cell\">Mixed prose"))
+    }
+
     func testImageAlt() {
         let html = render("![the alt](pic.png)")
         XCTAssertTrue(html.contains("<img"))
