@@ -35,7 +35,8 @@ final class LiveUpdateTester {
         }
 
         let checker = ReleaseUpdateChecker(
-            configuration: ReleaseUpdateConfiguration(currentVersion: fromVersion)
+            configuration: ReleaseUpdateConfiguration(currentVersion: fromVersion),
+            dataLoader: Self.releaseFeedData
         )
         let snapshot = await checker.check()
         guard snapshot.status == .updateAvailable else {
@@ -66,7 +67,7 @@ final class LiveUpdateTester {
             staged: staged,
             destinationBundle: destinationBundle,
             relaunch: false,
-            waitingForPID: Int32.max
+            waitingForPID: 0
         )
         try runShell(script)
 
@@ -85,6 +86,25 @@ final class LiveUpdateTester {
             throw TestError("could not read CFBundleShortVersionString from \(infoURL.path)")
         }
         return version
+    }
+
+    private static let releaseFeedData: @Sendable (URL) async throws -> Data = { url in
+        var request = URLRequest(url: url)
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        request.setValue("OuroMD/live-update-test", forHTTPHeaderField: "User-Agent")
+        if let token = ProcessInfo.processInfo.environment["GH_TOKEN"] ?? ProcessInfo.processInfo.environment["GITHUB_TOKEN"],
+           !token.isEmpty {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
+        }
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw TestError("release feed returned a non-HTTP response")
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            throw TestError("release feed returned HTTP \(http.statusCode)")
+        }
+        return data
     }
 
     private func runShell(_ script: String) throws {
