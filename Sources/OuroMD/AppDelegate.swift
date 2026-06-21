@@ -441,6 +441,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
              #selector(toggleSidebar(_:)),
              #selector(showOutlineSidebar(_:)),
              #selector(showFileTreeSidebar(_:)),
+             #selector(showSearchSidebar(_:)),
              #selector(toggleSourceMode(_:)),
              #selector(performFind(_:)),
              #selector(performReplace(_:)),
