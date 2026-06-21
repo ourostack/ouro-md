@@ -107,6 +107,7 @@ fi
 "$exe" --renderprobe
 "$exe" --alerttest
 "$exe" --wraptest
+"$exe" --codewraptest
 "$exe" --tablewraptest
 "$exe" --tablewraptest --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
 "$exe" --tablewraptest --tablewrap-width 1000 --tablewrap-height 1300 --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md

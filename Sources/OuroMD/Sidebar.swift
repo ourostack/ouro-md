@@ -177,7 +177,8 @@ struct FolderBrowserView: View {
         } else if model.folderFlat.isEmpty {
             centered("No markdown files here", action: nil, perform: nil)
         } else {
-            List(model.folderFlat) { fileRow($0, showParent: false) }.listStyle(.sidebar)
+            let duplicateNames = FolderDisplay.duplicateNames(in: model.folderFlat)
+            List(model.folderFlat) { fileRow($0, showParent: FolderDisplay.hasDuplicateName($0, duplicateNames: duplicateNames)) }.listStyle(.sidebar)
         }
     }
 
@@ -191,12 +192,13 @@ struct FolderBrowserView: View {
 
     private func fileRow(_ node: FolderNode, showParent: Bool) -> some View {
         let isCurrent = node.url == model.currentURL
+        let accessibilityLabel = FolderDisplay.accessibilityLabel(for: node, under: model.mountedFolder, includeParent: showParent)
         return HStack(spacing: 6) {
             Image(systemName: "doc.text").foregroundStyle(isCurrent ? Color.accentColor : .secondary)
             VStack(alignment: .leading, spacing: 0) {
                 Text(node.name).font(.system(size: 12)).lineLimit(1)
                 if showParent, let folder = model.mountedFolder {
-                    Text(parentHint(node.url, under: folder))
+                    Text(FolderDisplay.parentHint(node.url, under: folder))
                         .font(.system(size: 10)).foregroundStyle(.tertiary).lineLimit(1)
                 }
             }
@@ -207,7 +209,7 @@ struct FolderBrowserView: View {
         .onTapGesture { model.openFile(node.url) }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
-        .accessibilityLabel(node.name)
+        .accessibilityLabel(accessibilityLabel)
         .accessibilityAction { model.openFile(node.url) }
     }
 
@@ -249,12 +251,6 @@ struct FolderBrowserView: View {
         .padding(.horizontal, 10).padding(.vertical, 6)
     }
 
-    private func parentHint(_ url: URL, under folder: URL) -> String {
-        let rel = url.deletingLastPathComponent().path.replacingOccurrences(of: folder.path, with: "")
-        let trimmed = rel.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        return trimmed.isEmpty ? folder.lastPathComponent : trimmed
-    }
-
     @ViewBuilder private func centered(_ text: String, action: String?, perform: (() -> Void)?) -> some View {
         VStack(spacing: 8) {
             Spacer()
@@ -286,7 +282,7 @@ struct SearchPanelView: View {
             .padding(.horizontal, 8).padding(.vertical, 6)
             HStack(spacing: 6) {
                 opt("Aa", model.searchCaseSensitive, "Case Sensitive") { model.searchCaseSensitive.toggle(); model.runFolderSearch() }
-                opt("⠿", model.searchWholeWord, "Whole Word") { model.searchWholeWord.toggle(); model.runFolderSearch() }
+                opt("Word", model.searchWholeWord, "Whole Word") { model.searchWholeWord.toggle(); model.runFolderSearch() }
                 opt(".*", model.searchRegexp, "Regular Expression") { model.searchRegexp.toggle(); model.runFolderSearch() }
                 Spacer()
                 Button("Search") { model.runFolderSearch() }.controlSize(.small)
@@ -329,7 +325,10 @@ struct SearchPanelView: View {
                     } header: {
                         HStack(spacing: 4) {
                             Image(systemName: "doc.text").font(.system(size: 10))
-                            Text(result.name).font(.system(size: 11, weight: .semibold)).lineLimit(1)
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(result.name).font(.system(size: 11, weight: .semibold)).lineLimit(1)
+                                Text(result.parent).font(.system(size: 10)).foregroundStyle(.tertiary).lineLimit(1)
+                            }
                             Spacer()
                             if result.count > 0 {
                                 Text("\(result.count)").font(.system(size: 10)).foregroundStyle(.secondary)
@@ -337,6 +336,10 @@ struct SearchPanelView: View {
                         }
                         .contentShape(Rectangle())
                         .onTapGesture { model.openSearchResult(result.url) }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("\(result.name), \(result.parent)")
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityAction { model.openSearchResult(result.url) }
                     }
                 }
             }
@@ -397,7 +400,7 @@ private struct FindBar: View {
                     .textFieldStyle(.plain).frame(width: 150).focused($focused)
                     .onSubmit { model.findNext() }
                 optionButton("Aa", isOn: model.findCaseSensitive, help: "Case Sensitive") { model.findCaseSensitive.toggle(); model.findNext() }
-                optionButton("⠿", isOn: model.findWholeWord, help: "Whole Word") { model.findWholeWord.toggle(); model.findNext() }
+                optionButton("Word", isOn: model.findWholeWord, help: "Whole Word") { model.findWholeWord.toggle(); model.findNext() }
                 Button { model.findPrev() } label: { Image(systemName: "chevron.up") }.buttonStyle(.plain)
                     .accessibilityLabel("Previous match")
                 Button { model.findNext() } label: { Image(systemName: "chevron.down") }.buttonStyle(.plain)

@@ -76,6 +76,7 @@ jobs:
           run --undotest
           run --wraptest
           run --renderprobe
+          run --codewraptest
           run --tablewraptest
           run --tablewraptest --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
           run --tablewraptest --tablewrap-width 1000 --tablewrap-height 1300 --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md

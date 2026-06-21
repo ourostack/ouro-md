@@ -15,6 +15,7 @@ struct SearchResult: Identifiable, Hashable {
     let id: URL
     let url: URL
     let name: String
+    let parent: String
     let nameMatched: Bool
     let snippets: [SearchSnippet]
     var count: Int { snippets.count }
@@ -60,6 +61,7 @@ final class ContentSearcher {
                 }
                 guard nameMatched || !snippets.isEmpty else { continue }
                 let result = SearchResult(id: node.url, url: node.url, name: node.name,
+                                          parent: FolderDisplay.parentHint(node.url, under: folder),
                                           nameMatched: nameMatched, snippets: snippets)
                 DispatchQueue.main.async { if !workItem.isCancelled { onResult(result) } }
             }

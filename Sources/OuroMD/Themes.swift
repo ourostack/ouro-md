@@ -202,15 +202,15 @@ private func readerCSS(_ p: Palette) -> String {
     em{font-style:italic;}
     del{color:\(p.faint);}
     code{font-family:\(Fonts.mono);font-size:0.9em;background:\(p.inlineCodeBg);border:1px solid \(p.codeBorder);border-radius:3px;padding:0 2px;}
-    pre{background:\(p.codeBlockBg);border:1px solid \(p.codeBorder);border-radius:3px;padding:8px 10px;overflow:auto;line-height:1.5;margin:15px 0;}
-    pre code{background:none;border:none;padding:0;font-size:0.9em;}
+    pre{background:\(p.codeBlockBg);border:1px solid \(p.codeBorder);border-radius:3px;padding:8px 10px;overflow-x:auto;max-width:100%;line-height:1.5;margin:15px 0;-webkit-overflow-scrolling:touch;}
+    pre code{background:none;border:none;padding:0;font-size:0.9em;display:block;min-width:100%;width:max-content;box-sizing:border-box;white-space:pre;}
     blockquote{padding:0 15px;border-left:4px solid \(p.quoteBar);color:\(p.faint);}
     hr{border:0;height:2px;background:\(p.hrColor);margin:16px 0;padding:0;}
     ul,ol{padding-left:30px;}
     li{margin:0.25em 0;}
     .task-list-item{list-style:none;}
     .task-list-item input{margin:0 .5em 0 -1.3em;vertical-align:middle;}
-    table{border-collapse:collapse;display:block;overflow-x:auto;width:max-content;min-width:100%;max-width:var(--ouro-table-viewport);margin:0.8em 0;margin-left:min(0px, calc((100% - var(--ouro-table-viewport)) / 2));margin-right:min(0px, calc((100% - var(--ouro-table-viewport)) / 2));table-layout:auto;text-align:left;-webkit-overflow-scrolling:touch;}
+    table{border-collapse:collapse;display:block;overflow-x:auto;width:max-content;min-width:100%;max-width:var(--ouro-table-viewport);margin:0.8em 0;margin-left:min(0px, calc((100% - var(--ouro-table-viewport)) / 2));margin-right:min(0px, calc((100% - var(--ouro-table-viewport)) / 2));table-layout:auto;text-align:left;-webkit-overflow-scrolling:touch;box-sizing:border-box;border-right:8px solid rgba(0,0,0,.08);}
     table tr{border:1px solid \(p.cellBorder);}
     table tr:nth-child(2n),thead{background:\(p.tableFill);}
     th{font-weight:bold;border:1px solid \(p.cellBorder);border-bottom:0;padding:6px 13px;white-space:normal;overflow-wrap:normal;word-break:normal;vertical-align:top;min-width:16rem;max-width:42rem;}
@@ -262,8 +262,8 @@ private func editorCSS(_ p: Palette) -> String {
 
     /* Inline code + fenced code (Github exact). */
     .vditor-reset code:not(.hljs):not([class*="vditor-ir__marker"]){font-family:\(Fonts.mono)!important;background:\(p.inlineCodeBg)!important;border:1px solid \(p.codeBorder)!important;border-radius:3px;padding:0 2px;font-size:0.9em;color:\(p.fg);}
-    .vditor-reset pre{background:\(p.codeBlockBg)!important;border:1px solid \(p.codeBorder)!important;border-radius:3px!important;margin:15px 0!important;padding:0!important;}
-    .vditor-reset pre>code,.vditor-reset pre code.hljs{background:\(p.codeBlockBg)!important;font-family:\(Fonts.mono)!important;font-size:0.9em!important;padding:8px 10px!important;border:none!important;border-radius:3px;display:block;line-height:1.5;color:\(p.fg);}
+    .vditor-reset pre{background:\(p.codeBlockBg)!important;border:1px solid \(p.codeBorder)!important;border-radius:3px!important;margin:15px 0!important;padding:0!important;overflow-x:auto!important;max-width:100%!important;-webkit-overflow-scrolling:touch;}
+    .vditor-reset pre>code,.vditor-reset pre code.hljs{background:\(p.codeBlockBg)!important;font-family:\(Fonts.mono)!important;font-size:0.9em!important;padding:8px 10px!important;border:none!important;border-radius:3px;display:block;line-height:1.5;color:\(p.fg);min-width:100%;width:max-content;box-sizing:border-box;white-space:pre;}
 
     /* IR blocks: show only the rendered preview; hide raw source + fence
        markers until the block is focused for editing. */
@@ -294,7 +294,7 @@ private func editorCSS(_ p: Palette) -> String {
     .vditor-reset li{margin:0.25em 0;}
 
     /* Tables (Github exact): #dfe2e5 borders, #f8f8f8 header + even rows, 6px 13px cells. */
-    .vditor-reset table{border-collapse:collapse!important;display:block!important;overflow-x:auto!important;width:max-content!important;min-width:100%!important;max-width:var(--ouro-table-viewport)!important;margin:0.8em 0!important;margin-left:min(0px, calc((100% - var(--ouro-table-viewport)) / 2))!important;margin-right:min(0px, calc((100% - var(--ouro-table-viewport)) / 2))!important;table-layout:auto;text-align:left;-webkit-overflow-scrolling:touch;}
+    .vditor-reset table{border-collapse:collapse!important;display:block!important;overflow-x:auto!important;width:max-content!important;min-width:100%!important;max-width:var(--ouro-table-viewport)!important;margin:0.8em 0!important;margin-left:min(0px, calc((100% - var(--ouro-table-viewport)) / 2))!important;margin-right:min(0px, calc((100% - var(--ouro-table-viewport)) / 2))!important;table-layout:auto;text-align:left;-webkit-overflow-scrolling:touch;box-sizing:border-box!important;border-right:8px solid rgba(0,0,0,.08)!important;}
     .vditor-reset table tr{border:1px solid \(p.cellBorder)!important;background:\(p.bg)!important;}
     .vditor-reset table tr:nth-child(2n){background:\(p.tableFill)!important;}
     .vditor-reset table thead,.vditor-reset table thead tr,.vditor-reset table th{background:\(p.tableFill)!important;}
