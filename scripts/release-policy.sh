@@ -98,7 +98,9 @@ release_relevant_path() {
   case "$1" in
     Package.swift|Package.resolved|make-app.sh) return 0 ;;
     Sources/*|Resources/*|web/*) return 0 ;;
-    scripts/package-release.sh|scripts/verify-packaged-app.sh|scripts/verify-release-version.sh|scripts/release-policy.sh) return 0 ;;
+    scripts/check-hosted-installer.sh|scripts/package-release.sh|scripts/pr-preflight.sh) return 0 ;;
+    scripts/run-native-scenarios.sh|scripts/run-visual-qa.sh|scripts/swift-test-budget.sh) return 0 ;;
+    scripts/verify-packaged-app.sh|scripts/verify-release-version.sh|scripts/release-policy.sh) return 0 ;;
     .github/workflows/release.yml) return 0 ;;
     *) return 1 ;;
   esac

@@ -66,11 +66,11 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 
 | # | Criterion | Evidence | Validation | Status |
 |---|---|---|---|---|
-| 1 | Local PR preflight mirrors freshness/source policy | Add `scripts/pr-preflight.sh`; document in README | pending | pending |
-| 2 | Node 20 warning handled | Bump `actions/upload-artifact` v5 -> v6; verify release log/action version | pending | pending |
-| 3 | Slowest-test annotations/artifact | Add timing parser/wrapper and CI artifact/annotations | pending | pending |
-| 4 | Individual XCTest runtime budget | Add deterministic per-test budget enforcement | pending | pending |
-| 5 | Visual QA screenshots on failure | Add visual QA wrapper and upload artifact on failure | pending | pending |
+| 1 | Local PR preflight mirrors freshness/source policy | `scripts/pr-preflight.sh` runs release version, freshness, source scan, build, timed tests, coverage, and native scenarios; README maintainer section points to it | `bash -n ...`; `./scripts/release-policy.sh scan .`; final full `./scripts/pr-preflight.sh` in Unit 6 | implemented, final full run pending |
+| 2 | Node 20 warning handled | `.github/workflows/ci.yml` and `.github/workflows/release.yml` use `actions/upload-artifact@v6` | `rg -n "upload-artifact@v5|upload-artifact@v6"` shows only v6 | implemented |
+| 3 | Slowest-test annotations/artifact | `scripts/swift-test-budget.sh` prints slowest XCTest cases, writes `.build/ouro-test-timings.tsv`, and CI uploads timing artifacts | `OURO_TEST_LOG=.build/unit1-swift-test.log OURO_TEST_TIMINGS=.build/unit1-test-timings.tsv ./scripts/swift-test-budget.sh --filter ReleaseUpdateTests/testReleaseDescriptorMatchesCurrentDistribution` | implemented |
+| 4 | Individual XCTest runtime budget | `scripts/swift-test-budget.sh` fails when any XCTest exceeds `OURO_TEST_MAX_SECONDS` | same filtered wrapper run validated timing parse; full suite budget runs in Unit 6 | implemented, full-suite budget pending |
+| 5 | Visual QA screenshots on failure | `scripts/run-visual-qa.sh` captures PNG artifacts with `--shoot`; CI uploads `${{ runner.temp }}/ouro-md-artifacts` on native scenario failure | `OURO_VISUAL_ARTIFACT_DIR=.build/unit1-visual-artifacts ./scripts/run-native-scenarios.sh` | implemented |
 | 6 | Visual QA covers prefs/search/update/menu | Extend `UISurfaceTest`/menu probes | pending | pending |
 | 7 | Accessibility audit | Add AX labels/focus/contrast/reduced-motion checks | pending | pending |
 | 8 | Title/click/open flows | Add title decision/open-state tests | pending | pending |
@@ -102,14 +102,14 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 
 ### Unit 1: CI And Release Harnesses
 
-- [ ] Add `scripts/pr-preflight.sh`.
-- [ ] Add XCTest timing/budget wrapper.
-- [ ] Add slow-test manifest or allowlist and CI annotations/artifact.
-- [ ] Add visual QA artifact wrapper for screenshots on failure.
-- [ ] Upgrade `actions/upload-artifact` to v6.
-- [ ] Add hosted installer smoke/check.
-- [ ] Update README maintainer workflow.
-- [ ] Run local script validations.
+- [x] Add `scripts/pr-preflight.sh`.
+- [x] Add XCTest timing/budget wrapper.
+- [x] Add slow-test manifest or allowlist and CI annotations/artifact.
+- [x] Add visual QA artifact wrapper for screenshots on failure.
+- [x] Upgrade `actions/upload-artifact` to v6.
+- [x] Add hosted installer smoke/check.
+- [x] Update README maintainer workflow.
+- [x] Run local script validations.
 
 ### Unit 2: Native UI, Accessibility, Menus, Open Flows
 
@@ -168,3 +168,4 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 - 2026-06-21 09:48 Created doing doc from audit-backed planning scope.
 - 2026-06-21 09:55 Folded explorer findings into unit checklist and 25-row acceptance trace.
 - 2026-06-21 10:02 Reshaped doing doc to the local template and made the evidence matrix mandatory after reviewer findings.
+- 2026-06-21 10:10 Completed Unit 1 harness layer: PR preflight, XCTest timing/budget wrapper, native scenario wrapper, visual failure artifacts, hosted installer check, CI/release wiring, and README notes. Validation: script syntax/diff check, source policy scan, filtered Swift timing wrapper, and shared native scenario wrapper passed.

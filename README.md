@@ -78,6 +78,7 @@ For install or update problems, see
 ```sh
 ./scripts/check-release-secrets.sh          # confirms GitHub release telemetry secrets exist
 ./scripts/verify-release-version.sh         # make-app.sh / OuroMDRelease.swift / README agree
+./scripts/pr-preflight.sh                   # local mirror of PR freshness, policy, tests, coverage, and native scenarios
 ```
 
 To ship: bump `VERSION` in `make-app.sh`, `OuroMDRelease.version`, and this
@@ -92,6 +93,7 @@ For a local package smoke:
 ```sh
 ./scripts/package-release.sh
 ./scripts/verify-packaged-app.sh OuroMD.app
+./scripts/check-hosted-installer.sh         # smoke the public one-line installer URL
 ```
 
 Release builds can embed anonymous PostHog telemetry by setting
