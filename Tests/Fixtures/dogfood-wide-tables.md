@@ -46,14 +46,14 @@ rows, and tables that should scroll locally without pushing the whole document.
 | Command | Expected output | Owner |
 | --- | --- | --- |
 | `swift run ouro-md --tablewraptest --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md --tablewrap-width 1400 --tablewrap-height 5000` | no page overflow, table-local scroll only when needed, initial scroll offsets all zero | CI |
-| `./scripts/release-policy.sh verify-published --version 0.9.11 --sha <main-sha>` | latest release, manifest, zip, app, and installer all point at the same build | Release |
+| `./scripts/release-policy.sh verify-published --version 0.9.12 --sha <main-sha>` | latest release, manifest, zip, app, and installer all point at the same build | Release |
 
 ## Many Columns
 
 | Area | User signal | Source path | Bundle path | Release path | Probe | Owner |
 | --- | --- | --- | --- | --- | --- | --- |
-| Tables | Large document remains readable | `Sources/OuroMD/Themes.swift` | `OuroMD.app/Contents/Resources/ouro-md_OuroMD.bundle/web/index.html` | `dist/Ouro-MD-0.9.11.zip` | `--tablewraptest` | CI |
-| Title | Clicking title opens file picker | `Sources/OuroMD/DocumentWindowController.swift` | `OuroMD.app/Contents/MacOS/ouro-md` | `Ouro-MD-0.9.11.manifest.json` | `DocumentWindowControllerTests` | Swift tests |
+| Tables | Large document remains readable | `Sources/OuroMD/Themes.swift` | `OuroMD.app/Contents/Resources/ouro-md_OuroMD.bundle/web/index.html` | `dist/Ouro-MD-0.9.12.zip` | `--tablewraptest` | CI |
+| Title | Clicking title opens file picker | `Sources/OuroMD/DocumentWindowController.swift` | `OuroMD.app/Contents/MacOS/ouro-md` | `Ouro-MD-0.9.12.manifest.json` | `DocumentWindowControllerTests` | Swift tests |
 
 ## Narrow Prose
 
