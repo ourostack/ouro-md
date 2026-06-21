@@ -114,6 +114,12 @@ if hasFlag("--editorsurfacetest") {
     }
 }
 
+if hasFlag("--firstlaunchtest") {
+    MainActor.assumeIsolated {
+        FirstLaunchTester().run()
+    }
+}
+
 if hasFlag("--roundtrip") {
     guard let path = argValue("--roundtrip") else {
         FileHandle.standardError.write(Data("ouro-md: --roundtrip requires a FILE path\n".utf8))

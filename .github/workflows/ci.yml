@@ -32,6 +32,8 @@ jobs:
         run: ./scripts/release-policy.sh freshness
       - name: Scan source policy
         run: ./scripts/release-policy.sh scan .
+      - name: Check signing and notarization readiness
+        run: ./scripts/check-signing-readiness.sh
       - name: Run tests
         run: ./scripts/swift-test-budget.sh
       - name: Upload Swift test timings

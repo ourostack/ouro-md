@@ -77,6 +77,7 @@ For install or update problems, see
 
 ```sh
 ./scripts/check-release-secrets.sh          # confirms GitHub release telemetry secrets exist
+./scripts/check-signing-readiness.sh        # confirms signing/notarization tooling and secret shape
 ./scripts/verify-release-version.sh         # make-app.sh / OuroMDRelease.swift / README agree
 ./scripts/pr-preflight.sh                   # local mirror of PR freshness, policy, tests, coverage, and native scenarios
 ```
@@ -104,6 +105,12 @@ project configuration without committing the key. `scripts/package-release.sh`
 requires a clean git worktree and a telemetry key by default so release artifacts
 do not accidentally ship uncommitted or unconfigured bytes; set
 `OURO_MD_ALLOW_UNCONFIGURED_TELEMETRY=1` only for local dry runs.
+
+Developer-ID signing/notarization is intentionally checked as a separate
+readiness gate. `scripts/check-signing-readiness.sh` verifies host tooling on
+every PR and can fail closed with `OURO_REQUIRE_NOTARIZATION=1` when release
+signing is enabled; set `OURO_VALIDATE_NOTARY_CREDENTIALS=1` only when a runner
+should make a live notary credential call.
 
 ## Build
 

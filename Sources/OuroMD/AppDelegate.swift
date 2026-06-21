@@ -429,6 +429,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     @objc func pasteAsPlainText(_ sender: Any?) { model.pasteAsPlainText() }
     @objc func copyAsMarkdown(_ sender: Any?) { model.copyAsMarkdown() }
     @objc func copyAsHTML(_ sender: Any?) { model.copyAsHTML() }
+    @objc func showCommandPalette(_ sender: Any?) { model.showCommandPalette() }
 
     @objc func openProjectPage(_ sender: Any?) {
         if let url = URL(string: "https://github.com/ourostack/ouro-md") {
@@ -501,7 +502,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
              #selector(insertLink(_:)),
              #selector(pasteAsPlainText(_:)),
              #selector(copyAsMarkdown(_:)),
-             #selector(copyAsHTML(_:)):
+             #selector(copyAsHTML(_:)),
+             #selector(showCommandPalette(_:)):
             return editorReady
         default:
             return true

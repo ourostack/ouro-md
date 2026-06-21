@@ -40,6 +40,23 @@ final class UndoRedoRoutingTests: XCTestCase {
         XCTAssertTrue(search?.keyEquivalentModifierMask.contains(.shift) == true)
     }
 
+    func testCommandPaletteMenuUsesStandardSearchableActionShortcut() {
+        let app = NSApplication.shared
+        let previousMenu = app.mainMenu
+        defer { app.mainMenu = previousMenu }
+        let delegate = AppDelegate()
+
+        MenuBuilder.install(into: app, target: delegate)
+
+        let editMenu = app.mainMenu?.items.compactMap(\.submenu).first { $0.title == "Edit" }
+        let palette = editMenu?.item(withTitle: "Command Palette…")
+        XCTAssertEqual(palette?.action, #selector(AppDelegate.showCommandPalette(_:)))
+        XCTAssertTrue(palette?.target === delegate)
+        XCTAssertEqual(palette?.keyEquivalent, "p")
+        XCTAssertTrue(palette?.keyEquivalentModifierMask.contains(.command) == true)
+        XCTAssertTrue(palette?.keyEquivalentModifierMask.contains(.shift) == true)
+    }
+
     func testShortcutParserRecognizesMacUndoRedoKeystrokes() {
         XCTAssertEqual(
             UndoRedoCommandRouter.command(for: keyEvent("z", modifiers: [.command])),
@@ -112,11 +129,13 @@ final class UndoRedoRoutingTests: XCTestCase {
         let rename = NSMenuItem(title: "Rename", action: #selector(AppDelegate.renameDocument(_:)), keyEquivalent: "")
         let undo = NSMenuItem(title: "Undo", action: #selector(AppDelegate.undoEdit(_:)), keyEquivalent: "")
         let search = NSMenuItem(title: "Search", action: #selector(AppDelegate.showSearchSidebar(_:)), keyEquivalent: "")
+        let palette = NSMenuItem(title: "Command Palette", action: #selector(AppDelegate.showCommandPalette(_:)), keyEquivalent: "")
 
         XCTAssertFalse(delegate.validateMenuItem(save))
         XCTAssertFalse(delegate.validateMenuItem(rename))
         XCTAssertFalse(delegate.validateMenuItem(undo))
         XCTAssertFalse(delegate.validateMenuItem(search))
+        XCTAssertFalse(delegate.validateMenuItem(palette))
     }
 
     func testMenuValidationKeepsGlobalCommandsEnabledWithoutAWindow() {

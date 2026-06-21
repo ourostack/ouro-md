@@ -87,10 +87,10 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 | 19 | Older-live to latest-live update e2e | Add script harness; run when feasible | pending | pending |
 | 20 | Rollback after backup creation | `OuroMDUpdateInstaller.applyScript` restores backup if the replacement is not a valid app bundle; `web/ouro-md-install.sh` no longer swallows restore failures | focused installer tests plus `bash -n web/ouro-md-install.sh scripts/*.sh` | implemented |
 | 21 | Cancellable/recoverable updater progress | `OuroMDUpdateCoordinator` owns manual install tasks with structured progress/cancel/retry; `UpdateProgressView` exposes Cancel/Retry controls | focused coordinator tests; `./scripts/run-native-scenarios.sh`; `--uisurfacetest` | implemented |
-| 22 | First-launch blank/empty gate | Add first-launch screenshot/pixel smoke | pending | pending |
-| 23 | Command palette/searchable actions | Implement and test action palette | pending | pending |
-| 24 | Compact document stats/status | Add status surface and tests | pending | pending |
-| 25 | Signing/notarization readiness | Add credential-aware readiness script/check | pending | pending |
+| 22 | First-launch blank/empty gate | `FirstLaunchTester` loads the bundled welcome document in a real offscreen WebKit window, asserts rendered welcome content, and counts nonblank snapshot pixels; `--firstlaunchtest` is wired into CLI help, `main.swift`, and native scenarios | `.build/debug/ouro-md --firstlaunchtest`; `OURO_VISUAL_ARTIFACT_DIR=.build/unit5-visual-artifacts ./scripts/run-native-scenarios.sh` | implemented |
+| 23 | Command palette/searchable actions | `CommandPaletteCatalog`/`AppModel` add searchable actions and dispatch; `CommandPaletteView` renders responsive palette; Edit menu exposes `Shift-Command-P`; tests cover filtering, dispatch, shortcut, and validation | `OURO_TEST_LOG=.build/unit5-command-menu-rerun.log OURO_TEST_TIMINGS=.build/unit5-command-menu-rerun.tsv ./scripts/swift-test-budget.sh --filter 'CommandPaletteTests|UndoRedoRoutingTests'`; `--uisurfacetest`; native scenarios | implemented |
+| 24 | Compact document stats/status | `DocumentStatusBar` overlays compact word/char/mode/theme/dirty state; `UISurfaceTest` verifies editor palette/status fitting and semantic status/palette state | `.build/debug/ouro-md --uisurfacetest`; `OURO_VISUAL_ARTIFACT_DIR=.build/unit5-visual-artifacts ./scripts/run-native-scenarios.sh` | implemented |
+| 25 | Signing/notarization readiness | `scripts/check-signing-readiness.sh` verifies signing/notary tooling, credential shape, optional live validation, and fail-closed `OURO_REQUIRE_NOTARIZATION=1`; PR preflight, CI, release workflow, release policy, and README run/document it. Credentials are not configured locally and remain allowed until the require flag is enabled | `bash -n scripts/check-signing-readiness.sh scripts/pr-preflight.sh scripts/run-native-scenarios.sh`; `./scripts/check-signing-readiness.sh`; `OURO_REQUIRE_NOTARIZATION=1 ./scripts/check-signing-readiness.sh` fails closed as expected | implemented |
 
 ## Work Units
 
@@ -98,7 +98,7 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 
 - [x] Planning reviewer converges.
 - [x] Patch planning/doing docs after reviewer findings.
-- [ ] Commit docs.
+- [x] Commit docs.
 
 ### Unit 1: CI And Release Harnesses
 
@@ -141,10 +141,10 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 
 ### Unit 5: Product Polish
 
-- [ ] Add first-launch nonblank/themed screenshot or pixel smoke.
-- [ ] Implement searchable command palette.
-- [ ] Add compact document stats/status surface.
-- [ ] Add signing/notarization readiness check and document hard exception if credentials unavailable.
+- [x] Add first-launch nonblank/themed screenshot or pixel smoke.
+- [x] Implement searchable command palette.
+- [x] Add compact document stats/status surface.
+- [x] Add signing/notarization readiness check and document hard exception if credentials unavailable.
 
 ### Unit 6: Verification, Review, Merge, Release
 
@@ -172,3 +172,4 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 - 2026-06-21 10:25 Completed Unit 2 native UI/accessibility/open-flow layer. Validation: focused `DocumentWindowControllerTests|UndoRedoRoutingTests|AppDelegateWindowRoutingTests|ThemeAccessibilityTests` passed through `scripts/swift-test-budget.sh`; `./scripts/run-native-scenarios.sh` passed.
 - 2026-06-21 10:41 Completed Unit 3 updater/rollback layer. Validation: `bash -n web/ouro-md-install.sh scripts/*.sh`, `git diff --check`, focused `OuroMDUpdateCoordinatorTests|OuroMDUpdateInstallerTests|TerminationSaveCoordinatorTests`, `--uisurfacetest`, and `./scripts/run-native-scenarios.sh` passed.
 - 2026-06-21 10:57 Completed Unit 4 editor/search/folder/tables/export layer. Validation: focused `EditorWebViewTests`, focused `FolderBrowserTests|ContentSearcherTests|FolderDisplayTests`, focused `MarkdownRendererTests|TableLayoutPolicyTests`, `--editorsurfacetest`, dogfood tablewrap at 448/1000/1400px, `git diff --check`, and `./scripts/run-native-scenarios.sh` passed.
+- 2026-06-21 11:15 Completed Unit 5 product polish layer. Validation: focused `CommandPaletteTests|UndoRedoRoutingTests`, `--firstlaunchtest`, `--uisurfacetest`, signing readiness normal/fail-closed checks, `git diff --check`, script syntax checks, and `./scripts/run-native-scenarios.sh` passed.

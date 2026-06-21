@@ -42,6 +42,67 @@ protocol EditorBridge: AnyObject {
     func setZoom(_ factor: Double)
 }
 
+struct CommandPaletteItem: Identifiable, Equatable {
+    let id: String
+    let title: String
+    let keywords: String
+
+    var searchableText: String {
+        "\(title) \(keywords)".lowercased()
+    }
+}
+
+enum CommandPaletteCatalog {
+    static func items(themes: [Theme] = ThemeStore.shared.themes) -> [CommandPaletteItem] {
+        var items: [CommandPaletteItem] = [
+            CommandPaletteItem(id: "file.new", title: "New Document", keywords: "file blank"),
+            CommandPaletteItem(id: "file.open", title: "Open Document", keywords: "file picker"),
+            CommandPaletteItem(id: "file.open-folder", title: "Open Folder", keywords: "workspace files"),
+            CommandPaletteItem(id: "file.save", title: "Save", keywords: "write disk"),
+            CommandPaletteItem(id: "file.save-as", title: "Save As", keywords: "duplicate copy"),
+            CommandPaletteItem(id: "file.export-html", title: "Export HTML", keywords: "share web"),
+            CommandPaletteItem(id: "file.export-pdf", title: "Export PDF", keywords: "print share"),
+            CommandPaletteItem(id: "file.print", title: "Print", keywords: "paper pdf"),
+            CommandPaletteItem(id: "edit.find", title: "Find", keywords: "search document"),
+            CommandPaletteItem(id: "edit.replace", title: "Replace", keywords: "find substitute"),
+            CommandPaletteItem(id: "edit.copy-markdown", title: "Copy as Markdown", keywords: "clipboard source"),
+            CommandPaletteItem(id: "edit.copy-html", title: "Copy as HTML", keywords: "clipboard rich"),
+            CommandPaletteItem(id: "format.bold", title: "Bold", keywords: "strong"),
+            CommandPaletteItem(id: "format.italic", title: "Italic", keywords: "emphasis"),
+            CommandPaletteItem(id: "format.code", title: "Inline Code", keywords: "monospace"),
+            CommandPaletteItem(id: "format.link", title: "Insert Link", keywords: "url"),
+            CommandPaletteItem(id: "paragraph.h1", title: "Heading 1", keywords: "paragraph title"),
+            CommandPaletteItem(id: "paragraph.h2", title: "Heading 2", keywords: "paragraph title"),
+            CommandPaletteItem(id: "paragraph.ul", title: "Unordered List", keywords: "bullet paragraph"),
+            CommandPaletteItem(id: "paragraph.ol", title: "Ordered List", keywords: "number paragraph"),
+            CommandPaletteItem(id: "paragraph.task", title: "Task List", keywords: "checkbox paragraph"),
+            CommandPaletteItem(id: "paragraph.table", title: "Insert Table", keywords: "grid paragraph"),
+            CommandPaletteItem(id: "view.source", title: "Toggle Source Mode", keywords: "markdown code"),
+            CommandPaletteItem(id: "view.focus", title: "Toggle Focus Mode", keywords: "reading"),
+            CommandPaletteItem(id: "view.typewriter", title: "Toggle Typewriter Mode", keywords: "typing"),
+            CommandPaletteItem(id: "view.search-sidebar", title: "Show Folder Search", keywords: "sidebar"),
+            CommandPaletteItem(id: "view.files-sidebar", title: "Show File Browser", keywords: "sidebar"),
+            CommandPaletteItem(id: "view.outline-sidebar", title: "Show Outline", keywords: "sidebar headings"),
+        ]
+        items.append(contentsOf: themes.map {
+            CommandPaletteItem(id: "theme.\($0.id)", title: "Theme: \($0.displayName)", keywords: "appearance color \($0.id)")
+        })
+        return items
+    }
+
+    static func filter(_ items: [CommandPaletteItem], query: String) -> [CommandPaletteItem] {
+        let terms = query
+            .lowercased()
+            .split(whereSeparator: \.isWhitespace)
+            .map(String.init)
+        guard !terms.isEmpty else { return Array(items.prefix(10)) }
+        return items
+            .filter { item in terms.allSatisfy { item.searchableText.contains($0) } }
+            .prefix(20)
+            .map { $0 }
+    }
+}
+
 /// Owns document state (current file, dirty flag, theme/mode) and orchestrates
 /// file, theme, and export operations against the web editor.
 final class AppModel: ObservableObject {
@@ -99,6 +160,8 @@ final class AppModel: ObservableObject {
     @Published var searchCaseSensitive = false
     @Published var searchWholeWord = false
     @Published var searchRegexp = false
+    @Published var commandPaletteVisible = false
+    @Published var commandPaletteQuery = ""
 
     weak var bridge: EditorBridge?
     /// Invoked whenever window-chrome-relevant state changes.
@@ -1024,6 +1087,63 @@ final class AppModel: ObservableObject {
     func printDocument() { bridge?.printDocument() }
     func undo() { bridge?.undo() }
     func redo() { bridge?.redo() }
+
+    var commandPaletteItems: [CommandPaletteItem] {
+        CommandPaletteCatalog.filter(CommandPaletteCatalog.items(), query: commandPaletteQuery)
+    }
+
+    func showCommandPalette() {
+        commandPaletteQuery = ""
+        commandPaletteVisible = true
+    }
+
+    func closeCommandPalette() {
+        commandPaletteVisible = false
+        commandPaletteQuery = ""
+    }
+
+    func performCommandPaletteItem(_ item: CommandPaletteItem) {
+        closeCommandPalette()
+        performPaletteCommand(id: item.id)
+    }
+
+    private func performPaletteCommand(id: String) {
+        if id.hasPrefix("theme.") {
+            setTheme(id: String(id.dropFirst("theme.".count)))
+            return
+        }
+        switch id {
+        case "file.new": newDocument()
+        case "file.open": openPanel()
+        case "file.open-folder": openFolderPanel()
+        case "file.save": save()
+        case "file.save-as": saveAs()
+        case "file.export-html": exportHTML()
+        case "file.export-pdf": exportPDF()
+        case "file.print": printDocument()
+        case "edit.find": showFind()
+        case "edit.replace": showReplace()
+        case "edit.copy-markdown": copyAsMarkdown()
+        case "edit.copy-html": copyAsHTML()
+        case "format.bold": format("bold")
+        case "format.italic": format("italic")
+        case "format.code": format("code")
+        case "format.link": format("link")
+        case "paragraph.h1": format("h1")
+        case "paragraph.h2": format("h2")
+        case "paragraph.ul": format("ul")
+        case "paragraph.ol": format("ol")
+        case "paragraph.task": format("task")
+        case "paragraph.table": format("table")
+        case "view.source": setMode(mode == "sv" ? "ir" : "sv")
+        case "view.focus": toggleFocusMode()
+        case "view.typewriter": toggleTypewriter()
+        case "view.search-sidebar": setSidebarMode(.search); setSidebarVisible(true)
+        case "view.files-sidebar": setSidebarMode(.files); setSidebarVisible(true)
+        case "view.outline-sidebar": setSidebarMode(.outline); setSidebarVisible(true)
+        default: break
+        }
+    }
 
     /// Releases the document's background resources when its window closes, so
     /// nothing keeps watching the filesystem after the window is gone.

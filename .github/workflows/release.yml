@@ -23,6 +23,7 @@ on:
       - 'Resources/**'
       - 'scripts/package-release.sh'
       - 'scripts/check-hosted-installer.sh'
+      - 'scripts/check-signing-readiness.sh'
       - 'scripts/pr-preflight.sh'
       - 'scripts/release-policy.sh'
       - 'scripts/run-native-scenarios.sh'
@@ -85,6 +86,10 @@ jobs:
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Check signing and notarization readiness
+        if: steps.check.outputs.exists == 'false' || (github.event_name == 'workflow_dispatch' && inputs.dry_run)
+        run: ./scripts/check-signing-readiness.sh
 
       - name: Package release artifact
         if: steps.check.outputs.exists == 'false' || (github.event_name == 'workflow_dispatch' && inputs.dry_run)

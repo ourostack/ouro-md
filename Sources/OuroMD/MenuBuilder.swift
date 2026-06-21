@@ -137,6 +137,9 @@ enum MenuBuilder {
         add(menu, "Copy as HTML", #selector(AppDelegate.copyAsHTML(_:)), "", target)
 
         menu.addItem(.separator())
+        let palette = add(menu, "Command Palette…", #selector(AppDelegate.showCommandPalette(_:)), "p", target)
+        palette.keyEquivalentModifierMask = [.command, .shift]
+        menu.addItem(.separator())
         let find = menu.addItem(withTitle: "Find", action: nil, keyEquivalent: "")
         let findMenu = NSMenu(title: "Find")
         add(findMenu, "Find…", #selector(AppDelegate.performFind(_:)), "f", target)
