@@ -34,6 +34,7 @@ enum OuroCLI {
       ouro-md --uisurfacetest        Verify native Preferences/search surfaces.
       ouro-md --editorsurfacetest    Verify editor transfer/recovery/export surfaces.
       ouro-md --firstlaunchtest      Verify the first-launch welcome surface renders.
+      ouro-md --liveupdatetest       Verify live older-release to latest updater flow.
       ouro-md --undotest             Verify editor undo/redo routing.
       ouro-md --help | --version
 
