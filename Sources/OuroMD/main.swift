@@ -87,6 +87,27 @@ if hasFlag("--renderprobe") {
     RenderProbe().run()
 }
 
+if hasFlag("--visualqatest") {
+    let width = Double(argValue("--visualqa-width") ?? "") ?? 720
+    let height = Double(argValue("--visualqa-height") ?? "") ?? 900
+    VisualQATester(
+        markdownPath: argValue("--visualqa-file"),
+        viewportWidth: CGFloat(width),
+        viewportHeight: CGFloat(height),
+        themeID: argValue("--theme") ?? ThemeStore.shared.defaultTheme.id
+    ).run()
+}
+
+if hasFlag("--searchrevealtest") {
+    SearchRevealTester().run()
+}
+
+if hasFlag("--uisurfacetest") {
+    MainActor.assumeIsolated {
+        UISurfaceTester().run()
+    }
+}
+
 if hasFlag("--roundtrip") {
     guard let path = argValue("--roundtrip") else {
         FileHandle.standardError.write(Data("ouro-md: --roundtrip requires a FILE path\n".utf8))

@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     let updateCoordinator = OuroMDUpdateCoordinator()
     private var updateCancellables: Set<AnyCancellable> = []
     private var undoRedoShortcutMonitor: UndoRedoShortcutMonitor?
+    private var updateProgressWindow: NSWindow?
 
     private var isSelfTest: Bool { ProcessInfo.processInfo.environment["OURO_SELFTEST"] == "1" }
 
@@ -66,6 +67,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
                 self?.presentUpdatePrompt(prompt)
             }
             .store(in: &updateCancellables)
+        updateCoordinator.$isInstalling
+            .combineLatest(updateCoordinator.$installStatus, updateCoordinator.$installError)
+            .sink { [weak self] state in
+                let isInstalling = state.0
+                let installError = state.2
+                if isInstalling || installError != nil {
+                    self?.showUpdateProgressWindow()
+                } else {
+                    self?.closeUpdateProgressWindow()
+                }
+            }
+            .store(in: &updateCancellables)
     }
 
     private func presentUpdatePrompt(_ prompt: OuroMDUpdatePrompt) {
@@ -81,12 +94,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         let response = alert.runModal()
         if prompt.isInstallable, response == .alertFirstButtonReturn {
             updateCoordinator.updatePrompt = nil
+            showUpdateProgressWindow()
             Task { await updateCoordinator.installReleaseUpdate() }
         } else if prompt.isInstallable {
             updateCoordinator.dismissUpdatePrompt(reason: "later")
         } else {
             updateCoordinator.dismissUpdatePrompt(reason: "acknowledged")
         }
+    }
+
+    private func showUpdateProgressWindow() {
+        if updateProgressWindow == nil {
+            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 380, height: 112),
+                             styleMask: [.titled], backing: .buffered, defer: false)
+            w.title = "Software Update"
+            w.isReleasedWhenClosed = false
+            w.center()
+            updateProgressWindow = w
+        }
+        updateProgressWindow?.contentViewController = NSHostingController(
+            rootView: UpdateProgressView(updateCoordinator: updateCoordinator)
+        )
+        updateProgressWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func closeUpdateProgressWindow() {
+        updateProgressWindow?.orderOut(nil)
     }
 
     private func openInitial(_ path: String?) {
@@ -255,9 +289,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private var prefsWindow: NSWindow?
     @objc func showPreferences(_ sender: Any?) {
         if prefsWindow == nil {
-            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 380, height: 280),
-                             styleMask: [.titled, .closable], backing: .buffered, defer: false)
+            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 350),
+                             styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
             w.title = "Preferences"
+            w.minSize = NSSize(width: 500, height: 330)
             w.isReleasedWhenClosed = false
             w.center()
             prefsWindow = w

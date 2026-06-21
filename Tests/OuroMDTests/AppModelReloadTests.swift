@@ -8,6 +8,18 @@ private final class MockBridge: EditorBridge {
     var getMarkdownCalls = 0
     var onReload: ((String) -> Void)?
     var returnsNilMarkdown = false
+    struct RevealedMatch: Equatable {
+        var lineNumber: Int
+        var sourceColumn: Int
+        var sourceLength: Int
+        var matchOrdinal: Int
+        var matchedText: String
+        var query: String
+        var caseSensitive: Bool
+        var wholeWord: Bool
+        var regexp: Bool
+    }
+    var revealedMatches: [RevealedMatch] = []
 
     func setMarkdown(_ markdown: String) { current = markdown }
     func reloadMarkdown(_ markdown: String) { current = markdown; reloads.append(markdown); onReload?(markdown) }
@@ -16,7 +28,7 @@ private final class MockBridge: EditorBridge {
         completion(returnsNilMarkdown ? nil : current)
     }
     func getHTML(_ completion: @escaping (String?) -> Void) { completion("") }
-    func applyTheme(uiMode: String, css: String, codeTheme: String) {}
+    func applyTheme(uiMode: String, css: String, codeTheme: String, background: String) {}
     func setMode(_ mode: String) {}
     func setOutline(_ on: Bool) {}
     func setFocusMode(_ on: Bool) {}
@@ -24,6 +36,29 @@ private final class MockBridge: EditorBridge {
     func setAutoPair(_ on: Bool) {}
     func scrollToHeading(_ index: Int) {}
     func find(_ query: String, backward: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool) {}
+    func revealSearchMatch(
+        lineNumber: Int,
+        sourceColumn: Int,
+        sourceLength: Int,
+        matchOrdinal: Int,
+        matchedText: String,
+        query: String,
+        caseSensitive: Bool,
+        wholeWord: Bool,
+        regexp: Bool
+    ) {
+        revealedMatches.append(RevealedMatch(
+            lineNumber: lineNumber,
+            sourceColumn: sourceColumn,
+            sourceLength: sourceLength,
+            matchOrdinal: matchOrdinal,
+            matchedText: matchedText,
+            query: query,
+            caseSensitive: caseSensitive,
+            wholeWord: wholeWord,
+            regexp: regexp
+        ))
+    }
     func replace(_ query: String, with replacement: String, all: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool, completion: @escaping (Int) -> Void) { completion(0) }
     func clearFind() {}
     func execCommand(_ command: String) {}
@@ -274,11 +309,12 @@ final class AppModelReloadTests: XCTestCase {
         model.loadInitialFile(url.path)
 
         bridge.current = "# Unexpected editor normalization\n"
-        model.save()
-
-        let done = expectation(description: "save settled")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { done.fulfill() }
-        wait(for: [done], timeout: 1)
+        let saved = expectation(description: "save completed")
+        model.performSave { ok in
+            XCTAssertTrue(ok)
+            saved.fulfill()
+        }
+        wait(for: [saved], timeout: 3)
         XCTAssertEqual(try? String(contentsOf: url, encoding: .utf8), original)
         XCTAssertEqual(bridge.getMarkdownCalls, 0)
         assertTelemetry(
@@ -371,6 +407,131 @@ final class AppModelReloadTests: XCTestCase {
 
         XCTAssertEqual(try? Data(contentsOf: destination), data)
         XCTAssertEqual(try? String(contentsOf: destination, encoding: .utf16), original)
+    }
+
+    func testInvalidFolderRegexSetsVisibleSearchError() {
+        let model = AppModel()
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+
+        model.searchQuery = "("
+        model.searchRegexp = true
+        model.openFolder(FileManager.default.temporaryDirectory)
+        model.runFolderSearch()
+
+        XCTAssertFalse(model.searching)
+        XCTAssertTrue(model.searchResults.isEmpty)
+        XCTAssertTrue(model.searchError?.contains("Invalid regular expression") == true)
+    }
+
+    func testSearchSnippetClickRevealsCurrentFileMatch() {
+        let url = tempFile()
+        try? "alpha\nneedle here\n".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let model = AppModel()
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+        model.loadInitialFile(url.path)
+        model.searchQuery = "needle"
+
+        let snippet = SearchSnippet(
+            lineNumber: 2,
+            text: "needle here",
+            matchStart: 0,
+            matchLength: 6,
+            sourceMatchStart: 0,
+            sourceMatchLength: 6,
+            matchedText: "needle",
+            matchOrdinal: 0
+        )
+        let result = SearchResult(
+            id: url,
+            url: url,
+            name: url.lastPathComponent,
+            parent: url.deletingLastPathComponent().lastPathComponent,
+            nameMatched: false,
+            snippets: [snippet]
+        )
+
+        model.openSearchResult(result, snippet: snippet)
+
+        XCTAssertEqual(bridge.revealedMatches.last?.lineNumber, 2)
+        XCTAssertEqual(bridge.revealedMatches.last?.matchedText, "needle")
+        XCTAssertEqual(bridge.revealedMatches.last?.query, "needle")
+        XCTAssertTrue(model.findVisible)
+        XCTAssertEqual(model.findStatus, "Line 2")
+    }
+
+    func testSearchSnippetRevealUsesTrimmedQueryForPaddedFolderSearch() {
+        let url = tempFile()
+        try? "first needle\nsecond needle\n".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let model = AppModel()
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+        model.loadInitialFile(url.path)
+        model.searchQuery = " needle "
+
+        let snippet = SearchSnippet(
+            lineNumber: 2,
+            text: "second needle",
+            matchStart: 7,
+            matchLength: 6,
+            sourceMatchStart: 7,
+            sourceMatchLength: 6,
+            matchedText: "needle",
+            matchOrdinal: 1
+        )
+        let result = SearchResult(
+            id: url,
+            url: url,
+            name: url.lastPathComponent,
+            parent: url.deletingLastPathComponent().lastPathComponent,
+            nameMatched: false,
+            snippets: [snippet]
+        )
+
+        model.openSearchResult(result, snippet: snippet)
+
+        XCTAssertEqual(bridge.revealedMatches.last?.query, "needle")
+        XCTAssertEqual(bridge.revealedMatches.last?.matchedText, "needle")
+        XCTAssertEqual(bridge.revealedMatches.last?.matchOrdinal, 1)
+        XCTAssertEqual(model.findQuery, "needle")
+    }
+
+    func testAppearanceSelectionRemembersLightThemeAcrossModelRecreation() {
+        let defaults = UserDefaults.standard
+        let keys = ["ouro.theme", "ouro.theme.lastLight", "ouro.theme.lastDark"]
+        var saved: [String: Any] = [:]
+        for key in keys {
+            if let value = defaults.object(forKey: key) { saved[key] = value }
+            defaults.removeObject(forKey: key)
+        }
+        defer {
+            for key in keys {
+                if let value = saved[key] {
+                    defaults.set(value, forKey: key)
+                } else {
+                    defaults.removeObject(forKey: key)
+                }
+            }
+        }
+        defaults.set("newsprint", forKey: "ouro.theme")
+
+        let model = AppModel()
+        XCTAssertEqual(model.themeID, "newsprint")
+        model.setAppearance("dark")
+        XCTAssertEqual(model.themeID, "graphite")
+
+        let reopened = AppModel()
+        XCTAssertEqual(reopened.themeID, "graphite")
+        reopened.setAppearance("light")
+        XCTAssertEqual(reopened.themeID, "newsprint")
     }
 
     func testSaveAsDirtyDocumentWritesEditorBuffer() {

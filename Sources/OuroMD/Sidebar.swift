@@ -289,6 +289,17 @@ struct SearchPanelView: View {
             }
             .padding(.horizontal, 8).padding(.bottom, 6)
             Divider()
+            if let error = model.searchError {
+                Label(error, systemImage: "exclamationmark.triangle")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .accessibilityLabel("Search error")
+                    .accessibilityValue(error)
+                Divider()
+            }
             if model.searchWasTruncated {
                 Label("Searched first \(FolderScanner.maxFiles) files", systemImage: "exclamationmark.triangle")
                     .font(.system(size: 11))
@@ -304,7 +315,12 @@ struct SearchPanelView: View {
     }
 
     @ViewBuilder private var results: some View {
-        if model.searchResults.isEmpty {
+        if model.searchError != nil {
+            VStack { Spacer()
+                Text("Fix the search pattern")
+                    .font(.system(size: 12)).foregroundStyle(.tertiary)
+                Spacer() }.frame(maxWidth: .infinity)
+        } else if model.searchResults.isEmpty {
             VStack { Spacer()
                 Text(model.searching ? "Searching…" : (model.searchQuery.isEmpty ? "Search the open folder" : "No matches"))
                     .font(.system(size: 12)).foregroundStyle(.tertiary)
@@ -320,7 +336,10 @@ struct SearchPanelView: View {
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .contentShape(Rectangle())
-                            .onTapGesture { model.openSearchResult(result.url) }
+                            .onTapGesture { model.openSearchResult(result, snippet: snippet) }
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityLabel("Open \(result.name) at line \(snippet.lineNumber)")
+                            .accessibilityAction { model.openSearchResult(result, snippet: snippet) }
                         }
                     } header: {
                         HStack(spacing: 4) {
@@ -335,11 +354,11 @@ struct SearchPanelView: View {
                             }
                         }
                         .contentShape(Rectangle())
-                        .onTapGesture { model.openSearchResult(result.url) }
+                        .onTapGesture { model.openSearchResult(result) }
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel("\(result.name), \(result.parent)")
                         .accessibilityAddTraits(.isButton)
-                        .accessibilityAction { model.openSearchResult(result.url) }
+                        .accessibilityAction { model.openSearchResult(result) }
                     }
                 }
             }

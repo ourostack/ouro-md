@@ -29,6 +29,9 @@ enum OuroCLI {
       ouro-md --wraptest             Verify editor typing quality-of-life hooks.
       ouro-md --tablewraptest        Verify table layout and table-local scrolling.
       ouro-md --codewraptest         Verify fenced code uses block-local scrolling.
+      ouro-md --visualqatest         Verify mixed visual document surfaces.
+      ouro-md --searchrevealtest     Verify search result reveal semantics.
+      ouro-md --uisurfacetest        Verify native Preferences/search surfaces.
       ouro-md --undotest             Verify editor undo/redo routing.
       ouro-md --help | --version
 
