@@ -1,12 +1,21 @@
-# Goal
+# Planning: Ouro MD World-Class Hardening
+
+**Status**: approved
+**Created**: 2026-06-21 09:48
+
+## Goal
 
 Ship the "next 20+ things" world-class hardening pass for Ouro MD: convert the 25-item acceptance list into permanent CI, release, visual, native UI, update/install, export, folder, and dogfood safeguards.
 
 The work is under autopilot/no-human-gates authority from the operator: do not pause for human approval; use sub-agent reviewer gates, merge to `main`, verify CI/release/install, and clean up branches/worktrees before completion.
 
-# Scope
+## Upstream Work Items
 
-## In Scope
+- None
+
+## Scope
+
+### In Scope
 
 - CI/local preflight parity:
   1. Local PR preflight script mirrors release freshness and source policy.
@@ -30,7 +39,7 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 - Export/update/product polish:
   17. Print/PDF export visual/probe coverage exists.
   18. HTML export snapshot/probe coverage exists for all built-in themes.
-  19. Install/update e2e verifies an older live release can update to the latest live release.
+  19. Install/update e2e verifies an older live release can update to the latest live release, or records a credential/network hard exception after the harness exists.
   20. Rollback verification covers failed update apply after backup creation.
   21. Updater progress is more cancellable/recoverable for long downloads.
   22. First-launch UX avoids blank white flash/confusing empty state.
@@ -41,45 +50,57 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 - Bump app release version if any app/release-affecting path changes.
 - Use sub-agent reviewer gates for plan and final implementation.
 
-## Out of Scope
+### Out of Scope
 
 - Using or modifying the operator's live in-use Markdown dogfood document.
 - Requiring human-only signing/notarization credentials; when unavailable, add local/CI readiness validation and documented hard-exception evidence instead.
 - Redesigning Ouro MD into a toolbar-heavy editor.
 - Replacing the existing SwiftPM/AppKit/WebKit architecture.
 
-# Completion Criteria
+## Completion Criteria
 
-- Each of the 25 acceptance items has a concrete implementation, test/probe, or documented hard-exception disposition with evidence.
-- New or changed probes run in both local/package verification and CI where appropriate.
-- `swift test`, coverage, native scenario verifier, packaged app verification, and release verification pass.
-- App-affecting changes are released and verified from GitHub releases.
-- CI produces useful debugging artifacts/annotations for slow tests and visual failures.
-- Main is green after merge.
-- No stale PR/branch/worktree from this run remains.
-- Desk task state records terminal evidence and is archived.
+- [ ] The doing doc contains a 25-row evidence matrix, and every row is closed with one of: implemented, test/probe-covered, or hard-exception.
+- [ ] Every non-hard-exception row records concrete evidence: changed file(s), test/probe name, and the validation command that passed.
+- [ ] New or changed probes run in both local/package verification and CI when the behavior can be exercised in those environments.
+- [ ] CI produces durable debugging artifacts/annotations for slow tests and visual failures.
+- [ ] `swift test` passes.
+- [ ] `./scripts/check-coverage.sh` passes with 100% line and region coverage for `OuroMDCore`.
+- [ ] Native scenario verification passes against SwiftPM output.
+- [ ] Packaged app verification passes against the `.app` bundle.
+- [ ] PR preflight passes locally.
+- [ ] App-affecting changes are version-bumped, released, and verified from GitHub releases, unless the final evidence matrix records why release publication is non-applicable or blocked by a hard exception.
+- [ ] Main is green after merge.
+- [ ] No stale PR, branch, or worktree from this run remains.
+- [ ] Desk task state records terminal evidence and is archived.
 
-# Code Coverage Requirements
+## Code Coverage Requirements
+
+**MANDATORY: 100% coverage on all new pure/model code.**
 
 - Maintain `./scripts/check-coverage.sh` passing at 100% line and region coverage for `OuroMDCore`.
 - Add focused XCTest coverage for new pure/model/update/menu logic.
 - Add headless CLI probes for visual/native/editor/export behavior that XCTest cannot faithfully inspect.
 - Add release/package verification coverage for shipped `.app` behavior, not only SwiftPM-local behavior.
+- No `[ExcludeFromCodeCoverage]` or equivalent on new code.
+- All branches covered where the code lives in `OuroMDCore`.
+- All error paths tested for new pure logic.
+- Edge cases: empty input, missing files, unreadable files, cancellation, and boundary viewport sizes where relevant.
 
-# Open Questions
+## Open Questions
 
-- Signing/notarization cannot be completed without Developer ID credentials. Treat this as a hard exception if no credentials exist, but still add readiness validation/documentation.
-- Full drag/drop and image paste can be hard to synthesize headlessly; implement the lowest reliable harness that exercises app code paths and records any remaining AppKit-event limitation.
+- [ ] None that require human judgment under the active autopilot mandate.
 
-# Decisions Made
+## Decisions Made
 
 - Branch/worktree: `worker/ouro-md-world-class-hardening` at `/Users/arimendelow/Projects/_worktrees/ouro-md-world-class-hardening`.
 - Task docs live in repo under `worker/tasks/` per repo instructions.
 - Human gates are replaced by sub-agent reviewer gates under the user's explicit "don't return control" mandate.
 - Prefer strengthening existing harnesses (`VisualQATest`, `UISurfaceTest`, `TableWrapTest`, `verify-packaged-app.sh`, CI) before adding new harness types.
 - Ship as one or more atomic PRs if the work naturally splits; each PR must reach main/CI/release as applicable before the next.
+- Signing/notarization cannot be completed without Developer ID credentials. Treat this as a hard exception if no credentials exist, but still add readiness validation/documentation.
+- Full drag/drop and image paste can be hard to synthesize headlessly; implement the lowest reliable harness that exercises app code paths and records any remaining AppKit-event limitation in the evidence matrix.
 
-# Context / References
+## Context / References
 
 - `.github/workflows/ci.yml`
 - `.github/workflows/release.yml`
@@ -98,24 +119,18 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 - `Tests/OuroMDTests/*`
 - Desk task: `/Users/arimendelow/desk/ouro-md/world-class-hardening/task.md`
 
-# Notes
+## Notes
 
 - Existing CI already has Swift tests, app bundle verification, native scenario verifier, coverage, release version/freshness, source policy, table/code/visual/search/UI probes, and packaged-app verification.
 - Prior release-freshness lesson: run `./scripts/release-policy.sh freshness` before PRs touching app/release-affecting paths.
 - Explorer findings folded into scope:
-  - CI/release: bump `actions/upload-artifact` to v6, add `scripts/pr-preflight.sh`, add XCTest timing/slow-test budget reporting, upload visual artifacts on failure, and optionally smoke the hosted installer URL.
+  - CI/release: bump `actions/upload-artifact` to v6, add `scripts/pr-preflight.sh`, add XCTest timing/slow-test budget reporting, upload visual artifacts on failure, and smoke the hosted installer URL.
   - Native UI: add file/open and image transfer harnesses, AX/focus/contrast/reduced-motion checks, real title click-vs-drag decision coverage, and first-frame launch smoke.
   - Updater: add dirty-doc install quit-cancel coverage, structured/cancellable progress, retry recovery, live older-to-latest update harness, and stronger rollback/one-line installer restoration assertions.
   - Coverage matrix: items 3, 4, 15, 17, and 23 are missing today; most others are partial and must be made CI-visible.
-- Initial implementation units:
-  - Unit 0: discovery/review convergence and exact coverage matrix.
-  - Unit 1: CI local preflight, slow-test budget/annotation, artifact plumbing, Node 20 cleanup.
-  - Unit 2: visual/native UI/accessibility/menu/title/open/recents/multi-window probes.
-  - Unit 3: update/install dirty-quit/cancel/recover/rollback/live-update checks.
-  - Unit 4: large-folder/search/drag-drop/image/pathological table/export probes.
-  - Unit 5: first-launch, command palette, compact status surface, signing readiness.
-  - Unit 6: release bump, full verification, PR/reviewer/merge/release cleanup.
 
-# Progress Log
+## Progress Log
 
 - 2026-06-21 09:48 Created initial planning doc from the 25-item acceptance list.
+- 2026-06-21 09:55 Folded CI/release, update, UI/native, and coverage-matrix explorer findings into scope.
+- 2026-06-21 10:02 Reshaped planning doc to the local template and made the evidence-matrix completion gate explicit after reviewer findings.
