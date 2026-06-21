@@ -22,9 +22,16 @@ command -v curl >/dev/null 2>&1 || fail "curl is required"
 command -v jq >/dev/null 2>&1 || fail "jq is required"
 command -v ditto >/dev/null 2>&1 || fail "ditto is required"
 
+github_token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
+github_api_headers=(-H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' -H "User-Agent: OuroMD/live-update-check")
+if [[ -n "$github_token" ]]; then
+  github_api_headers+=(-H "Authorization: Bearer ${github_token}")
+fi
+
 echo "==> reading releases from $repo"
-curl -fsSL -H 'Accept: application/vnd.github+json' -H "User-Agent: OuroMD/live-update-check" \
-  "$api" > "$tmp/releases.json"
+if ! curl -fsSL "${github_api_headers[@]}" "$api" > "$tmp/releases.json"; then
+  fail "could not read releases for $repo; set GH_TOKEN or GITHUB_TOKEN for authenticated GitHub API access"
+fi
 
 latest_version="${OURO_MD_LIVE_UPDATE_TO_VERSION:-}"
 if [[ -z "$latest_version" ]]; then

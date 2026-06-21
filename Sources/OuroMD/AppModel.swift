@@ -654,6 +654,14 @@ final class AppModel: ObservableObject {
         }
         fileWatcher = watcher
         watcher.start()
+        reconcileAfterWatchStart(url)
+    }
+
+    private func reconcileAfterWatchStart(_ url: URL) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+            guard let self, self.currentURL == url else { return }
+            self.handleExternalChange()
+        }
     }
 
     private func stopWatching() {

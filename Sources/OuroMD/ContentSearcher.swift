@@ -44,7 +44,7 @@ struct SearchCompletion: Equatable {
 /// count, without a bundled external search binary.
 final class ContentSearcher {
     private let queue = DispatchQueue(label: "md.ouro.contentsearch", qos: .userInitiated)
-    private var current: DispatchWorkItem?
+    private var current: SearchToken?
 
     private static let maxMatchesPerFile = 30
     private static let maxFileBytes = 2_000_000
@@ -66,16 +66,16 @@ final class ContentSearcher {
             onComplete(.empty); return
         }
         let nameQuery = trimmed.lowercased()
-        var workItem: DispatchWorkItem!
+        let token = SearchToken()
         let work = DispatchWorkItem { [weak self] in
-            guard self != nil else { return }
-            let snapshot = FolderScanner.snapshot(at: folder, sort: .name, shouldCancel: { workItem.isCancelled })
-            if snapshot.isCancelled { return }
+            guard self != nil, !token.isCancelled else { return }
+            let snapshot = FolderScanner.snapshot(at: folder, sort: .name, shouldCancel: { token.isCancelled })
+            if snapshot.isCancelled || token.isCancelled { return }
             let files = snapshot.flat
             var skippedUnreadableCount = 0
             var skippedBinaryCount = 0
             for node in files {
-                if workItem.isCancelled { return }
+                if token.isCancelled { return }
                 let nameMatched = node.name.lowercased().contains(nameQuery)
                 var snippets: [SearchSnippet] = []
                 switch Self.searchableText(at: node.url) {
@@ -90,22 +90,41 @@ final class ContentSearcher {
                 let result = SearchResult(id: node.url, url: node.url, name: node.name,
                                           parent: FolderDisplay.parentHint(node.url, under: folder),
                                           nameMatched: nameMatched, snippets: snippets)
-                DispatchQueue.main.async { if !workItem.isCancelled { onResult(result) } }
-            }
-            DispatchQueue.main.async {
-                if !workItem.isCancelled {
-                    onComplete(SearchCompletion(
-                        isTruncated: snapshot.isTruncated,
-                        skippedUnreadableCount: skippedUnreadableCount,
-                        skippedBinaryCount: skippedBinaryCount,
-                        isCancelled: false
-                    ))
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, self.current === token, !token.isCancelled else { return }
+                    onResult(result)
                 }
             }
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.current === token, !token.isCancelled else { return }
+                self.current = nil
+                onComplete(SearchCompletion(
+                    isTruncated: snapshot.isTruncated,
+                    skippedUnreadableCount: skippedUnreadableCount,
+                    skippedBinaryCount: skippedBinaryCount,
+                    isCancelled: false
+                ))
+            }
         }
-        workItem = work
-        current = work
+        current = token
         queue.async(execute: work)
+    }
+
+    private final class SearchToken {
+        private let lock = NSLock()
+        private var cancelled = false
+
+        var isCancelled: Bool {
+            lock.lock()
+            defer { lock.unlock() }
+            return cancelled
+        }
+
+        func cancel() {
+            lock.lock()
+            cancelled = true
+            lock.unlock()
+        }
     }
 
     private enum SearchableText {
