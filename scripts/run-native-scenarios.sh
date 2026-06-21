@@ -28,6 +28,9 @@ run() {
 run --undotest
 run --wraptest
 run --renderprobe
+run --performanceprobe
+run --accessibilityaudit
+run --markdownparitytest
 run --codewraptest
 
 OURO_MD_EXE="$exe" ./scripts/run-visual-qa.sh

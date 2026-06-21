@@ -87,6 +87,24 @@ if hasFlag("--renderprobe") {
     RenderProbe().run()
 }
 
+if hasFlag("--performanceprobe") {
+    MainActor.assumeIsolated {
+        PerformanceProbe().run()
+    }
+}
+
+if hasFlag("--accessibilityaudit") {
+    MainActor.assumeIsolated {
+        AccessibilityAuditTester().run()
+    }
+}
+
+if hasFlag("--markdownparitytest") {
+    MainActor.assumeIsolated {
+        MarkdownParityTester().run()
+    }
+}
+
 if hasFlag("--visualqatest") {
     let width = Double(argValue("--visualqa-width") ?? "") ?? 720
     let height = Double(argValue("--visualqa-height") ?? "") ?? 900

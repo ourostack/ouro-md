@@ -25,6 +25,9 @@ enum OuroCLI {
       ouro-md --roundtrip FILE       Load FILE through the live editor and print
                                      the Markdown value returned by Vditor.
       ouro-md --renderprobe          Verify live rich-rendering support.
+      ouro-md --performanceprobe     Verify large-doc editor/search performance.
+      ouro-md --accessibilityaudit   Verify native accessibility and shortcuts.
+      ouro-md --markdownparitytest   Verify Markdown renderer/export parity.
       ouro-md --alerttest            Verify alert-callout marker display safety.
       ouro-md --wraptest             Verify editor typing quality-of-life hooks.
       ouro-md --tablewraptest        Verify table layout and table-local scrolling.

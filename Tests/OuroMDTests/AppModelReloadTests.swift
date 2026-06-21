@@ -186,6 +186,7 @@ final class AppModelReloadTests: XCTestCase {
         }
 
         try? "# Updated before ready\n".write(to: url, atomically: true, encoding: .utf8)
+        model.reconcileExternalChangeForTesting()
         wait(for: [queued], timeout: 6)
 
         XCTAssertTrue(bridge.reloads.isEmpty, "not-ready editor should not receive a completed reload")
