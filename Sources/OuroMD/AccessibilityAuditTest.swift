@@ -139,9 +139,42 @@ final class AccessibilityAuditTester {
 
     private func sourceAccessibilityAudit() -> SourceAuditResult {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-        let sources = ["Sources/OuroMD/ContentView.swift", "Sources/OuroMD/Sidebar.swift", "Sources/OuroMD/CommandReferenceView.swift", "Sources/OuroMD/AppInfoView.swift"]
+        let sourcePaths = [
+            "Sources/OuroMD/ContentView.swift",
+            "Sources/OuroMD/Sidebar.swift",
+            "Sources/OuroMD/CommandReferenceView.swift",
+            "Sources/OuroMD/AppInfoView.swift",
+        ]
+        let sharedSourcePaths = [
+            ".build/checkouts/ouro-native-apple-app-shell/Sources/OuroAppShellUI/AppShellAboutView.swift",
+            ".build/checkouts/ouro-native-apple-app-shell/Sources/OuroAppShellUI/ReleaseUpdateControls.swift",
+            ".build/checkouts/ouro-native-apple-app-shell/Sources/OuroAppShellUI/UpdateInstalledConfirmationView.swift",
+        ]
+        let appSources = sourcePaths
             .compactMap { try? String(contentsOf: root.appendingPathComponent($0), encoding: .utf8) }
+        let sharedSources = sharedSourcePaths
+            .compactMap { try? String(contentsOf: root.appendingPathComponent($0), encoding: .utf8) }
+        let sources = (appSources + sharedSources)
             .joined(separator: "\n")
+        let sharedSourceSnippets = [
+            ".accessibilityLabel(model.accessibilityLabel)",
+            ".accessibilityLabel(\"Update status\")",
+            ".accessibilityLabel(\"Update state\")",
+            ".accessibilityLabel(\"Check for updates\")",
+            ".accessibilityLabel(\"Open release notes\")",
+        ]
+        let packagedFallbackSnippets = [
+            "OuroAppShellUI.AppShellAboutView(",
+            "OuroAppShellUI.ReleaseUpdateControls(",
+            "OuroAppShellUI.UpdateInstalledConfirmationView(",
+            "labels: ReleaseUpdateActionLabels(",
+            "check: \"Check for Updates\"",
+            "openRelease: \"Open Release\"",
+            "openAboutLabel: \"What's New\"",
+            "openAboutSystemImage: nil",
+            "dismissLabel: \"OK\"",
+        ]
+        let sharedSourceAvailable = !sharedSources.isEmpty
         let requiredSnippets = [
             ".accessibilityLabel(\"Appearance\")",
             ".accessibilityLabel(\"Theme\")",
@@ -160,11 +193,6 @@ final class AccessibilityAuditTester {
             ".accessibilityLabel(\"Close command palette\")",
             ".accessibilityLabel(\"Keyboard shortcuts\")",
             ".accessibilityLabel(\"Search commands\")",
-            ".accessibilityLabel(\"About Ouro MD\")",
-            ".accessibilityLabel(\"Update status\")",
-            ".accessibilityLabel(\"Update state\")",
-            ".accessibilityLabel(\"Check for updates\")",
-            ".accessibilityLabel(\"Open release\")",
             ".accessibilityLabel(\"Document status\")",
             ".accessibilityLabel(\"Find\")",
             ".accessibilityLabel(\"Replace\")",
@@ -174,7 +202,7 @@ final class AccessibilityAuditTester {
             ".accessibilityLabel(\"Close Find\")",
             ".accessibilityLabel(progress.title.isEmpty ?",
             ".accessibilityLabel(\"Retry update\")",
-        ]
+        ] + (sharedSourceAvailable ? sharedSourceSnippets : packagedFallbackSnippets)
         return SourceAuditResult(missing: requiredSnippets.filter { !sources.contains($0) })
     }
 

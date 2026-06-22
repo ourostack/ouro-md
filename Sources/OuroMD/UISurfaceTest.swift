@@ -1,4 +1,5 @@
 import AppKit
+import OuroAppShellUI
 import OuroMDCore
 import SwiftUI
 
@@ -69,6 +70,7 @@ final class UISurfaceTester {
             UpdateProgressView(updateCoordinator: installingCoordinator),
             constrainedTo: NSSize(width: 420, height: 160)
         )
+        let installingShellState = installingCoordinator.appShellUpdateState
         waitUntil(timeout: 3) { installingCoordinator.installError != nil }
         let failedSize = fittingSize(
             UpdateProgressView(updateCoordinator: installingCoordinator),
@@ -110,6 +112,7 @@ final class UISurfaceTester {
             && editorFitModel.commandPaletteItems.contains { $0.id == "edit.find" && $0.shortcut == "⌘F" }
         let installingOK = installingCoordinator.installStatus?.contains("Downloading") == true || installingCoordinator.installError != nil
         let progressOK = installingSize.width <= 420 && installingSize.height <= 160 && failedSize.width <= 420 && failedSize.height <= 180
+        let reviewDisabledWhileInstallingOK = installingShellState.kind == .installing && installingShellState.canReviewUpdate
         let axOK = containsAll(prefsLabels, ["Light", "Dark"])
             && containsAll(sidebarLabels, ["Outline", "Files", "Search"])
             && (containsAll(updateLabels, ["Update failed"]) || updateLabels.isEmpty)
@@ -122,10 +125,14 @@ final class UISurfaceTester {
         print("status/palette semantic state: \(statusPaletteOK ? "✓" : "✗")")
         print("command discoverability semantic state: \(commandDiscoveryOK ? "✓" : "✗")")
         print(String(format: "update progress fitting size: installing %.1fx%.1f failed %.1fx%.1f %@", installingSize.width, installingSize.height, failedSize.width, failedSize.height, progressOK ? "✓" : "✗"))
+        print("installing update controls disable review: \(reviewDisabledWhileInstallingOK ? "✓" : "✗")")
         print("invalid regex visible state: \(regexErrorOK ? "✓" : "✗")")
         print("search result row state: \(searchResultsOK ? "✓" : "✗")")
         print("menu topology: \(menuOK ? "✓" : "✗")")
         print("accessibility labels: \(axOK ? "✓" : "✗")")
+        if !reviewDisabledWhileInstallingOK {
+            print("installing shell state: \(installingShellState.kind.rawValue), canReviewUpdate=\(installingShellState.canReviewUpdate)")
+        }
         if !axOK {
             print("preferences labels: \(prefsLabels.sorted().joined(separator: " | "))")
             print("sidebar labels: \(sidebarLabels.sorted().joined(separator: " | "))")
@@ -135,7 +142,7 @@ final class UISurfaceTester {
         invalidModel.teardown()
         searchModel.teardown()
         try? FileManager.default.removeItem(at: root)
-        exit(regexErrorOK && searchResultsOK && prefsOK && aboutOK && searchOK && editorOK && referenceOK && statusPaletteOK && commandDiscoveryOK && installingOK && progressOK && menuOK && axOK ? 0 : 1)
+        exit(regexErrorOK && searchResultsOK && prefsOK && aboutOK && searchOK && editorOK && referenceOK && statusPaletteOK && commandDiscoveryOK && installingOK && progressOK && reviewDisabledWhileInstallingOK && menuOK && axOK ? 0 : 1)
     }
 
     private func fittingSize<Content: View>(_ view: Content, constrainedTo size: NSSize) -> NSSize {

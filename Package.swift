@@ -25,6 +25,7 @@ let package = Package(
             dependencies: [
                 "OuroMDCore",
                 .product(name: "OuroAppShellCore", package: "ouro-native-apple-app-shell"),
+                .product(name: "OuroAppShellUI", package: "ouro-native-apple-app-shell"),
                 .product(name: "Markdown", package: "swift-markdown")
             ],
             resources: [
