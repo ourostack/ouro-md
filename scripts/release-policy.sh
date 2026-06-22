@@ -220,7 +220,9 @@ release_json_for_version() {
 }
 
 resolve_commit() {
-  git rev-parse "$1^{commit}" 2>/dev/null || printf '%s\n' "$1"
+  git rev-parse --verify --quiet "$1" 2>/dev/null \
+    || git rev-parse --verify --quiet "$1^{commit}" 2>/dev/null \
+    || printf '%s\n' "$1"
 }
 
 resolve_pr_base_ref() {
