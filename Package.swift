@@ -10,6 +10,7 @@ let package = Package(
         .executable(name: "ouro-md", targets: ["OuroMD"])
     ],
     dependencies: [
+        .package(url: "https://github.com/ourostack/ouro-native-apple-app-shell.git", branch: "main"),
         .package(url: "https://github.com/apple/swift-markdown.git", branch: "main")
     ],
     targets: [
@@ -23,6 +24,7 @@ let package = Package(
             name: "OuroMD",
             dependencies: [
                 "OuroMDCore",
+                .product(name: "OuroAppShellCore", package: "ouro-native-apple-app-shell"),
                 .product(name: "Markdown", package: "swift-markdown")
             ],
             resources: [
