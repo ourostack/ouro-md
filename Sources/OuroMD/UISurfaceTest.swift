@@ -35,7 +35,7 @@ final class UISurfaceTester {
         statusModel.commandPaletteQuery = "export"
         let editorFitModel = AppModel()
         editorFitModel.showCommandPalette()
-        editorFitModel.commandPaletteQuery = "export"
+        editorFitModel.commandPaletteQuery = "find"
 
         let updateCoordinator = OuroMDUpdateCoordinator()
         let installingCoordinator = makeInstallingUpdateCoordinator()
@@ -50,6 +50,10 @@ final class UISurfaceTester {
         let editorSize = fittingSize(
             EditorPane(model: editorFitModel),
             constrainedTo: NSSize(width: 520, height: 420)
+        )
+        let referenceSize = fittingSize(
+            CommandReferenceView(items: CommandPaletteCatalog.items()),
+            constrainedTo: NSSize(width: 560, height: 620)
         )
         let installingTask = Task {
             await installingCoordinator.checkForReleaseUpdate()
@@ -86,10 +90,14 @@ final class UISurfaceTester {
         let prefsOK = prefsSize.width <= 520 && prefsSize.height <= 350
         let searchOK = searchSize.width <= 380 && searchSize.height <= 700
         let editorOK = editorSize.width <= 560 && editorSize.height <= 460
+        let referenceOK = referenceSize.width <= 600 && referenceSize.height <= 660
         let statusPaletteOK = statusModel.wordCount == 123
             && statusModel.charCount == 456
             && statusModel.commandPaletteVisible
             && containsAll(Set(statusModel.commandPaletteItems.map(\.title)), ["Export HTML", "Export PDF"])
+        let commandDiscoveryOK = CommandPaletteCatalog.items().contains { $0.id == "edit.command-palette" && $0.shortcut == "⇧⌘P" }
+            && CommandPaletteCatalog.items().contains { $0.id == "help.keyboard-shortcuts" && $0.shortcut == "⌘?" }
+            && editorFitModel.commandPaletteItems.contains { $0.id == "edit.find" && $0.shortcut == "⌘F" }
         let installingOK = installingCoordinator.installStatus?.contains("Downloading") == true || installingCoordinator.installError != nil
         let progressOK = installingSize.width <= 420 && installingSize.height <= 160 && failedSize.width <= 420 && failedSize.height <= 180
         let axOK = containsAll(prefsLabels, ["Light", "Dark"])
@@ -99,7 +107,9 @@ final class UISurfaceTester {
         print(String(format: "preferences fitting size: %.1fx%.1f %@", prefsSize.width, prefsSize.height, prefsOK ? "✓" : "✗"))
         print(String(format: "search sidebar fitting size: %.1fx%.1f %@", searchSize.width, searchSize.height, searchOK ? "✓" : "✗"))
         print(String(format: "editor palette/status fitting size: %.1fx%.1f %@", editorSize.width, editorSize.height, editorOK ? "✓" : "✗"))
+        print(String(format: "command reference fitting size: %.1fx%.1f %@", referenceSize.width, referenceSize.height, referenceOK ? "✓" : "✗"))
         print("status/palette semantic state: \(statusPaletteOK ? "✓" : "✗")")
+        print("command discoverability semantic state: \(commandDiscoveryOK ? "✓" : "✗")")
         print(String(format: "update progress fitting size: installing %.1fx%.1f failed %.1fx%.1f %@", installingSize.width, installingSize.height, failedSize.width, failedSize.height, progressOK ? "✓" : "✗"))
         print("invalid regex visible state: \(regexErrorOK ? "✓" : "✗")")
         print("search result row state: \(searchResultsOK ? "✓" : "✗")")
@@ -114,7 +124,7 @@ final class UISurfaceTester {
         invalidModel.teardown()
         searchModel.teardown()
         try? FileManager.default.removeItem(at: root)
-        exit(regexErrorOK && searchResultsOK && prefsOK && searchOK && editorOK && statusPaletteOK && installingOK && progressOK && menuOK && axOK ? 0 : 1)
+        exit(regexErrorOK && searchResultsOK && prefsOK && searchOK && editorOK && referenceOK && statusPaletteOK && commandDiscoveryOK && installingOK && progressOK && menuOK && axOK ? 0 : 1)
     }
 
     private func fittingSize<Content: View>(_ view: Content, constrainedTo size: NSSize) -> NSSize {

@@ -51,6 +51,7 @@ final class AccessibilityAuditTester {
         .union(accessibilityStrings(SidebarView(model: model), size: NSSize(width: 320, height: 720)))
         .union(accessibilityStrings(SidebarView(model: invalidModel), size: NSSize(width: 320, height: 720)))
         .union(accessibilityStrings(EditorPane(model: model), size: NSSize(width: 680, height: 520)))
+        .union(accessibilityStrings(CommandReferenceView(items: CommandPaletteCatalog.items()), size: NSSize(width: 560, height: 620)))
         .union(accessibilityStrings(UpdateProgressView(updateCoordinator: updateCoordinator), size: NSSize(width: 440, height: 190)))
 
         let runtimeRequired = ["Light", "Dark", "Outline", "Files", "Search"]
@@ -59,7 +60,8 @@ final class AccessibilityAuditTester {
         }
         let source = sourceAccessibilityAudit()
         let menu = menuAudit()
-        let labelsOK = missingRuntime.isEmpty && source.missing.isEmpty
+        let discoverability = commandDiscoverabilityAudit()
+        let labelsOK = missingRuntime.isEmpty && source.missing.isEmpty && discoverability.missing.isEmpty
 
         print("runtime accessibility smoke: \(missingRuntime.isEmpty ? "✓" : "✗")")
         if !missingRuntime.isEmpty {
@@ -77,6 +79,10 @@ final class AccessibilityAuditTester {
         print("menu shortcut conflicts: \(menu.conflicts.isEmpty ? "✓" : "✗")")
         if !menu.conflicts.isEmpty {
             print("shortcut conflicts: \(menu.conflicts.joined(separator: " | "))")
+        }
+        print("command discoverability catalog: \(discoverability.missing.isEmpty ? "✓" : "✗")")
+        if !discoverability.missing.isEmpty {
+            print("missing discoverable commands: \(discoverability.missing.joined(separator: " | "))")
         }
 
         model.teardown()
@@ -131,7 +137,7 @@ final class AccessibilityAuditTester {
 
     private func sourceAccessibilityAudit() -> SourceAuditResult {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-        let sources = ["Sources/OuroMD/ContentView.swift", "Sources/OuroMD/Sidebar.swift"]
+        let sources = ["Sources/OuroMD/ContentView.swift", "Sources/OuroMD/Sidebar.swift", "Sources/OuroMD/CommandReferenceView.swift"]
             .compactMap { try? String(contentsOf: root.appendingPathComponent($0), encoding: .utf8) }
             .joined(separator: "\n")
         let requiredSnippets = [
@@ -150,6 +156,8 @@ final class AccessibilityAuditTester {
             ".accessibilityLabel(\"Command palette\")",
             ".accessibilityLabel(\"Command\")",
             ".accessibilityLabel(\"Close command palette\")",
+            ".accessibilityLabel(\"Keyboard shortcuts\")",
+            ".accessibilityLabel(\"Search commands\")",
             ".accessibilityLabel(\"Document status\")",
             ".accessibilityLabel(\"Find\")",
             ".accessibilityLabel(\"Replace\")",
@@ -182,6 +190,7 @@ final class AccessibilityAuditTester {
             (["File", "Save"], "s", [.command]),
             (["File", "Save As…"], "s", [.command, .shift]),
             (["Edit", "Command Palette…"], "p", [.command, .shift]),
+            (["Help", "Keyboard Shortcuts…"], "/", [.command, .shift]),
             (["Edit", "Find", "Find…"], "f", [.command]),
             (["Edit", "Find", "Replace…"], "f", [.command, .option]),
             (["View", "Toggle Sidebar"], "l", [.command, .shift]),
@@ -213,6 +222,38 @@ final class AccessibilityAuditTester {
             .map { "\($0.key): \($0.value.joined(separator: ", "))" }
             .sorted()
         return MenuAuditResult(coverageOK: missing.isEmpty, missingCritical: missing, conflicts: conflicts)
+    }
+
+    private struct CommandDiscoverabilityResult {
+        var missing: [String]
+    }
+
+    private func commandDiscoverabilityAudit() -> CommandDiscoverabilityResult {
+        let items = Dictionary(uniqueKeysWithValues: CommandPaletteCatalog.items().map { ($0.id, $0) })
+        let required: [(String, String)] = [
+            ("edit.command-palette", "⇧⌘P"),
+            ("help.keyboard-shortcuts", "⌘?"),
+            ("file.open-folder", "⇧⌘O"),
+            ("edit.find", "⌘F"),
+            ("edit.replace", "⌥⌘F"),
+            ("edit.find-next", "⌘G"),
+            ("edit.find-previous", "⇧⌘G"),
+            ("edit.paste-plain", "⇧⌘V"),
+            ("view.search-sidebar", "⇧⌘F"),
+            ("view.outline-sidebar", "⌃⌘1"),
+            ("format.bold", "⌘B"),
+            ("paragraph.h6", "⌘6"),
+            ("paragraph.quote", ""),
+            ("paragraph.codeblock", ""),
+            ("paragraph.math", ""),
+            ("paragraph.hr", ""),
+        ]
+        let missing = required.compactMap { id, shortcut -> String? in
+            guard let item = items[id] else { return "\(id) missing" }
+            if shortcut.isEmpty { return nil }
+            return item.shortcut == shortcut ? nil : "\(id) expected \(shortcut)"
+        }
+        return CommandDiscoverabilityResult(missing: missing)
     }
 
     private func findMenuItem(path: [String], in menu: NSMenu?) -> NSMenuItem? {

@@ -57,6 +57,23 @@ final class UndoRedoRoutingTests: XCTestCase {
         XCTAssertTrue(palette?.keyEquivalentModifierMask.contains(.shift) == true)
     }
 
+    func testHelpMenuSurfacesKeyboardShortcutsReference() {
+        let app = NSApplication.shared
+        let previousMenu = app.mainMenu
+        defer { app.mainMenu = previousMenu }
+        let delegate = AppDelegate()
+
+        MenuBuilder.install(into: app, target: delegate)
+
+        let helpMenu = app.mainMenu?.items.compactMap(\.submenu).first { $0.title == "Help" }
+        let shortcuts = helpMenu?.item(withTitle: "Keyboard Shortcuts…")
+        XCTAssertEqual(shortcuts?.action, #selector(AppDelegate.showKeyboardShortcuts(_:)))
+        XCTAssertTrue(shortcuts?.target === delegate)
+        XCTAssertEqual(shortcuts?.keyEquivalent, "/")
+        XCTAssertTrue(shortcuts?.keyEquivalentModifierMask.contains(.command) == true)
+        XCTAssertTrue(shortcuts?.keyEquivalentModifierMask.contains(.shift) == true)
+    }
+
     func testShortcutParserRecognizesMacUndoRedoKeystrokes() {
         XCTAssertEqual(
             UndoRedoCommandRouter.command(for: keyEvent("z", modifiers: [.command])),
@@ -144,10 +161,12 @@ final class UndoRedoRoutingTests: XCTestCase {
         let new = NSMenuItem(title: "New", action: #selector(AppDelegate.newDocument(_:)), keyEquivalent: "")
         let open = NSMenuItem(title: "Open", action: #selector(AppDelegate.openDocument(_:)), keyEquivalent: "")
         let updates = NSMenuItem(title: "Check for Updates", action: #selector(AppDelegate.checkForUpdates(_:)), keyEquivalent: "")
+        let shortcuts = NSMenuItem(title: "Keyboard Shortcuts", action: #selector(AppDelegate.showKeyboardShortcuts(_:)), keyEquivalent: "")
 
         XCTAssertTrue(delegate.validateMenuItem(new))
         XCTAssertTrue(delegate.validateMenuItem(open))
         XCTAssertTrue(delegate.validateMenuItem(updates))
+        XCTAssertTrue(delegate.validateMenuItem(shortcuts))
     }
 
     func testMenuValidationChecksRecentItemsAndDefaults() {

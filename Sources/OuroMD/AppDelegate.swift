@@ -295,6 +295,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     }
 
     private var prefsWindow: NSWindow?
+    private var keyboardShortcutsWindow: NSWindow?
+
     @objc func showPreferences(_ sender: Any?) {
         if prefsWindow == nil {
             let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 350),
@@ -314,6 +316,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             )
         )
         prefsWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @objc func showKeyboardShortcuts(_ sender: Any?) {
+        if keyboardShortcutsWindow == nil {
+            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 560, height: 620),
+                             styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+            w.title = "Keyboard Shortcuts"
+            w.minSize = NSSize(width: 520, height: 500)
+            w.isReleasedWhenClosed = false
+            w.center()
+            keyboardShortcutsWindow = w
+        }
+        keyboardShortcutsWindow?.contentViewController = NSHostingController(
+            rootView: CommandReferenceView(items: CommandPaletteCatalog.items())
+        )
+        keyboardShortcutsWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
 
@@ -453,6 +472,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
              #selector(openDocument(_:)),
              #selector(openFolder(_:)),
              #selector(showPreferences(_:)),
+             #selector(showKeyboardShortcuts(_:)),
              #selector(checkForUpdates(_:)),
              #selector(openProjectPage(_:)),
              #selector(reportIssue(_:)):

@@ -514,18 +514,21 @@ struct CommandPaletteView: View {
                         Button {
                             model.performCommandPaletteItem(item)
                         } label: {
-                            HStack {
+                            HStack(spacing: 8) {
                                 Text(item.title)
                                     .font(.system(size: 12, weight: .medium))
                                     .lineLimit(1)
                                 Spacer()
+                                if let shortcut = item.shortcut {
+                                    ShortcutBadge(text: shortcut)
+                                }
                             }
                             .contentShape(Rectangle())
                             .padding(.horizontal, 8)
                             .padding(.vertical, 5)
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel(item.title)
+                        .accessibilityLabel(item.shortcut.map { "\(item.title), \(spokenShortcut($0))" } ?? item.title)
                     }
                 }
             }

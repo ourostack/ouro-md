@@ -14,6 +14,7 @@ enum Welcome {
     - Open a file with **⌘O**, or a whole folder with **⇧⌘O** (the sidebar becomes a
       file browser you can search).
     - Your changes **auto-save**. Switch themes from the **Themes** menu.
+    - Run editor commands from **⇧⌘P**, or open **Help ▸ Keyboard Shortcuts** with **⌘?**.
     - **⌘/** toggles source mode · **⌘F** find · **⌥⌘F** replace · **⌘1–6** headings.
 
     ## Live editing
