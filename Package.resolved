@@ -1,6 +1,15 @@
 {
-  "originHash" : "f84052866c14e3171d23464140df667373741334a9dd4d239d3ffc5360bd6c9f",
+  "originHash" : "3c6c6642c4b05fe76fc2858bdb482da11fc7c3a85cd12f33c643f492c2d60ced",
   "pins" : [
+    {
+      "identity" : "ouro-native-apple-app-shell",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ourostack/ouro-native-apple-app-shell.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "0944315a273884e0a5f078468d12c73f7f78e885"
+      }
+    },
     {
       "identity" : "swift-cmark",
       "kind" : "remoteSourceControl",

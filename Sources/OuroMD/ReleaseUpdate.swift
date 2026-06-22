@@ -1,38 +1,12 @@
 import Foundation
+import OuroAppShellCore
 import OuroMDCore
 
-enum ReleaseUpdateStatus: String, Codable, Equatable, Sendable {
-    case current
-    case updateAvailable
-    case unavailable
-}
-
-struct ReleaseUpdateAsset: Codable, Equatable, Sendable {
-    var name: String
-    var downloadURL: String
-    var size: Int
-}
-
-struct ReleaseUpdateSnapshot: Codable, Equatable, Sendable {
-    var status: ReleaseUpdateStatus
-    var currentVersion: String
-    var latestVersion: String?
-    var tagName: String?
-    var htmlURL: String?
-    var publishedAt: String? = nil
-    var body: String? = nil
-    var assets: [ReleaseUpdateAsset]
-    var detail: String
-
-    var hasInstallableAssets: Bool {
-        assets.contains { $0.name.hasSuffix(".zip") }
-            && assets.contains { $0.name.hasSuffix(".manifest.json") }
-    }
-
-    var releaseLabel: String {
-        latestVersion ?? currentVersion
-    }
-}
+typealias ReleaseUpdateStatus = OuroAppShellCore.ReleaseUpdateStatus
+typealias ReleaseUpdateAsset = OuroAppShellCore.ReleaseUpdateAsset
+typealias ReleaseUpdateSnapshot = OuroAppShellCore.ReleaseUpdateSnapshot
+typealias ReleaseUpdateError = OuroAppShellCore.ReleaseUpdateError
+typealias SemanticVersion = OuroAppShellCore.SemanticVersion
 
 struct ReleaseUpdateConfiguration: Equatable, Sendable {
     var repository: String
@@ -47,6 +21,24 @@ struct ReleaseUpdateConfiguration: Equatable, Sendable {
         self.repository = repository
         self.currentVersion = currentVersion
         self.releasesURL = releasesURL ?? URL(string: "https://api.github.com/repos/\(repository)/releases?per_page=10")!
+    }
+
+    var appShellIdentity: AppShellIdentity {
+        AppShellIdentity(
+            appName: OuroMDRelease.appName,
+            bundleIdentifier: OuroMDRelease.bundleIdentifier,
+            repository: repository,
+            version: currentVersion,
+            userAgent: OuroMDRelease.userAgent
+        )
+    }
+
+    var appShellConfiguration: OuroAppShellCore.ReleaseUpdateConfiguration {
+        OuroAppShellCore.ReleaseUpdateConfiguration(
+            identity: appShellIdentity,
+            releasePolicy: .stable(),
+            releasesURL: releasesURL
+        )
     }
 }
 
@@ -65,7 +57,7 @@ struct ReleaseUpdateChecker: Sendable {
     func check() async -> ReleaseUpdateSnapshot {
         do {
             let data = try await dataLoader(configuration.releasesURL)
-            return try Self.snapshot(from: data, currentVersion: configuration.currentVersion)
+            return try Self.snapshot(from: data, configuration: configuration)
         } catch {
             return ReleaseUpdateSnapshot(
                 status: .unavailable,
@@ -74,149 +66,38 @@ struct ReleaseUpdateChecker: Sendable {
                 tagName: nil,
                 htmlURL: nil,
                 assets: [],
+                assetNamingPolicy: configuration.appShellConfiguration.assetNamingPolicy,
                 detail: "Release update check failed: \(error.localizedDescription)"
             )
         }
     }
 
     static func snapshot(from data: Data, currentVersion: String) throws -> ReleaseUpdateSnapshot {
-        let releases = try JSONDecoder().decode([GitHubRelease].self, from: data)
-        guard let latest = releases.first(where: { !$0.draft && !$0.prerelease }) else {
-            return ReleaseUpdateSnapshot(
-                status: .unavailable,
-                currentVersion: currentVersion,
-                latestVersion: nil,
-                tagName: nil,
-                htmlURL: nil,
-                assets: [],
-                detail: "No published release found."
-            )
-        }
-
-        let latestVersion = version(fromTag: latest.tagName)
-        let status = status(currentVersion: currentVersion, latestVersion: latestVersion)
-        let assets = latest.assets.map {
-            ReleaseUpdateAsset(name: $0.name, downloadURL: $0.browserDownloadURL, size: $0.size)
-        }
-
-        let detail: String
-        switch status {
-        case .updateAvailable:
-            detail = "Version \(latestVersion) is available."
-        case .current:
-            detail = "Version \(currentVersion) is current."
-        case .unavailable:
-            detail = "Latest release \(latest.tagName) could not be compared to \(currentVersion)."
-        }
-
-        return ReleaseUpdateSnapshot(
-            status: status,
+        try OuroAppShellCore.ReleaseUpdateChecker.snapshot(
+            from: data,
             currentVersion: currentVersion,
-            latestVersion: latestVersion,
-            tagName: latest.tagName,
-            htmlURL: latest.htmlURL,
-            publishedAt: latest.publishedAt,
-            body: latest.body,
-            assets: assets,
-            detail: detail
+            assetNamingPolicy: .simpleArchiveAndManifest(),
+            includePrereleases: false
+        )
+    }
+
+    static func snapshot(from data: Data, configuration: ReleaseUpdateConfiguration) throws -> ReleaseUpdateSnapshot {
+        try OuroAppShellCore.ReleaseUpdateChecker.snapshot(
+            from: data,
+            configuration: configuration.appShellConfiguration
         )
     }
 
     static let defaultDataLoader: @Sendable (URL) async throws -> Data = { url in
+        try await OuroAppShellCore.ReleaseUpdateChecker.defaultDataLoader(
+            request: ReleaseUpdateChecker.request(url: url)
+        )
+    }
+
+    private static func request(url: URL) -> URLRequest {
         var request = URLRequest(url: url)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         request.setValue(OuroMDRelease.userAgent, forHTTPHeaderField: "User-Agent")
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw ReleaseUpdateError.badResponse
-        }
-        return data
-    }
-
-    private static func status(currentVersion: String, latestVersion: String) -> ReleaseUpdateStatus {
-        guard let current = SemanticVersion(currentVersion),
-              let latest = SemanticVersion(latestVersion)
-        else {
-            return .unavailable
-        }
-        return latest > current ? .updateAvailable : .current
-    }
-
-    private static func version(fromTag tagName: String) -> String {
-        tagName.hasPrefix("v") ? String(tagName.dropFirst()) : tagName
-    }
-}
-
-enum ReleaseUpdateError: Error, Equatable, LocalizedError, Sendable {
-    case badResponse
-
-    var errorDescription: String? {
-        switch self {
-        case .badResponse:
-            return "GitHub Releases returned an unsuccessful response."
-        }
-    }
-}
-
-private struct GitHubRelease: Decodable {
-    var tagName: String
-    var htmlURL: String
-    var publishedAt: String?
-    var body: String?
-    var draft: Bool
-    var prerelease: Bool
-    var assets: [GitHubReleaseAsset]
-
-    private enum CodingKeys: String, CodingKey {
-        case tagName = "tag_name"
-        case htmlURL = "html_url"
-        case publishedAt = "published_at"
-        case body
-        case draft
-        case prerelease
-        case assets
-    }
-}
-
-private struct GitHubReleaseAsset: Decodable {
-    var name: String
-    var browserDownloadURL: String
-    var size: Int
-
-    private enum CodingKeys: String, CodingKey {
-        case name
-        case browserDownloadURL = "browser_download_url"
-        case size
-    }
-}
-
-struct SemanticVersion: Comparable, Equatable {
-    var major: Int
-    var minor: Int
-    var patch: Int
-
-    init?(_ value: String) {
-        let core = value.split(separator: "-", maxSplits: 1).first.map(String.init) ?? value
-        let parts = core.split(separator: ".")
-        guard parts.count == 3,
-              let major = Int(parts[0]),
-              let minor = Int(parts[1]),
-              let patch = Int(parts[2])
-        else {
-            return nil
-        }
-        self.major = major
-        self.minor = minor
-        self.patch = patch
-    }
-
-    static func < (lhs: SemanticVersion, rhs: SemanticVersion) -> Bool {
-        if lhs.major != rhs.major {
-            return lhs.major < rhs.major
-        }
-        if lhs.minor != rhs.minor {
-            return lhs.minor < rhs.minor
-        }
-        return lhs.patch < rhs.patch
+        return request
     }
 }
