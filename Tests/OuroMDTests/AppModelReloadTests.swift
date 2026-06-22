@@ -158,9 +158,8 @@ final class AppModelReloadTests: XCTestCase {
         exp.assertForOverFulfill = false
         bridge.onReload = { md in if md.contains("Updated by agent") { exp.fulfill() } }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-            try? "# Updated by agent\n\nNew paragraph.\n".write(to: url, atomically: true, encoding: .utf8)
-        }
+        try? "# Updated by agent\n\nNew paragraph.\n".write(to: url, atomically: true, encoding: .utf8)
+        model.reconcileExternalChangeForTesting()
         wait(for: [exp], timeout: 6)
         XCTAssertTrue(bridge.current.contains("Updated by agent"), "editor should hold the agent's new content")
         assertTelemetry(recorder.events, contains: "ouro_md_document_external_reload_completed", properties: [:])
