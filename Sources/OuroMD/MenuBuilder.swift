@@ -283,6 +283,9 @@ enum MenuBuilder {
         let item = NSMenuItem()
         let menu = NSMenu(title: "Help")
         item.submenu = menu
+        let shortcuts = add(menu, "Keyboard Shortcuts…", #selector(AppDelegate.showKeyboardShortcuts(_:)), "/", target)
+        shortcuts.keyEquivalentModifierMask = [.command, .shift]
+        menu.addItem(.separator())
         add(menu, "Ouro MD on GitHub", #selector(AppDelegate.openProjectPage(_:)), "", target)
         add(menu, "Report an Issue", #selector(AppDelegate.reportIssue(_:)), "", target)
         return item

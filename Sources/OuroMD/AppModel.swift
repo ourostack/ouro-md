@@ -46,43 +46,81 @@ struct CommandPaletteItem: Identifiable, Equatable {
     let id: String
     let title: String
     let keywords: String
+    let shortcut: String?
+
+    init(id: String, title: String, keywords: String, shortcut: String? = nil) {
+        self.id = id
+        self.title = title
+        self.keywords = keywords
+        self.shortcut = shortcut
+    }
 
     var searchableText: String {
-        "\(title) \(keywords)".lowercased()
+        "\(title) \(keywords) \(shortcut ?? "") \(shortcutSearchText)".lowercased()
+    }
+
+    private var shortcutSearchText: String {
+        guard let shortcut else { return "" }
+        return shortcut
+            .replacingOccurrences(of: "⌘", with: " command cmd ")
+            .replacingOccurrences(of: "⇧", with: " shift ")
+            .replacingOccurrences(of: "⌥", with: " option alt ")
+            .replacingOccurrences(of: "⌃", with: " control ctrl ")
+            .replacingOccurrences(of: "?", with: " question slash shift ")
+            .replacingOccurrences(of: "/", with: " slash ")
     }
 }
 
 enum CommandPaletteCatalog {
     static func items(themes: [Theme] = ThemeStore.shared.themes) -> [CommandPaletteItem] {
         var items: [CommandPaletteItem] = [
-            CommandPaletteItem(id: "file.new", title: "New Document", keywords: "file blank"),
-            CommandPaletteItem(id: "file.open", title: "Open Document", keywords: "file picker"),
-            CommandPaletteItem(id: "file.open-folder", title: "Open Folder", keywords: "workspace files"),
-            CommandPaletteItem(id: "file.save", title: "Save", keywords: "write disk"),
-            CommandPaletteItem(id: "file.save-as", title: "Save As", keywords: "duplicate copy"),
+            CommandPaletteItem(id: "file.new", title: "New Document", keywords: "file blank", shortcut: "⌘N"),
+            CommandPaletteItem(id: "file.open", title: "Open Document", keywords: "file picker", shortcut: "⌘O"),
+            CommandPaletteItem(id: "file.open-folder", title: "Open Folder", keywords: "workspace files", shortcut: "⇧⌘O"),
+            CommandPaletteItem(id: "file.save", title: "Save", keywords: "write disk", shortcut: "⌘S"),
+            CommandPaletteItem(id: "file.save-as", title: "Save As", keywords: "duplicate copy", shortcut: "⇧⌘S"),
             CommandPaletteItem(id: "file.export-html", title: "Export HTML", keywords: "share web"),
             CommandPaletteItem(id: "file.export-pdf", title: "Export PDF", keywords: "print share"),
-            CommandPaletteItem(id: "file.print", title: "Print", keywords: "paper pdf"),
-            CommandPaletteItem(id: "edit.find", title: "Find", keywords: "search document"),
-            CommandPaletteItem(id: "edit.replace", title: "Replace", keywords: "find substitute"),
+            CommandPaletteItem(id: "file.print", title: "Print", keywords: "paper pdf", shortcut: "⌘P"),
+            CommandPaletteItem(id: "edit.command-palette", title: "Command Palette", keywords: "commands actions power user", shortcut: "⇧⌘P"),
+            CommandPaletteItem(id: "edit.find", title: "Find", keywords: "search document", shortcut: "⌘F"),
+            CommandPaletteItem(id: "edit.replace", title: "Replace", keywords: "find substitute", shortcut: "⌥⌘F"),
+            CommandPaletteItem(id: "edit.find-next", title: "Find Next", keywords: "search next match", shortcut: "⌘G"),
+            CommandPaletteItem(id: "edit.find-previous", title: "Find Previous", keywords: "search previous match", shortcut: "⇧⌘G"),
+            CommandPaletteItem(id: "edit.paste-plain", title: "Paste as Plain Text", keywords: "clipboard paste text", shortcut: "⇧⌘V"),
             CommandPaletteItem(id: "edit.copy-markdown", title: "Copy as Markdown", keywords: "clipboard source"),
             CommandPaletteItem(id: "edit.copy-html", title: "Copy as HTML", keywords: "clipboard rich"),
-            CommandPaletteItem(id: "format.bold", title: "Bold", keywords: "strong"),
-            CommandPaletteItem(id: "format.italic", title: "Italic", keywords: "emphasis"),
-            CommandPaletteItem(id: "format.code", title: "Inline Code", keywords: "monospace"),
-            CommandPaletteItem(id: "format.link", title: "Insert Link", keywords: "url"),
-            CommandPaletteItem(id: "paragraph.h1", title: "Heading 1", keywords: "paragraph title"),
-            CommandPaletteItem(id: "paragraph.h2", title: "Heading 2", keywords: "paragraph title"),
+            CommandPaletteItem(id: "format.bold", title: "Bold", keywords: "strong", shortcut: "⌘B"),
+            CommandPaletteItem(id: "format.italic", title: "Italic", keywords: "emphasis", shortcut: "⌘I"),
+            CommandPaletteItem(id: "format.strike", title: "Strikethrough", keywords: "delete line", shortcut: "⌃⌘S"),
+            CommandPaletteItem(id: "format.code", title: "Inline Code", keywords: "monospace", shortcut: "⌘E"),
+            CommandPaletteItem(id: "format.link", title: "Insert Link", keywords: "url", shortcut: "⌘K"),
+            CommandPaletteItem(id: "paragraph.h1", title: "Heading 1", keywords: "paragraph title", shortcut: "⌘1"),
+            CommandPaletteItem(id: "paragraph.h2", title: "Heading 2", keywords: "paragraph title", shortcut: "⌘2"),
+            CommandPaletteItem(id: "paragraph.h3", title: "Heading 3", keywords: "paragraph title", shortcut: "⌘3"),
+            CommandPaletteItem(id: "paragraph.h4", title: "Heading 4", keywords: "paragraph title", shortcut: "⌘4"),
+            CommandPaletteItem(id: "paragraph.h5", title: "Heading 5", keywords: "paragraph title", shortcut: "⌘5"),
+            CommandPaletteItem(id: "paragraph.h6", title: "Heading 6", keywords: "paragraph title", shortcut: "⌘6"),
+            CommandPaletteItem(id: "paragraph.body", title: "Paragraph", keywords: "body text", shortcut: "⌘0"),
             CommandPaletteItem(id: "paragraph.ul", title: "Unordered List", keywords: "bullet paragraph"),
             CommandPaletteItem(id: "paragraph.ol", title: "Ordered List", keywords: "number paragraph"),
             CommandPaletteItem(id: "paragraph.task", title: "Task List", keywords: "checkbox paragraph"),
+            CommandPaletteItem(id: "paragraph.quote", title: "Quote", keywords: "blockquote paragraph"),
+            CommandPaletteItem(id: "paragraph.codeblock", title: "Code Fences", keywords: "code block fenced paragraph"),
             CommandPaletteItem(id: "paragraph.table", title: "Insert Table", keywords: "grid paragraph"),
-            CommandPaletteItem(id: "view.source", title: "Toggle Source Mode", keywords: "markdown code"),
-            CommandPaletteItem(id: "view.focus", title: "Toggle Focus Mode", keywords: "reading"),
-            CommandPaletteItem(id: "view.typewriter", title: "Toggle Typewriter Mode", keywords: "typing"),
-            CommandPaletteItem(id: "view.search-sidebar", title: "Show Folder Search", keywords: "sidebar"),
-            CommandPaletteItem(id: "view.files-sidebar", title: "Show File Browser", keywords: "sidebar"),
-            CommandPaletteItem(id: "view.outline-sidebar", title: "Show Outline", keywords: "sidebar headings"),
+            CommandPaletteItem(id: "paragraph.math", title: "Math Block", keywords: "equation latex paragraph"),
+            CommandPaletteItem(id: "paragraph.hr", title: "Horizontal Rule", keywords: "divider paragraph"),
+            CommandPaletteItem(id: "view.source", title: "Toggle Source Mode", keywords: "markdown code", shortcut: "⌘/"),
+            CommandPaletteItem(id: "view.focus", title: "Toggle Focus Mode", keywords: "reading", shortcut: "F8"),
+            CommandPaletteItem(id: "view.typewriter", title: "Toggle Typewriter Mode", keywords: "typing", shortcut: "F9"),
+            CommandPaletteItem(id: "view.toggle-sidebar", title: "Toggle Sidebar", keywords: "panel", shortcut: "⇧⌘L"),
+            CommandPaletteItem(id: "view.search-sidebar", title: "Show Folder Search", keywords: "sidebar", shortcut: "⇧⌘F"),
+            CommandPaletteItem(id: "view.files-sidebar", title: "Show File Browser", keywords: "sidebar", shortcut: "⌃⌘3"),
+            CommandPaletteItem(id: "view.outline-sidebar", title: "Show Outline", keywords: "sidebar headings", shortcut: "⌃⌘1"),
+            CommandPaletteItem(id: "view.actual-size", title: "Actual Size", keywords: "zoom text", shortcut: "⇧⌘0"),
+            CommandPaletteItem(id: "view.zoom-in", title: "Zoom In", keywords: "text larger", shortcut: "⇧⌘="),
+            CommandPaletteItem(id: "view.zoom-out", title: "Zoom Out", keywords: "text smaller", shortcut: "⇧⌘-"),
+            CommandPaletteItem(id: "help.keyboard-shortcuts", title: "Keyboard Shortcuts", keywords: "help commands reference", shortcut: "⌘?"),
         ]
         items.append(contentsOf: themes.map {
             CommandPaletteItem(id: "theme.\($0.id)", title: "Theme: \($0.displayName)", keywords: "appearance color \($0.id)")
@@ -90,15 +128,20 @@ enum CommandPaletteCatalog {
         return items
     }
 
-    static func filter(_ items: [CommandPaletteItem], query: String) -> [CommandPaletteItem] {
+    static func filter(
+        _ items: [CommandPaletteItem],
+        query: String,
+        emptyLimit: Int = 10,
+        resultLimit: Int = 20
+    ) -> [CommandPaletteItem] {
         let terms = query
             .lowercased()
             .split(whereSeparator: \.isWhitespace)
             .map(String.init)
-        guard !terms.isEmpty else { return Array(items.prefix(10)) }
+        guard !terms.isEmpty else { return Array(items.prefix(emptyLimit)) }
         return items
             .filter { item in terms.allSatisfy { item.searchableText.contains($0) } }
-            .prefix(20)
+            .prefix(resultLimit)
             .map { $0 }
     }
 }
@@ -1133,26 +1176,48 @@ final class AppModel: ObservableObject {
         case "file.export-html": exportHTML()
         case "file.export-pdf": exportPDF()
         case "file.print": printDocument()
+        case "edit.command-palette": showCommandPalette()
         case "edit.find": showFind()
         case "edit.replace": showReplace()
+        case "edit.find-next": findNext()
+        case "edit.find-previous": findPrev()
+        case "edit.paste-plain": pasteAsPlainText()
         case "edit.copy-markdown": copyAsMarkdown()
         case "edit.copy-html": copyAsHTML()
         case "format.bold": format("bold")
         case "format.italic": format("italic")
+        case "format.strike": format("strike")
         case "format.code": format("code")
         case "format.link": format("link")
         case "paragraph.h1": format("h1")
         case "paragraph.h2": format("h2")
+        case "paragraph.h3": format("h3")
+        case "paragraph.h4": format("h4")
+        case "paragraph.h5": format("h5")
+        case "paragraph.h6": format("h6")
+        case "paragraph.body": format("paragraph")
         case "paragraph.ul": format("ul")
         case "paragraph.ol": format("ol")
         case "paragraph.task": format("task")
+        case "paragraph.quote": format("quote")
+        case "paragraph.codeblock": format("codeblock")
         case "paragraph.table": format("table")
+        case "paragraph.math": format("math")
+        case "paragraph.hr": format("hr")
         case "view.source": setMode(mode == "sv" ? "ir" : "sv")
         case "view.focus": toggleFocusMode()
         case "view.typewriter": toggleTypewriter()
+        case "view.toggle-sidebar": setSidebarVisible(!sidebarVisible)
         case "view.search-sidebar": setSidebarMode(.search); setSidebarVisible(true)
         case "view.files-sidebar": setSidebarMode(.files); setSidebarVisible(true)
         case "view.outline-sidebar": setSidebarMode(.outline); setSidebarVisible(true)
+        case "view.actual-size": actualSize()
+        case "view.zoom-in": zoomIn()
+        case "view.zoom-out": zoomOut()
+        case "help.keyboard-shortcuts":
+            Task { @MainActor in
+                (NSApp.delegate as? AppDelegate)?.showKeyboardShortcuts(nil)
+            }
         default: break
         }
     }
@@ -1248,14 +1313,21 @@ final class AppModel: ObservableObject {
     }
 
     var searchSkippedMessage: String? {
-        let skipped = searchSkippedUnreadableCount + searchSkippedBinaryCount
+        Self.searchSkippedMessage(
+            unreadableCount: searchSkippedUnreadableCount,
+            binaryCount: searchSkippedBinaryCount
+        )
+    }
+
+    static func searchSkippedMessage(unreadableCount: Int, binaryCount: Int) -> String? {
+        let skipped = unreadableCount + binaryCount
         guard skipped > 0 else { return nil }
         var parts: [String] = []
-        if searchSkippedUnreadableCount > 0 {
-            parts.append("\(searchSkippedUnreadableCount) unreadable")
+        if unreadableCount > 0 {
+            parts.append("\(unreadableCount) unreadable")
         }
-        if searchSkippedBinaryCount > 0 {
-            parts.append("\(searchSkippedBinaryCount) binary")
+        if binaryCount > 0 {
+            parts.append("\(binaryCount) binary")
         }
         return "Skipped \(parts.joined(separator: ", ")) file\(skipped == 1 ? "" : "s")"
     }

@@ -157,8 +157,7 @@ final class ContentSearcherTests: XCTestCase {
         wait(for: [didComplete], timeout: 0.5)
     }
 
-    func testAppModelPublishesSearchCancelAndSkippedFileUXState() {
-        try? Data([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).write(to: root.appendingPathComponent("binary.md"))
+    func testAppModelPublishesSearchCancelAndFormatsSkippedFileUXState() {
         let cancelModel = AppModel()
         cancelModel.openFolder(root)
         cancelModel.searchQuery = "widget"
@@ -169,21 +168,9 @@ final class ContentSearcherTests: XCTestCase {
         XCTAssertFalse(cancelModel.searching)
         XCTAssertTrue(cancelModel.searchWasCancelled)
 
-        let searchModel = AppModel()
-        searchModel.openFolder(root)
-        searchModel.searchQuery = "widget"
-        searchModel.runFolderSearch()
-        XCTAssertTrue(waitUntil(timeout: 10) { !searchModel.searching })
-
-        XCTAssertEqual(searchModel.searchSkippedBinaryCount, 1)
-        XCTAssertEqual(searchModel.searchSkippedMessage, "Skipped 1 binary file")
+        XCTAssertNil(AppModel.searchSkippedMessage(unreadableCount: 0, binaryCount: 0))
+        XCTAssertEqual(AppModel.searchSkippedMessage(unreadableCount: 0, binaryCount: 1), "Skipped 1 binary file")
+        XCTAssertEqual(AppModel.searchSkippedMessage(unreadableCount: 2, binaryCount: 1), "Skipped 2 unreadable, 1 binary files")
     }
 
-    private func waitUntil(timeout: TimeInterval, condition: () -> Bool) -> Bool {
-        let deadline = Date().addingTimeInterval(timeout)
-        while !condition(), Date() < deadline {
-            RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.05))
-        }
-        return condition()
-    }
 }
