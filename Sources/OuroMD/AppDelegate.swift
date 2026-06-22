@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private var updateCancellables: Set<AnyCancellable> = []
     private var undoRedoShortcutMonitor: UndoRedoShortcutMonitor?
     private var updateProgressWindow: NSWindow?
+    private var updateConfirmationWindow: NSWindow?
     var recentDocumentURLsProvider: () -> [URL] = { NSDocumentController.shared.recentDocumentURLs }
     var clearRecentDocumentsHandler: (Any?) -> Void = { NSDocumentController.shared.clearRecentDocuments($0) }
 
@@ -69,6 +70,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             DispatchQueue.main.async { [weak self] in self?.completeLaunchFallback() }
         }
         Task { await updateCoordinator.runAutoUpdateCheckIfDue() }
+        if let version = updateCoordinator.recordObservedVersionOnLaunch() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+                self?.showUpdateInstalledConfirmation(version: version)
+            }
+        }
     }
 
     private func observeUpdatePrompts() {
@@ -129,6 +135,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
     private func closeUpdateProgressWindow() {
         updateProgressWindow?.orderOut(nil)
+    }
+
+    private func showUpdateInstalledConfirmation(version: String) {
+        if updateConfirmationWindow == nil {
+            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 360, height: 140),
+                             styleMask: [.titled, .closable], backing: .buffered, defer: false)
+            w.title = "Ouro MD Updated"
+            w.isReleasedWhenClosed = false
+            w.center()
+            updateConfirmationWindow = w
+        }
+        updateConfirmationWindow?.contentViewController = NSHostingController(
+            rootView: UpdateInstalledConfirmationView(
+                version: version,
+                onOpenAbout: { [weak self] in
+                    self?.updateConfirmationWindow?.orderOut(nil)
+                    self?.showAbout(nil)
+                },
+                onDismiss: { [weak self] in
+                    self?.updateConfirmationWindow?.orderOut(nil)
+                }
+            )
+        )
+        updateConfirmationWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     private func openInitial(_ path: String?) {
@@ -296,13 +327,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
     private var prefsWindow: NSWindow?
     private var keyboardShortcutsWindow: NSWindow?
+    private var aboutWindow: NSWindow?
 
     @objc func showPreferences(_ sender: Any?) {
         if prefsWindow == nil {
-            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 350),
+            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 560, height: 430),
                              styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
             w.title = "Preferences"
-            w.minSize = NSSize(width: 500, height: 330)
+            w.minSize = NSSize(width: 520, height: 400)
             w.isReleasedWhenClosed = false
             w.center()
             prefsWindow = w
@@ -334,6 +366,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         )
         keyboardShortcutsWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @objc func showWhatsNew(_ sender: Any?) {
+        showAbout(sender)
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
@@ -369,14 +405,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     // MARK: - Menu actions
 
     @objc func showAbout(_ sender: Any?) {
-        let build = OuroCLI.gitSHA.map { "Build \($0)" } ?? "Source build"
-        let credits = NSAttributedString(string: "Independent software.\n\(build)")
-        NSApp.orderFrontStandardAboutPanel(options: [
-            .applicationName: OuroMDRelease.appName,
-            .applicationVersion: OuroCLI.versionDescription,
-            .version: OuroMDRelease.version,
-            .credits: credits
-        ])
+        if aboutWindow == nil {
+            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 520),
+                             styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+            w.title = "About Ouro MD"
+            w.minSize = NSSize(width: 500, height: 480)
+            w.isReleasedWhenClosed = false
+            w.center()
+            aboutWindow = w
+        }
+        aboutWindow?.contentViewController = NSHostingController(
+            rootView: OuroMDAboutView(
+                updateCoordinator: updateCoordinator,
+                onDismiss: { [weak self] in self?.aboutWindow?.orderOut(nil) }
+            )
+        )
+        aboutWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     @objc func checkForUpdates(_ sender: Any?) {
@@ -385,6 +430,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
     @objc func installUpdateAndRelaunch(_ sender: Any?) {
         updateCoordinator.startInstallReleaseUpdate()
+    }
+
+    @objc func openLatestReleasePage(_ sender: Any?) {
+        if let url = updateCoordinator.releasePageURL {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     @objc func newDocument(_ sender: Any?) { model.newDocument() }
@@ -471,9 +522,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
              #selector(newWindow(_:)),
              #selector(openDocument(_:)),
              #selector(openFolder(_:)),
+             #selector(showAbout(_:)),
              #selector(showPreferences(_:)),
              #selector(showKeyboardShortcuts(_:)),
+             #selector(showWhatsNew(_:)),
              #selector(checkForUpdates(_:)),
+             #selector(openLatestReleasePage(_:)),
              #selector(openProjectPage(_:)),
              #selector(reportIssue(_:)):
             return true

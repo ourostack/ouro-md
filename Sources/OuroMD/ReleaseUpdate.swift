@@ -19,12 +19,18 @@ struct ReleaseUpdateSnapshot: Codable, Equatable, Sendable {
     var latestVersion: String?
     var tagName: String?
     var htmlURL: String?
+    var publishedAt: String? = nil
+    var body: String? = nil
     var assets: [ReleaseUpdateAsset]
     var detail: String
 
     var hasInstallableAssets: Bool {
         assets.contains { $0.name.hasSuffix(".zip") }
             && assets.contains { $0.name.hasSuffix(".manifest.json") }
+    }
+
+    var releaseLabel: String {
+        latestVersion ?? currentVersion
     }
 }
 
@@ -109,6 +115,8 @@ struct ReleaseUpdateChecker: Sendable {
             latestVersion: latestVersion,
             tagName: latest.tagName,
             htmlURL: latest.htmlURL,
+            publishedAt: latest.publishedAt,
+            body: latest.body,
             assets: assets,
             detail: detail
         )
@@ -153,6 +161,8 @@ enum ReleaseUpdateError: Error, Equatable, LocalizedError, Sendable {
 private struct GitHubRelease: Decodable {
     var tagName: String
     var htmlURL: String
+    var publishedAt: String?
+    var body: String?
     var draft: Bool
     var prerelease: Bool
     var assets: [GitHubReleaseAsset]
@@ -160,6 +170,8 @@ private struct GitHubRelease: Decodable {
     private enum CodingKeys: String, CodingKey {
         case tagName = "tag_name"
         case htmlURL = "html_url"
+        case publishedAt = "published_at"
+        case body
         case draft
         case prerelease
         case assets

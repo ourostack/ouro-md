@@ -1,4 +1,5 @@
 import AppKit
+import OuroMDCore
 import SwiftUI
 
 /// Headless `--accessibilityaudit`: checks that core native surfaces expose
@@ -52,6 +53,7 @@ final class AccessibilityAuditTester {
         .union(accessibilityStrings(SidebarView(model: invalidModel), size: NSSize(width: 320, height: 720)))
         .union(accessibilityStrings(EditorPane(model: model), size: NSSize(width: 680, height: 520)))
         .union(accessibilityStrings(CommandReferenceView(items: CommandPaletteCatalog.items()), size: NSSize(width: 560, height: 620)))
+        .union(accessibilityStrings(OuroMDAboutView(updateCoordinator: makeCurrentUpdateCoordinator()), size: NSSize(width: 540, height: 540)))
         .union(accessibilityStrings(UpdateProgressView(updateCoordinator: updateCoordinator), size: NSSize(width: 440, height: 190)))
 
         let runtimeRequired = ["Light", "Dark", "Outline", "Files", "Search"]
@@ -137,7 +139,7 @@ final class AccessibilityAuditTester {
 
     private func sourceAccessibilityAudit() -> SourceAuditResult {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-        let sources = ["Sources/OuroMD/ContentView.swift", "Sources/OuroMD/Sidebar.swift", "Sources/OuroMD/CommandReferenceView.swift"]
+        let sources = ["Sources/OuroMD/ContentView.swift", "Sources/OuroMD/Sidebar.swift", "Sources/OuroMD/CommandReferenceView.swift", "Sources/OuroMD/AppInfoView.swift"]
             .compactMap { try? String(contentsOf: root.appendingPathComponent($0), encoding: .utf8) }
             .joined(separator: "\n")
         let requiredSnippets = [
@@ -158,6 +160,11 @@ final class AccessibilityAuditTester {
             ".accessibilityLabel(\"Close command palette\")",
             ".accessibilityLabel(\"Keyboard shortcuts\")",
             ".accessibilityLabel(\"Search commands\")",
+            ".accessibilityLabel(\"About Ouro MD\")",
+            ".accessibilityLabel(\"Update status\")",
+            ".accessibilityLabel(\"Update state\")",
+            ".accessibilityLabel(\"Check for updates\")",
+            ".accessibilityLabel(\"Open release\")",
             ".accessibilityLabel(\"Document status\")",
             ".accessibilityLabel(\"Find\")",
             ".accessibilityLabel(\"Replace\")",
@@ -247,6 +254,10 @@ final class AccessibilityAuditTester {
             ("paragraph.codeblock", ""),
             ("paragraph.math", ""),
             ("paragraph.hr", ""),
+            ("help.about", ""),
+            ("help.whats-new", ""),
+            ("help.check-updates", ""),
+            ("help.open-latest-release", ""),
         ]
         let missing = required.compactMap { id, shortcut -> String? in
             guard let item = items[id] else { return "\(id) missing" }
@@ -310,6 +321,28 @@ final class AccessibilityAuditTester {
                 await progress("Downloading Ouro-MD-0.10.0.zip...")
                 try await Task.sleep(nanoseconds: 200_000_000)
                 throw OuroMDUpdateInstaller.InstallError.download("offline")
+            },
+            terminate: {},
+            telemetry: { _, _ in }
+        )
+    }
+
+    private func makeCurrentUpdateCoordinator() -> OuroMDUpdateCoordinator {
+        let defaults = UserDefaults(suiteName: "ouro-accessibility-current-\(UUID().uuidString)") ?? .standard
+        return OuroMDUpdateCoordinator(
+            defaults: defaults,
+            checker: {
+                ReleaseUpdateSnapshot(
+                    status: .current,
+                    currentVersion: OuroMDRelease.version,
+                    latestVersion: OuroMDRelease.version,
+                    tagName: "v\(OuroMDRelease.version)",
+                    htmlURL: "https://github.com/ourostack/ouro-md/releases/tag/v\(OuroMDRelease.version)",
+                    publishedAt: "2026-06-22T19:00:06Z",
+                    body: "Release notes for visible update state.",
+                    assets: [],
+                    detail: "Version \(OuroMDRelease.version) is current."
+                )
             },
             terminate: {},
             telemetry: { _, _ in }

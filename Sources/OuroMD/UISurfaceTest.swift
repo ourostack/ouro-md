@@ -1,4 +1,5 @@
 import AppKit
+import OuroMDCore
 import SwiftUI
 
 /// Headless `--uisurfacetest`: checks native SwiftUI surfaces that WebKit
@@ -41,7 +42,11 @@ final class UISurfaceTester {
         let installingCoordinator = makeInstallingUpdateCoordinator()
         let prefsSize = fittingSize(
             PreferencesView(model: searchModel, updateCoordinator: updateCoordinator, telemetry: OuroMDTelemetry.shared),
-            constrainedTo: NSSize(width: 520, height: 350)
+            constrainedTo: NSSize(width: 560, height: 430)
+        )
+        let aboutSize = fittingSize(
+            OuroMDAboutView(updateCoordinator: makeCurrentUpdateCoordinator()),
+            constrainedTo: NSSize(width: 520, height: 520)
         )
         let searchSize = fittingSize(
             SidebarView(model: searchModel),
@@ -87,7 +92,8 @@ final class UISurfaceTester {
 
         let regexErrorOK = invalidModel.searchError?.contains("Invalid regular expression") == true
         let searchResultsOK = !searchModel.searchResults.isEmpty && searchModel.searchError == nil
-        let prefsOK = prefsSize.width <= 520 && prefsSize.height <= 350
+        let prefsOK = prefsSize.width <= 580 && prefsSize.height <= 460
+        let aboutOK = aboutSize.width <= 540 && aboutSize.height <= 540
         let searchOK = searchSize.width <= 380 && searchSize.height <= 700
         let editorOK = editorSize.width <= 560 && editorSize.height <= 460
         let referenceOK = referenceSize.width <= 600 && referenceSize.height <= 660
@@ -97,6 +103,10 @@ final class UISurfaceTester {
             && containsAll(Set(statusModel.commandPaletteItems.map(\.title)), ["Export HTML", "Export PDF"])
         let commandDiscoveryOK = CommandPaletteCatalog.items().contains { $0.id == "edit.command-palette" && $0.shortcut == "⇧⌘P" }
             && CommandPaletteCatalog.items().contains { $0.id == "help.keyboard-shortcuts" && $0.shortcut == "⌘?" }
+            && CommandPaletteCatalog.items().contains { $0.id == "help.about" }
+            && CommandPaletteCatalog.items().contains { $0.id == "help.whats-new" }
+            && CommandPaletteCatalog.items().contains { $0.id == "help.check-updates" }
+            && CommandPaletteCatalog.items().contains { $0.id == "help.open-latest-release" }
             && editorFitModel.commandPaletteItems.contains { $0.id == "edit.find" && $0.shortcut == "⌘F" }
         let installingOK = installingCoordinator.installStatus?.contains("Downloading") == true || installingCoordinator.installError != nil
         let progressOK = installingSize.width <= 420 && installingSize.height <= 160 && failedSize.width <= 420 && failedSize.height <= 180
@@ -105,6 +115,7 @@ final class UISurfaceTester {
             && (containsAll(updateLabels, ["Update failed"]) || updateLabels.isEmpty)
 
         print(String(format: "preferences fitting size: %.1fx%.1f %@", prefsSize.width, prefsSize.height, prefsOK ? "✓" : "✗"))
+        print(String(format: "about fitting size: %.1fx%.1f %@", aboutSize.width, aboutSize.height, aboutOK ? "✓" : "✗"))
         print(String(format: "search sidebar fitting size: %.1fx%.1f %@", searchSize.width, searchSize.height, searchOK ? "✓" : "✗"))
         print(String(format: "editor palette/status fitting size: %.1fx%.1f %@", editorSize.width, editorSize.height, editorOK ? "✓" : "✗"))
         print(String(format: "command reference fitting size: %.1fx%.1f %@", referenceSize.width, referenceSize.height, referenceOK ? "✓" : "✗"))
@@ -124,7 +135,7 @@ final class UISurfaceTester {
         invalidModel.teardown()
         searchModel.teardown()
         try? FileManager.default.removeItem(at: root)
-        exit(regexErrorOK && searchResultsOK && prefsOK && searchOK && editorOK && referenceOK && statusPaletteOK && commandDiscoveryOK && installingOK && progressOK && menuOK && axOK ? 0 : 1)
+        exit(regexErrorOK && searchResultsOK && prefsOK && aboutOK && searchOK && editorOK && referenceOK && statusPaletteOK && commandDiscoveryOK && installingOK && progressOK && menuOK && axOK ? 0 : 1)
     }
 
     private func fittingSize<Content: View>(_ view: Content, constrainedTo size: NSSize) -> NSSize {
@@ -196,11 +207,37 @@ final class UISurfaceTester {
               let view = app.mainMenu?.items.compactMap(\.submenu).first(where: { $0.title == "View" }) else {
             return false
         }
+        let help = app.mainMenu?.items.compactMap(\.submenu).first(where: { $0.title == "Help" })
         return file.item(withTitle: "Open…")?.keyEquivalent == "o"
             && file.item(withTitle: "Open Recent")?.submenu?.title == "Open Recent"
             && edit.item(withTitle: "Command Palette…")?.keyEquivalent == "p"
             && edit.item(withTitle: "Find")?.submenu?.item(withTitle: "Find…")?.keyEquivalent == "f"
             && view.item(withTitle: "Search")?.action == #selector(AppDelegate.showSearchSidebar(_:))
+            && help?.item(withTitle: "What's New")?.action == #selector(AppDelegate.showWhatsNew(_:))
+            && help?.item(withTitle: "Check for Updates…")?.action == #selector(AppDelegate.checkForUpdates(_:))
+            && help?.item(withTitle: "Open Latest Release")?.action == #selector(AppDelegate.openLatestReleasePage(_:))
+    }
+
+    private func makeCurrentUpdateCoordinator() -> OuroMDUpdateCoordinator {
+        let defaults = UserDefaults(suiteName: "ouro-ui-current-\(UUID().uuidString)") ?? .standard
+        return OuroMDUpdateCoordinator(
+            defaults: defaults,
+            checker: {
+                ReleaseUpdateSnapshot(
+                    status: .current,
+                    currentVersion: OuroMDRelease.version,
+                    latestVersion: OuroMDRelease.version,
+                    tagName: "v\(OuroMDRelease.version)",
+                    htmlURL: "https://github.com/ourostack/ouro-md/releases/tag/v\(OuroMDRelease.version)",
+                    publishedAt: "2026-06-22T19:00:06Z",
+                    body: "Release notes for visible update state.",
+                    assets: [],
+                    detail: "Version \(OuroMDRelease.version) is current."
+                )
+            },
+            terminate: {},
+            telemetry: { _, _ in }
+        )
     }
 
     private func makeInstallingUpdateCoordinator() -> OuroMDUpdateCoordinator {
