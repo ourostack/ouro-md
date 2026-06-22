@@ -120,6 +120,10 @@ enum CommandPaletteCatalog {
             CommandPaletteItem(id: "view.actual-size", title: "Actual Size", keywords: "zoom text", shortcut: "⇧⌘0"),
             CommandPaletteItem(id: "view.zoom-in", title: "Zoom In", keywords: "text larger", shortcut: "⇧⌘="),
             CommandPaletteItem(id: "view.zoom-out", title: "Zoom Out", keywords: "text smaller", shortcut: "⇧⌘-"),
+            CommandPaletteItem(id: "help.about", title: "About Ouro MD", keywords: "version build info app"),
+            CommandPaletteItem(id: "help.whats-new", title: "What's New", keywords: "release notes changes latest version"),
+            CommandPaletteItem(id: "help.check-updates", title: "Check for Updates", keywords: "software update latest version install release"),
+            CommandPaletteItem(id: "help.open-latest-release", title: "Open Latest Release", keywords: "github release notes latest update"),
             CommandPaletteItem(id: "help.keyboard-shortcuts", title: "Keyboard Shortcuts", keywords: "help commands reference", shortcut: "⌘?"),
         ]
         items.append(contentsOf: themes.map {
@@ -1214,6 +1218,22 @@ final class AppModel: ObservableObject {
         case "view.actual-size": actualSize()
         case "view.zoom-in": zoomIn()
         case "view.zoom-out": zoomOut()
+        case "help.about":
+            Task { @MainActor in
+                (NSApp.delegate as? AppDelegate)?.showAbout(nil)
+            }
+        case "help.whats-new":
+            Task { @MainActor in
+                (NSApp.delegate as? AppDelegate)?.showWhatsNew(nil)
+            }
+        case "help.check-updates":
+            Task { @MainActor in
+                (NSApp.delegate as? AppDelegate)?.checkForUpdates(nil)
+            }
+        case "help.open-latest-release":
+            Task { @MainActor in
+                (NSApp.delegate as? AppDelegate)?.openLatestReleasePage(nil)
+            }
         case "help.keyboard-shortcuts":
             Task { @MainActor in
                 (NSApp.delegate as? AppDelegate)?.showKeyboardShortcuts(nil)

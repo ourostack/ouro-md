@@ -64,7 +64,10 @@ struct PreferencesView: View {
             }
 
             preferenceRow("Updates") {
-                Toggle("Check for updates automatically", isOn: Binding(get: { updateCoordinator.autoUpdateEnabled }, set: { updateCoordinator.setAutoUpdateEnabled($0) }))
+                VStack(alignment: .leading, spacing: 8) {
+                    Toggle("Check for updates automatically", isOn: Binding(get: { updateCoordinator.autoUpdateEnabled }, set: { updateCoordinator.setAutoUpdateEnabled($0) }))
+                    ReleaseUpdateControls(updateCoordinator: updateCoordinator, showTitle: false)
+                }
             }
 
             preferenceRow("Telemetry") {
@@ -88,7 +91,7 @@ struct PreferencesView: View {
         }
         .font(.system(size: 12))
         .padding(24)
-        .frame(minWidth: 500, idealWidth: 520)
+        .frame(minWidth: 500, idealWidth: 560)
     }
 
     private var appearanceSelection: String {

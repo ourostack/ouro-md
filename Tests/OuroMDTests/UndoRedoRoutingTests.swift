@@ -74,6 +74,20 @@ final class UndoRedoRoutingTests: XCTestCase {
         XCTAssertTrue(shortcuts?.keyEquivalentModifierMask.contains(.shift) == true)
     }
 
+    func testHelpMenuSurfacesVersionAndUpdateCommands() {
+        let app = NSApplication.shared
+        let previousMenu = app.mainMenu
+        defer { app.mainMenu = previousMenu }
+        let delegate = AppDelegate()
+
+        MenuBuilder.install(into: app, target: delegate)
+
+        let helpMenu = app.mainMenu?.items.compactMap(\.submenu).first { $0.title == "Help" }
+        XCTAssertEqual(helpMenu?.item(withTitle: "What's New")?.action, #selector(AppDelegate.showWhatsNew(_:)))
+        XCTAssertEqual(helpMenu?.item(withTitle: "Check for Updates…")?.action, #selector(AppDelegate.checkForUpdates(_:)))
+        XCTAssertEqual(helpMenu?.item(withTitle: "Open Latest Release")?.action, #selector(AppDelegate.openLatestReleasePage(_:)))
+    }
+
     func testShortcutParserRecognizesMacUndoRedoKeystrokes() {
         XCTAssertEqual(
             UndoRedoCommandRouter.command(for: keyEvent("z", modifiers: [.command])),
@@ -162,11 +176,17 @@ final class UndoRedoRoutingTests: XCTestCase {
         let open = NSMenuItem(title: "Open", action: #selector(AppDelegate.openDocument(_:)), keyEquivalent: "")
         let updates = NSMenuItem(title: "Check for Updates", action: #selector(AppDelegate.checkForUpdates(_:)), keyEquivalent: "")
         let shortcuts = NSMenuItem(title: "Keyboard Shortcuts", action: #selector(AppDelegate.showKeyboardShortcuts(_:)), keyEquivalent: "")
+        let whatsNew = NSMenuItem(title: "What's New", action: #selector(AppDelegate.showWhatsNew(_:)), keyEquivalent: "")
+        let release = NSMenuItem(title: "Open Latest Release", action: #selector(AppDelegate.openLatestReleasePage(_:)), keyEquivalent: "")
+        let about = NSMenuItem(title: "About", action: #selector(AppDelegate.showAbout(_:)), keyEquivalent: "")
 
         XCTAssertTrue(delegate.validateMenuItem(new))
         XCTAssertTrue(delegate.validateMenuItem(open))
         XCTAssertTrue(delegate.validateMenuItem(updates))
         XCTAssertTrue(delegate.validateMenuItem(shortcuts))
+        XCTAssertTrue(delegate.validateMenuItem(whatsNew))
+        XCTAssertTrue(delegate.validateMenuItem(release))
+        XCTAssertTrue(delegate.validateMenuItem(about))
     }
 
     func testMenuValidationChecksRecentItemsAndDefaults() {

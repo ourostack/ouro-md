@@ -23,6 +23,8 @@ final class ReleaseUpdateTests: XCTestCase {
         XCTAssertEqual(OuroMDRelease.appName, "Ouro MD")
         XCTAssertEqual(OuroMDRelease.bundleIdentifier, "org.ourostack.ouro-md")
         XCTAssertEqual(OuroMDRelease.repository, "ourostack/ouro-md")
+        XCTAssertFalse(OuroMDRelease.releaseDate.isEmpty)
+        XCTAssertFalse(OuroMDRelease.releaseHighlights.isEmpty)
         // Version-agnostic: assert it's a real semver and the user-agent derives
         // from it, so a version bump doesn't break these tests.
         XCTAssertTrue(OuroMDRelease.version.range(of: #"^\d+\.\d+\.\d+$"#, options: .regularExpression) != nil,
@@ -47,6 +49,8 @@ final class ReleaseUpdateTests: XCTestCase {
           {
             "tag_name": "v0.10.0",
             "html_url": "https://github.com/ourostack/ouro-md/releases/tag/v0.10.0",
+            "published_at": "2026-06-22T19:00:06Z",
+            "body": "## Highlights\\n- Better update clarity",
             "draft": false,
             "prerelease": false,
             "assets": [
@@ -62,6 +66,9 @@ final class ReleaseUpdateTests: XCTestCase {
         XCTAssertEqual(snapshot.status, .updateAvailable)
         XCTAssertEqual(snapshot.latestVersion, "0.10.0")
         XCTAssertEqual(snapshot.tagName, "v0.10.0")
+        XCTAssertEqual(snapshot.publishedAt, "2026-06-22T19:00:06Z")
+        XCTAssertEqual(snapshot.body, "## Highlights\n- Better update clarity")
+        XCTAssertEqual(snapshot.releaseLabel, "0.10.0")
         XCTAssertTrue(snapshot.hasInstallableAssets)
     }
 

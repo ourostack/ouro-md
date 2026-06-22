@@ -13,6 +13,8 @@ final class CommandPaletteTests: XCTestCase {
         XCTAssertEqual(CommandPaletteCatalog.filter(items, query: "theme night").map(\.id), ["theme.night"])
         XCTAssertEqual(CommandPaletteCatalog.filter(items, query: "cmd shift palette").map(\.id), ["edit.command-palette"])
         XCTAssertEqual(CommandPaletteCatalog.filter(items, query: "cmd shift slash").map(\.id), ["help.keyboard-shortcuts"])
+        XCTAssertTrue(Set(CommandPaletteCatalog.filter(items, query: "latest release").map(\.id)).isSuperset(of: ["help.whats-new", "help.open-latest-release"]))
+        XCTAssertEqual(CommandPaletteCatalog.filter(items, query: "version build").map(\.id), ["help.about"])
         XCTAssertTrue(CommandPaletteCatalog.filter(items, query: "not-a-command").isEmpty)
     }
 
@@ -38,6 +40,10 @@ final class CommandPaletteTests: XCTestCase {
         XCTAssertTrue(ids.contains("paragraph.codeblock"))
         XCTAssertTrue(ids.contains("paragraph.math"))
         XCTAssertTrue(ids.contains("paragraph.hr"))
+        XCTAssertTrue(ids.contains("help.about"))
+        XCTAssertTrue(ids.contains("help.whats-new"))
+        XCTAssertTrue(ids.contains("help.check-updates"))
+        XCTAssertTrue(ids.contains("help.open-latest-release"))
     }
 
     func testPaletteVisibilityAndFindCommandsResetQuery() {

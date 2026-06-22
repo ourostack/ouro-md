@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import OuroMDCore
 import SwiftUI
 
 enum OuroMDUpdatePrompt: Equatable {
@@ -60,6 +61,7 @@ struct OuroMDInstallProgress: Equatable {
 final class OuroMDUpdateCoordinator: ObservableObject {
     static let autoUpdateEnabledDefaultsKey = "ouro.autoupdate.enabled"
     static let lastUpdateCheckAtDefaultsKey = "ouro.autoupdate.lastCheckAt"
+    static let lastObservedVersionDefaultsKey = "ouro.lastObservedVersion"
     static let minimumAutoUpdateCheckInterval: TimeInterval = 3600
 
     @Published private(set) var releaseSnapshot: ReleaseUpdateSnapshot?
@@ -69,6 +71,7 @@ final class OuroMDUpdateCoordinator: ObservableObject {
     @Published private(set) var installError: String?
     @Published private(set) var installProgress = OuroMDInstallProgress.idle
     @Published private(set) var stagedUpdateVersion: String?
+    @Published private(set) var recentlyInstalledVersion: String?
     @Published var updatePrompt: OuroMDUpdatePrompt?
     @Published private(set) var autoUpdateEnabled: Bool {
         didSet {
@@ -139,6 +142,15 @@ final class OuroMDUpdateCoordinator: ObservableObject {
     }
 
     @discardableResult
+    func recordObservedVersionOnLaunch(currentVersion: String = OuroMDRelease.version) -> String? {
+        let prior = defaults.string(forKey: Self.lastObservedVersionDefaultsKey)
+        defaults.set(currentVersion, forKey: Self.lastObservedVersionDefaultsKey)
+        guard let prior, prior != currentVersion else { return nil }
+        recentlyInstalledVersion = currentVersion
+        return currentVersion
+    }
+
+    @discardableResult
     func checkForReleaseUpdate(trigger: String = "programmatic") async -> ReleaseUpdateSnapshot {
         if let existing = inFlightCheck {
             let snapshot = await existing.task.value
@@ -199,6 +211,56 @@ final class OuroMDUpdateCoordinator: ObservableObject {
             return "Update \(version)"
         }
         return nil
+    }
+
+    var releaseUpdateStatusLine: String {
+        if isChecking {
+            return "Checking for updates..."
+        }
+        if let version = stagedUpdateVersion {
+            return "Update \(version) is downloaded and ready to install."
+        }
+        if let snapshot = releaseSnapshot {
+            return snapshot.detail
+        }
+        if let version = recentlyInstalledVersion {
+            return "Updated to \(version) on this launch."
+        }
+        return "Installed \(OuroMDRelease.version). Latest version not checked yet."
+    }
+
+    var releaseUpdateStatusKind: ReleaseUpdateStatus? {
+        if stagedUpdateVersion != nil { return .updateAvailable }
+        return releaseSnapshot?.status
+    }
+
+    var releasePageURL: URL? {
+        if let htmlURL = releaseSnapshot?.htmlURL, let url = URL(string: htmlURL) {
+            return url
+        }
+        return URL(string: "https://github.com/\(OuroMDRelease.repository)/releases/latest")
+    }
+
+    var latestKnownVersion: String? {
+        releaseSnapshot?.latestVersion ?? stagedUpdateVersion
+    }
+
+    var releasePublishedAtText: String? {
+        guard let value = releaseSnapshot?.publishedAt else { return nil }
+        return Self.displayDate(from: value)
+    }
+
+    var releaseNotesPreview: String? {
+        guard let body = releaseSnapshot?.body?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !body.isEmpty else {
+            return nil
+        }
+        return body
+            .split(whereSeparator: \.isNewline)
+            .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .prefix(4)
+            .joined(separator: "\n")
     }
 
     func presentUpdatePrompt() {
@@ -556,5 +618,21 @@ final class OuroMDUpdateCoordinator: ObservableObject {
         case .badAssetURL:
             return "bad_asset_url"
         }
+    }
+
+    private static func displayDate(from iso8601: String) -> String? {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let date = formatter.date(from: iso8601) ?? {
+            let fallback = ISO8601DateFormatter()
+            fallback.formatOptions = [.withInternetDateTime]
+            return fallback.date(from: iso8601)
+        }()
+        guard let date else { return nil }
+        let display = DateFormatter()
+        display.locale = Locale(identifier: "en_US_POSIX")
+        display.dateStyle = .medium
+        display.timeStyle = .none
+        return display.string(from: date)
     }
 }

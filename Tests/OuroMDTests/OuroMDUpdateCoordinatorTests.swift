@@ -1,6 +1,7 @@
 import Foundation
 import XCTest
 @testable import OuroMD
+import OuroMDCore
 
 @MainActor
 final class OuroMDUpdateCoordinatorTests: XCTestCase {
@@ -93,6 +94,115 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
         XCTAssertEqual(OuroMDUpdatePrompt.failed(detail: "offline").message, "offline")
         XCTAssertTrue(OuroMDUpdatePrompt.installable(version: "0.10.0").isInstallable)
         XCTAssertFalse(OuroMDUpdatePrompt.upToDate(version: "0.9.1").isInstallable)
+    }
+
+    func testReleaseStatusLineCoversUncheckedCheckingCurrentAvailableAndUnavailableStates() async {
+        let current = makeCoordinator(checker: { self.currentSnapshot() })
+        XCTAssertEqual(current.releaseUpdateStatusLine, "Installed \(OuroMDRelease.version). Latest version not checked yet.")
+
+        let started = expectation(description: "checker started")
+        var continuation: CheckedContinuation<ReleaseUpdateSnapshot, Never>?
+        let checking = makeCoordinator(
+            checker: {
+                started.fulfill()
+                return await withCheckedContinuation { continuation = $0 }
+            }
+        )
+        let task = Task { await checking.checkForReleaseUpdate() }
+        await fulfillment(of: [started], timeout: 1)
+        XCTAssertEqual(checking.releaseUpdateStatusLine, "Checking for updates...")
+        continuation?.resume(returning: updateSnapshot())
+        _ = await task.value
+        XCTAssertEqual(checking.releaseUpdateStatusLine, "Version 0.10.0 is available.")
+        XCTAssertEqual(checking.releaseUpdateStatusKind, .updateAvailable)
+        XCTAssertEqual(checking.latestKnownVersion, "0.10.0")
+        XCTAssertNotNil(checking.releasePageURL)
+
+        await current.checkForReleaseUpdate()
+        XCTAssertEqual(current.releaseUpdateStatusLine, "Version 0.9.0 is current.")
+        XCTAssertEqual(current.releaseUpdateStatusKind, .current)
+
+        let unavailable = makeCoordinator(checker: { self.unavailableSnapshot(detail: "offline") })
+        await unavailable.checkForReleaseUpdate()
+        XCTAssertEqual(unavailable.releaseUpdateStatusLine, "offline")
+        XCTAssertEqual(unavailable.releaseUpdateStatusKind, .unavailable)
+    }
+
+    func testReleaseMetadataFormatsPublishedDateAndNotesPreview() async {
+        let coordinator = makeCoordinator(
+            checker: {
+                ReleaseUpdateSnapshot(
+                    status: .updateAvailable,
+                    currentVersion: "0.9.0",
+                    latestVersion: "0.10.0",
+                    tagName: "v0.10.0",
+                    htmlURL: "https://github.com/ourostack/ouro-md/releases/tag/v0.10.0",
+                    publishedAt: "2026-06-22T19:00:06Z",
+                    body: "\nFirst line\n\nSecond line\nThird line\nFourth line\nFifth line\n",
+                    assets: [
+                        ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.zip", downloadURL: "https://example.test/Ouro-MD-0.10.0.zip", size: 100),
+                        ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.manifest.json", downloadURL: "https://example.test/Ouro-MD-0.10.0.manifest.json", size: 50),
+                    ],
+                    detail: "Version 0.10.0 is available."
+                )
+            }
+        )
+
+        await coordinator.checkForReleaseUpdate()
+
+        XCTAssertEqual(coordinator.releasePublishedAtText, "Jun 22, 2026")
+        XCTAssertEqual(coordinator.releaseNotesPreview, "First line\nSecond line\nThird line\nFourth line")
+    }
+
+    func testLaunchVersionMemorySurfacesPostUpdateConfirmationOnceVersionChanges() {
+        let coordinator = makeCoordinator()
+
+        XCTAssertNil(coordinator.recordObservedVersionOnLaunch(currentVersion: "0.9.0"))
+        XCTAssertNil(coordinator.recentlyInstalledVersion)
+        XCTAssertEqual(
+            defaults.string(forKey: OuroMDUpdateCoordinator.lastObservedVersionDefaultsKey),
+            "0.9.0"
+        )
+
+        XCTAssertEqual(coordinator.recordObservedVersionOnLaunch(currentVersion: "0.9.1"), "0.9.1")
+        XCTAssertEqual(coordinator.recentlyInstalledVersion, "0.9.1")
+        XCTAssertEqual(coordinator.releaseUpdateStatusLine, "Updated to 0.9.1 on this launch.")
+
+        XCTAssertNil(coordinator.recordObservedVersionOnLaunch(currentVersion: "0.9.1"))
+    }
+
+    func testCheckedReleaseStateTakesPrecedenceOverLaunchInstalledState() async {
+        let cases: [(ReleaseUpdateSnapshot, String, ReleaseUpdateStatus)] = [
+            (
+                currentSnapshot(version: "0.9.1"),
+                "Version 0.9.1 is current.",
+                .current
+            ),
+            (
+                updateSnapshot(version: "0.10.0"),
+                "Version 0.10.0 is available.",
+                .updateAvailable
+            ),
+            (
+                unavailableSnapshot(detail: "offline"),
+                "offline",
+                .unavailable
+            ),
+        ]
+
+        for (snapshot, expectedLine, expectedKind) in cases {
+            defaults.removePersistentDomain(forName: suiteName)
+            defaults.set("0.9.0", forKey: OuroMDUpdateCoordinator.lastObservedVersionDefaultsKey)
+            let coordinator = makeCoordinator(checker: { snapshot })
+
+            XCTAssertEqual(coordinator.recordObservedVersionOnLaunch(currentVersion: "0.9.1"), "0.9.1")
+            XCTAssertEqual(coordinator.releaseUpdateStatusLine, "Updated to 0.9.1 on this launch.")
+
+            await coordinator.checkForReleaseUpdate()
+
+            XCTAssertEqual(coordinator.releaseUpdateStatusLine, expectedLine)
+            XCTAssertEqual(coordinator.releaseUpdateStatusKind, expectedKind)
+        }
     }
 
     func testPromptPresentationBindingDismissesPrompt() {
@@ -639,15 +749,15 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
         )
     }
 
-    private func currentSnapshot() -> ReleaseUpdateSnapshot {
+    private func currentSnapshot(version: String = "0.9.0") -> ReleaseUpdateSnapshot {
         ReleaseUpdateSnapshot(
             status: .current,
-            currentVersion: "0.9.0",
-            latestVersion: "0.9.0",
-            tagName: "v0.9.0",
-            htmlURL: "https://github.com/ourostack/ouro-md/releases/tag/v0.9.0",
+            currentVersion: version,
+            latestVersion: version,
+            tagName: "v\(version)",
+            htmlURL: "https://github.com/ourostack/ouro-md/releases/tag/v\(version)",
             assets: [],
-            detail: "Version 0.9.0 is current."
+            detail: "Version \(version) is current."
         )
     }
 

@@ -53,6 +53,7 @@ enum MenuBuilder {
         let settings = add(menu, "Settings…", #selector(AppDelegate.showPreferences(_:)), ",", target)
         settings.keyEquivalentModifierMask = [.command]
         add(menu, "Check for Updates…", #selector(AppDelegate.checkForUpdates(_:)), "", target)
+        add(menu, "Open Latest Release", #selector(AppDelegate.openLatestReleasePage(_:)), "", target)
         menu.addItem(.separator())
 
         let hide = menu.addItem(withTitle: "Hide Ouro MD",
@@ -285,6 +286,9 @@ enum MenuBuilder {
         item.submenu = menu
         let shortcuts = add(menu, "Keyboard Shortcuts…", #selector(AppDelegate.showKeyboardShortcuts(_:)), "/", target)
         shortcuts.keyEquivalentModifierMask = [.command, .shift]
+        add(menu, "What's New", #selector(AppDelegate.showWhatsNew(_:)), "", target)
+        add(menu, "Check for Updates…", #selector(AppDelegate.checkForUpdates(_:)), "", target)
+        add(menu, "Open Latest Release", #selector(AppDelegate.openLatestReleasePage(_:)), "", target)
         menu.addItem(.separator())
         add(menu, "Ouro MD on GitHub", #selector(AppDelegate.openProjectPage(_:)), "", target)
         add(menu, "Report an Issue", #selector(AppDelegate.reportIssue(_:)), "", target)
