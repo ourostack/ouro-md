@@ -98,7 +98,6 @@ struct ReleaseUpdateChecker: Sendable {
         var request = URLRequest(url: url)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         request.setValue(OuroMDRelease.userAgent, forHTTPHeaderField: "User-Agent")
-        request.timeoutInterval = 10
         return request
     }
 }
