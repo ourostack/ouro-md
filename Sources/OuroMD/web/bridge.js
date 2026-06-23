@@ -589,8 +589,20 @@
     styleAlerts();
     updateAlertEditing();
     annotateCodeOnlyTableCells();
+    annotateScrollableTables();
     resetTableScrollIfNeeded();
     resetNewTableScroll(document);
+  }
+
+  // Mark only tables that actually overflow horizontally, so the CSS paints the
+  // right-edge scroll affordance on those (and not on tables that already fit).
+  function annotateScrollableTables() {
+    var tables = document.querySelectorAll(".vditor-reset table");
+    for (var i = 0; i < tables.length; i++) {
+      var t = tables[i];
+      var scrollable = t.scrollWidth - t.clientWidth > 2;
+      t.classList.toggle("ouro-table-scrollable", scrollable);
+    }
   }
 
   function annotateCodeOnlyTableCells() {
