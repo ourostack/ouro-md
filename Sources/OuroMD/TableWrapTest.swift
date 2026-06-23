@@ -77,6 +77,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             let scrollableCount = (body["scrollableCount"] as? Int) ?? 0
             let affordanceCount = (body["affordanceCount"] as? Int) ?? 0
             let spuriousAffordanceCount = (body["spuriousAffordanceCount"] as? Int) ?? .max
+            let misalignedCount = (body["misalignedCount"] as? Int) ?? .max
             let categories = (body["categories"] as? [String]) ?? []
             let hasCenterAlignment = (body["hasCenterAlignment"] as? Bool) ?? false
             let hasRightAlignment = (body["hasRightAlignment"] as? Bool) ?? false
@@ -100,6 +101,8 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             let affordanceOK = scrollableCount == 0 || affordanceCount == scrollableCount
             // Tables that already fit must not paint the scroll affordance.
             let noSpuriousAffordanceOK = spuriousAffordanceCount == 0
+            // ...and must align with the text column, not be shoved into the margin.
+            let alignedOK = misalignedCount == 0
             let requiredCategories = ["empty", "alignment", "html", "url", "sparse", "long-code", "huge"]
             let categoryGateApplies = markdownPath?.contains("dogfood-wide-tables") == true
             let missingCategories = requiredCategories.filter { !categories.contains($0) }
@@ -118,6 +121,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             print("tables with own horizontal scroll: \(scrollableCount) \(scrollOK ? "✓" : scrollFailure)")
             print("scrollable tables with edge affordance: \(affordanceCount) \(affordanceOK ? "✓" : "✗")")
             print("fitting tables with stray affordance: \(spuriousAffordanceCount) \(noSpuriousAffordanceOK ? "✓" : "✗ (grey strip on a table that fits)")")
+            print("fitting tables shoved left of column: \(misalignedCount) \(alignedOK ? "✓" : "✗ (table pushed into the page margin)")")
             print("tables initially scrolled sideways: \(initialScrolledCount) \(initialScrollOK ? "✓" : "✗")")
             print("collapsed long cells: \(collapsedLongCellCount) \(longCellsOK ? "✓" : "✗")")
             print("collapsed code cells: \(collapsedCodeCellCount) \(codeCellsOK ? "✓" : "✗")")
@@ -138,7 +142,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
                 print(String(format: "table %02d %@width %.1fpx scroll %.1fpx left %.1fpx min-long %.1fpx min-code %.1fpx column-ratio %.2f",
                              index + 1, category.isEmpty ? "" : "[\(category)] ", width, scroll, scrollLeft, minLong, minCode, columnRatio))
             }
-            exit(tableCountOK && categoryOK && alignmentOK && hugeOK && pageOK && clippedOK && scrollOK && affordanceOK && noSpuriousAffordanceOK && initialScrollOK && longCellsOK && codeCellsOK && emptyCellsOK && balanceOK && overlapOK && inlineOverlapOK && metricsOK ? 0 : 1)
+            exit(tableCountOK && categoryOK && alignmentOK && hugeOK && pageOK && clippedOK && scrollOK && affordanceOK && noSpuriousAffordanceOK && alignedOK && initialScrollOK && longCellsOK && codeCellsOK && emptyCellsOK && balanceOK && overlapOK && inlineOverlapOK && metricsOK ? 0 : 1)
         }
     }
 
@@ -203,6 +207,12 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
       var scrollableCount = 0;
       var affordanceCount = 0;
       var spuriousAffordanceCount = 0;
+      var misalignedCount = 0;
+      // Left content edge of the reading column — a fitting table's left edge
+      // must line up with this, not be shoved into the page margin.
+      var resetEl = document.querySelector("#editor .vditor-reset") || document.getElementById("editor");
+      var resetStyle = resetEl ? window.getComputedStyle(resetEl) : null;
+      var contentLeft = resetEl ? resetEl.getBoundingClientRect().left + parseFloat((resetStyle && resetStyle.paddingLeft) || "0") : 0;
       var imbalancedTableCount = 0;
       var overlappingCodeCount = 0;
       var overlappingInlineCount = 0;
@@ -294,6 +304,9 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
           // A table that already fits must NOT paint the scroll affordance.
           var fitStyle = window.getComputedStyle(table);
           if (parseFloat(fitStyle.borderRightWidth || "0") >= 6) { spuriousAffordanceCount += 1; }
+          // ...and it must line up with the text column, not be shoved into the
+          // left page margin by a negative bleed margin.
+          if (rect.left < contentLeft - 4) { misalignedCount += 1; }
         }
         if (scrollLeft > 1) { initialScrolledCount += 1; }
         if (minLongCellWidth > 0 && minLongCellWidth < 120) { collapsedLongCellCount += 1; }
@@ -332,6 +345,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         scrollableCount: scrollableCount,
         affordanceCount: affordanceCount,
         spuriousAffordanceCount: spuriousAffordanceCount,
+        misalignedCount: misalignedCount,
         categories: Object.keys(categories).sort(),
         hasCenterAlignment: hasCenterAlignment,
         hasRightAlignment: hasRightAlignment,
