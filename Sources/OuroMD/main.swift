@@ -83,6 +83,10 @@ if hasFlag("--alerttest") {
     AlertMarkerTester().run()
 }
 
+if hasFlag("--mermaidcliptest") {
+    MermaidClipTester().run()
+}
+
 if hasFlag("--renderprobe") {
     RenderProbe().run()
 }

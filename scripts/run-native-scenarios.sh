@@ -28,6 +28,7 @@ run() {
 run --undotest
 run --wraptest
 run --renderprobe
+run --mermaidcliptest
 run --performanceprobe
 run --accessibilityaudit
 run --markdownparitytest

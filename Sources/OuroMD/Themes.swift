@@ -254,6 +254,12 @@ private func editorCSS(_ p: Palette) -> String {
 
     /* Block rhythm. */
     .vditor-reset p{margin:0.8em 0!important;}
+    /* Mermaid draws node/edge labels as <p> inside an SVG <foreignObject> and sizes
+       each label box with getBoundingClientRect(), which excludes margins. The block
+       rhythm above (0.8em !important) otherwise cascades into those labels — defeating
+       Mermaid's own non-important margin:0 reset — so the text overflows its box and the
+       bottom line clips. Re-zero the margin inside Mermaid diagrams only. */
+    .vditor-reset .language-mermaid foreignObject p{margin:0!important;}
     .vditor-reset>:first-child{margin-top:0!important;}
     .vditor-reset a{color:\(p.accent)!important;text-decoration:none;}
     .vditor-reset a:hover{text-decoration:underline;}

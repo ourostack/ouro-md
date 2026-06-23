@@ -29,6 +29,7 @@ enum OuroCLI {
       ouro-md --accessibilityaudit   Verify native accessibility and shortcuts.
       ouro-md --markdownparitytest   Verify Markdown renderer/export parity.
       ouro-md --alerttest            Verify alert-callout marker display safety.
+      ouro-md --mermaidcliptest      Verify Mermaid node labels fit their boxes.
       ouro-md --wraptest             Verify editor typing quality-of-life hooks.
       ouro-md --tablewraptest        Verify table layout and table-local scrolling.
       ouro-md --codewraptest         Verify fenced code uses block-local scrolling.
