@@ -298,11 +298,49 @@
     el.addEventListener("focusin", function () {
       document.body.classList.remove("ouro-editor-blurred");
     });
+    attachCopyEnrichment();
     // Resolve relative image paths against the open document's folder so
     // images an agent referenced relatively actually display; style alerts.
     postRender();
     var observer = new MutationObserver(function () { postRender(); });
     observer.observe(el, { childList: true, characterData: true, subtree: true });
+  }
+
+  // Default Cmd+C / Edit ▸ Copy: put BOTH a rendered-HTML flavor and a Markdown
+  // flavor on the clipboard at once. Rich targets (Teams, Word, mail) paste the
+  // HTML — formatted; plain targets (code editors, PR boxes, other markdown
+  // docs) take the plain text — clean Markdown. The paste target chooses; we
+  // don't sniff it. Vditor's own IR copy sets only text/plain (markdown) and
+  // blanks text/html, so a rich paste otherwise lands as raw markdown. We
+  // produce the same markdown for text/plain (no regression) and add a clean
+  // text/html rendered from that markdown (selection → md → html, so no IR
+  // editor markup leaks into the HTML).
+  function attachCopyEnrichment() {
+    if (document.__ouroCopy) { return; }
+    document.__ouroCopy = true;
+    document.addEventListener("copy", function (e) {
+      try {
+        if (!vditor || !vditor.vditor || vditor.vditor.currentMode !== "ir") { return; }
+        var sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0 || sel.isCollapsed || sel.toString() === "") { return; }
+        var editorEl = document.getElementById("editor");
+        if (!editorEl || !editorEl.contains(sel.anchorNode)) { return; }
+        var lute = vditor.vditor.lute;
+        if (!lute || !lute.VditorIRDOM2Md || !lute.Md2HTML) { return; }
+        var temp = document.createElement("div");
+        temp.appendChild(sel.getRangeAt(0).cloneContents());
+        var md = lute.VditorIRDOM2Md(temp.innerHTML).trim();
+        if (!md) { return; }
+        var html = "";
+        try { html = lute.Md2HTML(md); } catch (err) { html = ""; }
+        e.clipboardData.setData("text/plain", md);
+        if (html) { e.clipboardData.setData("text/html", html); }
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      } catch (err) {
+        // Any failure: fall through to the editor's default copy behavior.
+      }
+    }, true);
   }
 
   var docBase = "";
