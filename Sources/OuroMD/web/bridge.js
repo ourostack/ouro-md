@@ -594,14 +594,14 @@
     resetNewTableScroll(document);
   }
 
-  // Mark only tables that actually overflow horizontally, so the CSS paints the
-  // right-edge scroll affordance on those (and not on tables that already fit).
+  // Tables are centered and capped at the reading column in pure CSS
+  // (margin:auto + max-width:100% in the theme), so JS only needs to flag tables
+  // that overflow their own box, to paint the right-edge scroll affordance.
   function annotateScrollableTables() {
     var tables = document.querySelectorAll(".vditor-reset table");
     for (var i = 0; i < tables.length; i++) {
       var t = tables[i];
-      var scrollable = t.scrollWidth - t.clientWidth > 2;
-      t.classList.toggle("ouro-table-scrollable", scrollable);
+      t.classList.toggle("ouro-table-scrollable", t.scrollWidth - t.clientWidth > 2);
     }
   }
 

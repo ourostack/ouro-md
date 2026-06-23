@@ -211,7 +211,7 @@ private func readerCSS(_ p: Palette) -> String {
     li{margin:0.25em 0;}
     .task-list-item{list-style:none;}
     .task-list-item input{margin:0 .5em 0 -1.3em;vertical-align:middle;}
-    table{border-collapse:collapse;display:block;overflow-x:auto;width:max-content;max-width:var(--ouro-table-viewport);margin:0.8em 0;table-layout:auto;text-align:left;-webkit-overflow-scrolling:touch;box-sizing:border-box;}
+    table{border-collapse:collapse;display:block;overflow-x:auto;width:max-content;max-width:100%;margin:0.8em auto;table-layout:auto;text-align:left;-webkit-overflow-scrolling:touch;box-sizing:border-box;}
     table tr{border:1px solid \(p.cellBorder);}
     table tr:nth-child(2n),thead{background:\(p.tableFill);}
     th{font-weight:bold;border:1px solid \(p.cellBorder);border-bottom:0;padding:6px 13px;white-space:normal;overflow-wrap:normal;word-break:normal;vertical-align:top;min-width:16rem;max-width:42rem;}
@@ -301,14 +301,16 @@ private func editorCSS(_ p: Palette) -> String {
     .vditor-reset li{margin:0.25em 0;}
 
     /* Tables (Github exact): #dfe2e5 borders, #f8f8f8 header + even rows, 6px 13px cells. */
-    .vditor-reset table{border-collapse:collapse!important;display:block!important;overflow-x:auto!important;width:max-content!important;max-width:var(--ouro-table-viewport)!important;margin:0.8em 0!important;table-layout:auto;text-align:left;-webkit-overflow-scrolling:touch;box-sizing:border-box!important;}
-    /* Right-edge scroll affordance + margin bleed: ONLY on tables wide enough to
-       scroll horizontally (class toggled from bridge.js). A fitting table keeps
-       its natural width aligned with the text column — applying the negative
-       bleed margins to every table otherwise shoves narrow ones left out of
-       alignment (badly so on wide windows). Margins don't affect scrollWidth /
-       clientWidth, so toggling them by class can't oscillate the scroll state. */
-    .vditor-reset table.ouro-table-scrollable{margin-left:min(0px, calc((100% - var(--ouro-table-viewport)) / 2))!important;margin-right:min(0px, calc((100% - var(--ouro-table-viewport)) / 2))!important;border-right:8px solid rgba(0,0,0,.08)!important;}
+    .vditor-reset table{border-collapse:collapse!important;display:block!important;overflow-x:auto!important;width:max-content!important;max-width:100%!important;margin:0.8em auto!important;table-layout:auto;text-align:left;-webkit-overflow-scrolling:touch;box-sizing:border-box!important;}
+    /* Tables are centered in the reading column and never bleed into the page
+       margins: width:max-content sizes them to their content, max-width:100% caps
+       them at the column (wider tables scroll within their own box), and
+       margin:auto centers them. This keeps every table aligned with the text
+       instead of being shoved to one side. ouro-table-scrollable adds the
+       right-edge scroll affordance when a table actually overflows its box;
+       bridge.js toggles it on margin/border only, never width, so nothing can
+       oscillate. */
+    .vditor-reset table.ouro-table-scrollable{border-right:8px solid rgba(0,0,0,.08)!important;}
     .vditor-reset table tr{border:1px solid \(p.cellBorder)!important;background:\(p.bg)!important;}
     .vditor-reset table tr:nth-child(2n){background:\(p.tableFill)!important;}
     .vditor-reset table thead,.vditor-reset table thead tr,.vditor-reset table th{background:\(p.tableFill)!important;}

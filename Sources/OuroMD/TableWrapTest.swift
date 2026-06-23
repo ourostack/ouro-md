@@ -208,11 +208,6 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
       var affordanceCount = 0;
       var spuriousAffordanceCount = 0;
       var misalignedCount = 0;
-      // Left content edge of the reading column — a fitting table's left edge
-      // must line up with this, not be shoved into the page margin.
-      var resetEl = document.querySelector("#editor .vditor-reset") || document.getElementById("editor");
-      var resetStyle = resetEl ? window.getComputedStyle(resetEl) : null;
-      var contentLeft = resetEl ? resetEl.getBoundingClientRect().left + parseFloat((resetStyle && resetStyle.paddingLeft) || "0") : 0;
       var imbalancedTableCount = 0;
       var overlappingCodeCount = 0;
       var overlappingInlineCount = 0;
@@ -296,6 +291,12 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         var minCodeCellWidth = codeWidths.length ? Math.min.apply(Math, codeWidths) : 0;
         var clipped = rect.left < -2 || rect.right > viewportWidth + 2;
         if (clipped) { clippedCount += 1; }
+        // Every table — narrow or wide — must end up centered in the viewport
+        // (the reading column is itself centered, and the theme centers each
+        // table within it via margin:auto). A table whose center drifts off the
+        // viewport center has been shoved to one side (the left-shift bug).
+        var tableCenter = (rect.left + rect.right) / 2;
+        if (Math.abs(tableCenter - viewportWidth / 2) > 4) { misalignedCount += 1; }
         if (scrollOverflow > 2) {
           scrollableCount += 1;
           var style = window.getComputedStyle(table);
@@ -304,9 +305,6 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
           // A table that already fits must NOT paint the scroll affordance.
           var fitStyle = window.getComputedStyle(table);
           if (parseFloat(fitStyle.borderRightWidth || "0") >= 6) { spuriousAffordanceCount += 1; }
-          // ...and it must line up with the text column, not be shoved into the
-          // left page margin by a negative bleed margin.
-          if (rect.left < contentLeft - 4) { misalignedCount += 1; }
         }
         if (scrollLeft > 1) { initialScrolledCount += 1; }
         if (minLongCellWidth > 0 && minLongCellWidth < 120) { collapsedLongCellCount += 1; }
