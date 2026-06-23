@@ -184,6 +184,7 @@ private func readerCSS(_ p: Palette) -> String {
     html{font-size:\(Fonts.size);}
     body{background:\(p.bg);color:\(p.fg);font-family:\(Fonts.sans);line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;margin:0;}
     ::selection{background:\(p.selection);}
+    ::selection:window-inactive{background:rgba(128,128,128,0.30);}
     .markdown-body{max-width:860px;margin:0 auto;padding:30px 30px 100px;--ouro-table-viewport:calc(100vw - 24px);}
     @media (min-width:1400px){.markdown-body{max-width:1024px;}}
     @media (min-width:1800px){.markdown-body{max-width:1200px;}}
@@ -328,6 +329,16 @@ private func editorCSS(_ p: Palette) -> String {
 
     ::selection{background:\(p.selection);}
     .vditor-reset ::selection{background:\(p.selection);}
+    /* Mute the selection to a neutral grey when the editor isn't the active
+       focus — when the window goes inactive (:window-inactive) or focus moves
+       out of the editor into the sidebar/chrome (body.ouro-editor-blurred,
+       toggled from bridge.js). An explicit ::selection color otherwise defeats
+       WebKit's native inactive-selection greying, leaving a vivid highlight
+       stranded after you navigate away. */
+    ::selection:window-inactive{background:rgba(128,128,128,0.30);}
+    .vditor-reset ::selection:window-inactive{background:rgba(128,128,128,0.30);}
+    body.ouro-editor-blurred ::selection{background:rgba(128,128,128,0.30);}
+    body.ouro-editor-blurred .vditor-reset ::selection{background:rgba(128,128,128,0.30);}
     \(codeSyntaxCSS(p))
     """
 }

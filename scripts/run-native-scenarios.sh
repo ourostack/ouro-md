@@ -31,6 +31,7 @@ run --renderprobe
 run --mermaidcliptest
 run --reloadrendertest
 run --darkdiagramtest
+run --selectionblurtest
 run --performanceprobe
 run --accessibilityaudit
 run --markdownparitytest
