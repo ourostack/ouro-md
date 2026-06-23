@@ -77,6 +77,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             let scrollableCount = (body["scrollableCount"] as? Int) ?? 0
             let affordanceCount = (body["affordanceCount"] as? Int) ?? 0
             let spuriousAffordanceCount = (body["spuriousAffordanceCount"] as? Int) ?? .max
+            let misalignedCount = (body["misalignedCount"] as? Int) ?? .max
             let categories = (body["categories"] as? [String]) ?? []
             let hasCenterAlignment = (body["hasCenterAlignment"] as? Bool) ?? false
             let hasRightAlignment = (body["hasRightAlignment"] as? Bool) ?? false
@@ -100,6 +101,8 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             let affordanceOK = scrollableCount == 0 || affordanceCount == scrollableCount
             // Tables that already fit must not paint the scroll affordance.
             let noSpuriousAffordanceOK = spuriousAffordanceCount == 0
+            // ...and must align with the text column, not be shoved into the margin.
+            let alignedOK = misalignedCount == 0
             let requiredCategories = ["empty", "alignment", "html", "url", "sparse", "long-code", "huge"]
             let categoryGateApplies = markdownPath?.contains("dogfood-wide-tables") == true
             let missingCategories = requiredCategories.filter { !categories.contains($0) }
@@ -118,6 +121,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             print("tables with own horizontal scroll: \(scrollableCount) \(scrollOK ? "✓" : scrollFailure)")
             print("scrollable tables with edge affordance: \(affordanceCount) \(affordanceOK ? "✓" : "✗")")
             print("fitting tables with stray affordance: \(spuriousAffordanceCount) \(noSpuriousAffordanceOK ? "✓" : "✗ (grey strip on a table that fits)")")
+            print("fitting tables shoved left of column: \(misalignedCount) \(alignedOK ? "✓" : "✗ (table pushed into the page margin)")")
             print("tables initially scrolled sideways: \(initialScrolledCount) \(initialScrollOK ? "✓" : "✗")")
             print("collapsed long cells: \(collapsedLongCellCount) \(longCellsOK ? "✓" : "✗")")
             print("collapsed code cells: \(collapsedCodeCellCount) \(codeCellsOK ? "✓" : "✗")")
@@ -138,7 +142,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
                 print(String(format: "table %02d %@width %.1fpx scroll %.1fpx left %.1fpx min-long %.1fpx min-code %.1fpx column-ratio %.2f",
                              index + 1, category.isEmpty ? "" : "[\(category)] ", width, scroll, scrollLeft, minLong, minCode, columnRatio))
             }
-            exit(tableCountOK && categoryOK && alignmentOK && hugeOK && pageOK && clippedOK && scrollOK && affordanceOK && noSpuriousAffordanceOK && initialScrollOK && longCellsOK && codeCellsOK && emptyCellsOK && balanceOK && overlapOK && inlineOverlapOK && metricsOK ? 0 : 1)
+            exit(tableCountOK && categoryOK && alignmentOK && hugeOK && pageOK && clippedOK && scrollOK && affordanceOK && noSpuriousAffordanceOK && alignedOK && initialScrollOK && longCellsOK && codeCellsOK && emptyCellsOK && balanceOK && overlapOK && inlineOverlapOK && metricsOK ? 0 : 1)
         }
     }
 
@@ -203,6 +207,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
       var scrollableCount = 0;
       var affordanceCount = 0;
       var spuriousAffordanceCount = 0;
+      var misalignedCount = 0;
       var imbalancedTableCount = 0;
       var overlappingCodeCount = 0;
       var overlappingInlineCount = 0;
@@ -286,6 +291,12 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         var minCodeCellWidth = codeWidths.length ? Math.min.apply(Math, codeWidths) : 0;
         var clipped = rect.left < -2 || rect.right > viewportWidth + 2;
         if (clipped) { clippedCount += 1; }
+        // Every table — narrow or wide — must end up centered in the viewport
+        // (the reading column is itself centered, and the theme centers each
+        // table within it via margin:auto). A table whose center drifts off the
+        // viewport center has been shoved to one side (the left-shift bug).
+        var tableCenter = (rect.left + rect.right) / 2;
+        if (Math.abs(tableCenter - viewportWidth / 2) > 4) { misalignedCount += 1; }
         if (scrollOverflow > 2) {
           scrollableCount += 1;
           var style = window.getComputedStyle(table);
@@ -332,6 +343,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         scrollableCount: scrollableCount,
         affordanceCount: affordanceCount,
         spuriousAffordanceCount: spuriousAffordanceCount,
+        misalignedCount: misalignedCount,
         categories: Object.keys(categories).sort(),
         hasCenterAlignment: hasCenterAlignment,
         hasRightAlignment: hasRightAlignment,
