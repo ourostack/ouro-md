@@ -1,6 +1,8 @@
 import AppKit
+import OuroAppShellUI
 import OuroMDCore
 import SwiftUI
+import Vision
 
 /// Headless `--accessibilityaudit`: checks that core native surfaces expose
 /// accessible labels/values and that critical menu shortcuts remain present and
@@ -55,20 +57,56 @@ final class AccessibilityAuditTester {
         .union(accessibilityStrings(CommandReferenceView(items: CommandPaletteCatalog.items()), size: NSSize(width: 560, height: 620)))
         .union(accessibilityStrings(OuroMDAboutView(updateCoordinator: makeCurrentUpdateCoordinator()), size: NSSize(width: 540, height: 540)))
         .union(accessibilityStrings(UpdateProgressView(updateCoordinator: updateCoordinator), size: NSSize(width: 440, height: 190)))
+        let shellText = renderedText(OuroMDAboutView(updateCoordinator: makeCurrentUpdateCoordinator()), size: NSSize(width: 540, height: 540))
+            .union(renderedText(OuroAppShellUI.ReleaseUpdateControls(
+                state: shellAvailableUpdateState,
+                actions: shellUpdateActions,
+                labels: ReleaseUpdateActionLabels(
+                    check: "Check for Updates",
+                    review: "Review Update",
+                    install: "Install & Relaunch",
+                    openRelease: "Open Release"
+                ),
+                showTitle: true
+            ).frame(width: 560, alignment: .leading), size: NSSize(width: 560, height: 220)))
+            .union(renderedText(UpdateInstalledConfirmationView(version: "0.10.0", onOpenAbout: {}, onDismiss: {}), size: NSSize(width: 380, height: 140)))
 
         let runtimeRequired = ["Light", "Dark", "Outline", "Files", "Search"]
         let missingRuntime = runtimeRequired.filter { expected in
             !labels.contains { $0.localizedCaseInsensitiveContains(expected) }
         }
+        let shellRenderedRequired = [
+            "Ouro MD",
+            "Version",
+            "Software Updates",
+            "Check for Updates",
+            "Review Update",
+            "Open Release",
+            "Open Repo",
+            "Copy Version",
+            "What's New",
+            "OK",
+        ]
+        let missingShellRendered = shellRenderedRequired.filter { expected in
+            !shellText.contains { renderedTextContains($0, expected) }
+        }
         let source = sourceAccessibilityAudit()
         let menu = menuAudit()
         let discoverability = commandDiscoverabilityAudit()
-        let labelsOK = missingRuntime.isEmpty && source.missing.isEmpty && discoverability.missing.isEmpty
+        let labelsOK = missingRuntime.isEmpty
+            && missingShellRendered.isEmpty
+            && source.missing.isEmpty
+            && discoverability.missing.isEmpty
 
         print("runtime accessibility smoke: \(missingRuntime.isEmpty ? "✓" : "✗")")
         if !missingRuntime.isEmpty {
             print("missing runtime labels: \(missingRuntime.joined(separator: " | "))")
             print("observed labels: \(labels.sorted().joined(separator: " | "))")
+        }
+        print("shell rendered accessibility labels: \(missingShellRendered.isEmpty ? "✓" : "✗")")
+        if !missingShellRendered.isEmpty {
+            print("missing shell rendered labels: \(missingShellRendered.joined(separator: " | "))")
+            print("observed shell text: \(shellText.sorted().joined(separator: " | "))")
         }
         print("source accessibility labels: \(source.missing.isEmpty ? "✓" : "✗")")
         if !source.missing.isEmpty {
@@ -105,7 +143,8 @@ final class AccessibilityAuditTester {
         window.makeKeyAndOrderFront(nil)
         RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.08))
         host.view.layoutSubtreeIfNeeded()
-        let strings = collectAccessibilityStrings(from: host.view)
+        var strings = collectAccessibilityStrings(from: window)
+        strings.formUnion(collectAccessibilityStrings(from: host.view))
         window.orderOut(nil)
         return strings
     }
@@ -120,8 +159,16 @@ final class AccessibilityAuditTester {
         add(object.accessibilityLabel?())
         add(object.accessibilityTitle?())
         add(object.accessibilityHelp?())
+        if let button = object as? NSButton {
+            add(button.title)
+            add(button.attributedTitle.string)
+        }
+        if let textField = object as? NSTextField {
+            add(textField.stringValue)
+        }
         let children = (object.accessibilityChildren?() ?? [])
             + (object.accessibilityVisibleChildren?() ?? [])
+            + accessibilityChildren(named: "accessibilityChildrenInNavigationOrder", from: object)
         for child in children {
             out.formUnion(collectAccessibilityStrings(from: child))
         }
@@ -131,6 +178,87 @@ final class AccessibilityAuditTester {
             }
         }
         return out
+    }
+
+    private func renderedText<Content: View>(_ view: Content, size: NSSize) -> Set<String> {
+        let host = NSHostingController(
+            rootView: view
+                .background(Color.white)
+                .environment(\.colorScheme, .light)
+        )
+        host.view.frame = NSRect(origin: .zero, size: size)
+        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
+                              styleMask: [.titled],
+                              backing: .buffered,
+                              defer: false)
+        window.contentView = host.view
+        window.setFrameOrigin(NSPoint(x: -30000, y: -30000))
+        window.makeKeyAndOrderFront(nil)
+        RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.08))
+        host.view.layoutSubtreeIfNeeded()
+        window.displayIfNeeded()
+        host.view.displayIfNeeded()
+        let image = snapshot(host.view)
+        window.orderOut(nil)
+        guard let image else {
+            return []
+        }
+        return recognizeText(in: image)
+    }
+
+    private func snapshot(_ view: NSView) -> CGImage? {
+        let bounds = view.bounds
+        guard bounds.width > 0, bounds.height > 0,
+              let representation = view.bitmapImageRepForCachingDisplay(in: bounds) else {
+            return nil
+        }
+        view.cacheDisplay(in: bounds, to: representation)
+        return representation.cgImage
+    }
+
+    private func recognizeText(in image: CGImage) -> Set<String> {
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = false
+        let handler = VNImageRequestHandler(cgImage: image, options: [:])
+        do {
+            try handler.perform([request])
+        } catch {
+            return []
+        }
+        return Set((request.results ?? []).compactMap { observation in
+            observation.topCandidates(1).first?.string
+        })
+    }
+
+    private func renderedTextContains(_ line: String, _ token: String) -> Bool {
+        normalizeOCRText(line).contains(normalizeOCRText(token))
+    }
+
+    private func normalizeOCRText(_ text: String) -> String {
+        text
+            .replacingOccurrences(of: "…", with: "...")
+            .replacingOccurrences(of: "’", with: "'")
+            .replacingOccurrences(of: "‘", with: "'")
+            .replacingOccurrences(of: "“", with: "\"")
+            .replacingOccurrences(of: "”", with: "\"")
+            .folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: .current)
+    }
+
+    private func accessibilityChildren(named selectorName: String, from object: AnyObject) -> [Any] {
+        let selector = NSSelectorFromString(selectorName)
+        guard object.responds(to: selector),
+              let unmanaged = object.perform(selector) else {
+            return []
+        }
+        let value = unmanaged.takeUnretainedValue()
+        if let array = value as? [Any] {
+            return array
+        }
+        if let array = value as? NSArray {
+            return array.map { $0 }
+        }
+        return []
     }
 
     private struct SourceAuditResult {
@@ -145,36 +273,9 @@ final class AccessibilityAuditTester {
             "Sources/OuroMD/CommandReferenceView.swift",
             "Sources/OuroMD/AppInfoView.swift",
         ]
-        let sharedSourcePaths = [
-            ".build/checkouts/ouro-native-apple-app-shell/Sources/OuroAppShellUI/AppShellAboutView.swift",
-            ".build/checkouts/ouro-native-apple-app-shell/Sources/OuroAppShellUI/ReleaseUpdateControls.swift",
-            ".build/checkouts/ouro-native-apple-app-shell/Sources/OuroAppShellUI/UpdateInstalledConfirmationView.swift",
-        ]
         let appSources = sourcePaths
             .compactMap { try? String(contentsOf: root.appendingPathComponent($0), encoding: .utf8) }
-        let sharedSources = sharedSourcePaths
-            .compactMap { try? String(contentsOf: root.appendingPathComponent($0), encoding: .utf8) }
-        let sources = (appSources + sharedSources)
-            .joined(separator: "\n")
-        let sharedSourceSnippets = [
-            ".accessibilityLabel(model.accessibilityLabel)",
-            ".accessibilityLabel(\"Update status\")",
-            ".accessibilityLabel(\"Update state\")",
-            ".accessibilityLabel(\"Check for updates\")",
-            ".accessibilityLabel(\"Open release notes\")",
-        ]
-        let packagedFallbackSnippets = [
-            "OuroAppShellUI.AppShellAboutView(",
-            "OuroAppShellUI.ReleaseUpdateControls(",
-            "OuroAppShellUI.UpdateInstalledConfirmationView(",
-            "labels: ReleaseUpdateActionLabels(",
-            "check: \"Check for Updates\"",
-            "openRelease: \"Open Release\"",
-            "openAboutLabel: \"What's New\"",
-            "openAboutSystemImage: nil",
-            "dismissLabel: \"OK\"",
-        ]
-        let sharedSourceAvailable = !sharedSources.isEmpty
+        let sources = appSources.joined(separator: "\n")
         let requiredSnippets = [
             ".accessibilityLabel(\"Appearance\")",
             ".accessibilityLabel(\"Theme\")",
@@ -202,7 +303,7 @@ final class AccessibilityAuditTester {
             ".accessibilityLabel(\"Close Find\")",
             ".accessibilityLabel(progress.title.isEmpty ?",
             ".accessibilityLabel(\"Retry update\")",
-        ] + (sharedSourceAvailable ? sharedSourceSnippets : packagedFallbackSnippets)
+        ]
         return SourceAuditResult(missing: requiredSnippets.filter { !sources.contains($0) })
     }
 
@@ -332,18 +433,7 @@ final class AccessibilityAuditTester {
         return OuroMDUpdateCoordinator(
             defaults: defaults,
             checker: {
-                ReleaseUpdateSnapshot(
-                    status: .updateAvailable,
-                    currentVersion: "0.9.0",
-                    latestVersion: "0.10.0",
-                    tagName: "v0.10.0",
-                    htmlURL: "https://github.com/ourostack/ouro-md/releases/tag/v0.10.0",
-                    assets: [
-                        ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.zip", downloadURL: "https://example.test/Ouro-MD-0.10.0.zip", size: 100),
-                        ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.manifest.json", downloadURL: "https://example.test/Ouro-MD-0.10.0.manifest.json", size: 50),
-                    ],
-                    detail: "Version 0.10.0 is available."
-                )
+                self.availableUpdateSnapshot()
             },
             stageUpdate: { _, progress in
                 await progress("Downloading Ouro-MD-0.10.0.zip...")
@@ -374,6 +464,43 @@ final class AccessibilityAuditTester {
             },
             terminate: {},
             telemetry: { _, _ in }
+        )
+    }
+
+    private func availableUpdateSnapshot() -> ReleaseUpdateSnapshot {
+        ReleaseUpdateSnapshot(
+            status: .updateAvailable,
+            currentVersion: "0.9.0",
+            latestVersion: "0.10.0",
+            tagName: "v0.10.0",
+            htmlURL: "https://github.com/ourostack/ouro-md/releases/tag/v0.10.0",
+            assets: [
+                ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.zip", downloadURL: "https://example.test/Ouro-MD-0.10.0.zip", size: 100),
+                ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.manifest.json", downloadURL: "https://example.test/Ouro-MD-0.10.0.manifest.json", size: 50),
+            ],
+            detail: "Version 0.10.0 is available."
+        )
+    }
+
+    private var shellAvailableUpdateState: ReleaseUpdateViewState {
+        ReleaseUpdateViewState(
+            kind: .updateAvailable,
+            statusLine: "Version 0.10.0 is available.",
+            metadata: [
+                ReleaseUpdateMetadataItem(id: "latest", label: "Latest", value: "0.10.0"),
+                ReleaseUpdateMetadataItem(id: "channel", label: "Channel", value: "Direct download"),
+            ],
+            detail: "Before installing, Ouro MD verifies the release manifest, SHA-256 checksum, byte count, bundle identity, and newer version.",
+            canReviewUpdate: true,
+            canOpenReleasePage: true
+        )
+    }
+
+    private var shellUpdateActions: ReleaseUpdateActions {
+        ReleaseUpdateActions(
+            checkForUpdates: {},
+            reviewUpdate: {},
+            openReleasePage: {}
         )
     }
 
