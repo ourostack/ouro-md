@@ -768,9 +768,6 @@
     setValue: function (md) {
       state.value = (md == null) ? "" : md;
       if (vditor && ready) { vditor.setValue(state.value, true); }
-      // New document — drop any selection carried over from the previous file so
-      // its highlight doesn't strand on the freshly-loaded content.
-      try { window.getSelection().removeAllRanges(); } catch (e) { /* ignore */ }
       queueTableScrollReset();
       schedulePostRender();
       dirty = false;
