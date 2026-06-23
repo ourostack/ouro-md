@@ -107,7 +107,7 @@ final class OuroMDUpdateCoordinator: ObservableObject {
     init(
         defaults: UserDefaults = .standard,
         checker: @escaping @MainActor () async -> ReleaseUpdateSnapshot = {
-            await ReleaseUpdateChecker().check()
+            await OuroMDReleaseUpdate.checker().check()
         },
         stageUpdate: @escaping (OuroMDUpdatePlan, @escaping @Sendable (String) async -> Void) async throws -> OuroMDUpdateInstaller.Staged = { plan, progress in
             try await OuroMDUpdateInstaller().stage(plan: plan, progress: progress)

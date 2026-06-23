@@ -1,6 +1,7 @@
 import Foundation
 import XCTest
 @testable import OuroMD
+import OuroAppShellCore
 import OuroMDCore
 
 final class ReleaseUpdateTests: XCTestCase {
@@ -33,10 +34,13 @@ final class ReleaseUpdateTests: XCTestCase {
     }
 
     func testDefaultConfigurationTargetsOuroMDGitHubReleases() {
-        let configuration = ReleaseUpdateConfiguration()
+        let configuration = OuroMDReleaseUpdate.configuration()
 
         XCTAssertEqual(configuration.repository, "ourostack/ouro-md")
         XCTAssertEqual(configuration.currentVersion, OuroMDRelease.version)
+        XCTAssertEqual(configuration.identity.appName, "Ouro MD")
+        XCTAssertEqual(configuration.identity.bundleIdentifier, "org.ourostack.ouro-md")
+        XCTAssertEqual(configuration.identity.userAgent, "OuroMD/\(OuroMDRelease.version)")
         XCTAssertEqual(
             configuration.releasesURL.absoluteString,
             "https://api.github.com/repos/ourostack/ouro-md/releases?per_page=10"
@@ -61,7 +65,7 @@ final class ReleaseUpdateTests: XCTestCase {
         ]
         """.utf8)
 
-        let snapshot = try ReleaseUpdateChecker.snapshot(from: data, currentVersion: "0.9.0")
+        let snapshot = try OuroAppShellCore.ReleaseUpdateChecker.snapshot(from: data, currentVersion: "0.9.0")
 
         XCTAssertEqual(snapshot.status, .updateAvailable)
         XCTAssertEqual(snapshot.latestVersion, "0.10.0")
@@ -92,7 +96,7 @@ final class ReleaseUpdateTests: XCTestCase {
         ]
         """.utf8)
 
-        let snapshot = try ReleaseUpdateChecker.snapshot(from: data, currentVersion: "0.9.0")
+        let snapshot = try OuroAppShellCore.ReleaseUpdateChecker.snapshot(from: data, currentVersion: "0.9.0")
 
         XCTAssertEqual(snapshot.status, .updateAvailable)
         XCTAssertEqual(snapshot.latestVersion, "0.10.0")
@@ -112,7 +116,7 @@ final class ReleaseUpdateTests: XCTestCase {
         ]
         """.utf8)
 
-        let snapshot = try ReleaseUpdateChecker.snapshot(from: data, currentVersion: "0.9.0")
+        let snapshot = try OuroAppShellCore.ReleaseUpdateChecker.snapshot(from: data, currentVersion: "0.9.0")
 
         XCTAssertEqual(snapshot.status, .current)
         XCTAssertEqual(snapshot.detail, "Version 0.9.0 is current.")
@@ -131,7 +135,7 @@ final class ReleaseUpdateTests: XCTestCase {
         ]
         """.utf8)
 
-        let snapshot = try ReleaseUpdateChecker.snapshot(from: data, currentVersion: "0.9.0")
+        let snapshot = try OuroAppShellCore.ReleaseUpdateChecker.snapshot(from: data, currentVersion: "0.9.0")
 
         XCTAssertEqual(snapshot.status, .unavailable)
         XCTAssertEqual(snapshot.latestVersion, "banana")
@@ -151,7 +155,7 @@ final class ReleaseUpdateTests: XCTestCase {
         ]
         """.utf8)
 
-        let snapshot = try ReleaseUpdateChecker.snapshot(from: data, currentVersion: "0.9.0")
+        let snapshot = try OuroAppShellCore.ReleaseUpdateChecker.snapshot(from: data, currentVersion: "0.9.0")
 
         XCTAssertEqual(snapshot.status, .unavailable)
         XCTAssertNil(snapshot.latestVersion)
@@ -161,11 +165,11 @@ final class ReleaseUpdateTests: XCTestCase {
     func testSnapshotThrowsOnMalformedReleaseJSON() {
         let data = Data("{\"not\":\"an array\"}".utf8)
 
-        XCTAssertThrowsError(try ReleaseUpdateChecker.snapshot(from: data, currentVersion: "0.9.0"))
+        XCTAssertThrowsError(try OuroAppShellCore.ReleaseUpdateChecker.snapshot(from: data, currentVersion: "0.9.0"))
     }
 
     func testAsyncCheckReturnsUnavailableSnapshotOnNetworkFailure() async {
-        let checker = ReleaseUpdateChecker { _ in
+        let checker = OuroMDReleaseUpdate.checker { _ in
             throw ReleaseUpdateError.badResponse
         }
 
@@ -188,8 +192,10 @@ final class ReleaseUpdateTests: XCTestCase {
           }
         ]
         """.utf8)
-        let checker = ReleaseUpdateChecker { url in
-            XCTAssertEqual(url.absoluteString, "https://api.github.com/repos/ourostack/ouro-md/releases?per_page=10")
+        let checker = OuroMDReleaseUpdate.checker { request in
+            XCTAssertEqual(request.url?.absoluteString, "https://api.github.com/repos/ourostack/ouro-md/releases?per_page=10")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/vnd.github+json")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "User-Agent"), "OuroMD/\(OuroMDRelease.version)")
             return data
         }
 
@@ -243,8 +249,8 @@ final class ReleaseUpdateTests: XCTestCase {
         let expectedData = Data("[{\"tag_name\":\"v0.9.0\",\"html_url\":\"https://example.test\",\"draft\":false,\"prerelease\":false,\"assets\":[]}]".utf8)
         RecordingURLProtocol.stub(statusCode: 200, data: expectedData)
 
-        let data = try await ReleaseUpdateChecker.defaultDataLoader(
-            URL(string: "https://api.github.com/repos/ourostack/ouro-md/releases?per_page=10")!
+        let data = try await OuroMDReleaseUpdate.defaultDataLoader(
+            OuroAppShellCore.ReleaseUpdateChecker.request(for: OuroMDReleaseUpdate.configuration())
         )
 
         XCTAssertEqual(data, expectedData)
@@ -259,8 +265,8 @@ final class ReleaseUpdateTests: XCTestCase {
         RecordingURLProtocol.stub(statusCode: 503, data: Data("unavailable".utf8))
 
         do {
-            _ = try await ReleaseUpdateChecker.defaultDataLoader(
-                URL(string: "https://api.github.com/repos/ourostack/ouro-md/releases?per_page=10")!
+            _ = try await OuroMDReleaseUpdate.defaultDataLoader(
+                OuroAppShellCore.ReleaseUpdateChecker.request(for: OuroMDReleaseUpdate.configuration())
             )
             XCTFail("Expected badResponse for non-2xx status.")
         } catch {

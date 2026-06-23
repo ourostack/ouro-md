@@ -1,4 +1,5 @@
 import Foundation
+import OuroAppShellCore
 
 /// Headless `--liveupdatetest`: given a temp destination containing an older
 /// published Ouro MD.app, use the real update planner/installer to stage the
@@ -34,8 +35,8 @@ final class LiveUpdateTester {
             throw TestError("destination version \(installedVersion) did not match expected older version \(fromVersion)")
         }
 
-        let checker = ReleaseUpdateChecker(
-            configuration: ReleaseUpdateConfiguration(currentVersion: fromVersion),
+        let checker = OuroAppShellCore.ReleaseUpdateChecker(
+            configuration: OuroMDReleaseUpdate.configuration(currentVersion: fromVersion),
             dataLoader: Self.releaseFeedData
         )
         let snapshot = await checker.check()
@@ -88,9 +89,8 @@ final class LiveUpdateTester {
         return version
     }
 
-    private static let releaseFeedData: @Sendable (URL) async throws -> Data = { url in
-        var request = URLRequest(url: url)
-        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+    private static let releaseFeedData: @Sendable (URLRequest) async throws -> Data = { input in
+        var request = input
         request.setValue("OuroMD/live-update-test", forHTTPHeaderField: "User-Agent")
         if let token = ProcessInfo.processInfo.environment["GH_TOKEN"] ?? ProcessInfo.processInfo.environment["GITHUB_TOKEN"],
            !token.isEmpty {
