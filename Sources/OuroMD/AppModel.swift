@@ -33,6 +33,7 @@ protocol EditorBridge: AnyObject {
     func clearFind()
     func execCommand(_ command: String)
     func insertText(_ text: String)
+    func copyAs(_ mode: String)
     func setDocBase(_ directory: String?)
     func markSaved()
     func undo()
@@ -40,6 +41,12 @@ protocol EditorBridge: AnyObject {
     func focusEditor()
     func printDocument()
     func setZoom(_ factor: Double)
+}
+
+extension EditorBridge {
+    // Default no-op so existing conformers (test mocks) need no change; the real
+    // WKWebView coordinator provides the actual implementation.
+    func copyAs(_ mode: String) {}
 }
 
 struct CommandPaletteItem: Identifiable, Equatable {
@@ -1254,19 +1261,15 @@ final class AppModel: ObservableObject {
     }
 
     func copyAsMarkdown() {
-        bridge?.getMarkdown { md in
-            guard let md else { return }
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(md, forType: .string)
-        }
+        bridge?.copyAs("markdown")
     }
 
     func copyAsHTML() {
-        bridge?.getHTML { html in
-            guard let html else { return }
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(html, forType: .string)
-        }
+        bridge?.copyAs("html")
+    }
+
+    func copyAsPlainText() {
+        bridge?.copyAs("plain")
     }
 
     func pasteAsPlainText() {

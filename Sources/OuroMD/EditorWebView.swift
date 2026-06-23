@@ -262,6 +262,10 @@ struct EditorWebView: NSViewRepresentable {
             eval("window.ouro && window.ouro.insertText(\(Coordinator.jsString(text)))")
         }
 
+        func copyAs(_ mode: String) {
+            eval("window.ouro && window.ouro.copyAs(\(Coordinator.jsString(mode)))")
+        }
+
         func setDocBase(_ directory: String?) {
             eval("window.ouro && window.ouro.setDocBase(\(Coordinator.jsString(directory ?? "")))")
         }
