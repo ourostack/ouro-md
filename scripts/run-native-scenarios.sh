@@ -32,6 +32,7 @@ run --mermaidcliptest
 run --reloadrendertest
 run --darkdiagramtest
 run --selectionblurtest
+run --copyflavortest
 run --performanceprobe
 run --accessibilityaudit
 run --markdownparitytest

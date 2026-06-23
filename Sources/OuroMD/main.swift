@@ -99,6 +99,10 @@ if hasFlag("--selectionblurtest") {
     SelectionBlurTester().run()
 }
 
+if hasFlag("--copyflavortest") {
+    CopyFlavorTester().run()
+}
+
 if hasFlag("--renderprobe") {
     RenderProbe().run()
 }
