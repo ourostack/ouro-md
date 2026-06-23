@@ -17,7 +17,7 @@ final class ReloadRenderTester: NSObject, WKScriptMessageHandler, WKNavigationDe
     private static let docAlpha = [
         "# Live-reload render check",
         "",
-        String(repeating: "Filler paragraph to give the document scroll height.\n\n", count: 12),
+        String(repeating: "Filler paragraph to give the document scroll height.\n\n", count: 40),
         "```mermaid",
         "flowchart LR",
         "  A[\"ALPHANODE source<br/>first line<br/>second line\"] --> B[\"ALPHANODE sink\"]",
@@ -28,7 +28,7 @@ final class ReloadRenderTester: NSObject, WKScriptMessageHandler, WKNavigationDe
     private static let docBeta = [
         "# Live-reload render check",
         "",
-        String(repeating: "Filler paragraph to give the document scroll height.\n\n", count: 12),
+        String(repeating: "Filler paragraph to give the document scroll height.\n\n", count: 40),
         "```mermaid",
         "flowchart LR",
         "  X[\"BETANODE source<br/>first line<br/>second line\"] --> Y[\"BETANODE sink\"]",
@@ -74,8 +74,11 @@ final class ReloadRenderTester: NSObject, WKScriptMessageHandler, WKNavigationDe
         case "rendered":
             let stage = body["stage"] as? String ?? ""
             if stage == "alpha" {
-                // Scroll down, then live-reload to the BETA doc and assert the swap.
-                webView.evaluateJavaScript("(function(){var s=document.scrollingElement||document.documentElement;s.scrollTop=Math.round(s.scrollHeight*0.5);return s.scrollTop;})()") { [weak self] result, _ in
+                // Scroll to a fixed offset inside the filler ABOVE the diagram, so
+                // the scroll anchor sits in content whose height can't change when
+                // the diagram below reflows on reload. Then live-reload to BETA and
+                // assert the swap + that the reader's place is preserved.
+                webView.evaluateJavaScript("(function(){var s=document.scrollingElement||document.documentElement;s.scrollTop=150;return s.scrollTop;})()") { [weak self] result, _ in
                     let y = (result as? Double) ?? (result as? Int).map(Double.init) ?? 0
                     self?.scrollBefore = y
                     self?.webView.evaluateJavaScript("window.ouro.reloadValue(\(Self.jsLiteralStatic(Self.docBeta)))", completionHandler: nil)
