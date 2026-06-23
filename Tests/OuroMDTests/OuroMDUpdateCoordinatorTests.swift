@@ -82,6 +82,40 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
         )
     }
 
+    func testAppShellUpdateActionsExposeReviewButKeepDirectInstallBehindOuroMDPrompt() async {
+        let coordinator = makeCoordinator(checker: { self.updateSnapshot() })
+
+        await coordinator.checkForReleaseUpdate()
+
+        var state = coordinator.appShellUpdateState
+        var actions = coordinator.appShellUpdateActions
+        XCTAssertEqual(state.kind, .updateAvailable)
+        XCTAssertTrue(state.canReviewUpdate)
+        XCTAssertTrue(state.canOpenReleasePage)
+        XCTAssertFalse(state.canInstallUpdate)
+        XCTAssertNotNil(actions.reviewUpdate)
+        XCTAssertNotNil(actions.openReleasePage)
+        XCTAssertNil(actions.installAndRelaunch)
+
+        let staged = stagedUpdate(version: "0.10.0")
+        let stagedCoordinator = makeCoordinator(
+            checker: { self.updateSnapshot() },
+            stageUpdate: { _, _ in staged }
+        )
+
+        await stagedCoordinator.runAutoUpdateCheckIfDue()
+
+        state = stagedCoordinator.appShellUpdateState
+        actions = stagedCoordinator.appShellUpdateActions
+        XCTAssertEqual(state.kind, .readyToRelaunch)
+        XCTAssertTrue(state.canReviewUpdate)
+        XCTAssertTrue(state.canOpenReleasePage)
+        XCTAssertFalse(state.canInstallUpdate)
+        XCTAssertNotNil(actions.reviewUpdate)
+        XCTAssertNotNil(actions.openReleasePage)
+        XCTAssertNil(actions.installAndRelaunch)
+    }
+
     func testPromptDisplayHelpersAreUserFacing() {
         XCTAssertEqual(
             OuroMDUpdatePrompt.installable(version: "0.10.0").message,

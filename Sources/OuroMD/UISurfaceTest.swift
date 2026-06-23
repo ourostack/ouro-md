@@ -2,6 +2,7 @@ import AppKit
 import OuroAppShellUI
 import OuroMDCore
 import SwiftUI
+import Vision
 
 /// Headless `--uisurfacetest`: checks native SwiftUI surfaces that WebKit
 /// document probes cannot see, especially the search sidebar and Preferences.
@@ -40,6 +41,7 @@ final class UISurfaceTester {
         editorFitModel.commandPaletteQuery = "find"
 
         let updateCoordinator = OuroMDUpdateCoordinator()
+        let availableUpdateCoordinator = makeAvailableUpdateCoordinator()
         let installingCoordinator = makeInstallingUpdateCoordinator()
         let prefsSize = fittingSize(
             PreferencesView(model: searchModel, updateCoordinator: updateCoordinator, telemetry: OuroMDTelemetry.shared),
@@ -61,6 +63,21 @@ final class UISurfaceTester {
             CommandReferenceView(items: CommandPaletteCatalog.items()),
             constrainedTo: NSSize(width: 560, height: 620)
         )
+        let availableTask = Task {
+            await availableUpdateCoordinator.checkForReleaseUpdate()
+        }
+        waitUntil(timeout: 3) { availableUpdateCoordinator.releaseSnapshot != nil }
+        let availableUpdateSize = fittingSize(
+            ReleaseUpdateControls(updateCoordinator: availableUpdateCoordinator, showTitle: true)
+                .frame(width: 560, alignment: .leading),
+            constrainedTo: NSSize(width: 560, height: 220)
+        )
+        let availableUpdateText = renderedText(
+            ReleaseUpdateControls(updateCoordinator: availableUpdateCoordinator, showTitle: true)
+                .frame(width: 560, alignment: .leading),
+            constrainedTo: NSSize(width: 560, height: 220)
+        )
+        availableTask.cancel()
         let installingTask = Task {
             await installingCoordinator.checkForReleaseUpdate()
             await installingCoordinator.installReleaseUpdate(destinationBundle: URL(fileURLWithPath: "/tmp/Ouro MD.app"))
@@ -112,7 +129,24 @@ final class UISurfaceTester {
             && editorFitModel.commandPaletteItems.contains { $0.id == "edit.find" && $0.shortcut == "⌘F" }
         let installingOK = installingCoordinator.installStatus?.contains("Downloading") == true || installingCoordinator.installError != nil
         let progressOK = installingSize.width <= 420 && installingSize.height <= 160 && failedSize.width <= 420 && failedSize.height <= 180
-        let reviewDisabledWhileInstallingOK = installingShellState.kind == .installing && installingShellState.canReviewUpdate
+        let installingReviewStateOK = installingShellState.kind == .installing && installingShellState.canReviewUpdate
+        let availableShellState = availableUpdateCoordinator.appShellUpdateState
+        let availableShellActions = availableUpdateCoordinator.appShellUpdateActions
+        let availableUpdateSizeOK = availableUpdateSize.width <= 560 && availableUpdateSize.height <= 220
+        let availableTextOK = containsAll(availableUpdateText, ["Review Update", "Open Release"])
+            && !availableUpdateText.contains {
+                ($0.localizedCaseInsensitiveContains("Install")
+                    && $0.localizedCaseInsensitiveContains("Relaunch"))
+            }
+        let directInstallSuppressedOK = availableShellState.kind == .updateAvailable
+            && availableShellState.canReviewUpdate
+            && availableShellState.canOpenReleasePage
+            && !availableShellState.canInstallUpdate
+            && availableShellActions.reviewUpdate != nil
+            && availableShellActions.openReleasePage != nil
+            && availableShellActions.installAndRelaunch == nil
+            && availableUpdateSizeOK
+            && availableTextOK
         let axOK = containsAll(prefsLabels, ["Light", "Dark"])
             && containsAll(sidebarLabels, ["Outline", "Files", "Search"])
             && (containsAll(updateLabels, ["Update failed"]) || updateLabels.isEmpty)
@@ -124,14 +158,20 @@ final class UISurfaceTester {
         print(String(format: "command reference fitting size: %.1fx%.1f %@", referenceSize.width, referenceSize.height, referenceOK ? "✓" : "✗"))
         print("status/palette semantic state: \(statusPaletteOK ? "✓" : "✗")")
         print("command discoverability semantic state: \(commandDiscoveryOK ? "✓" : "✗")")
+        print(String(format: "available update controls fitting size: %.1fx%.1f %@", availableUpdateSize.width, availableUpdateSize.height, availableUpdateSizeOK ? "✓" : "✗"))
         print(String(format: "update progress fitting size: installing %.1fx%.1f failed %.1fx%.1f %@", installingSize.width, installingSize.height, failedSize.width, failedSize.height, progressOK ? "✓" : "✗"))
-        print("installing update controls disable review: \(reviewDisabledWhileInstallingOK ? "✓" : "✗")")
+        print("installing update review state: \(installingReviewStateOK ? "✓" : "✗")")
+        print("direct shell install suppressed; review prompt available: \(directInstallSuppressedOK ? "✓" : "✗")")
         print("invalid regex visible state: \(regexErrorOK ? "✓" : "✗")")
         print("search result row state: \(searchResultsOK ? "✓" : "✗")")
         print("menu topology: \(menuOK ? "✓" : "✗")")
         print("accessibility labels: \(axOK ? "✓" : "✗")")
-        if !reviewDisabledWhileInstallingOK {
+        if !installingReviewStateOK {
             print("installing shell state: \(installingShellState.kind.rawValue), canReviewUpdate=\(installingShellState.canReviewUpdate)")
+        }
+        if !directInstallSuppressedOK {
+            print("available shell state: \(availableShellState.kind.rawValue), canReviewUpdate=\(availableShellState.canReviewUpdate), canOpenReleasePage=\(availableShellState.canOpenReleasePage), canInstallUpdate=\(availableShellState.canInstallUpdate), hasReviewAction=\(availableShellActions.reviewUpdate != nil), hasOpenReleaseAction=\(availableShellActions.openReleasePage != nil), hasInstallAction=\(availableShellActions.installAndRelaunch != nil), renderedTextObservable=\(!availableUpdateText.isEmpty)")
+            print("available update text: \(availableUpdateText.sorted().joined(separator: " | "))")
         }
         if !axOK {
             print("preferences labels: \(prefsLabels.sorted().joined(separator: " | "))")
@@ -142,7 +182,7 @@ final class UISurfaceTester {
         invalidModel.teardown()
         searchModel.teardown()
         try? FileManager.default.removeItem(at: root)
-        exit(regexErrorOK && searchResultsOK && prefsOK && aboutOK && searchOK && editorOK && referenceOK && statusPaletteOK && commandDiscoveryOK && installingOK && progressOK && reviewDisabledWhileInstallingOK && menuOK && axOK ? 0 : 1)
+        exit(regexErrorOK && searchResultsOK && prefsOK && aboutOK && searchOK && editorOK && referenceOK && statusPaletteOK && commandDiscoveryOK && installingOK && availableUpdateSizeOK && progressOK && installingReviewStateOK && directInstallSuppressedOK && menuOK && axOK ? 0 : 1)
     }
 
     private func fittingSize<Content: View>(_ view: Content, constrainedTo size: NSSize) -> NSSize {
@@ -164,9 +204,71 @@ final class UISurfaceTester {
         window.makeKeyAndOrderFront(nil)
         RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.05))
         host.view.layoutSubtreeIfNeeded()
-        let labels = collectAccessibilityLabels(from: host.view)
+        var labels = collectAccessibilityLabels(from: window)
+        labels.formUnion(collectAccessibilityLabels(from: host.view))
         window.orderOut(nil)
         return labels
+    }
+
+    private func renderedText<Content: View>(_ view: Content, constrainedTo size: NSSize) -> Set<String> {
+        let host = NSHostingController(
+            rootView: view
+                .background(Color.white)
+                .environment(\.colorScheme, .light)
+        )
+        host.view.frame = NSRect(origin: .zero, size: size)
+        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
+                              styleMask: [.titled],
+                              backing: .buffered,
+                              defer: false)
+        window.contentView = host.view
+        window.setFrameOrigin(NSPoint(x: -30000, y: -30000))
+        window.makeKeyAndOrderFront(nil)
+        RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.08))
+        host.view.layoutSubtreeIfNeeded()
+        window.displayIfNeeded()
+        host.view.displayIfNeeded()
+        guard let image = snapshot(host.view) else {
+            window.orderOut(nil)
+            return []
+        }
+        saveDebugSnapshot(image, name: "available-update-controls")
+        window.orderOut(nil)
+        return recognizeText(in: image)
+    }
+
+    private func snapshot(_ view: NSView) -> CGImage? {
+        let bounds = view.bounds
+        guard bounds.width > 0, bounds.height > 0,
+              let rep = view.bitmapImageRepForCachingDisplay(in: bounds) else {
+            return nil
+        }
+        view.cacheDisplay(in: bounds, to: rep)
+        return rep.cgImage
+    }
+
+    private func saveDebugSnapshot(_ image: CGImage, name: String) {
+        guard ProcessInfo.processInfo.environment["OURO_MD_UI_SURFACE_DEBUG_SNAPSHOT"] != nil else { return }
+        let rep = NSBitmapImageRep(cgImage: image)
+        guard let data = rep.representation(using: .png, properties: [:]) else { return }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("ouro-md-\(name).png")
+        try? data.write(to: url)
+        print("debug snapshot: \(url.path)")
+    }
+
+    private func recognizeText(in image: CGImage) -> Set<String> {
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = false
+        let handler = VNImageRequestHandler(cgImage: image, options: [:])
+        do {
+            try handler.perform([request])
+        } catch {
+            return []
+        }
+        return Set((request.results ?? []).compactMap { observation in
+            observation.topCandidates(1).first?.string
+        })
     }
 
     private func collectAccessibilityLabels(from root: Any?) -> Set<String> {
@@ -181,8 +283,21 @@ final class UISurfaceTester {
         if let help = object.accessibilityHelp?(), !help.isEmpty {
             labels.insert(help)
         }
+        if let button = object as? NSButton {
+            if !button.title.isEmpty {
+                labels.insert(button.title)
+            }
+            let attributedTitle = button.attributedTitle.string
+            if !attributedTitle.isEmpty {
+                labels.insert(attributedTitle)
+            }
+        }
+        if let textField = object as? NSTextField, !textField.stringValue.isEmpty {
+            labels.insert(textField.stringValue)
+        }
         let children = (object.accessibilityChildren?() ?? [])
             + (object.accessibilityVisibleChildren?() ?? [])
+            + accessibilityChildren(named: "accessibilityChildrenInNavigationOrder", from: object)
         for child in children {
             labels.formUnion(collectAccessibilityLabels(from: child))
         }
@@ -192,6 +307,22 @@ final class UISurfaceTester {
             }
         }
         return labels
+    }
+
+    private func accessibilityChildren(named selectorName: String, from object: AnyObject) -> [Any] {
+        let selector = NSSelectorFromString(selectorName)
+        guard object.responds(to: selector),
+              let unmanaged = object.perform(selector) else {
+            return []
+        }
+        let value = unmanaged.takeUnretainedValue()
+        if let array = value as? [Any] {
+            return array
+        }
+        if let array = value as? NSArray {
+            return array.map { $0 }
+        }
+        return []
     }
 
     private func containsAll(_ labels: Set<String>, _ required: [String]) -> Bool {
@@ -252,18 +383,7 @@ final class UISurfaceTester {
         return OuroMDUpdateCoordinator(
             defaults: defaults,
             checker: {
-                ReleaseUpdateSnapshot(
-                    status: .updateAvailable,
-                    currentVersion: "0.9.0",
-                    latestVersion: "0.10.0",
-                    tagName: "v0.10.0",
-                    htmlURL: "https://github.com/ourostack/ouro-md/releases/tag/v0.10.0",
-                    assets: [
-                        ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.zip", downloadURL: "https://example.test/Ouro-MD-0.10.0.zip", size: 100),
-                        ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.manifest.json", downloadURL: "https://example.test/Ouro-MD-0.10.0.manifest.json", size: 50),
-                    ],
-                    detail: "Version 0.10.0 is available."
-                )
+                self.availableUpdateSnapshot()
             },
             stageUpdate: { _, progress in
                 await progress("Downloading Ouro-MD-0.10.0.zip...")
@@ -272,6 +392,33 @@ final class UISurfaceTester {
             },
             terminate: {},
             telemetry: { _, _ in }
+        )
+    }
+
+    private func makeAvailableUpdateCoordinator() -> OuroMDUpdateCoordinator {
+        let defaults = UserDefaults(suiteName: "ouro-ui-available-\(UUID().uuidString)") ?? .standard
+        return OuroMDUpdateCoordinator(
+            defaults: defaults,
+            checker: {
+                self.availableUpdateSnapshot()
+            },
+            terminate: {},
+            telemetry: { _, _ in }
+        )
+    }
+
+    private func availableUpdateSnapshot() -> ReleaseUpdateSnapshot {
+        ReleaseUpdateSnapshot(
+            status: .updateAvailable,
+            currentVersion: "0.9.0",
+            latestVersion: "0.10.0",
+            tagName: "v0.10.0",
+            htmlURL: "https://github.com/ourostack/ouro-md/releases/tag/v0.10.0",
+            assets: [
+                ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.zip", downloadURL: "https://example.test/Ouro-MD-0.10.0.zip", size: 100),
+                ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.manifest.json", downloadURL: "https://example.test/Ouro-MD-0.10.0.manifest.json", size: 50),
+            ],
+            detail: "Version 0.10.0 is available."
         )
     }
 
