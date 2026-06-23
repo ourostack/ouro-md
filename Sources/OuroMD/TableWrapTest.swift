@@ -76,6 +76,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             let initialScrolledCount = (body["initialScrolledCount"] as? Int) ?? .max
             let scrollableCount = (body["scrollableCount"] as? Int) ?? 0
             let affordanceCount = (body["affordanceCount"] as? Int) ?? 0
+            let spuriousAffordanceCount = (body["spuriousAffordanceCount"] as? Int) ?? .max
             let categories = (body["categories"] as? [String]) ?? []
             let hasCenterAlignment = (body["hasCenterAlignment"] as? Bool) ?? false
             let hasRightAlignment = (body["hasRightAlignment"] as? Bool) ?? false
@@ -97,6 +98,8 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             let scrollRequired = viewportWidth <= 800
             let scrollOK = !scrollRequired || scrollableCount > 0
             let affordanceOK = scrollableCount == 0 || affordanceCount == scrollableCount
+            // Tables that already fit must not paint the scroll affordance.
+            let noSpuriousAffordanceOK = spuriousAffordanceCount == 0
             let requiredCategories = ["empty", "alignment", "html", "url", "sparse", "long-code", "huge"]
             let categoryGateApplies = markdownPath?.contains("dogfood-wide-tables") == true
             let missingCategories = requiredCategories.filter { !categories.contains($0) }
@@ -114,6 +117,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             let scrollFailure = scrollRequired ? "✗ (wide tables were squeezed instead)" : "✗"
             print("tables with own horizontal scroll: \(scrollableCount) \(scrollOK ? "✓" : scrollFailure)")
             print("scrollable tables with edge affordance: \(affordanceCount) \(affordanceOK ? "✓" : "✗")")
+            print("fitting tables with stray affordance: \(spuriousAffordanceCount) \(noSpuriousAffordanceOK ? "✓" : "✗ (grey strip on a table that fits)")")
             print("tables initially scrolled sideways: \(initialScrolledCount) \(initialScrollOK ? "✓" : "✗")")
             print("collapsed long cells: \(collapsedLongCellCount) \(longCellsOK ? "✓" : "✗")")
             print("collapsed code cells: \(collapsedCodeCellCount) \(codeCellsOK ? "✓" : "✗")")
@@ -134,7 +138,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
                 print(String(format: "table %02d %@width %.1fpx scroll %.1fpx left %.1fpx min-long %.1fpx min-code %.1fpx column-ratio %.2f",
                              index + 1, category.isEmpty ? "" : "[\(category)] ", width, scroll, scrollLeft, minLong, minCode, columnRatio))
             }
-            exit(tableCountOK && categoryOK && alignmentOK && hugeOK && pageOK && clippedOK && scrollOK && affordanceOK && initialScrollOK && longCellsOK && codeCellsOK && emptyCellsOK && balanceOK && overlapOK && inlineOverlapOK && metricsOK ? 0 : 1)
+            exit(tableCountOK && categoryOK && alignmentOK && hugeOK && pageOK && clippedOK && scrollOK && affordanceOK && noSpuriousAffordanceOK && initialScrollOK && longCellsOK && codeCellsOK && emptyCellsOK && balanceOK && overlapOK && inlineOverlapOK && metricsOK ? 0 : 1)
         }
     }
 
@@ -198,6 +202,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
       var clippedCount = 0;
       var scrollableCount = 0;
       var affordanceCount = 0;
+      var spuriousAffordanceCount = 0;
       var imbalancedTableCount = 0;
       var overlappingCodeCount = 0;
       var overlappingInlineCount = 0;
@@ -285,6 +290,10 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
           scrollableCount += 1;
           var style = window.getComputedStyle(table);
           if (parseFloat(style.borderRightWidth || "0") >= 6) { affordanceCount += 1; }
+        } else {
+          // A table that already fits must NOT paint the scroll affordance.
+          var fitStyle = window.getComputedStyle(table);
+          if (parseFloat(fitStyle.borderRightWidth || "0") >= 6) { spuriousAffordanceCount += 1; }
         }
         if (scrollLeft > 1) { initialScrolledCount += 1; }
         if (minLongCellWidth > 0 && minLongCellWidth < 120) { collapsedLongCellCount += 1; }
@@ -322,6 +331,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         initialScrolledCount: initialScrolledCount,
         scrollableCount: scrollableCount,
         affordanceCount: affordanceCount,
+        spuriousAffordanceCount: spuriousAffordanceCount,
         categories: Object.keys(categories).sort(),
         hasCenterAlignment: hasCenterAlignment,
         hasRightAlignment: hasRightAlignment,
