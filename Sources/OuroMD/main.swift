@@ -91,6 +91,10 @@ if hasFlag("--reloadrendertest") {
     ReloadRenderTester().run()
 }
 
+if hasFlag("--darkdiagramtest") {
+    DarkDiagramTester().run()
+}
+
 if hasFlag("--renderprobe") {
     RenderProbe().run()
 }

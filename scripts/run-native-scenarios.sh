@@ -30,6 +30,7 @@ run --wraptest
 run --renderprobe
 run --mermaidcliptest
 run --reloadrendertest
+run --darkdiagramtest
 run --performanceprobe
 run --accessibilityaudit
 run --markdownparitytest
