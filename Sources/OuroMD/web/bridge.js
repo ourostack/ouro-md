@@ -306,35 +306,67 @@
     observer.observe(el, { childList: true, characterData: true, subtree: true });
   }
 
-  // Default Cmd+C / Edit ▸ Copy: put BOTH a rendered-HTML flavor and a Markdown
-  // flavor on the clipboard at once. Rich targets (Teams, Word, mail) paste the
-  // HTML — formatted; plain targets (code editors, PR boxes, other markdown
-  // docs) take the plain text — clean Markdown. The paste target chooses; we
-  // don't sniff it. Vditor's own IR copy sets only text/plain (markdown) and
-  // blanks text/html, so a rich paste otherwise lands as raw markdown. We
-  // produce the same markdown for text/plain (no regression) and add a clean
-  // text/html rendered from that markdown (selection → md → html, so no IR
-  // editor markup leaks into the HTML).
+  // Copy behavior. A single capture-phase handler serves both the default
+  // Cmd+C / Edit ▸ Copy and the explicit Edit ▸ Copy as ▸ {Markdown, Plain
+  // Text, Rendered HTML} commands (the latter set `pendingCopyMode` then fire a
+  // synthetic copy). The paste TARGET picks the flavor it understands — we don't
+  // sniff it:
+  //   default  -> BOTH text/plain (Markdown) + text/html (rendered). Rich
+  //               targets (Teams, Word, mail) paste formatted; plain targets
+  //               (code, PRs, other markdown) take the Markdown.
+  //   markdown -> text/plain = Markdown only.
+  //   plain    -> text/plain = the visible text, Markdown symbols stripped.
+  //   html     -> text/html = rendered HTML (formatted paste) + a plain-text
+  //               fallback of the visible text.
+  // Markdown is produced the way Vditor would (selection -> VditorIRDOM2Md) so
+  // text/plain never regresses; the HTML is rendered from that Markdown
+  // (Md2HTML) so no IR editor markup leaks in. Explicit modes fall back to the
+  // whole document when there is no selection (matching the old menu's intent).
+  var pendingCopyMode = null;
   function attachCopyEnrichment() {
     if (document.__ouroCopy) { return; }
     document.__ouroCopy = true;
     document.addEventListener("copy", function (e) {
+      var mode = pendingCopyMode;
+      pendingCopyMode = null;
       try {
         if (!vditor || !vditor.vditor || vditor.vditor.currentMode !== "ir") { return; }
-        var sel = window.getSelection();
-        if (!sel || sel.rangeCount === 0 || sel.isCollapsed || sel.toString() === "") { return; }
-        var editorEl = document.getElementById("editor");
-        if (!editorEl || !editorEl.contains(sel.anchorNode)) { return; }
         var lute = vditor.vditor.lute;
         if (!lute || !lute.VditorIRDOM2Md || !lute.Md2HTML) { return; }
-        var temp = document.createElement("div");
-        temp.appendChild(sel.getRangeAt(0).cloneContents());
-        var md = lute.VditorIRDOM2Md(temp.innerHTML).trim();
-        if (!md) { return; }
+        var sel = window.getSelection();
+        var editorEl = document.getElementById("editor");
+        var hasSelection = sel && sel.rangeCount > 0 && !sel.isCollapsed &&
+          sel.toString() !== "" && editorEl && editorEl.contains(sel.anchorNode);
+        var md, plain;
+        if (hasSelection) {
+          var temp = document.createElement("div");
+          temp.appendChild(sel.getRangeAt(0).cloneContents());
+          md = lute.VditorIRDOM2Md(temp.innerHTML).trim();
+          plain = sel.toString();
+        } else if (mode) {
+          // Explicit Copy-as with no selection: operate on the whole document.
+          md = (typeof vditor.getValue === "function" ? vditor.getValue() : "").trim();
+          var content = document.querySelector("#editor .vditor-reset") || editorEl;
+          plain = content ? (content.innerText || content.textContent || md) : md;
+        } else {
+          // Default copy with nothing selected in the editor — let the default run.
+          return;
+        }
+        if (!md && !plain) { return; }
         var html = "";
         try { html = lute.Md2HTML(md); } catch (err) { html = ""; }
-        e.clipboardData.setData("text/plain", md);
-        if (html) { e.clipboardData.setData("text/html", html); }
+
+        if (mode === "markdown") {
+          e.clipboardData.setData("text/plain", md);
+        } else if (mode === "plain") {
+          e.clipboardData.setData("text/plain", plain || md);
+        } else if (mode === "html") {
+          e.clipboardData.setData("text/plain", plain || md);
+          if (html) { e.clipboardData.setData("text/html", html); }
+        } else {
+          e.clipboardData.setData("text/plain", md);
+          if (html) { e.clipboardData.setData("text/html", html); }
+        }
         e.preventDefault();
         e.stopImmediatePropagation();
       } catch (err) {
@@ -941,6 +973,15 @@
     },
     focus: function () { if (vditor) { try { vditor.focus(); } catch (e) { /* ignore */ } } },
     insertText: function (text) { if (text) { insertAtCursor(text); } },
+    // Explicit Edit ▸ Copy as ▸ {markdown, plain, html}. Sets the mode for the
+    // unified copy handler above, then fires a synthetic copy so that handler
+    // writes the requested flavor to the clipboard.
+    copyAs: function (mode) {
+      pendingCopyMode = (mode === "markdown" || mode === "plain" || mode === "html") ? mode : null;
+      if (!pendingCopyMode) { return; }
+      try { document.execCommand("copy"); } catch (e) { /* ignore */ }
+      pendingCopyMode = null;
+    },
     setDocBase: function (dir) { docBase = dir || ""; rewriteRelativeImages(); },
     scrollToHeading: function (index) {
       var hs = document.querySelectorAll(".vditor-reset h1, .vditor-reset h2, .vditor-reset h3, .vditor-reset h4, .vditor-reset h5, .vditor-reset h6");

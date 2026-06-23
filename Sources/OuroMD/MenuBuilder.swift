@@ -134,8 +134,12 @@ enum MenuBuilder {
         pastePlain.keyEquivalentModifierMask = [.command, .shift]
         standard(menu, "Select All", #selector(NSText.selectAll(_:)), "a")
         menu.addItem(.separator())
-        add(menu, "Copy as Markdown", #selector(AppDelegate.copyAsMarkdown(_:)), "", target)
-        add(menu, "Copy as HTML", #selector(AppDelegate.copyAsHTML(_:)), "", target)
+        let copyAs = menu.addItem(withTitle: "Copy as", action: nil, keyEquivalent: "")
+        let copyAsMenu = NSMenu(title: "Copy as")
+        copyAs.submenu = copyAsMenu
+        add(copyAsMenu, "Rendered (HTML)", #selector(AppDelegate.copyAsHTML(_:)), "", target)
+        add(copyAsMenu, "Plain Text", #selector(AppDelegate.copyAsPlainText(_:)), "", target)
+        add(copyAsMenu, "Markdown", #selector(AppDelegate.copyAsMarkdown(_:)), "", target)
 
         menu.addItem(.separator())
         let palette = add(menu, "Command Palette…", #selector(AppDelegate.showCommandPalette(_:)), "p", target)

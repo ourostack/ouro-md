@@ -499,6 +499,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     @objc func pasteAsPlainText(_ sender: Any?) { model.pasteAsPlainText() }
     @objc func copyAsMarkdown(_ sender: Any?) { model.copyAsMarkdown() }
     @objc func copyAsHTML(_ sender: Any?) { model.copyAsHTML() }
+    @objc func copyAsPlainText(_ sender: Any?) { model.copyAsPlainText() }
     @objc func showCommandPalette(_ sender: Any?) { model.showCommandPalette() }
 
     @objc func openProjectPage(_ sender: Any?) {
@@ -577,6 +578,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
              #selector(pasteAsPlainText(_:)),
              #selector(copyAsMarkdown(_:)),
              #selector(copyAsHTML(_:)),
+             #selector(copyAsPlainText(_:)),
              #selector(showCommandPalette(_:)):
             return editorReady
         default:
