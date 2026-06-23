@@ -87,6 +87,10 @@ if hasFlag("--mermaidcliptest") {
     MermaidClipTester().run()
 }
 
+if hasFlag("--reloadrendertest") {
+    ReloadRenderTester().run()
+}
+
 if hasFlag("--renderprobe") {
     RenderProbe().run()
 }

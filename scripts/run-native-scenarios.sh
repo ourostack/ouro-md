@@ -29,6 +29,7 @@ run --undotest
 run --wraptest
 run --renderprobe
 run --mermaidcliptest
+run --reloadrendertest
 run --performanceprobe
 run --accessibilityaudit
 run --markdownparitytest
