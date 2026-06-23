@@ -95,6 +95,10 @@ if hasFlag("--darkdiagramtest") {
     DarkDiagramTester().run()
 }
 
+if hasFlag("--selectionblurtest") {
+    SelectionBlurTester().run()
+}
+
 if hasFlag("--renderprobe") {
     RenderProbe().run()
 }

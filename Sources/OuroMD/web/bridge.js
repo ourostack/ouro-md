@@ -288,6 +288,16 @@
     el.__ouroImg = true;
     el.addEventListener("paste", onTransfer, true);
     el.addEventListener("drop", onTransfer, true);
+    // Mute the text selection when focus leaves the editor for the sidebar /
+    // app chrome (the window-inactive case is handled in CSS via :window-inactive).
+    // relatedTarget inside #editor means focus only moved between blocks — ignore.
+    el.addEventListener("focusout", function (e) {
+      if (e.relatedTarget && el.contains(e.relatedTarget)) { return; }
+      document.body.classList.add("ouro-editor-blurred");
+    });
+    el.addEventListener("focusin", function () {
+      document.body.classList.remove("ouro-editor-blurred");
+    });
     // Resolve relative image paths against the open document's folder so
     // images an agent referenced relatively actually display; style alerts.
     postRender();
@@ -758,6 +768,9 @@
     setValue: function (md) {
       state.value = (md == null) ? "" : md;
       if (vditor && ready) { vditor.setValue(state.value, true); }
+      // New document — drop any selection carried over from the previous file so
+      // its highlight doesn't strand on the freshly-loaded content.
+      try { window.getSelection().removeAllRanges(); } catch (e) { /* ignore */ }
       queueTableScrollReset();
       schedulePostRender();
       dirty = false;
