@@ -786,6 +786,7 @@
       try { return vditor ? vditor.getHTML() : ""; } catch (e) { return ""; }
     },
     setTheme: function (uiMode, css, codeTheme, background) {
+      var prevMode = state.uiTheme;
       if (uiMode) { state.uiTheme = uiMode; }
       if (codeTheme) { state.codeTheme = codeTheme; }
       background = background || (window.__ouroInitialTheme && window.__ouroInitialTheme.background) || "";
@@ -798,6 +799,24 @@
       var tag = document.getElementById("ouro-theme");
       if (tag) { tag.textContent = css || ""; }
       if (vditor) { try { vditor.setTheme(state.uiTheme, undefined, state.codeTheme); } catch (e) { /* ignore */ } }
+      // Vditor.setTheme updates options.theme but does NOT re-render already-processed
+      // Mermaid diagrams — Mermaid bakes light/dark colors into the SVG at render time
+      // (the block is cached via data-processed). So a light↔dark switch would otherwise
+      // strand a light diagram in a dark page (or vice versa). When the mode actually
+      // flips and diagrams are on screen, re-render from source (preserving the reader's
+      // scroll) so the diagrams pick up the new Mermaid theme.
+      var modeFlipped = (prevMode === "dark") !== (state.uiTheme === "dark");
+      if (vditor && ready && modeFlipped && document.querySelector(".language-mermaid")) {
+        var scroller = document.scrollingElement || document.documentElement;
+        var prevY = scroller ? scroller.scrollTop : window.scrollY;
+        vditor.setValue(state.value, true);
+        queueTableScrollReset();
+        schedulePostRender();
+        var restore = function () {
+          if (scroller) { scroller.scrollTop = prevY; } else { window.scrollTo(0, prevY); }
+        };
+        requestAnimationFrame(function () { restore(); requestAnimationFrame(restore); });
+      }
     },
     setMode: function (mode) {
       if (!mode || mode === state.mode) { return; }
