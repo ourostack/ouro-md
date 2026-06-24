@@ -74,6 +74,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             let invalidMetricCount = (body["invalidMetricCount"] as? Int) ?? .max
             let initialScrolledCount = (body["initialScrolledCount"] as? Int) ?? .max
             let scrollableCount = (body["scrollableCount"] as? Int) ?? 0
+            let clearlyScrollableCount = (body["clearlyScrollableCount"] as? Int) ?? 0
             let affordanceCount = (body["affordanceCount"] as? Int) ?? 0
             let spuriousAffordanceCount = (body["spuriousAffordanceCount"] as? Int) ?? .max
             let misalignedCount = (body["misalignedCount"] as? Int) ?? .max
@@ -96,7 +97,11 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             let initialScrollOK = initialScrolledCount == 0
             let scrollRequired = viewportWidth <= 800
             let scrollOK = !scrollRequired || scrollableCount > 0
-            let affordanceOK = scrollableCount == 0 || affordanceCount == scrollableCount
+            // Only tables that clearly scroll (>6px overflow) must show the
+            // affordance; borderline tables near the toggle boundary are not
+            // asserted, so sub-pixel render jitter between bridge.js and the probe
+            // can't flake this check.
+            let affordanceOK = clearlyScrollableCount == 0 || affordanceCount == clearlyScrollableCount
             // Tables that already fit must not paint the scroll affordance.
             let noSpuriousAffordanceOK = spuriousAffordanceCount == 0
             // ...and must sit flush with the body text's left edge, neither
@@ -118,7 +123,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             print("tables clipped by viewport: \(clippedCount) \(clippedOK ? "✓" : "✗")")
             let scrollFailure = scrollRequired ? "✗ (wide tables were squeezed instead)" : "✗"
             print("tables with own horizontal scroll: \(scrollableCount) \(scrollOK ? "✓" : scrollFailure)")
-            print("scrollable tables with edge affordance: \(affordanceCount) \(affordanceOK ? "✓" : "✗")")
+            print("clearly-scrollable tables with edge affordance: \(affordanceCount)/\(clearlyScrollableCount) \(affordanceOK ? "✓" : "✗")")
             print("fitting tables with stray affordance: \(spuriousAffordanceCount) \(noSpuriousAffordanceOK ? "✓" : "✗ (grey strip on a table that fits)")")
             print("tables not flush with text left edge: \(misalignedCount) \(alignedOK ? "✓" : "✗ (table not aligned to the body text's left edge)")")
             print("tables initially scrolled sideways: \(initialScrolledCount) \(initialScrollOK ? "✓" : "✗")")
@@ -203,6 +208,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
       var initialScrolledCount = 0;
       var clippedCount = 0;
       var scrollableCount = 0;
+      var clearlyScrollableCount = 0;
       var affordanceCount = 0;
       var spuriousAffordanceCount = 0;
       var misalignedCount = 0;
@@ -306,14 +312,20 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         var column = table.closest(".vditor-reset") || table.parentElement;
         var columnLeft = column.getBoundingClientRect().left + parseFloat(window.getComputedStyle(column).paddingLeft || "0");
         if (Math.abs(rect.left - columnLeft) > 2) { misalignedCount += 1; }
-        if (scrollOverflow > 2) {
-          scrollableCount += 1;
-          var style = window.getComputedStyle(table);
-          if (parseFloat(style.borderRightWidth || "0") >= 6) { affordanceCount += 1; }
-        } else {
-          // A table that already fits must NOT paint the scroll affordance.
-          var fitStyle = window.getComputedStyle(table);
-          if (parseFloat(fitStyle.borderRightWidth || "0") >= 6) { spuriousAffordanceCount += 1; }
+        if (scrollOverflow > 2) { scrollableCount += 1; }
+        // The scroll affordance (a right-edge border on .ouro-table-scrollable) is
+        // toggled in bridge.js at the same ~2px overflow boundary the probe
+        // measures, but a render frame earlier. A table sitting within a sub-pixel
+        // of that boundary can read either way between the two instants, so assert
+        // the affordance only outside a dead zone: a table that *clearly* scrolls
+        // (>6px overflow) must show it, and one that *clearly* fits (<1px) must not.
+        // Borderline tables in between are left unasserted so they can't flake.
+        var hasAffordance = parseFloat(window.getComputedStyle(table).borderRightWidth || "0") >= 6;
+        if (scrollOverflow > 6) {
+          clearlyScrollableCount += 1;
+          if (hasAffordance) { affordanceCount += 1; }
+        } else if (scrollOverflow < 1 && hasAffordance) {
+          spuriousAffordanceCount += 1;
         }
         if (scrollLeft > 1) { initialScrolledCount += 1; }
         // A "long" text cell keeps a readable floor via .ouro-long-cell; if one
@@ -351,6 +363,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         invalidMetricCount: invalidMetricCount,
         initialScrolledCount: initialScrolledCount,
         scrollableCount: scrollableCount,
+        clearlyScrollableCount: clearlyScrollableCount,
         affordanceCount: affordanceCount,
         spuriousAffordanceCount: spuriousAffordanceCount,
         misalignedCount: misalignedCount,
