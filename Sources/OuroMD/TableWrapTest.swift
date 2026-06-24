@@ -67,8 +67,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             let pageOverflow = (body["pageOverflow"] as? Double) ?? .infinity
             let clippedCount = (body["clippedCount"] as? Int) ?? .max
             let collapsedLongCellCount = (body["collapsedLongCellCount"] as? Int) ?? .max
-            let collapsedCodeCellCount = (body["collapsedCodeCellCount"] as? Int) ?? .max
-            let imbalancedTableCount = (body["imbalancedTableCount"] as? Int) ?? .max
+            let clippedCodeCellCount = (body["clippedCodeCellCount"] as? Int) ?? .max
             let overlappingCodeCount = (body["overlappingCodeCount"] as? Int) ?? .max
             let overlappingInlineCount = (body["overlappingInlineCount"] as? Int) ?? .max
             let collapsedEmptyCellCount = (body["collapsedEmptyCellCount"] as? Int) ?? .max
@@ -89,9 +88,8 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             let tableCountOK = tableCount >= 8
             let clippedOK = clippedCount == 0
             let longCellsOK = collapsedLongCellCount == 0
-            let codeCellsOK = collapsedCodeCellCount == 0
+            let codeCellsOK = clippedCodeCellCount == 0
             let emptyCellsOK = collapsedEmptyCellCount == 0
-            let balanceOK = imbalancedTableCount == 0
             let overlapOK = overlappingCodeCount == 0
             let inlineOverlapOK = overlappingInlineCount == 0
             let metricsOK = invalidMetricCount == 0
@@ -101,7 +99,8 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             let affordanceOK = scrollableCount == 0 || affordanceCount == scrollableCount
             // Tables that already fit must not paint the scroll affordance.
             let noSpuriousAffordanceOK = spuriousAffordanceCount == 0
-            // ...and must align with the text column, not be shoved into the margin.
+            // ...and must sit flush with the body text's left edge, neither
+            // centered nor shoved into the page margin.
             let alignedOK = misalignedCount == 0
             let requiredCategories = ["empty", "alignment", "html", "url", "sparse", "long-code", "huge"]
             let categoryGateApplies = markdownPath?.contains("dogfood-wide-tables") == true
@@ -121,12 +120,11 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             print("tables with own horizontal scroll: \(scrollableCount) \(scrollOK ? "✓" : scrollFailure)")
             print("scrollable tables with edge affordance: \(affordanceCount) \(affordanceOK ? "✓" : "✗")")
             print("fitting tables with stray affordance: \(spuriousAffordanceCount) \(noSpuriousAffordanceOK ? "✓" : "✗ (grey strip on a table that fits)")")
-            print("fitting tables shoved left of column: \(misalignedCount) \(alignedOK ? "✓" : "✗ (table pushed into the page margin)")")
+            print("tables not flush with text left edge: \(misalignedCount) \(alignedOK ? "✓" : "✗ (table not aligned to the body text's left edge)")")
             print("tables initially scrolled sideways: \(initialScrolledCount) \(initialScrollOK ? "✓" : "✗")")
             print("collapsed long cells: \(collapsedLongCellCount) \(longCellsOK ? "✓" : "✗")")
-            print("collapsed code cells: \(collapsedCodeCellCount) \(codeCellsOK ? "✓" : "✗")")
+            print("cells with clipped (hidden) code: \(clippedCodeCellCount) \(codeCellsOK ? "✓" : "✗")")
             print("collapsed empty cells: \(collapsedEmptyCellCount) \(emptyCellsOK ? "✓" : "✗")")
-            print("imbalanced sparse tables: \(imbalancedTableCount) \(balanceOK ? "✓" : "✗")")
             print("code spilling across cells: \(overlappingCodeCount) \(overlapOK ? "✓" : "✗")")
             print("inline elements spilling across cells: \(overlappingInlineCount) \(inlineOverlapOK ? "✓" : "✗")")
             print("invalid table metrics: \(invalidMetricCount) \(metricsOK ? "✓" : "✗")")
@@ -142,7 +140,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
                 print(String(format: "table %02d %@width %.1fpx scroll %.1fpx left %.1fpx min-long %.1fpx min-code %.1fpx column-ratio %.2f",
                              index + 1, category.isEmpty ? "" : "[\(category)] ", width, scroll, scrollLeft, minLong, minCode, columnRatio))
             }
-            exit(tableCountOK && categoryOK && alignmentOK && hugeOK && pageOK && clippedOK && scrollOK && affordanceOK && noSpuriousAffordanceOK && alignedOK && initialScrollOK && longCellsOK && codeCellsOK && emptyCellsOK && balanceOK && overlapOK && inlineOverlapOK && metricsOK ? 0 : 1)
+            exit(tableCountOK && categoryOK && alignmentOK && hugeOK && pageOK && clippedOK && scrollOK && affordanceOK && noSpuriousAffordanceOK && alignedOK && initialScrollOK && longCellsOK && codeCellsOK && emptyCellsOK && overlapOK && inlineOverlapOK && metricsOK ? 0 : 1)
         }
     }
 
@@ -200,7 +198,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
       var pageOverflow = Math.max(de.scrollWidth, document.body.scrollWidth) - viewportWidth;
       var tables = Array.prototype.slice.call(document.querySelectorAll("#editor table"));
       var collapsedLongCellCount = 0;
-      var collapsedCodeCellCount = 0;
+      var clippedCodeCellCount = 0;
       var collapsedEmptyCellCount = 0;
       var initialScrolledCount = 0;
       var clippedCount = 0;
@@ -208,7 +206,6 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
       var affordanceCount = 0;
       var spuriousAffordanceCount = 0;
       var misalignedCount = 0;
-      var imbalancedTableCount = 0;
       var overlappingCodeCount = 0;
       var overlappingInlineCount = 0;
       var invalidMetricCount = 0;
@@ -274,12 +271,22 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             if (align === "right" || align === "end") { hasRightAlignment = true; }
           }
           var cellRect = cell.getBoundingClientRect();
+          var cellClipsCode = false;
           Array.prototype.slice.call(cell.querySelectorAll("code")).forEach(function (code) {
             var codeRect = code.getBoundingClientRect();
             if (codeRect.left < cellRect.left - 2 || codeRect.right > cellRect.right + 2) {
               overlappingCodeCount += 1;
             }
+            // Code wider than its own (scrollable) box is cut off — you can't
+            // read it without scrolling the inline box.
+            if (code.scrollWidth - code.clientWidth > 4) { cellClipsCode = true; }
           });
+          // A "ribbon" (the failure the dogfood guards against): code crammed into
+          // a narrow cell AND cut off. Short fully-visible code is fine, and a
+          // roomy code cell with a little inline scroll is fine — only a narrow
+          // cell hiding its code fails. Code-only cells size to max-content, so
+          // they widen the table instead of becoming ribbons.
+          if (cellClipsCode && width < 140) { clippedCodeCellCount += 1; }
           Array.prototype.slice.call(cell.querySelectorAll("a,kbd,span")).forEach(function (inline) {
             var inlineRect = inline.getBoundingClientRect();
             if (inlineRect.left < cellRect.left - 2 || inlineRect.right > cellRect.right + 2) {
@@ -291,12 +298,14 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         var minCodeCellWidth = codeWidths.length ? Math.min.apply(Math, codeWidths) : 0;
         var clipped = rect.left < -2 || rect.right > viewportWidth + 2;
         if (clipped) { clippedCount += 1; }
-        // Every table — narrow or wide — must end up centered in the viewport
-        // (the reading column is itself centered, and the theme centers each
-        // table within it via margin:auto). A table whose center drifts off the
-        // viewport center has been shoved to one side (the left-shift bug).
-        var tableCenter = (rect.left + rect.right) / 2;
-        if (Math.abs(tableCenter - viewportWidth / 2) > 4) { misalignedCount += 1; }
+        // Every table — narrow or wide — must sit flush with the body text's
+        // left edge (GitHub-style), not centered and not shoved into the
+        // page margin. The reading column is .vditor-reset; its content-left
+        // (rect.left + padding-left) is exactly where the body text starts, and a
+        // left-aligned table's border-box left lands there.
+        var column = table.closest(".vditor-reset") || table.parentElement;
+        var columnLeft = column.getBoundingClientRect().left + parseFloat(window.getComputedStyle(column).paddingLeft || "0");
+        if (Math.abs(rect.left - columnLeft) > 2) { misalignedCount += 1; }
         if (scrollOverflow > 2) {
           scrollableCount += 1;
           var style = window.getComputedStyle(table);
@@ -307,11 +316,13 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
           if (parseFloat(fitStyle.borderRightWidth || "0") >= 6) { spuriousAffordanceCount += 1; }
         }
         if (scrollLeft > 1) { initialScrolledCount += 1; }
+        // A "long" text cell keeps a readable floor via .ouro-long-cell; if one
+        // still measures too narrow, the floor failed to apply. Column-width
+        // *imbalance* is no longer a failure: with content-sized columns a sparse
+        // key-value table legitimately pairs a narrow label column with a wide
+        // value column. Real squish bugs are caught by collapsed-empty/long,
+        // clipped-code, and viewport-clip guards instead.
         if (minLongCellWidth > 0 && minLongCellWidth < 120) { collapsedLongCellCount += 1; }
-        if (minCodeCellWidth > 0 && minCodeCellWidth < 140) { collapsedCodeCellCount += 1; }
-        if (scrollOverflow <= 2 && columnCount >= 2 && columnCount <= 4 && table.clientWidth >= Math.min(900, viewportWidth - 24) && columnRatio > 3) {
-          imbalancedTableCount += 1;
-        }
         return {
           index: index,
           category: category,
@@ -333,9 +344,8 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         pageOverflow: pageOverflow,
         clippedCount: clippedCount,
         collapsedLongCellCount: collapsedLongCellCount,
-        collapsedCodeCellCount: collapsedCodeCellCount,
+        clippedCodeCellCount: clippedCodeCellCount,
         collapsedEmptyCellCount: collapsedEmptyCellCount,
-        imbalancedTableCount: imbalancedTableCount,
         overlappingCodeCount: overlappingCodeCount,
         overlappingInlineCount: overlappingInlineCount,
         invalidMetricCount: invalidMetricCount,

@@ -211,12 +211,13 @@ private func readerCSS(_ p: Palette) -> String {
     li{margin:0.25em 0;}
     .task-list-item{list-style:none;}
     .task-list-item input{margin:0 .5em 0 -1.3em;vertical-align:middle;}
-    table{border-collapse:collapse;display:block;overflow-x:auto;width:max-content;max-width:100%;margin:0.8em auto;table-layout:auto;text-align:left;-webkit-overflow-scrolling:touch;box-sizing:border-box;}
+    table{border-collapse:collapse;display:block;overflow-x:auto;width:max-content;max-width:100%;margin:0.8em 0;table-layout:auto;text-align:left;-webkit-overflow-scrolling:touch;box-sizing:border-box;}
     table tr{border:1px solid \(p.cellBorder);}
     table tr:nth-child(2n),thead{background:\(p.tableFill);}
-    th{font-weight:bold;border:1px solid \(p.cellBorder);border-bottom:0;padding:6px 13px;white-space:normal;overflow-wrap:normal;word-break:normal;vertical-align:top;min-width:16rem;max-width:42rem;}
-    td{border:1px solid \(p.cellBorder);padding:6px 13px;white-space:normal;overflow-wrap:normal;word-break:normal;vertical-align:top;min-width:16rem;max-width:42rem;}
+    th{font-weight:bold;border:1px solid \(p.cellBorder);border-bottom:0;padding:6px 13px;white-space:normal;overflow-wrap:normal;word-break:normal;vertical-align:top;max-width:42rem;}
+    td{border:1px solid \(p.cellBorder);padding:6px 13px;white-space:normal;overflow-wrap:normal;word-break:normal;vertical-align:top;max-width:42rem;}
     th.ouro-code-only-cell,td.ouro-code-only-cell{min-width:max-content;max-width:none;}
+    th.ouro-long-cell,td.ouro-long-cell{min-width:16rem;}
     td code,th code{white-space:nowrap;display:inline-block;max-width:100%;overflow-x:auto;vertical-align:bottom;}
     img{max-width:100%;}
     """
@@ -301,22 +302,23 @@ private func editorCSS(_ p: Palette) -> String {
     .vditor-reset li{margin:0.25em 0;}
 
     /* Tables (Github exact): #dfe2e5 borders, #f8f8f8 header + even rows, 6px 13px cells. */
-    .vditor-reset table{border-collapse:collapse!important;display:block!important;overflow-x:auto!important;width:max-content!important;max-width:100%!important;margin:0.8em auto!important;table-layout:auto;text-align:left;-webkit-overflow-scrolling:touch;box-sizing:border-box!important;}
-    /* Tables are centered in the reading column and never bleed into the page
-       margins: width:max-content sizes them to their content, max-width:100% caps
-       them at the column (wider tables scroll within their own box), and
-       margin:auto centers them. This keeps every table aligned with the text
-       instead of being shoved to one side. ouro-table-scrollable adds the
-       right-edge scroll affordance when a table actually overflows its box;
-       bridge.js toggles it on margin/border only, never width, so nothing can
-       oscillate. */
+    .vditor-reset table{border-collapse:collapse!important;display:block!important;overflow-x:auto!important;width:max-content!important;max-width:100%!important;margin:0.8em 0!important;table-layout:auto;text-align:left;-webkit-overflow-scrolling:touch;box-sizing:border-box!important;}
+    /* Tables are left-aligned flush with the body text (GitHub-style) and
+       never bleed into the page margins: width:max-content sizes them to their
+       content, max-width:100% caps them at the column (wider tables scroll within
+       their own box), and margin:0.8em 0 keeps the left edge aligned with the
+       text — not centered, and not shoved into the page margin.
+       ouro-table-scrollable adds the right-edge scroll affordance when a table
+       actually overflows its box; bridge.js toggles it on margin/border only,
+       never width, so nothing can oscillate. */
     .vditor-reset table.ouro-table-scrollable{border-right:8px solid rgba(0,0,0,.08)!important;}
     .vditor-reset table tr{border:1px solid \(p.cellBorder)!important;background:\(p.bg)!important;}
     .vditor-reset table tr:nth-child(2n){background:\(p.tableFill)!important;}
     .vditor-reset table thead,.vditor-reset table thead tr,.vditor-reset table th{background:\(p.tableFill)!important;}
-    .vditor-reset table th{font-weight:bold;border:1px solid \(p.cellBorder)!important;border-bottom:0!important;padding:6px 13px!important;color:\(p.fg)!important;white-space:normal!important;overflow-wrap:normal!important;word-break:normal!important;vertical-align:top!important;min-width:16rem;max-width:42rem;}
-    .vditor-reset table td{border:1px solid \(p.cellBorder)!important;padding:6px 13px!important;color:\(p.fg)!important;background:transparent!important;white-space:normal!important;overflow-wrap:normal!important;word-break:normal!important;vertical-align:top!important;min-width:16rem;max-width:42rem;}
+    .vditor-reset table th{font-weight:bold;border:1px solid \(p.cellBorder)!important;border-bottom:0!important;padding:6px 13px!important;color:\(p.fg)!important;white-space:normal!important;overflow-wrap:normal!important;word-break:normal!important;vertical-align:top!important;max-width:42rem;}
+    .vditor-reset table td{border:1px solid \(p.cellBorder)!important;padding:6px 13px!important;color:\(p.fg)!important;background:transparent!important;white-space:normal!important;overflow-wrap:normal!important;word-break:normal!important;vertical-align:top!important;max-width:42rem;}
     .vditor-reset table th.ouro-code-only-cell,.vditor-reset table td.ouro-code-only-cell{min-width:max-content!important;max-width:none!important;}
+    .vditor-reset table th.ouro-long-cell,.vditor-reset table td.ouro-long-cell{min-width:16rem!important;}
     .vditor-reset table td code,.vditor-reset table th code{white-space:nowrap!important;display:inline-block!important;max-width:100%!important;overflow-x:auto!important;vertical-align:bottom!important;}
 
     .vditor-reset img{max-width:100%;}

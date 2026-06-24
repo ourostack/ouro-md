@@ -91,6 +91,19 @@ final class MarkdownRendererTests: XCTestCase {
         XCTAssertFalse(html.contains("class=\"ouro-code-only-cell\">Mixed prose"))
     }
 
+    func testShortCellsStayFreeWhileLongAndCodeBearingCellsGetAReadableFloor() {
+        let html = render("| A | Long | Code |\n| --- | --- | --- |\n| hi | This description is definitely longer than the threshold | see `runStep()` here |")
+
+        // A short plain cell gets no sizing class, so a narrow table shrinks to its
+        // content and sits flush-left instead of being padded to a fixed width.
+        XCTAssertTrue(html.contains("<td>hi</td>"))
+        // A long-text cell keeps a readable floor.
+        XCTAssertTrue(html.contains("<td class=\"ouro-long-cell\">This description"))
+        // A cell that merely *contains* code (not code-only) also keeps the floor,
+        // so the nowrap code can't be squeezed into a ribbon when the table narrows.
+        XCTAssertTrue(html.contains("ouro-long-cell\">see <code>runStep()</code> here</td>"))
+    }
+
     func testPathologicalTableCellsRenderAlignmentHTMLURLsAndEmptyCells() {
         let html = render("""
         | Left | Center | Right | HTML | URL | Empty | Code |

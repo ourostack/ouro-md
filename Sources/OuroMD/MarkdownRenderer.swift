@@ -417,7 +417,7 @@ private struct HTMLVisitor: MarkupVisitor {
         var html = "<table>\n<thead>\n<tr>\n"
         let headCells = table.head.children.compactMap { $0 as? Table.Cell }
         for (index, cell) in headCells.enumerated() {
-            html += "<th\(styleFor(index))\(codeOnlyClass(for: cell))>\(renderChildren(cell))</th>\n"
+            html += "<th\(styleFor(index))\(cellSizingClass(for: cell))>\(renderChildren(cell))</th>\n"
         }
         html += "</tr>\n</thead>\n"
 
@@ -428,7 +428,7 @@ private struct HTMLVisitor: MarkupVisitor {
                 html += "<tr>\n"
                 let cells = row.children.compactMap { $0 as? Table.Cell }
                 for (index, cell) in cells.enumerated() {
-                    html += "<td\(styleFor(index))\(codeOnlyClass(for: cell))>\(renderChildren(cell))</td>\n"
+                    html += "<td\(styleFor(index))\(cellSizingClass(for: cell))>\(renderChildren(cell))</td>\n"
                 }
                 html += "</tr>\n"
             }
@@ -438,9 +438,27 @@ private struct HTMLVisitor: MarkupVisitor {
         return html
     }
 
-    private func codeOnlyClass(for cell: Table.Cell) -> String {
+    /// Per-cell sizing class. A short plain cell gets nothing, so a narrow table
+    /// shrinks to its content and sits flush-left (GitHub-style). Cells that would
+    /// otherwise collapse to an unreadable sliver when a wide table is compressed
+    /// keep a readable floor: a code-only cell sizes to the code's natural width
+    /// (`ouro-code-only-cell`), and a cell with substantial text OR any inline code
+    /// (code can't wrap, so a squeezed column would clip it into a ribbon) keeps a
+    /// minimum width (`ouro-long-cell`).
+    private func cellSizingClass(for cell: Table.Cell) -> String {
         let children = Array(cell.children)
-        return children.count == 1 && children[0] is InlineCode ? " class=\"ouro-code-only-cell\"" : ""
+        if children.count == 1 && children[0] is InlineCode {
+            return " class=\"ouro-code-only-cell\""
+        }
+        if plainText(of: cell).count >= 24 || containsInlineCode(cell) {
+            return " class=\"ouro-long-cell\""
+        }
+        return ""
+    }
+
+    private func containsInlineCode(_ markup: Markup) -> Bool {
+        if markup is InlineCode { return true }
+        return markup.children.contains { containsInlineCode($0) }
     }
 
     // MARK: - Helpers

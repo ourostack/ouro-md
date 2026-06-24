@@ -2,20 +2,25 @@ import XCTest
 @testable import OuroMD
 
 final class TableLayoutPolicyTests: XCTestCase {
-    func testStandaloneThemeCentersTablesAndCapsThemAtTheColumn() {
+    func testStandaloneThemeLeftAlignsTablesAndCapsThemAtTheColumn() {
         let css = ThemeStore.shared.defaultTheme.css
 
         XCTAssertTrue(css.contains(".markdown-body{max-width:860px;"))
         XCTAssertTrue(css.contains("table{border-collapse:collapse;display:block;overflow-x:auto;"))
         // Tables are sized to their content, capped at the reading column, and
-        // centered with margin:auto — they never bleed into the page margins.
-        XCTAssertTrue(css.contains("width:max-content;max-width:100%;margin:0.8em auto;"))
+        // left-aligned flush with the body text (GitHub-style) via margin:0.8em 0 —
+        // not centered, and they never bleed into the page margins.
+        XCTAssertTrue(css.contains("width:max-content;max-width:100%;margin:0.8em 0;"))
+        XCTAssertFalse(css.contains("margin:0.8em auto;"))
         XCTAssertFalse(css.contains("margin-left:min(0px, calc((100% - var(--ouro-table-viewport)) / 2));"))
         XCTAssertFalse(css.contains("min-width:100%;max-width:var(--ouro-table-viewport);"))
         XCTAssertTrue(css.contains("-webkit-overflow-scrolling:touch;box-sizing:border-box;}"))
         XCTAssertFalse(css.contains("box-sizing:border-box;border-right:8px solid rgba(0,0,0,.08);"))
         XCTAssertTrue(css.contains("table tr{border:1px solid"))
         XCTAssertTrue(css.contains("th.ouro-code-only-cell,td.ouro-code-only-cell{min-width:max-content;max-width:none;}"))
+        // Long-text / code-bearing cells keep a readable floor so a compressed
+        // column can't squeeze them into a sliver; short plain cells stay free.
+        XCTAssertTrue(css.contains("th.ouro-long-cell,td.ouro-long-cell{min-width:16rem;}"))
         XCTAssertTrue(css.contains("td code,th code{white-space:nowrap;display:inline-block;max-width:100%;overflow-x:auto;"))
         XCTAssertTrue(css.contains("pre{background:"))
         XCTAssertTrue(css.contains("overflow-x:auto;max-width:100%;"))
@@ -25,17 +30,19 @@ final class TableLayoutPolicyTests: XCTestCase {
         XCTAssertFalse(css.contains("word-break:break-word"))
     }
 
-    func testEditorThemeCentersTablesAndCapsThemAtTheColumn() {
+    func testEditorThemeLeftAlignsTablesAndCapsThemAtTheColumn() {
         let css = ThemeStore.shared.defaultTheme.editorCSS
 
         XCTAssertTrue(css.contains(".vditor-reset{color:"))
         XCTAssertTrue(css.contains(".vditor{overflow:visible!important;}"))
         XCTAssertTrue(css.contains(".vditor-reset table{border-collapse:collapse!important;display:block!important;overflow-x:auto!important;"))
-        // Same policy as standalone: content-sized, capped at the column, centered
-        // with margin:auto. No bleed margins, and no ouro-table-fits-column override
-        // (there is nothing to cancel anymore). Only the scroll affordance is class-
-        // driven by bridge.js (ouro-table-scrollable), toggled on border only.
-        XCTAssertTrue(css.contains("width:max-content!important;max-width:100%!important;margin:0.8em auto!important;"))
+        // Same policy as standalone: content-sized, capped at the column, and
+        // left-aligned flush with the body text via margin:0.8em 0 (not centered).
+        // No bleed margins, and no ouro-table-fits-column override (there is nothing
+        // to cancel anymore). Only the scroll affordance is class-driven by
+        // bridge.js (ouro-table-scrollable), toggled on border only.
+        XCTAssertTrue(css.contains("width:max-content!important;max-width:100%!important;margin:0.8em 0!important;"))
+        XCTAssertFalse(css.contains("margin:0.8em auto!important;"))
         XCTAssertFalse(css.contains("margin-left:min(0px, calc((100% - var(--ouro-table-viewport)) / 2))!important;"))
         XCTAssertFalse(css.contains("ouro-table-fits-column"))
         XCTAssertTrue(css.contains("-webkit-overflow-scrolling:touch;box-sizing:border-box!important;}"))
@@ -43,6 +50,7 @@ final class TableLayoutPolicyTests: XCTestCase {
         XCTAssertFalse(css.contains("box-sizing:border-box!important;border-right:8px solid rgba(0,0,0,.08)!important;"))
         XCTAssertTrue(css.contains(".vditor-reset table tr{border:1px solid"))
         XCTAssertTrue(css.contains(".vditor-reset table th.ouro-code-only-cell,.vditor-reset table td.ouro-code-only-cell{min-width:max-content!important;max-width:none!important;}"))
+        XCTAssertTrue(css.contains(".vditor-reset table th.ouro-long-cell,.vditor-reset table td.ouro-long-cell{min-width:16rem!important;}"))
         XCTAssertTrue(css.contains(".vditor-reset table td code,.vditor-reset table th code{white-space:nowrap!important;display:inline-block!important;max-width:100%!important;overflow-x:auto!important;"))
         XCTAssertTrue(css.contains(".vditor-reset pre{background:"))
         XCTAssertTrue(css.contains("overflow-x:auto!important;max-width:100%!important;"))
