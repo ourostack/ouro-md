@@ -880,6 +880,12 @@
       dirty = false;
       postCount(state.value);
     },
+    // Synchronously recompute the layout-derived decorations (table cell sizing
+    // and the scroll affordance) against the CURRENT layout. Decorations are
+    // normally applied on a render frame, so a caller that measures immediately
+    // after a late layout change (font swap, etc.) can call this first to avoid
+    // reading a stale affordance. Used by the headless table-wrap probe.
+    refreshDecorations: function () { postRender(); },
     reloadValue: function (md) {
       // Like setValue, but preserves the reader's scroll position — used when
       // the open file is rewritten externally (agent edit) and we live-reload.

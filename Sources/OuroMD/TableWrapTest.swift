@@ -199,6 +199,14 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
     private static let measureScript = #"""
     (function () {
       function measure() {
+      // Re-run bridge.js's real decoration pass against the current layout right
+      // before measuring, so the scroll affordance reflects the same layout the
+      // probe is about to read — not whatever frame it last ran on. This closes
+      // the async gap that let a late layout change (font swap, class reflow)
+      // leave a clearly-scrollable table without its affordance class.
+      if (window.ouro && typeof window.ouro.refreshDecorations === "function") {
+        window.ouro.refreshDecorations();
+      }
       var de = document.documentElement;
       var viewportWidth = de.clientWidth;
       var pageOverflow = Math.max(de.scrollWidth, document.body.scrollWidth) - viewportWidth;
