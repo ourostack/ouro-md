@@ -1,10 +1,28 @@
 # Doing: Ouro MD World-Class Hardening
 
-**Status**: in-progress
+**Status**: COMPLETE — shipped (closed 2026-06-24)
 **Execution Mode**: direct
 **Created**: 2026-06-21 09:48
 **Planning**: ./2026-06-21-0948-planning-world-class-hardening.md
 **Artifacts**: ./2026-06-21-0948-doing-world-class-hardening/
+
+> **Closeout note (2026-06-24).** All 25 acceptance rows and Units 0–5 landed in
+> `main` and are live in the shipped app — verified by presence of every claimed
+> artifact (`scripts/pr-preflight.sh`, `scripts/swift-test-budget.sh`,
+> `scripts/check-live-update-path.sh`, `scripts/check-signing-readiness.sh`,
+> `FirstLaunchTest.swift`, `CommandReferenceView.swift`, the hardened table/folder
+> probes, etc.) and by the `harden`/`preflight`/`palette` commits now in `main`
+> (`5fa290e`, `b1d4e16`, `e69ceba`, `e21f9fc`, `b336952`, `6b6912b`, `18ca164`,
+> `bf65fe4`).
+>
+> Unit 6 was committed mid-flight at `6b6912b` (2026-06-21) and never re-touched,
+> so its checklist below still reads unfinished. In reality the work did **not**
+> ship as this doc's single-PR + reviewer-gate plan — it was reshaped into a
+> stream of small PRs (#26–45) over 2026-06-21 → 06-23, during which the app
+> advanced from the doc's target `0.9.16` all the way to `0.9.35`. The Unit 6
+> boxes are left unticked on purpose: those exact steps were superseded, not
+> executed as written. No stale branch/worktree/PR from this run remains
+> (`git worktree list` = root only; no open PRs). Closing as shipped/superseded.
 
 ## Execution Mode
 
@@ -177,3 +195,4 @@ The work is under autopilot/no-human-gates authority from the operator: do not p
 - 2026-06-21 11:28 Bumped app version to 0.9.16 for app-affecting changes after confirming latest published release is v0.9.15.
 - 2026-06-21 11:43 Completed local Unit 6 gates. Validation: `git diff --check`, focused unit probes, full timed XCTest through `scripts/swift-test-budget.sh` (239 tests, 0 failures), `./scripts/check-coverage.sh` (100% `OuroMDCore` line + region coverage), `OURO_VISUAL_ARTIFACT_DIR=.build/unit6-visual-artifacts ./scripts/run-native-scenarios.sh`, packaged `.app` verification, live update path check, and final `./scripts/pr-preflight.sh` all passed.
 - 2026-06-21 12:12 Addressed final reviewer gate finding: PR freshness now normalizes `main`/`origin/main`/full ref names and fails hard on unresolved bases, `selftest-pr-base` is wired into local preflight and CI, and coverage/native scenario profiles are routed under `.build/`. Validation: `bash -n scripts/release-policy.sh scripts/check-coverage.sh scripts/pr-preflight.sh scripts/run-native-scenarios.sh`, `./scripts/release-policy.sh selftest-pr-base`, `./scripts/release-policy.sh freshness --mode pr --base-ref origin/main`, bogus base failure check, `git diff --check`, and final `OURO_PR_BASE_REF=origin/main ./scripts/pr-preflight.sh` passed; worktree root had no `default.profraw`.
+- 2026-06-24 (closeout) Reconciled doc against `main` while resuming: all Units 0–5 + every acceptance-matrix artifact are present and live in `main`; the work shipped incrementally as PRs #26–45 (not the single-PR/reviewer-gate path Unit 6 describes), advancing the app from the target `0.9.16` to `0.9.35`. No stale branch/worktree/PR remains. Marked Status COMPLETE — shipped/superseded.

@@ -304,6 +304,15 @@
     postRender();
     var observer = new MutationObserver(function () { postRender(); });
     observer.observe(el, { childList: true, characterData: true, subtree: true });
+    // The body uses Open Sans, a web font loaded with font-display:swap. The
+    // first postRender measures table widths against the fallback font; when Open
+    // Sans swaps in, prose-cell metrics change and a borderline table can cross
+    // its scroll threshold. Font loading doesn't mutate the DOM, so the observer
+    // above won't catch it — re-run postRender on each font load so the scroll
+    // affordance reflects the final (swapped-in) layout, not the fallback one.
+    if (document.fonts && typeof document.fonts.addEventListener === "function") {
+      document.fonts.addEventListener("loadingdone", function () { postRender(); });
+    }
   }
 
   // Copy behavior. A single capture-phase handler serves both the default
@@ -588,7 +597,7 @@
     rewriteRelativeImages();
     styleAlerts();
     updateAlertEditing();
-    annotateCodeOnlyTableCells();
+    annotateTableCellSizing();
     annotateScrollableTables();
     resetTableScrollIfNeeded();
     resetNewTableScroll(document);
@@ -605,16 +614,32 @@
     }
   }
 
-  function annotateCodeOnlyTableCells() {
+  // Per-cell sizing, mirroring MarkdownRenderer.cellSizingClass for the live
+  // editor (Vditor builds the table DOM itself, so the Swift renderer's classes
+  // aren't present here). Short cells get nothing and shrink, so a narrow table
+  // stays thin and flush-left. Two kinds of cell keep a readable floor instead
+  // of collapsing when a wide table is compressed: a code-only cell sizes to the
+  // code's natural width, and a cell with substantial text keeps a minimum width.
+  function annotateTableCellSizing() {
     var cells = document.querySelectorAll(".vditor-reset th,.vditor-reset td");
     for (var i = 0; i < cells.length; i++) {
       var cell = cells[i];
       cell.classList.remove("ouro-code-only-cell");
-      if (!cell.children || cell.children.length !== 1) { continue; }
-      var only = cell.firstElementChild;
-      if (!only || !only.matches || !only.matches("code")) { continue; }
-      if ((cell.textContent || "").trim() === (only.textContent || "").trim()) {
+      cell.classList.remove("ouro-long-cell");
+      var codes = cell.querySelectorAll("code");
+      // A cell that is exactly one inline-code span (ignoring Vditor's backtick
+      // markers) sizes to the code's natural width. querySelectorAll + the
+      // backtick strip make this robust to Vditor's IR marker spans, which a
+      // firstElementChild === <code> check would miss.
+      if (codes.length === 1 &&
+          (cell.textContent || "").replace(/`/g, "").trim() === (codes[0].textContent || "").trim()) {
         cell.classList.add("ouro-code-only-cell");
+        continue;
+      }
+      // Substantial text, or any inline code (code can't wrap, so a squeezed
+      // column would clip it into a ribbon), keeps a readable minimum width.
+      if ((cell.textContent || "").trim().length >= 24 || codes.length > 0) {
+        cell.classList.add("ouro-long-cell");
       }
     }
   }
@@ -855,6 +880,12 @@
       dirty = false;
       postCount(state.value);
     },
+    // Synchronously recompute the layout-derived decorations (table cell sizing
+    // and the scroll affordance) against the CURRENT layout. Decorations are
+    // normally applied on a render frame, so a caller that measures immediately
+    // after a late layout change (font swap, etc.) can call this first to avoid
+    // reading a stale affordance. Used by the headless table-wrap probe.
+    refreshDecorations: function () { postRender(); },
     reloadValue: function (md) {
       // Like setValue, but preserves the reader's scroll position — used when
       // the open file is rewritten externally (agent edit) and we live-reload.
