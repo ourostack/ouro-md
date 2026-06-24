@@ -198,6 +198,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
 
     private static let measureScript = #"""
     (function () {
+      function measure() {
       var de = document.documentElement;
       var viewportWidth = de.clientWidth;
       var pageOverflow = Math.max(de.scrollWidth, document.body.scrollWidth) - viewportWidth;
@@ -373,6 +374,16 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         hasHugeTable: hasHugeTable,
         tableDetails: tableDetails
       });
+      }
+      // Measure only once web fonts have loaded: the body uses Open Sans
+      // (font-display:swap), and measuring against the fallback font would read
+      // table widths — and therefore scroll/affordance state — that don't match
+      // the final rendered layout.
+      if (document.fonts && document.fonts.ready && typeof document.fonts.ready.then === "function") {
+        document.fonts.ready.then(function () { requestAnimationFrame(measure); });
+      } else {
+        measure();
+      }
     })();
     """#
 }

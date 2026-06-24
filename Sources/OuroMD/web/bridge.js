@@ -304,6 +304,15 @@
     postRender();
     var observer = new MutationObserver(function () { postRender(); });
     observer.observe(el, { childList: true, characterData: true, subtree: true });
+    // The body uses Open Sans, a web font loaded with font-display:swap. The
+    // first postRender measures table widths against the fallback font; when Open
+    // Sans swaps in, prose-cell metrics change and a borderline table can cross
+    // its scroll threshold. Font loading doesn't mutate the DOM, so the observer
+    // above won't catch it — re-run postRender on each font load so the scroll
+    // affordance reflects the final (swapped-in) layout, not the fallback one.
+    if (document.fonts && typeof document.fonts.addEventListener === "function") {
+      document.fonts.addEventListener("loadingdone", function () { postRender(); });
+    }
   }
 
   // Copy behavior. A single capture-phase handler serves both the default
