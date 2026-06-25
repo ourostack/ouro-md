@@ -66,8 +66,25 @@ public enum MarkdownTidy {
         return result
     }
 
+    /// A GFM table delimiter row in the leading/trailing-pipe form the editor
+    /// emits (`| --- | :---: | ---: |`). Requires the line to be bounded by pipes
+    /// and every cell to be a delimiter cell — optional leading colon, one or more
+    /// dashes, optional trailing colon — so non-table lines that merely use the
+    /// same characters (a bullet `- |`, an alignment-only `| : | : |`) are NOT
+    /// mistaken for separators and rewritten.
     private static func isTableSeparator(_ trimmed: String) -> Bool {
-        trimmed.contains("|") && trimmed.contains("-") && trimmed.allSatisfy { "|:- \t".contains($0) }
+        guard trimmed.hasPrefix("|"), trimmed.hasSuffix("|") else { return false }
+        let cells = trimmed.dropFirst().dropLast()
+            .split(separator: "|", omittingEmptySubsequences: false)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+        return !cells.isEmpty && cells.allSatisfy(isDelimiterCell)
+    }
+
+    private static func isDelimiterCell(_ cell: String) -> Bool {
+        var body = Substring(cell)
+        if body.first == ":" { body = body.dropFirst() }
+        if body.last == ":" { body = body.dropLast() }
+        return !body.isEmpty && body.allSatisfy { $0 == "-" }
     }
 
     private static func expandTableSeparator(_ line: String) -> String {
