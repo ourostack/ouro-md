@@ -23,6 +23,8 @@ if [[ -n "$(git status --porcelain)" ]]; then
   exit 1
 fi
 
+./scripts/check-shell-dependency.sh
+
 EXPECTED_VERSION="$(./scripts/verify-release-version.sh --print)"
 
 POSTHOG_KEY="${OURO_MD_POSTHOG_KEY:-${VITE_POSTHOG_KEY:-}}"
