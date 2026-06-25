@@ -15,7 +15,7 @@ final class PerformanceProbe: NSObject, WKScriptMessageHandler, WKNavigationDele
 
     func run() -> Never {
         let app = NSApplication.shared
-        app.setActivationPolicy(.regular)
+        HeadlessHarness.configure()
         prepareSearchFixture()
 
         let configuration = WKWebViewConfiguration()
@@ -26,14 +26,7 @@ final class PerformanceProbe: NSObject, WKScriptMessageHandler, WKNavigationDele
 
         webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 1200, height: 900), configuration: configuration)
         webView.navigationDelegate = self
-        window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1200, height: 900),
-                          styleMask: [.titled],
-                          backing: .buffered,
-                          defer: false)
-        window.contentView = webView
-        window.setFrameOrigin(NSPoint(x: -30000, y: -30000))
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        window = HeadlessHarness.offscreenHost(webView, size: NSSize(width: 1200, height: 900))
 
         guard let indexURL = OuroResources.web("index", "html") else {
             fail("performanceprobe: index.html not found")

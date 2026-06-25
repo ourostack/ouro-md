@@ -13,7 +13,7 @@ final class FirstLaunchTester: NSObject, WKScriptMessageHandler, WKNavigationDel
 
     func run() -> Never {
         let app = NSApplication.shared
-        app.setActivationPolicy(.regular)
+        HeadlessHarness.configure()
 
         let configuration = WKWebViewConfiguration()
         let controller = WKUserContentController()
@@ -23,14 +23,7 @@ final class FirstLaunchTester: NSObject, WKScriptMessageHandler, WKNavigationDel
 
         webView = WKWebView(frame: NSRect(origin: .zero, size: size), configuration: configuration)
         webView.navigationDelegate = self
-        window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
-                          styleMask: [.titled],
-                          backing: .buffered,
-                          defer: false)
-        window.contentView = webView
-        window.setFrameOrigin(NSPoint(x: -30000, y: -30000))
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        window = HeadlessHarness.offscreenHost(webView, size: size)
         guard let indexURL = OuroResources.web("index", "html") else {
             fail("index.html not found")
         }

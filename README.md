@@ -6,7 +6,7 @@ ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
 in careful typography on a centered page. Type Markdown and watch it render in
 place — switch themes live, and read the same document four different ways.
 
-> **Status:** v0.9.37. Reads and edits Markdown today. Not yet Developer-ID
+> **Status:** v0.9.38. Reads and edits Markdown today. Not yet Developer-ID
 > signed or notarized — see [First launch](#first-launch).
 
 ---
@@ -82,8 +82,9 @@ For install or update problems, see
 ./scripts/pr-preflight.sh                   # local mirror of PR freshness, policy, tests, coverage, and native scenarios
 ```
 
-To ship: bump `VERSION` in `make-app.sh`, `OuroMDRelease.version`, and this
-README status line, then merge to `main`. The Release workflow builds the app,
+To ship: bump `OuroMDRelease.version` and this README status line, then merge to
+`main` (`make-app.sh` derives its `VERSION` from `OuroMDRelease.swift`, so there's
+no third place to edit — `verify-release-version.sh` enforces this). The Release workflow builds the app,
 requires embedded PostHog telemetry for production publishes, runs packaged-app
 probes, uploads the zip/manifest, and publishes `v<VERSION>`. It no-ops when that
 tag already exists. Use workflow dispatch with `dry_run=true` to build/probe on a
