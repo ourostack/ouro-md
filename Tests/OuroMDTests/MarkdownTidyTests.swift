@@ -63,6 +63,17 @@ final class MarkdownTidyTests: XCTestCase {
                        "| A | B |\n| --- | :---: |\n| 1 | 2 |")
     }
 
+    func testSeparatorRequiresBothBoundingPipes() {
+        // AN-010 negative control: the classifier requires the line to be bounded
+        // by pipes on BOTH ends (the editor only ever emits `| --- | … |`). A line
+        // with only a trailing pipe (`--- |`) or only a leading pipe (`| ---`) is
+        // not an editor-style delimiter row and must be left byte-identical — this
+        // pins the leading-pipe AND trailing-pipe halves of the guard, each of
+        // which is independently load-bearing (drop either and these rewrite).
+        XCTAssertEqual(MarkdownTidy.tidy("--- |"), "--- |")
+        XCTAssertEqual(MarkdownTidy.tidy("| ---"), "| ---")
+    }
+
     func testTidyIsIdempotent() {
         // tidy must be a fixed point: applying it twice equals applying it once.
         // Negative control — any non-idempotent normalization (e.g. an expanded
@@ -92,6 +103,28 @@ final class MarkdownTidyTests: XCTestCase {
         XCTAssertEqual(MarkdownTidy.tidy(input), input)
     }
 
+    func testDoesNotTouchTildeFencedCode() {
+        // AN-005 negative control: `~~~` fences are handled symmetrically with
+        // ```` ``` ```` fences — content inside is left untouched. Without the
+        // `~~~` arm of the fence check, the separator-looking line is rewritten.
+        let input = "~~~\n| - | - |\nx\n~~~"
+        XCTAssertEqual(MarkdownTidy.tidy(input), input)
+    }
+
+    func testPreservesBlankLineAfterClosingFence() {
+        // AN-007 negative control: the blank-run collapser resets its state on a
+        // fence-delimiter line, so a blank line *after* a closing fence is kept
+        // (not merged with a blank *before* the opening fence).
+        let input = "a\n\n```\ncode\n```\n\nb"
+        XCTAssertEqual(MarkdownTidy.tidy(input), input)
+    }
+
+    func testIndentedTableSeparatorKeepsItsIndent() {
+        // AN-008 negative control: expandTableSeparator re-derives and preserves
+        // the original leading whitespace.
+        XCTAssertEqual(MarkdownTidy.tidy("  | - | - |"), "  | --- | --- |")
+    }
+
     func testNonTableContentUnchanged() {
         let input = "# H\n\n- a\n- b\n\n> quote\n\ntext"
         XCTAssertEqual(MarkdownTidy.tidy(input), input)
@@ -119,6 +152,17 @@ final class MarkdownTidyTests: XCTestCase {
         // A `---` that isn't at the very top is a thematic break, untouched.
         let input = "# Title\n\nText.\n\n---\n\nMore."
         XCTAssertEqual(MarkdownTidy.tidy(input), input)
+    }
+
+    func testMidDocumentTripleDashWithoutSurroundingBlanksNotTreatedAsFrontMatter() {
+        // AN-006 negative control: the front-matter restore is guarded by
+        // `lines.first == "---"` (document must START with the fence). Here the
+        // `---` is mid-document and NOT already followed by a blank line, so it
+        // exercises that first-line guard directly — relaxing it would insert a
+        // spurious blank after the thematic break. (The test above is blind to the
+        // first-line guard because its `---` is already blank-surrounded, which the
+        // separate already-blank guard short-circuits on.)
+        XCTAssertEqual(MarkdownTidy.tidy("# Title\n---\nMore"), "# Title\n---\nMore")
     }
     func testUnclosedFrontMatterFenceLeftUnchanged() {
         // Opening `---` with no closing fence is not front matter; leave it be.
