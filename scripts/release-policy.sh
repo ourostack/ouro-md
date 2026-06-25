@@ -113,6 +113,7 @@ release_relevant_path() {
     # installed, or verified for publish, DOES gate a release.
     Package.swift|Package.resolved|make-app.sh) return 0 ;;
     Sources/*|Resources/*|web/*) return 0 ;;
+    scripts/lib/app-version.sh) return 0 ;;
     scripts/check-hosted-installer.sh|scripts/check-live-update-path.sh|scripts/check-shell-dependency.sh|scripts/check-signing-readiness.sh|scripts/package-release.sh|scripts/pr-preflight.sh) return 0 ;;
     scripts/verify-packaged-app.sh|scripts/verify-release-version.sh|scripts/release-policy.sh) return 0 ;;
     .github/workflows/release.yml) return 0 ;;
@@ -500,6 +501,7 @@ selftest_paths_mode() {
     Sources/OuroMDCore/OuroMDRelease.swift
     Sources/OuroMD/web/bridge.js
     make-app.sh
+    scripts/lib/app-version.sh
     scripts/check-shell-dependency.sh
     scripts/verify-release-version.sh
     scripts/release-policy.sh
@@ -544,6 +546,8 @@ if package.index(guard) > package.index(build):
 workflow = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
 if "scripts/check-shell-dependency.sh" not in workflow:
     raise SystemExit("release.yml must treat scripts/check-shell-dependency.sh as release-path input")
+if "scripts/lib/app-version.sh" not in workflow:
+    raise SystemExit("release.yml must treat scripts/lib/app-version.sh as release-path input")
 PY
   echo "release package guard selftest ok"
 }

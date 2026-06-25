@@ -21,6 +21,7 @@ on:
       - 'Sources/**'
       - 'web/**'
       - 'Resources/**'
+      - 'scripts/lib/app-version.sh'
       - 'scripts/package-release.sh'
       - 'scripts/check-hosted-installer.sh'
       - 'scripts/check-live-update-path.sh'
