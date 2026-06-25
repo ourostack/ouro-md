@@ -32,6 +32,8 @@ jobs:
         run: ./scripts/release-policy.sh freshness
       - name: Verify release policy PR base handling
         run: ./scripts/release-policy.sh selftest-pr-base
+      - name: Verify release policy path classification
+        run: ./scripts/release-policy.sh selftest-paths
       - name: Scan source policy
         run: ./scripts/release-policy.sh scan .
       - name: Check signing and notarization readiness

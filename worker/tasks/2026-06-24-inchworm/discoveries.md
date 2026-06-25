@@ -118,3 +118,19 @@ updates. New discoveries get the next `D-00n` id.
 **Notes**: Touches `Sources/*` (release-affecting) → bumped to 0.9.40 via `bump-version.sh`.
 
 ---
+
+## [D-008] — Test-only changes cut user-facing releases (release churn)
+
+**Source**: observed-during-seed (every test-harness / release-tooling PR this campaign cut a fresh user-facing release; operator confirmed the churn is unwanted)
+**What**: `release_relevant_path` in `release-policy.sh` treated all of `Sources/*` (and the test-runner scripts) as release-affecting, so changing a CLI test harness — `--tablewraptest`, `--undotest`, etc., which live in the binary but are reachable only via flags and change nothing a user sees — forced a version bump and a published release. The headless-harness (#48 → 0.9.38) and unused-`app` (#52 → 0.9.40) PRs each cut a zero-user-impact release for exactly this reason.
+**Where**: `scripts/release-policy.sh` (`release_relevant_path`).
+**Why it matters**: Routine test/probe tweaks churn the version and publish no-op releases; over time that erodes the meaning of a release and wastes release-workflow runs.
+**Severity**: high-value
+**Blast radius**: affects one module (release gating)
+**Fix shape**: Narrow `release_relevant_path` so test-only harnesses (`Sources/OuroMD/*Test.swift`, `*Probe.swift`, `Snapshot`/`RoundTrip`/`HeadlessHarness`) and test-runner scripts (`run-native-scenarios`/`run-visual-qa`/`swift-test-budget`) don't gate a release; everything that shapes the shipped artifact or how it's built/packaged/installed/published still does. Lock it with a `selftest-paths` self-test wired into pr-preflight + CI.
+**Verification**: `release-policy.sh selftest-paths`; the isolated classifier returns "skip" for harnesses/Tests/README and "gate" for app code / build / publish tooling.
+**Status**: fixed
+**Linked work**: branch `chore/narrow-release-policy`
+**Notes**: This change touches `release-policy.sh` (genuinely release-gating), so it cuts one last bump (0.9.41) — after which test-only changes ship churn-free. `make-app.sh` / `verify-release-version.sh` stay release-affecting on purpose (they shape the build/publish), so a rare release-tooling refactor can still bump; the frequent churn (test harnesses) is gone.
+
+---

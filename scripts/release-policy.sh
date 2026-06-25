@@ -97,10 +97,21 @@ PY
 
 release_relevant_path() {
   case "$1" in
+    # Test-only harnesses and probe runners: they live in the binary (or run only
+    # in CI) but are reachable solely via --xxxtest / --xxxprobe flags and test
+    # scripts — never normal app launch — so they change nothing a user sees and
+    # don't gate a user-facing release. Keep the *Test/*Probe naming (or extend the
+    # explicit list) when adding a harness. NOTE: these patterns must precede the
+    # Sources/* line below, since the first matching case wins.
+    Sources/OuroMD/*Test.swift|Sources/OuroMD/*Probe.swift) return 1 ;;
+    Sources/OuroMD/Snapshot.swift|Sources/OuroMD/RoundTrip.swift|Sources/OuroMD/HeadlessHarness.swift) return 1 ;;
+    scripts/run-native-scenarios.sh|scripts/run-visual-qa.sh|scripts/swift-test-budget.sh) return 1 ;;
+
+    # Anything that shapes the shipped artifact, or how it's built, packaged,
+    # installed, or verified for publish, DOES gate a release.
     Package.swift|Package.resolved|make-app.sh) return 0 ;;
     Sources/*|Resources/*|web/*) return 0 ;;
     scripts/check-hosted-installer.sh|scripts/check-live-update-path.sh|scripts/check-signing-readiness.sh|scripts/package-release.sh|scripts/pr-preflight.sh) return 0 ;;
-    scripts/run-native-scenarios.sh|scripts/run-visual-qa.sh|scripts/swift-test-budget.sh) return 0 ;;
     scripts/verify-packaged-app.sh|scripts/verify-release-version.sh|scripts/release-policy.sh) return 0 ;;
     .github/workflows/release.yml) return 0 ;;
     *) return 1 ;;
@@ -476,6 +487,42 @@ selftest_pr_base_mode() {
   echo "release policy PR base selftest ok"
 }
 
+# Locks the release_relevant_path classifier so the "test-only changes don't gate
+# a release" narrowing can't silently regress (e.g. a reordered case statement, or
+# a dropped exclusion, would quietly bring the churn back).
+selftest_paths_mode() {
+  local must_gate=(
+    Sources/OuroMD/Themes.swift
+    Sources/OuroMD/AppDelegate.swift
+    Sources/OuroMD/main.swift
+    Sources/OuroMDCore/OuroMDRelease.swift
+    Sources/OuroMD/web/bridge.js
+    make-app.sh
+    scripts/verify-release-version.sh
+    scripts/release-policy.sh
+  )
+  local must_skip=(
+    Sources/OuroMD/TableWrapTest.swift
+    Sources/OuroMD/RenderProbe.swift
+    Sources/OuroMD/PerformanceProbe.swift
+    Sources/OuroMD/Snapshot.swift
+    Sources/OuroMD/RoundTrip.swift
+    Sources/OuroMD/HeadlessHarness.swift
+    scripts/run-native-scenarios.sh
+    scripts/swift-test-budget.sh
+    Tests/OuroMDTests/Example.swift
+    README.md
+  )
+  local p
+  for p in "${must_gate[@]}"; do
+    release_relevant_path "$p" || fail "paths selftest: '$p' should gate a release but doesn't"
+  done
+  for p in "${must_skip[@]}"; do
+    ! release_relevant_path "$p" || fail "paths selftest: '$p' should NOT gate a release but does"
+  done
+  echo "release policy paths selftest ok"
+}
+
 release_exists_mode() {
   local repo="${GITHUB_REPOSITORY:-$repo_default}"
   local version=""
@@ -658,6 +705,7 @@ case "$cmd" in
   release-exists) release_exists_mode "$@" ;;
   scan) scan_mode "$@" ;;
   selftest-pr-base) selftest_pr_base_mode "$@" ;;
+  selftest-paths) selftest_paths_mode "$@" ;;
   verify-local) verify_local_mode "$@" ;;
   verify-published) verify_published_mode "$@" ;;
   *) usage ;;
