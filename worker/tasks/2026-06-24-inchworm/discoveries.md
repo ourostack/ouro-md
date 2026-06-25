@@ -86,3 +86,19 @@ updates. New discoveries get the next `D-00n` id.
 **Notes**: Should ideally have ridden along with #47; folded here as an incidental doc fix in a file already touched.
 
 ---
+
+## [D-006] — LLVM coverage artifacts aren't gitignored
+
+**Source**: observed-during-seed (kept `rm`-ing a stray `default.profraw` from the worktree root throughout this campaign)
+**What**: `swift test` / the coverage probes drop a `default.profraw` (and `default.profdata`) in the repo root, but `.gitignore` only covered `.build/`, `OuroMD.app/`, `dist/`, and fixtures — not `*.profraw`/`*.profdata`.
+**Where**: `.gitignore`.
+**Why it matters**: The stray file shows up as untracked (easy to accidentally `git add -A` into a commit), and `scripts/pr-preflight.sh` explicitly fails if a `default.profraw` is present in the worktree root — so a forgotten one breaks the local gate.
+**Severity**: nice-to-have
+**Blast radius**: self-contained (repo hygiene)
+**Fix shape**: Add `*.profraw` and `*.profdata` to `.gitignore`.
+**Verification**: `git check-ignore default.profraw default.profdata` both report ignored; existing ignores (`.build/`, `OuroMD.app/`) unaffected.
+**Status**: fixed
+**Linked work**: branch `chore/gitignore-coverage-artifacts`
+**Notes**: Not release-affecting (`.gitignore` isn't in `release-policy.sh`'s relevant-path list), so it ships with no version bump.
+
+---
