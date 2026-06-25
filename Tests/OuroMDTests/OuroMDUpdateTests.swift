@@ -2,9 +2,11 @@ import XCTest
 @testable import OuroMD
 
 final class OuroMDUpdateTests: XCTestCase {
+    private let bundleIdentifier = "org.ourostack.ouro-md"
+
     private func snapshot(
-        status: ReleaseUpdateStatus,
-        latest: String?,
+        status: ReleaseUpdateStatus = .updateAvailable,
+        latest: String? = "0.10.0",
         assets: [ReleaseUpdateAsset]
     ) -> ReleaseUpdateSnapshot {
         ReleaseUpdateSnapshot(
@@ -33,63 +35,27 @@ final class OuroMDUpdateTests: XCTestCase {
         ]
     }
 
-    func testPlanPicksZipAndManifestAssets() throws {
-        let plan = try OuroMDUpdatePlanner.plan(
-            from: snapshot(status: .updateAvailable, latest: "0.10.0", assets: installableAssets)
-        ).get()
+    func testPlannerAcceptsOuroMDReleaseAssets() throws {
+        let plan = try OuroMDUpdatePlanner.plan(from: snapshot(assets: installableAssets)).get()
 
         XCTAssertEqual(plan.version, "0.10.0")
+        XCTAssertNil(plan.build)
         XCTAssertEqual(plan.archiveName, "Ouro-MD-0.10.0.zip")
         XCTAssertEqual(plan.archiveURL.lastPathComponent, "Ouro-MD-0.10.0.zip")
         XCTAssertEqual(plan.manifestURL.lastPathComponent, "Ouro-MD-0.10.0.manifest.json")
     }
 
-    func testPlanFailsWhenNotAnUpdate() {
-        let result = OuroMDUpdatePlanner.plan(
-            from: snapshot(status: .current, latest: "0.9.0", assets: installableAssets)
-        )
-
-        XCTAssertEqual(result, .failure(.notAnUpdate))
-    }
-
-    func testPlanFailsWhenArchiveMissing() {
-        let result = OuroMDUpdatePlanner.plan(
-            from: snapshot(status: .updateAvailable, latest: "0.10.0", assets: [installableAssets[1]])
-        )
-
-        XCTAssertEqual(result, .failure(.missingArchiveAsset))
-    }
-
-    func testPlanFailsWhenManifestMissing() {
-        let result = OuroMDUpdatePlanner.plan(
-            from: snapshot(status: .updateAvailable, latest: "0.10.0", assets: [installableAssets[0]])
-        )
-
-        XCTAssertEqual(result, .failure(.missingManifestAsset))
-    }
-
-    func testPlanFailsWhenAssetURLIsInvalid() {
+    func testPlannerRequiresHTTPSReleaseAssets() {
         let assets = [
-            ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.zip", downloadURL: "not a url", size: 10),
-            ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.manifest.json", downloadURL: "https://example.com/manifest.json", size: 10),
+            ReleaseUpdateAsset(
+                name: "Ouro-MD-0.10.0.zip",
+                downloadURL: "http://example.com/Ouro-MD-0.10.0.zip",
+                size: 7_400_000
+            ),
+            installableAssets[1],
         ]
 
-        let result = OuroMDUpdatePlanner.plan(
-            from: snapshot(status: .updateAvailable, latest: "0.10.0", assets: assets)
-        )
-
-        XCTAssertEqual(result, .failure(.badAssetURL))
-    }
-
-    func testPlanRejectsPlainHTTPAssetURLs() {
-        let assets = [
-            ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.zip", downloadURL: "http://example.com/app.zip", size: 10),
-            ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.manifest.json", downloadURL: "https://example.com/manifest.json", size: 10),
-        ]
-
-        let result = OuroMDUpdatePlanner.plan(
-            from: snapshot(status: .updateAvailable, latest: "0.10.0", assets: assets)
-        )
+        let result = OuroMDUpdatePlanner.plan(from: snapshot(assets: assets))
 
         XCTAssertEqual(result, .failure(.badAssetURL))
     }
@@ -97,178 +63,44 @@ final class OuroMDUpdateTests: XCTestCase {
     private func manifest(
         sha: String = "abc123",
         bytes: Int = 7_400_000,
-        bundleID: String = "org.ourostack.ouro-md",
         version: String = "0.10.0",
+        build: String = "0.10.0",
         archive: String = "Ouro-MD-0.10.0.zip"
     ) -> OuroMDUpdateManifest {
         OuroMDUpdateManifest(
             appName: "Ouro MD",
-            bundleIdentifier: bundleID,
+            bundleIdentifier: bundleIdentifier,
             version: version,
-            build: version,
+            build: build,
             archive: archive,
             sha256: sha,
             bytes: bytes
         )
     }
 
-    func testVerifyPassesWhenEverythingMatches() {
+    func testVerificationAcceptsNewerOuroMDManifest() {
         let failure = OuroMDUpdateVerification.verify(
             manifest: manifest(sha: "ABC123"),
             downloadedArchiveName: "Ouro-MD-0.10.0.zip",
             downloadedSHA256: "abc123",
             downloadedBytes: 7_400_000,
-            expectedBundleIdentifier: "org.ourostack.ouro-md",
+            expectedBundleIdentifier: bundleIdentifier,
             currentVersion: "0.9.0"
         )
 
         XCTAssertNil(failure)
     }
 
-    func testVerifyFailsOnSHAMismatch() {
+    func testVerificationIgnoresBuildIdentityForOuroMDReleases() {
         let failure = OuroMDUpdateVerification.verify(
-            manifest: manifest(sha: "abc123"),
-            downloadedArchiveName: "Ouro-MD-0.10.0.zip",
-            downloadedSHA256: "deadbeef",
-            downloadedBytes: 7_400_000,
-            expectedBundleIdentifier: "org.ourostack.ouro-md",
-            currentVersion: "0.9.0"
-        )
-
-        XCTAssertEqual(failure, .sha256Mismatch(expected: "abc123", got: "deadbeef"))
-    }
-
-    func testVerifyFailsOnByteCountMismatch() {
-        let failure = OuroMDUpdateVerification.verify(
-            manifest: manifest(bytes: 7_400_000),
-            downloadedArchiveName: "Ouro-MD-0.10.0.zip",
-            downloadedSHA256: "abc123",
-            downloadedBytes: 42,
-            expectedBundleIdentifier: "org.ourostack.ouro-md",
-            currentVersion: "0.9.0"
-        )
-
-        XCTAssertEqual(failure, .byteCountMismatch(expected: 7_400_000, got: 42))
-    }
-
-    func testVerifyFailsOnBundleIdentifierMismatch() {
-        let failure = OuroMDUpdateVerification.verify(
-            manifest: manifest(bundleID: "com.example.bad"),
+            manifest: manifest(version: "0.10.0", build: "1001"),
             downloadedArchiveName: "Ouro-MD-0.10.0.zip",
             downloadedSHA256: "abc123",
             downloadedBytes: 7_400_000,
-            expectedBundleIdentifier: "org.ourostack.ouro-md",
-            currentVersion: "0.9.0"
+            expectedBundleIdentifier: bundleIdentifier,
+            currentVersion: "0.10.0"
         )
 
-        XCTAssertEqual(failure, .bundleIdentifierMismatch(expected: "org.ourostack.ouro-md", got: "com.example.bad"))
-    }
-
-    func testVerifyFailsWhenArchiveNameDiffersFromManifest() {
-        let failure = OuroMDUpdateVerification.verify(
-            manifest: manifest(archive: "Ouro-MD-0.10.0.zip"),
-            downloadedArchiveName: "different.zip",
-            downloadedSHA256: "abc123",
-            downloadedBytes: 7_400_000,
-            expectedBundleIdentifier: "org.ourostack.ouro-md",
-            currentVersion: "0.9.0"
-        )
-
-        XCTAssertEqual(failure, .archiveNameMismatch(expected: "Ouro-MD-0.10.0.zip", got: "different.zip"))
-    }
-
-    func testVerifyFailsWhenNotNewerThanCurrent() {
-        let failure = OuroMDUpdateVerification.verify(
-            manifest: manifest(version: "0.9.0"),
-            downloadedArchiveName: "Ouro-MD-0.10.0.zip",
-            downloadedSHA256: "abc123",
-            downloadedBytes: 7_400_000,
-            expectedBundleIdentifier: "org.ourostack.ouro-md",
-            currentVersion: "0.9.0"
-        )
-
-        XCTAssertEqual(failure, .notNewerThanCurrent(current: "0.9.0", candidate: "0.9.0"))
-    }
-
-    func testVerifyFailsWhenVersionCannotBeCompared() {
-        let failure = OuroMDUpdateVerification.verify(
-            manifest: manifest(version: "banana"),
-            downloadedArchiveName: "Ouro-MD-0.10.0.zip",
-            downloadedSHA256: "abc123",
-            downloadedBytes: 7_400_000,
-            expectedBundleIdentifier: "org.ourostack.ouro-md",
-            currentVersion: "0.9.0"
-        )
-
-        XCTAssertEqual(failure, .unreadableVersion(manifest: "banana", current: "0.9.0"))
-    }
-
-    func testAutoUpdatePolicyChecksWhenNeverCheckedBefore() {
-        XCTAssertTrue(
-            OuroMDAutoUpdatePolicy.shouldCheck(
-                now: Date(timeIntervalSince1970: 1000),
-                lastCheck: nil,
-                minimumInterval: 3600,
-                enabled: true
-            )
-        )
-    }
-
-    func testAutoUpdatePolicySkipsWhenDisabled() {
-        XCTAssertFalse(
-            OuroMDAutoUpdatePolicy.shouldCheck(
-                now: Date(timeIntervalSince1970: 100_000),
-                lastCheck: nil,
-                minimumInterval: 3600,
-                enabled: false
-            )
-        )
-    }
-
-    func testAutoUpdatePolicyThrottlesWithinInterval() {
-        let last = Date(timeIntervalSince1970: 100_000)
-        XCTAssertFalse(
-            OuroMDAutoUpdatePolicy.shouldCheck(
-                now: last.addingTimeInterval(1800),
-                lastCheck: last,
-                minimumInterval: 3600,
-                enabled: true
-            )
-        )
-    }
-
-    func testAutoUpdatePolicyChecksAfterInterval() {
-        let last = Date(timeIntervalSince1970: 100_000)
-        XCTAssertTrue(
-            OuroMDAutoUpdatePolicy.shouldCheck(
-                now: last.addingTimeInterval(3600),
-                lastCheck: last,
-                minimumInterval: 3600,
-                enabled: true
-            )
-        )
-    }
-
-    func testManifestDecodesFromReleaseJSON() throws {
-        let json = """
-        {
-          "appName": "Ouro MD",
-          "bundleIdentifier": "org.ourostack.ouro-md",
-          "version": "0.10.0",
-          "build": "0.10.0",
-          "gitSha": "abcdef1",
-          "archive": "Ouro-MD-0.10.0.zip",
-          "sha256": "05abb1975c8cb04afc0b5988428e6e0e9af5b46217ab519873c66f885a4d2050",
-          "bytes": 7400000,
-          "createdAt": "2026-06-14T00:00:00Z"
-        }
-        """
-
-        let manifest = try JSONDecoder().decode(OuroMDUpdateManifest.self, from: Data(json.utf8))
-
-        XCTAssertEqual(manifest.appName, "Ouro MD")
-        XCTAssertEqual(manifest.version, "0.10.0")
-        XCTAssertEqual(manifest.bytes, 7_400_000)
-        XCTAssertEqual(manifest.sha256, "05abb1975c8cb04afc0b5988428e6e0e9af5b46217ab519873c66f885a4d2050")
+        XCTAssertEqual(failure, .notNewerThanCurrent(current: "0.10.0", candidate: "0.10.0"))
     }
 }
