@@ -36,6 +36,8 @@ jobs:
         run: ./scripts/release-policy.sh selftest-paths
       - name: Scan source policy
         run: ./scripts/release-policy.sh scan .
+      - name: Verify shared shell dependency freshness
+        run: ./scripts/check-shell-dependency.sh
       - name: Check signing and notarization readiness
         run: ./scripts/check-signing-readiness.sh
       - name: Run tests
