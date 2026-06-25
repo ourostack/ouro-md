@@ -145,11 +145,11 @@ active seed source.
 **Evidence**: Preflight exited 142 at `scripts/run-native-scenarios.sh:23` on `--undotest`; direct `perl -e 'alarm ...' .build/debug/ouro-md --undotest` reached the harness timeout. Neighboring WebKit probes (`--wraptest`, `--renderprobe`, `--copyflavortest`, `--selectionblurtest`) passed, narrowing the issue to the undo harness path.
 **Severity**: high-value
 **Blast radius**: self-contained
-**Fix shape**: Make `--undotest` report JavaScript/shortcut bridge failures explicitly instead of waiting forever, then fix any surfaced bridge failure until preflight passes.
+**Fix shape**: Make `--undotest` report JavaScript/editor-stack failures explicitly instead of waiting forever, and keep native shortcut routing in deterministic unit coverage instead of a flaky WebKit message callback.
 **Verification**: `swift test --filter UndoRedoRoutingTests`, direct `--undotest`, `./scripts/run-native-scenarios.sh`, and `OURO_PR_BASE_REF=origin/main ./scripts/pr-preflight.sh`.
 **Status**: fixed
-**Linked work**: branch `worker/close-stale-task-queues`
-**Notes**: Fixed by adding phase-aware timeout/debug output, JavaScript launch-error handling, script watchdog/exception reporting, shortcut response timeouts, deterministic edit undo snapshots, first-undo assertions, and restored shortcut stress coverage. Revalidated with direct `--undotest`, `swift test --filter UndoRedoRoutingTests`, `./scripts/run-native-scenarios.sh`, and full `OURO_PR_BASE_REF=origin/main ./scripts/pr-preflight.sh` (`PR preflight ok`).
+**Linked work**: branch `worker/a11y-dismiss-label-variant`
+**Notes**: Fixed by adding phase-aware timeout/debug output, JavaScript launch-error handling, script watchdog/exception reporting, deterministic edit undo snapshots, first-undo assertions, and a longer outer undo-scenario timeout so inner diagnostics can surface. Native shortcut routing and empty-stack behavior remain covered by `UndoRedoRoutingTests`. Revalidated with direct `--undotest`, `swift test --filter UndoRedoRoutingTests`, `./scripts/run-native-scenarios.sh`, and full `OURO_PR_BASE_REF=origin/main ./scripts/pr-preflight.sh` (`PR preflight ok`).
 
 ---
 

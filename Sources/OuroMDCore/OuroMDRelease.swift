@@ -4,10 +4,10 @@ public enum OuroMDRelease {
     public static let appName = "Ouro MD"
     public static let bundleIdentifier = "org.ourostack.ouro-md"
     public static let repository = "ourostack/ouro-md"
-    public static let version = "0.9.43"
+    public static let version = "0.9.44"
     public static let userAgent = "OuroMD/\(version)"
     public static let releaseDate = "2026-06-25"
     public static let releaseHighlights = [
-        "Fixed a save-fidelity bug: a non-table line that merely used `|` and `-` characters (e.g. a bullet `- |`) could be silently rewritten into a table separator. Saving now only re-expands genuine table delimiter rows.",
+        "Hardened undo/redo and release verification: editor undo/redo now no-ops safely on empty stacks, the native undo smoke waits for real editor readiness, and the accessibility audit accepts macOS confirmation-label variants.",
     ]
 }

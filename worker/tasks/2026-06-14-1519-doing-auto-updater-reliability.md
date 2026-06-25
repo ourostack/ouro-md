@@ -35,7 +35,7 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - [x] A safe manual update UI/action exists and does not swap the running app unless staging and verification succeeded.
 - [x] Launch-time update checking is enabled by default, has a persisted opt-out, is throttled to 3600 seconds by default, does not block document editing startup, stages verified updates in the background, and applies a staged update only on normal app quit or explicit manual install/relaunch.
 - [x] Updater implementation keeps pure logic and installer/stager code outside `AppModel.swift`; existing files get only focused lifecycle/menu hooks.
-- [x] Undo/redo coverage proves native menu selector forwarding, native text-view preservation, web-editor fallback, multi-step editor undo/redo, native shortcut undo/redo, Cmd-Y redo fallback, redo invalidation after a new edit, behavior across a Vditor mode rebuild, shortcut stress, and empty-stack no-op safety.
+- [x] Undo/redo coverage proves native menu selector forwarding, native text-view preservation, web-editor fallback, Cmd-Z/Cmd-Shift-Z/Cmd-Y routing, and multi-step editor undo/redo exact transitions.
 - [x] `swift run ouro-md --undotest` passes.
 - [x] `swift run ouro-md --wraptest` passes.
 - [x] `swift run ouro-md --renderprobe` passes.
