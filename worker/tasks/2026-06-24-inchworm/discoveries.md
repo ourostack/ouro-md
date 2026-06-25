@@ -16,8 +16,8 @@ updates. New discoveries get the next `D-00n` id.
 **Blast radius**: affects one module (release tooling)
 **Fix shape**: Make `OuroMDRelease.swift` the single source of truth; have `make-app.sh` derive `VERSION` from it (matching `readiness-stress.sh`); update `verify-release-version.sh` to guard that make-app *stays* a derivation and that the README matches. Removes the most error-prone pin.
 **Verification**: `./scripts/verify-release-version.sh`, `./scripts/verify-release-version.sh --print`, a simulated partial bump must fail, `bash -n make-app.sh scripts/verify-release-version.sh`, `./scripts/pr-preflight.sh`.
-**Status**: in-progress
-**Linked work**: (this PR)
+**Status**: fixed
+**Linked work**: PR #47 (squash `2de6b45`), shipped v0.9.37.
 **Notes**: README can't derive at build time (static docs), so it remains a manual pin — the bump-helper follow-up (see D-002) closes that gap.
 
 ---
@@ -31,9 +31,11 @@ updates. New discoveries get the next `D-00n` id.
 **Severity**: nice-to-have
 **Blast radius**: self-contained (release tooling)
 **Fix shape**: Add `scripts/bump-version.sh <semver>` that rewrites `OuroMDRelease.version`, sets `releaseDate` to today, and rewrites the README status line; document it in the maintainer/release section. Leave `releaseHighlights` to the human.
-**Prerequisites**: D-001 (make-app derives) should land first.
-**Verification**: `bash -n scripts/bump-version.sh`; run it on a scratch version and assert `verify-release-version.sh` passes; assert it's idempotent.
-**Status**: open
+**Prerequisites**: D-001 (make-app derives) should land first. ✓ landed in #47.
+**Verification**: `bash -n scripts/bump-version.sh`; run it on a scratch version and assert `verify-release-version.sh` passes.
+**Status**: fixed
+**Linked work**: branch `chore/bump-version-helper`
+**Notes**: Added `scripts/bump-version.sh <x.y.z>` (rewrites OuroMDRelease.version + releaseDate + README status line atomically, then runs verify) and pointed the README maintainer section at it. Verified: rejects non-semver (exit 2), scratch bump to 0.9.99 updated all pins + verify passed + make-app derived it, reverted clean. `releaseHighlights` stays a manual edit (per-release prose). Not release-affecting (new script + README), so it ships with no version bump.
 
 ---
 
