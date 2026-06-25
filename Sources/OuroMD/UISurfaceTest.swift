@@ -9,7 +9,6 @@ import Vision
 @MainActor
 final class UISurfaceTester {
     func run() -> Never {
-        let app = NSApplication.shared
         HeadlessHarness.configure()
 
         let root = FileManager.default.temporaryDirectory
