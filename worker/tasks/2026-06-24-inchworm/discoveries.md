@@ -102,3 +102,19 @@ updates. New discoveries get the next `D-00n` id.
 **Notes**: Not release-affecting (`.gitignore` isn't in `release-policy.sh`'s relevant-path list), so it ships with no version bump.
 
 ---
+
+## [D-007] — Stray "unused immutable value 'app'" compiler warning in UISurfaceTest
+
+**Source**: observed-during-seed (a `swift build` while sweeping for remaining friction after D-006 surfaced the warning)
+**What**: The #48 headless migration left `let app = NSApplication.shared` at the top of `UISurfaceTester.run()` unused (the run loop is no longer started via that local — `HeadlessHarness.configure()` owns `NSApplication.shared`). The fork cleaned the identical leftover in `AccessibilityAuditTest` but missed this one.
+**Where**: `Sources/OuroMD/UISurfaceTest.swift:12`.
+**Why it matters**: `swift build` emits a warning on every build; warnings train people to ignore warnings (and could trip a future `-warnings-as-errors`).
+**Severity**: nice-to-have
+**Blast radius**: self-contained (one harness)
+**Fix shape**: Delete the unused line (a separate, *used* `let app` in the menu-topology helper at line ~323 stays).
+**Verification**: `swift build` and `swift build --build-tests` warning-free.
+**Status**: fixed
+**Linked work**: branch `chore/fix-uisurface-unused-app`
+**Notes**: Touches `Sources/*` (release-affecting) → bumped to 0.9.40 via `bump-version.sh`.
+
+---
