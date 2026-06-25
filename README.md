@@ -6,7 +6,7 @@ ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
 in careful typography on a centered page. Type Markdown and watch it render in
 place — switch themes live, and read the same document four different ways.
 
-> **Status:** v0.9.45. Reads and edits Markdown today. Not yet Developer-ID
+> **Status:** v0.9.46. Reads and edits Markdown today. Not yet Developer-ID
 > signed or notarized — see [First launch](#first-launch).
 
 ---
@@ -223,4 +223,4 @@ readiness checklist and known non-goals.
 ## License
 
 ouro-md is released under the [MIT License](LICENSE). Third-party components and
-attributions are listed in [NOTICE](NOTICE). ouro-md is an independent project.
+attributions are listed in [NOTICE](NOTICE).
