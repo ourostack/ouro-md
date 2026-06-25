@@ -2,7 +2,7 @@
 
 **Skill**: `anneal` (dogfood run #1, driven by the ouro-md agent at Ari's request)
 **Started**: 2026-06-25
-**Status**: in-progress
+**Status**: annealed
 
 > This is the resumable journal (anneal §5). Every iteration's energy, the PERT graph,
 > and the backlog live here and are committed each iteration. A reboot must not lose
