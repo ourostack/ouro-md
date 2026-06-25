@@ -4,6 +4,11 @@
 DerivedData/
 *.xcodeproj
 
+# LLVM coverage artifacts left in the worktree root by `swift test` / coverage
+# probes (pr-preflight.sh fails if a stray default.profraw is present).
+*.profraw
+*.profdata
+
 # Packaged app (produced by make-app.sh)
 OuroMD.app/
 
