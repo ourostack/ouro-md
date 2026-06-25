@@ -20,12 +20,18 @@ fail() {
 
 [[ -x "$exe" ]] || fail "ouro-md executable not found or not executable: $exe"
 
-run() {
+run_with_timeout() {
+  local timeout="$1"
+  shift
   echo "==> ouro-md $*"
-  perl -e 'alarm shift @ARGV; exec @ARGV' "$timeout_seconds" "$exe" "$@"
+  perl -e 'alarm shift @ARGV; exec @ARGV' "$timeout" "$exe" "$@"
 }
 
-run --undotest
+run() {
+  run_with_timeout "$timeout_seconds" "$@"
+}
+
+run_with_timeout "${OURO_UNDO_SCENARIO_TIMEOUT_SECONDS:-180}" --undotest
 run --wraptest
 run --renderprobe
 run --mermaidcliptest

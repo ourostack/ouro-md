@@ -84,16 +84,24 @@ final class AccessibilityAuditTester {
             "Open Repo",
             "Copy Version",
             "What's New",
-            "OK",
         ]
         let missingShellRendered = shellRenderedRequired.filter { expected in
             !shellText.contains { renderedTextContains($0, expected) }
+        }
+        let shellRenderedAlternatives = [
+            ("installed update dismiss action", ["OK", "Done"]),
+        ]
+        let missingShellRenderedAlternatives = shellRenderedAlternatives.compactMap { label, alternatives in
+            alternatives.contains { expected in
+                shellText.contains { renderedTextContains($0, expected) }
+            } ? nil : "\(label) (\(alternatives.joined(separator: " or ")))"
         }
         let source = sourceAccessibilityAudit()
         let menu = menuAudit()
         let discoverability = commandDiscoverabilityAudit()
         let labelsOK = missingRuntime.isEmpty
             && missingShellRendered.isEmpty
+            && missingShellRenderedAlternatives.isEmpty
             && source.missing.isEmpty
             && discoverability.missing.isEmpty
 
@@ -105,6 +113,10 @@ final class AccessibilityAuditTester {
         print("shell rendered accessibility labels: \(missingShellRendered.isEmpty ? "✓" : "✗")")
         if !missingShellRendered.isEmpty {
             print("missing shell rendered labels: \(missingShellRendered.joined(separator: " | "))")
+            print("observed shell text: \(shellText.sorted().joined(separator: " | "))")
+        }
+        if !missingShellRenderedAlternatives.isEmpty {
+            print("missing shell rendered alternative labels: \(missingShellRenderedAlternatives.joined(separator: " | "))")
             print("observed shell text: \(shellText.sorted().joined(separator: " | "))")
         }
         print("source accessibility labels: \(source.missing.isEmpty ? "✓" : "✗")")

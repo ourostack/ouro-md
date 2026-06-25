@@ -1031,6 +1031,8 @@
     undo: function () {
       if (!vditor || !vditor.vditor || !vditor.vditor.undo) { return; }
       try {
+        var undoState = vditor.vditor.undo[vditor.vditor.currentMode || state.mode];
+        if (!undoState || !undoState.undoStack || undoState.undoStack.length < 2) { return; }
         vditor.vditor.undo.undo(vditor.vditor);
         state.value = vditor.getValue();
         setDirty(true);
@@ -1040,6 +1042,8 @@
     redo: function () {
       if (!vditor || !vditor.vditor || !vditor.vditor.undo) { return; }
       try {
+        var undoState = vditor.vditor.undo[vditor.vditor.currentMode || state.mode];
+        if (!undoState || !undoState.redoStack || undoState.redoStack.length === 0) { return; }
         vditor.vditor.undo.redo(vditor.vditor);
         state.value = vditor.getValue();
         setDirty(true);

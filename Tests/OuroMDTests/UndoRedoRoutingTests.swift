@@ -103,6 +103,25 @@ final class UndoRedoRoutingTests: XCTestCase {
         )
     }
 
+    func testCommandYRedoUsesEditorFallbackWhenFocusIsInWebEditor() {
+        let event = keyEvent("y", modifiers: [.command])
+        let command = UndoRedoCommandRouter.command(for: event)
+        var undoFallbackCalls = 0
+        var redoFallbackCalls = 0
+
+        let handled = UndoRedoCommandRouter.perform(
+            command!,
+            firstResponder: nil,
+            editorIsReady: true,
+            editorUndo: { undoFallbackCalls += 1 },
+            editorRedo: { redoFallbackCalls += 1 }
+        )
+
+        XCTAssertTrue(handled)
+        XCTAssertEqual(undoFallbackCalls, 0)
+        XCTAssertEqual(redoFallbackCalls, 1)
+    }
+
     func testShortcutParserRejectsModifiedNonUndoRedoKeystrokes() {
         XCTAssertNil(UndoRedoCommandRouter.command(for: keyEvent("z", modifiers: [.command, .option])))
         XCTAssertNil(UndoRedoCommandRouter.command(for: keyEvent("z", modifiers: [.command, .control])))
