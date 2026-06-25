@@ -63,6 +63,17 @@ final class MarkdownTidyTests: XCTestCase {
                        "| A | B |\n| --- | :---: |\n| 1 | 2 |")
     }
 
+    func testSeparatorRequiresBothBoundingPipes() {
+        // AN-010 negative control: the classifier requires the line to be bounded
+        // by pipes on BOTH ends (the editor only ever emits `| --- | … |`). A line
+        // with only a trailing pipe (`--- |`) or only a leading pipe (`| ---`) is
+        // not an editor-style delimiter row and must be left byte-identical — this
+        // pins the leading-pipe AND trailing-pipe halves of the guard, each of
+        // which is independently load-bearing (drop either and these rewrite).
+        XCTAssertEqual(MarkdownTidy.tidy("--- |"), "--- |")
+        XCTAssertEqual(MarkdownTidy.tidy("| ---"), "| ---")
+    }
+
     func testTidyIsIdempotent() {
         // tidy must be a fixed point: applying it twice equals applying it once.
         // Negative control — any non-idempotent normalization (e.g. an expanded
