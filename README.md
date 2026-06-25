@@ -76,15 +76,17 @@ For install or update problems, see
 ### Cutting a release (maintainers)
 
 ```sh
+./scripts/bump-version.sh 0.9.39            # rewrites the version + release date atomically
 ./scripts/check-release-secrets.sh          # confirms GitHub release telemetry secrets exist
 ./scripts/check-signing-readiness.sh        # confirms signing/notarization tooling and secret shape
-./scripts/verify-release-version.sh         # make-app.sh / OuroMDRelease.swift / README agree
+./scripts/verify-release-version.sh         # OuroMDRelease.swift / README agree (make-app derives)
 ./scripts/pr-preflight.sh                   # local mirror of PR freshness, policy, tests, coverage, and native scenarios
 ```
 
-To ship: bump `OuroMDRelease.version` and this README status line, then merge to
-`main` (`make-app.sh` derives its `VERSION` from `OuroMDRelease.swift`, so there's
-no third place to edit — `verify-release-version.sh` enforces this). The Release workflow builds the app,
+To ship: run `./scripts/bump-version.sh <x.y.z>` — it rewrites `OuroMDRelease.version`,
+the release date, and this README status line in one shot (`make-app.sh` derives its
+`VERSION` from `OuroMDRelease.swift`, so there's no third place to edit; a partial bump
+is impossible). Then update `releaseHighlights` and merge to `main`. The Release workflow builds the app,
 requires embedded PostHog telemetry for production publishes, runs packaged-app
 probes, uploads the zip/manifest, and publishes `v<VERSION>`. It no-ops when that
 tag already exists. Use workflow dispatch with `dry_run=true` to build/probe on a
