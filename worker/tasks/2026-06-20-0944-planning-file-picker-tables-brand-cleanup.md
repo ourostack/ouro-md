@@ -1,7 +1,12 @@
 # Planning: File Picker, Table Layout, And Brand Cleanup
 
-**Status**: NEEDS_REVIEW
+**Status**: done
 **Created**: 2026-06-20 09:44
+
+> Closeout note (2026-06-25): this planning-only artifact was superseded by the
+> implementation stream that shipped title-open behavior, table readability, and
+> the forbidden-brand repository scan across PRs #14, #15, #39, #44, #45, #46,
+> and later hardening. It is retained as historical context, not an active gate.
 
 ## Goal
 Make Ouro MD behave more like a trustworthy macOS document editor during dogfood: clicking the document title opens the standard file picker, large Markdown tables remain readable instead of collapsing or cropping, and all traces of the prohibited third-party editor brand are removed from repository content.

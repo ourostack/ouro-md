@@ -1,7 +1,8 @@
 # Inch-worm backlog — ouro-md (campaign started 2026-06-24)
 
-Canonical backlog for the open inch-worm campaign. Append-only except for `Status`
-updates. New discoveries get the next `D-00n` id.
+Campaign status: closed. Every entry is fixed, superseded, or otherwise
+terminal; this repo-local log is retained as historical evidence rather than an
+active seed source.
 
 ---
 
@@ -132,5 +133,39 @@ updates. New discoveries get the next `D-00n` id.
 **Status**: fixed
 **Linked work**: branch `chore/narrow-release-policy`
 **Notes**: This change touches `release-policy.sh` (genuinely release-gating), so it cuts one last bump (0.9.41) — after which test-only changes ship churn-free. `make-app.sh` / `verify-release-version.sh` stay release-affecting on purpose (they shape the build/publish), so a rare release-tooling refactor can still bump; the frequent churn (test harnesses) is gone.
+
+---
+
+## [D-009] — `--undotest` can hang as a black-box native gate
+
+**Source**: observed-during-seed
+**What**: While closing stale worker task state, `OURO_PR_BASE_REF=origin/main ./scripts/pr-preflight.sh` hung in the first native scenario (`--undotest`) until the outer alarm killed it, and a direct `--undotest` run only emitted `undotest: timed out`.
+**Where**: `Sources/OuroMD/UndoTest.swift`, `scripts/run-native-scenarios.sh`.
+**Why it matters**: A required CI/local gate should fail with actionable diagnostics; a silent WebKit/shortcut bridge hang makes agents and humans guess whether the product, WebKit bootstrap, shortcut routing, or the harness is broken.
+**Evidence**: Preflight exited 142 at `scripts/run-native-scenarios.sh:23` on `--undotest`; direct `perl -e 'alarm ...' .build/debug/ouro-md --undotest` reached the harness timeout. Neighboring WebKit probes (`--wraptest`, `--renderprobe`, `--copyflavortest`, `--selectionblurtest`) passed, narrowing the issue to the undo harness path.
+**Severity**: high-value
+**Blast radius**: self-contained
+**Fix shape**: Make `--undotest` report JavaScript/shortcut bridge failures explicitly instead of waiting forever, then fix any surfaced bridge failure until preflight passes.
+**Verification**: `swift test --filter UndoRedoRoutingTests`, direct `--undotest`, `./scripts/run-native-scenarios.sh`, and `OURO_PR_BASE_REF=origin/main ./scripts/pr-preflight.sh`.
+**Status**: fixed
+**Linked work**: branch `worker/close-stale-task-queues`
+**Notes**: Fixed by adding phase-aware timeout/debug output, JavaScript launch-error handling, script watchdog/exception reporting, shortcut response timeouts, deterministic edit undo snapshots, first-undo assertions, and restored shortcut stress coverage. Revalidated with direct `--undotest`, `swift test --filter UndoRedoRoutingTests`, `./scripts/run-native-scenarios.sh`, and full `OURO_PR_BASE_REF=origin/main ./scripts/pr-preflight.sh` (`PR preflight ok`).
+
+---
+
+## [D-010] — Search reveal native scenario reports no selected match
+
+**Source**: observed-during-seed
+**What**: After fixing the undo native gate, `./scripts/run-native-scenarios.sh` progressed to `--searchrevealtest` and failed both whole-word and regex reveal assertions with empty before/after selection diagnostics.
+**Where**: `Sources/OuroMD/SearchRevealTest.swift`, search highlight/reveal bridge.
+**Why it matters**: Search reveal is a required native scenario and a product affordance for navigating matches; a failing gate after the undo fix means the CI/native suite is still not trustworthy or complete.
+**Evidence**: `./scripts/run-native-scenarios.sh` output: `whole-word reveal selection:  before[] after[] in  ✗` and `regex reveal selection:  in  matches[111,222] ✗`.
+**Severity**: high-value
+**Blast radius**: affects one module
+**Fix shape**: Reproduce the direct `--searchrevealtest` failure, add actionable diagnostics if needed, and repair the search reveal path or harness expectation until the native scenario suite passes.
+**Verification**: direct `--searchrevealtest`, `./scripts/run-native-scenarios.sh`, and `OURO_PR_BASE_REF=origin/main ./scripts/pr-preflight.sh`.
+**Status**: fixed
+**Linked work**: branch `worker/close-stale-task-queues`
+**Notes**: Fixed by making rendered search reveal prefer visible text roots and adding a guarded timer fallback so reveal does not depend only on throttled `requestAnimationFrame` callbacks. The harness now prints DOM/selection/reveal diagnostics on failure. Revalidated with direct `--searchrevealtest`, `./scripts/run-native-scenarios.sh`, and full `OURO_PR_BASE_REF=origin/main ./scripts/pr-preflight.sh` (`PR preflight ok`).
 
 ---

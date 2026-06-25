@@ -1,6 +1,6 @@
 # Ouro MD Audit Backlog
 
-**Status**: DONE
+**Status**: done
 **Created**: 2026-06-14 15:19
 **Source report**: ./audit-report.md
 
@@ -106,9 +106,9 @@
 **Recommended lane**: inch-worm-ready-after-reeval
 **Suggested supporting skills**: inch-worm
 **Verification**: Add tests proving tree and flat outputs match current behavior; folder scan does one recursive traversal.
-**Status**: open
-**Linked work**:
-**Notes**: Defer until after updater and shortcut reliability work.
+**Status**: done
+**Linked work**: ../2026-06-14-2028-doing-v1-readiness-followups.md; commit `2c30164` (`perf(folder): scan tree and flat views once`)
+**Notes**: Revalidated on `main` at `5b104b6`: `FolderScanner.snapshot(at:sort:)` builds tree and flat outputs from one recursive `scan`, `AppModel.rescanFolder()` consumes that snapshot once, and `FolderBrowserTests` cover the snapshot output, large-folder budget, truncation, symlink, sort, and duplicate-name behavior.
 
 ---
 

@@ -52,15 +52,16 @@ final class SearchRevealTester: NSObject, WKScriptMessageHandler, WKNavigationDe
             let before = body["before"] as? String ?? ""
             let after = body["after"] as? String ?? ""
             let matches = body["matches"] as? String ?? ""
+            let detail = body["detail"] as? String ?? ""
             if step == "wholeWord" {
                 wholeWordOK = selection == "needle"
                     && before.range(of: #"^\w$"#, options: .regularExpression) == nil
                     && after.range(of: #"^\w$"#, options: .regularExpression) == nil
-                print("whole-word reveal selection: \(selection) before[\(before)] after[\(after)] in \(context) \(wholeWordOK ? "✓" : "✗")")
+                print("whole-word reveal selection: \(selection) before[\(before)] after[\(after)] in \(context) \(wholeWordOK ? "✓" : "✗")\(wholeWordOK ? "" : " \(detail)")")
                 runRegexProbe()
             } else if step == "regex" {
                 regexOK = selection == "222"
-                print("regex reveal selection: \(selection) in \(context) matches[\(matches)] \(regexOK ? "✓" : "✗")")
+                print("regex reveal selection: \(selection) in \(context) matches[\(matches)] \(regexOK ? "✓" : "✗")\(regexOK ? "" : " \(detail)")")
                 exit(wholeWordOK && regexOK ? 0 : 1)
             }
         }
@@ -68,6 +69,33 @@ final class SearchRevealTester: NSObject, WKScriptMessageHandler, WKNavigationDe
 
     private func runWholeWordProbe() {
         let script = """
+        function textNodes(root) {
+          var out = [];
+          if (!root) { return out; }
+          var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+            acceptNode: function (node) {
+              return node.nodeValue && node.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+            }
+          });
+          while (walker.nextNode()) { out.push(walker.currentNode); }
+          return out;
+        }
+        function diagnostics() {
+          var roots = Array.prototype.slice.call(document.querySelectorAll("#editor .vditor-reset"));
+          var rootInfo = roots.map(function (root) {
+            var nodes = textNodes(root);
+            var style = window.getComputedStyle(root);
+            var rect = root.getBoundingClientRect();
+            var layout = style.display + "/" + style.visibility + "/" + Math.round(rect.width) + "x" + Math.round(rect.height);
+            return [root.className, layout, (root.textContent || "").trim(), nodes.map(function (n) { return n.nodeValue; }).join("|")].join(" :: ");
+          }).join(" || ");
+          var sel = window.getSelection();
+          var node = sel && sel.anchorNode;
+          return "roots=" + roots.length + " mode=" + (window.__ouroEditor && window.__ouroEditor.vditor && window.__ouroEditor.vditor.currentMode) +
+            " selection=" + String(sel) + " anchor=" + (node && node.nodeName) +
+            " reveal=" + JSON.stringify(window.__ouroLastReveal || {}) + " rootInfo=" + rootInfo;
+        }
+        window.__ouroCaptureRevealDiagnostics = true;
         window.ouro.revealSearchMatch({
           query: "needle",
           matchedText: "needle",
@@ -90,15 +118,48 @@ final class SearchRevealTester: NSObject, WKScriptMessageHandler, WKNavigationDe
             selection: String(sel),
             before: before,
             after: after,
-            context: el && el.closest("[data-block]") ? el.closest("[data-block]").textContent : ""
+            context: el && el.closest("[data-block]") ? el.closest("[data-block]").textContent : "",
+            detail: diagnostics()
           });
         }, 350);
         """
-        webView.evaluateJavaScript(script, completionHandler: nil)
+        webView.evaluateJavaScript(script) { _, error in
+            if let error {
+                FileHandle.standardError.write(Data("searchrevealtest: whole-word script failed: \(error)\n".utf8))
+                exit(1)
+            }
+        }
     }
 
     private func runRegexProbe() {
         let script = """
+        function textNodes(root) {
+          var out = [];
+          if (!root) { return out; }
+          var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+            acceptNode: function (node) {
+              return node.nodeValue && node.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+            }
+          });
+          while (walker.nextNode()) { out.push(walker.currentNode); }
+          return out;
+        }
+        function diagnostics() {
+          var roots = Array.prototype.slice.call(document.querySelectorAll("#editor .vditor-reset"));
+          var rootInfo = roots.map(function (root) {
+            var nodes = textNodes(root);
+            var style = window.getComputedStyle(root);
+            var rect = root.getBoundingClientRect();
+            var layout = style.display + "/" + style.visibility + "/" + Math.round(rect.width) + "x" + Math.round(rect.height);
+            return [root.className, layout, (root.textContent || "").trim(), nodes.map(function (n) { return n.nodeValue; }).join("|")].join(" :: ");
+          }).join(" || ");
+          var sel = window.getSelection();
+          var node = sel && sel.anchorNode;
+          return "roots=" + roots.length + " mode=" + (window.__ouroEditor && window.__ouroEditor.vditor && window.__ouroEditor.vditor.currentMode) +
+            " selection=" + String(sel) + " anchor=" + (node && node.nodeName) +
+            " reveal=" + JSON.stringify(window.__ouroLastReveal || {}) + " rootInfo=" + rootInfo;
+        }
+        window.__ouroCaptureRevealDiagnostics = true;
         window.getSelection().removeAllRanges();
         window.ouro.revealSearchMatch({
           query: "\\\\d+",
@@ -120,11 +181,17 @@ final class SearchRevealTester: NSObject, WKScriptMessageHandler, WKNavigationDe
             step: "regex",
             selection: String(sel),
             context: el && el.closest("[data-block]") ? el.closest("[data-block]").textContent : "",
-            matches: (text.match(/\\d+/g) || []).join(",")
+            matches: (text.match(/\\d+/g) || []).join(","),
+            detail: diagnostics()
           });
         }, 350);
         """
-        webView.evaluateJavaScript(script, completionHandler: nil)
+        webView.evaluateJavaScript(script) { _, error in
+            if let error {
+                FileHandle.standardError.write(Data("searchrevealtest: regex script failed: \(error)\n".utf8))
+                exit(1)
+            }
+        }
     }
 
     private static let markdown = """

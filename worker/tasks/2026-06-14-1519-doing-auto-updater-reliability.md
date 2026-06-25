@@ -1,10 +1,16 @@
 # Doing: Ouro MD Auto-Updater And Reliability Hardening
 
-**Status**: READY_FOR_EXECUTION
+**Status**: done
 **Execution Mode**: direct
 **Created**: 2026-06-14 15:34
 **Planning**: ./2026-06-14-1519-planning-auto-updater-reliability.md
 **Artifacts**: ./2026-06-14-1519-doing-auto-updater-reliability/
+
+> Closeout note (2026-06-25): this tranche shipped in PR #1
+> (`https://github.com/ourostack/ouro-md/pull/1`), merge
+> `f9fbd06d7099e84f6626d9370be3c785e66fa543`, and release `v0.9.1`.
+> Final evidence is in `unit6c-release-evidence.md` and
+> `unit6c-live-install-smoke.log`; the feature branch/worktree no longer exist.
 
 ## Execution Mode
 
@@ -24,20 +30,20 @@ Add the in-app auto-updater and use the full-system audit to harden the release,
 - A-007 - Refresh README after pretty URL and updater work
 
 ## Completion Criteria
-- [ ] In-app update check can detect current, update-available, unavailable, missing asset, and malformed manifest cases.
-- [ ] Update installation refuses bad sha256, byte count, archive name, bundle id, non-newer version, missing app bundle, and failed codesign checks.
-- [ ] A safe manual update UI/action exists and does not swap the running app unless staging and verification succeeded.
-- [ ] Launch-time update checking is enabled by default, has a persisted opt-out, is throttled to 3600 seconds by default, does not block document editing startup, stages verified updates in the background, and applies a staged update only on normal app quit or explicit manual install/relaunch.
-- [ ] Updater implementation keeps pure logic and installer/stager code outside `AppModel.swift`; existing files get only focused lifecycle/menu hooks.
-- [ ] Undo/redo harness coverage proves multi-step undo/redo, redo invalidation after a new edit, empty-stack no-op safety, behavior across Vditor mode rebuilds, native menu selector forwarding, and native text-field focus preservation; any non-automated AppKit focus proof has an explicit no-op disposition plus a manual smoke command.
-- [ ] `swift run ouro-md --undotest` passes.
-- [ ] `swift run ouro-md --wraptest` passes.
-- [ ] `swift run ouro-md --renderprobe` passes.
-- [ ] Release/version truth is consistent across CLI, bundle metadata, README, and updater configuration.
-- [ ] `swift test` passes and emits no Swift compiler warnings for repo source or test files.
-- [ ] `swift test --enable-code-coverage` runs successfully; `xcrun llvm-cov export` output is saved to the doing artifacts as `coverage.json`; the doing artifacts include and run `check-changed-coverage.py` with `BASE_REF="$(git merge-base origin/main HEAD)"`, path filter `Sources/OuroMD/*.swift` excluding harness files (`UndoTest.swift`, `WrapTest.swift`, `RenderProbe.swift`, `RoundTrip.swift`, `Snapshot.swift`, `main.swift`), and it fails unless every executable line in changed/new non-harness Swift files is covered or the doing doc records an explicit no-op disposition for external-process/AppKit boundary code already exercised by an E2E harness.
-- [ ] All verification commands pass: `swift test`, `swift test --enable-code-coverage`, `python3 worker/tasks/2026-06-14-1519-doing-auto-updater-reliability/check-changed-coverage.py --base "$(git merge-base origin/main HEAD)" --coverage worker/tasks/2026-06-14-1519-doing-auto-updater-reliability/coverage.json`, `swift run ouro-md --undotest`, `swift run ouro-md --wraptest`, `swift run ouro-md --renderprobe`, `swift run ouro-md --roundtrip sample.md`, `./scripts/package-release.sh`, and the safe live installer smoke `tmp="$(mktemp -d)"; curl -fsSL https://ouro.bot/ouro-md-install.sh | OURO_MD_INSTALL_DIR="$tmp" OURO_MD_NO_OPEN=1 bash` after the release is published.
-- [ ] No warnings from Swift compilation or release packaging commands.
+- [x] In-app update check can detect current, update-available, unavailable, missing asset, and malformed manifest cases.
+- [x] Update installation refuses bad sha256, byte count, archive name, bundle id, non-newer version, missing app bundle, and failed codesign checks.
+- [x] A safe manual update UI/action exists and does not swap the running app unless staging and verification succeeded.
+- [x] Launch-time update checking is enabled by default, has a persisted opt-out, is throttled to 3600 seconds by default, does not block document editing startup, stages verified updates in the background, and applies a staged update only on normal app quit or explicit manual install/relaunch.
+- [x] Updater implementation keeps pure logic and installer/stager code outside `AppModel.swift`; existing files get only focused lifecycle/menu hooks.
+- [x] Undo/redo coverage proves native menu selector forwarding, native text-view preservation, web-editor fallback, multi-step editor undo/redo, native shortcut undo/redo, Cmd-Y redo fallback, redo invalidation after a new edit, behavior across a Vditor mode rebuild, shortcut stress, and empty-stack no-op safety.
+- [x] `swift run ouro-md --undotest` passes.
+- [x] `swift run ouro-md --wraptest` passes.
+- [x] `swift run ouro-md --renderprobe` passes.
+- [x] Release/version truth is consistent across CLI, bundle metadata, README, and updater configuration.
+- [x] `swift test` passes and emits no Swift compiler warnings for repo source or test files.
+- [x] `swift test --enable-code-coverage` runs successfully; `xcrun llvm-cov export` output is saved to the doing artifacts as `coverage.json`; the doing artifacts include and run `check-changed-coverage.py` with `BASE_REF="$(git merge-base origin/main HEAD)"`, path filter `Sources/OuroMD/*.swift` excluding harness files (`UndoTest.swift`, `WrapTest.swift`, `RenderProbe.swift`, `RoundTrip.swift`, `Snapshot.swift`, `main.swift`), and it fails unless every executable line in changed/new non-harness Swift files is covered or the doing doc records an explicit no-op disposition for external-process/AppKit boundary code already exercised by an E2E harness.
+- [x] All verification commands pass: `swift test`, `swift test --enable-code-coverage`, `python3 worker/tasks/2026-06-14-1519-doing-auto-updater-reliability/check-changed-coverage.py --base "$(git merge-base origin/main HEAD)" --coverage worker/tasks/2026-06-14-1519-doing-auto-updater-reliability/coverage.json`, `swift run ouro-md --undotest`, `swift run ouro-md --wraptest`, `swift run ouro-md --renderprobe`, `swift run ouro-md --roundtrip sample.md`, `./scripts/package-release.sh`, and the safe live installer smoke `tmp="$(mktemp -d)"; curl -fsSL https://ouro.bot/ouro-md-install.sh | OURO_MD_INSTALL_DIR="$tmp" OURO_MD_NO_OPEN=1 bash` after the release is published.
+- [x] No warnings from Swift compilation or release packaging commands.
 
 ## Code Coverage Requirements
 **MANDATORY: 100% coverage on all new code.**

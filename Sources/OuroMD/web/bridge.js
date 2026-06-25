@@ -767,20 +767,37 @@
   }
 
   function activeEditorRoot() {
+    var roots = document.querySelectorAll("#editor .vditor-reset");
+    for (var i = 0; i < roots.length; i++) {
+      if (isVisibleTextRoot(roots[i])) { return roots[i]; }
+    }
+    for (var j = 0; j < roots.length; j++) {
+      if ((roots[j].textContent || "").trim()) { return roots[j]; }
+    }
     if (vditor && vditor.vditor) {
       var mode = vditor.vditor.currentMode || state.mode;
       var surface = vditor.vditor[mode] && vditor.vditor[mode].element;
       if (surface) { return surface; }
     }
-    var roots = document.querySelectorAll("#editor .vditor-reset");
-    for (var i = 0; i < roots.length; i++) {
-      if ((roots[i].textContent || "").trim()) { return roots[i]; }
-    }
     return document.querySelector(".vditor-reset") || document.getElementById("editor") || document.body;
+  }
+
+  function isVisibleTextRoot(root) {
+    if (!root || !(root.textContent || "").trim()) { return false; }
+    var style = window.getComputedStyle ? window.getComputedStyle(root) : null;
+    if (style && (style.display === "none" || style.visibility === "hidden")) { return false; }
+    var rect = root.getBoundingClientRect ? root.getBoundingClientRect() : null;
+    return !!(rect && rect.width > 0 && rect.height > 0);
   }
 
   function selectTextRange(node, start, length) {
     if (!node || length <= 0) { return false; }
+    recordRevealDiagnostic({
+      phase: "selectTextRange",
+      requested: node.nodeValue || "",
+      start: start,
+      length: length
+    });
     var range = document.createRange();
     range.setStart(node, start);
     range.setEnd(node, start + length);
@@ -795,7 +812,20 @@
     } else if (rect && rect.top) {
       window.scrollTo({ top: Math.max(0, window.scrollY + rect.top - 120), behavior: "smooth" });
     }
+    recordRevealDiagnostic({
+      phase: "selected",
+      requested: node.nodeValue || "",
+      start: start,
+      length: length,
+      selection: String(sel),
+      rangeCount: sel.rangeCount,
+      anchorNode: sel.anchorNode ? sel.anchorNode.nodeName : ""
+    });
     return true;
+  }
+
+  function recordRevealDiagnostic(payload) {
+    if (window.__ouroCaptureRevealDiagnostics) { window.__ouroLastReveal = payload; }
   }
 
   function revealTextOccurrence(text, ordinal, caseSensitive) {
@@ -804,6 +834,7 @@
     var needle = caseSensitive ? text : text.toLowerCase();
     var seen = 0;
     var nodes = textNodesUnder(root);
+    recordRevealDiagnostic({ phase: "text", needle: needle, ordinal: ordinal, nodes: nodes.length, root: root && root.className });
     for (var n = 0; n < nodes.length; n++) {
       var raw = nodes[n].nodeValue || "";
       var haystack = caseSensitive ? raw : raw.toLowerCase();
@@ -824,6 +855,7 @@
     var root = activeEditorRoot();
     var seen = 0;
     var nodes = textNodesUnder(root);
+    recordRevealDiagnostic({ phase: "search", query: query, pattern: re.source, ordinal: ordinal, nodes: nodes.length, root: root && root.className });
     for (var n = 0; n < nodes.length; n++) {
       var raw = nodes[n].nodeValue || "";
       re.lastIndex = 0;
@@ -1049,7 +1081,14 @@
           try { window.find(query, !!opts.caseSensitive, false, true, !!opts.wholeWord, false, false); } catch (e) { /* ignore */ }
         }
       };
-      requestAnimationFrame(function () { requestAnimationFrame(reveal); });
+      var didReveal = false;
+      var runReveal = function () {
+        if (didReveal) { return; }
+        didReveal = true;
+        reveal();
+      };
+      requestAnimationFrame(function () { requestAnimationFrame(runReveal); });
+      setTimeout(runReveal, 80);
     },
     replaceNext: function (query, replacement, opts) { return doReplace(query, replacement, opts, false); },
     replaceAll: function (query, replacement, opts) { return doReplace(query, replacement, opts, true); },
