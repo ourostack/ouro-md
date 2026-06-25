@@ -16,7 +16,8 @@ BUNDLE_ID="org.ourostack.ouro-md"
 # runtime); never hardcode it here or the packaged Info.plist can silently drift
 # from the runtime version on a release bump. verify-release-version.sh enforces
 # that this stays a derivation.
-VERSION="$(sed -n 's/.*static let version = "\([^"]*\)".*/\1/p' Sources/OuroMDCore/OuroMDRelease.swift | head -1)"
+source scripts/lib/app-version.sh
+VERSION="$(ouro_md_source_version)"
 [[ -n "${VERSION}" ]] || { echo "error: could not read version from Sources/OuroMDCore/OuroMDRelease.swift" >&2; exit 1; }
 GIT_SHA="${OURO_MD_GIT_SHA:-$(git rev-parse --short=12 HEAD 2>/dev/null || printf unknown)}"
 POSTHOG_KEY="${OURO_MD_POSTHOG_KEY:-${VITE_POSTHOG_KEY:-}}"

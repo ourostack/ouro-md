@@ -49,7 +49,9 @@ updates. New discoveries get the next `D-00n` id.
 **Blast radius**: affects one module (release tooling)
 **Fix shape**: Extract a tiny `scripts/lib/app-version.sh` (or a `--print-source` flag on verify) that emits the Swift version, and have the three callers source it. Keep it independent of the README check so `make-app.sh` still works when the README is mid-bump.
 **Severity-note**: bundle opportunistically; not worth a standalone PR unless touched anyway.
-**Status**: open
+**Status**: fixed
+**Linked work**: branch `chore/dedupe-version-extraction`
+**Notes**: Added `scripts/lib/app-version.sh` defining `ouro_md_source_version` (the one place that reads the version from OuroMDRelease.swift, independent of the README check so it works mid-bump); `make-app.sh`, `verify-release-version.sh`, and `readiness-stress.sh` now source it. The verify guard now checks make-app derives via the helper. Verified: verify + `--print` work via the helper, the guard fails if make-app stops calling it, syntax clean. Bumped to 0.9.39 (touches release-affecting make-app/verify) using `bump-version.sh` — dogfooding D-002.
 
 ---
 
