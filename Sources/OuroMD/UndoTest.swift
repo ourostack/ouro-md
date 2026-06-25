@@ -6,7 +6,7 @@ import WebKit
 /// the value at each step, so undo/redo can be verified without a GUI.
 final class UndoTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     private var webView: WKWebView!
-    private var window: DocumentWindow!
+    private var window: NSWindow!
     private var shortcutMonitor: UndoRedoShortcutMonitor?
     private var lastShortcutHandled = false
     private var lastShortcutResponder = ""
@@ -14,7 +14,7 @@ final class UndoTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
 
     func run() -> Never {
         let app = NSApplication.shared
-        app.setActivationPolicy(.regular)
+        HeadlessHarness.configure()
 
         let configuration = WKWebViewConfiguration()
         let controller = WKUserContentController()
@@ -27,15 +27,10 @@ final class UndoTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         guard let indexURL = OuroResources.web("index", "html") else {
             FileHandle.standardError.write(Data("undotest: index.html not found\n".utf8)); exit(1)
         }
-        // Host the web view in an off-screen key window so it can take focus and
-        // receive real input events (execCommand needs a focused editable).
-        let window = DocumentWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
-                                    styleMask: [.titled], backing: .buffered, defer: false)
-        window.contentView = webView
-        window.setFrameOrigin(NSPoint(x: -30000, y: -30000))
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-        self.window = window
+        // Undo runs through a focused contentEditable, so the app must be active
+        // for WebKit to grant DOM focus and route the synthesized cmd-z — the host
+        // window stays off-screen, so nothing visible appears.
+        self.window = HeadlessHarness.offscreenHostActive(webView, size: NSSize(width: 800, height: 600))
         installShortcutMonitor()
 
         webView.loadFileURL(indexURL, allowingReadAccessTo: indexURL.deletingLastPathComponent())

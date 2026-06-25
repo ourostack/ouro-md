@@ -10,7 +10,7 @@ import Vision
 final class UISurfaceTester {
     func run() -> Never {
         let app = NSApplication.shared
-        app.setActivationPolicy(.regular)
+        HeadlessHarness.configure()
 
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("ouro-ui-surface-\(UUID().uuidString)", isDirectory: true)
@@ -195,13 +195,7 @@ final class UISurfaceTester {
     private func accessibilityLabels<Content: View>(_ view: Content, constrainedTo size: NSSize) -> Set<String> {
         let host = NSHostingController(rootView: view)
         host.view.frame = NSRect(origin: .zero, size: size)
-        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
-                              styleMask: [.titled],
-                              backing: .buffered,
-                              defer: false)
-        window.contentView = host.view
-        window.setFrameOrigin(NSPoint(x: -30000, y: -30000))
-        window.makeKeyAndOrderFront(nil)
+        let window = HeadlessHarness.offscreenHost(host.view, size: size)
         RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.05))
         host.view.layoutSubtreeIfNeeded()
         var labels = collectAccessibilityLabels(from: window)
@@ -217,13 +211,7 @@ final class UISurfaceTester {
                 .environment(\.colorScheme, .light)
         )
         host.view.frame = NSRect(origin: .zero, size: size)
-        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
-                              styleMask: [.titled],
-                              backing: .buffered,
-                              defer: false)
-        window.contentView = host.view
-        window.setFrameOrigin(NSPoint(x: -30000, y: -30000))
-        window.makeKeyAndOrderFront(nil)
+        let window = HeadlessHarness.offscreenHost(host.view, size: size)
         RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.08))
         host.view.layoutSubtreeIfNeeded()
         window.displayIfNeeded()

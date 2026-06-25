@@ -9,7 +9,7 @@ final class AlertMarkerTester: NSObject, WKScriptMessageHandler, WKNavigationDel
 
     func run() -> Never {
         let app = NSApplication.shared
-        app.setActivationPolicy(.regular)
+        HeadlessHarness.configure()
 
         let configuration = WKWebViewConfiguration()
         let controller = WKUserContentController()
@@ -22,12 +22,7 @@ final class AlertMarkerTester: NSObject, WKScriptMessageHandler, WKNavigationDel
         guard let indexURL = OuroResources.web("index", "html") else {
             FileHandle.standardError.write(Data("alerttest: index.html not found\n".utf8)); exit(1)
         }
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
-                              styleMask: [.titled], backing: .buffered, defer: false)
-        window.contentView = webView
-        window.setFrameOrigin(NSPoint(x: -30000, y: -30000))
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        HeadlessHarness.offscreenHost(webView, size: NSSize(width: 800, height: 600))
 
         webView.loadFileURL(indexURL, allowingReadAccessTo: indexURL.deletingLastPathComponent())
         DispatchQueue.main.asyncAfter(deadline: .now() + 30) {

@@ -25,7 +25,10 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
 
     func run() -> Never {
         let app = NSApplication.shared
-        app.setActivationPolicy(.regular)
+        // Headless: no Dock icon, no focus stealing, off-screen host window (see
+        // HeadlessHarness) so the probe never takes over the user's screen and its
+        // result can't be perturbed by whatever app/window is active.
+        HeadlessHarness.configure()
 
         let configuration = WKWebViewConfiguration()
         let controller = WKUserContentController()
@@ -36,15 +39,10 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         let frame = NSRect(x: 0, y: 0, width: viewportWidth, height: viewportHeight)
         webView = WKWebView(frame: frame, configuration: configuration)
         webView.navigationDelegate = self
+        HeadlessHarness.offscreenHost(webView, size: frame.size)
         guard let indexURL = OuroResources.web("index", "html") else {
             FileHandle.standardError.write(Data("tablewraptest: index.html not found\n".utf8)); exit(1)
         }
-        let window = NSWindow(contentRect: frame, styleMask: [.titled], backing: .buffered, defer: false)
-        window.contentView = webView
-        window.setFrameOrigin(NSPoint(x: -30000, y: -30000))
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-
         webView.loadFileURL(indexURL, allowingReadAccessTo: indexURL.deletingLastPathComponent())
         DispatchQueue.main.asyncAfter(deadline: .now() + 22) {
             FileHandle.standardError.write(Data("tablewraptest: timed out\n".utf8)); exit(1)
@@ -388,7 +386,7 @@ final class TableWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDeleg
       // table widths — and therefore scroll/affordance state — that don't match
       // the final rendered layout.
       if (document.fonts && document.fonts.ready && typeof document.fonts.ready.then === "function") {
-        document.fonts.ready.then(function () { requestAnimationFrame(measure); });
+        document.fonts.ready.then(measure);
       } else {
         measure();
       }

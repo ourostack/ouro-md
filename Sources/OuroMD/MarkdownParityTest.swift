@@ -7,7 +7,7 @@ import OuroMDCore
 final class MarkdownParityTester {
     func run() -> Never {
         let app = NSApplication.shared
-        app.setActivationPolicy(.regular)
+        HeadlessHarness.configure()
         Task { @MainActor in
             let ok = await self.execute()
             exit(ok ? 0 : 1)

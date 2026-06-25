@@ -18,7 +18,7 @@ final class CodeWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDelega
 
     func run() -> Never {
         let app = NSApplication.shared
-        app.setActivationPolicy(.regular)
+        HeadlessHarness.configure()
 
         let configuration = WKWebViewConfiguration()
         let controller = WKUserContentController()
@@ -32,11 +32,7 @@ final class CodeWrapTester: NSObject, WKScriptMessageHandler, WKNavigationDelega
         guard let indexURL = OuroResources.web("index", "html") else {
             FileHandle.standardError.write(Data("codewraptest: index.html not found\n".utf8)); exit(1)
         }
-        let window = NSWindow(contentRect: frame, styleMask: [.titled], backing: .buffered, defer: false)
-        window.contentView = webView
-        window.setFrameOrigin(NSPoint(x: -30000, y: -30000))
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        HeadlessHarness.offscreenHost(webView, size: frame.size)
 
         webView.loadFileURL(indexURL, allowingReadAccessTo: indexURL.deletingLastPathComponent())
         DispatchQueue.main.asyncAfter(deadline: .now() + 22) {

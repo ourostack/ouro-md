@@ -50,3 +50,35 @@ updates. New discoveries get the next `D-00n` id.
 **Status**: open
 
 ---
+
+## [D-004] — Headless test harnesses pop visible windows and steal the user's focus
+
+**Source**: observed-during-seed (reported by the user mid-campaign, with a screenshot of a probe window taking over the screen)
+**What**: ~18 CLI harnesses (`--tablewraptest`, `--undotest`, `--uisurfacetest`, etc.) each call `setActivationPolicy(.regular)` + create a `.titled` `NSWindow` (which macOS constrains back on-screen even when positioned off-screen) + `makeKeyAndOrderFront` + `NSApp.activate(ignoringOtherApps: true)` — so every local run (native scenarios, pr-preflight) pops windows over the user's apps and yanks keyboard focus.
+**Where**: `Sources/OuroMD/{TableWrapTest,UndoTest,UISurfaceTest,EditorSurfaceTest,...}.swift` (18 files); `Snapshot.swift`/`RoundTrip.swift` already do the gentle `.accessory` no-window thing.
+**Why it matters**: Makes the test suite hostile to run on a machine the human is using; also caused a real flake — `tablewraptest: timed out` in a local preflight when the user reclaimed focus and WebKit throttled the (then focus-dependent) render.
+**Evidence**: User screenshot of a "Dogfood Tables" probe window floating over iMessage/browser; the v0.9.37 preflight failed only on `tablewraptest: timed out`.
+**Severity**: high-value
+**Blast radius**: affects one module (test harnesses)
+**Fix shape**: Add a shared `HeadlessHarness` (`.accessory` + an off-screen, borderless, key-capable `HeadlessHostWindow` that refuses the on-screen constraint); migrate every harness to it and drop `NSApp.activate(...)`. Proven on TableWrapTest (renders + measures correctly, off-screen, no focus theft). Verify the whole set via one `run-native-scenarios.sh` once all are migrated.
+**Verification**: `swift build`; `./scripts/run-native-scenarios.sh` EXIT 0 with no on-screen windows; spot-run a couple of harnesses.
+**Status**: fixed
+**Linked work**: branch `chore/headless-test-harnesses`
+**Notes**: Render/measure harnesses use `HeadlessHarness.offscreenHost` (off-screen, no activation — fully headless). Input/focus harnesses (undo, copy, editor paste/drop, selection blur, search reveal) need WebKit to grant the editable DOM focus, which only happens when the window is on a real screen AND the app is active — so they use `HeadlessHarness.offscreenHostActive`, a transparent (alpha 0), click-through, on-screen window plus `NSApp.activate`. Net effect: no visible windows ever; only a brief app-activation/focus blip for the handful of focus-dependent probes. Verified: `run-native-scenarios.sh` EXIT 0, 21 scenarios / 154 checks, no window pop-ups.
+
+---
+
+## [D-005] — README maintainer note still says to bump the version in make-app.sh
+
+**Source**: observed-during-seed (spotted while bumping the README for the headless release)
+**What**: After D-001 made `make-app.sh` *derive* its version, the README "Cutting a release" section still instructed maintainers to "bump `VERSION` in `make-app.sh`, `OuroMDRelease.version`, and this README" — but `verify-release-version.sh` now *rejects* a hardcoded `VERSION=` in make-app.sh, so following the doc would fail the build.
+**Where**: `README.md` (maintainer "Cutting a release" section).
+**Why it matters**: Actively-wrong release instructions; a maintainer following them re-hardcodes make-app.sh and trips the guard.
+**Severity**: nice-to-have
+**Blast radius**: self-contained (docs)
+**Fix shape**: One-line doc correction — bump only `OuroMDRelease.version` + the README status line; note make-app derives.
+**Status**: fixed
+**Linked work**: fixed inline in the headless PR (README was already being edited for the version bump).
+**Notes**: Should ideally have ridden along with #47; folded here as an incidental doc fix in a file already touched.
+
+---

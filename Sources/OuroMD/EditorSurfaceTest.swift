@@ -16,7 +16,7 @@ final class EditorSurfaceTester: NSObject {
 
     func run() -> Never {
         let app = NSApplication.shared
-        app.setActivationPolicy(.regular)
+        HeadlessHarness.configure()
         Task { @MainActor in
             let ok = await self.execute()
             self.cleanup()
@@ -86,11 +86,7 @@ final class EditorSurfaceTester: NSObject {
         coordinator.webView = webView
         model.bridge = coordinator
 
-        window = NSWindow(contentRect: frame, styleMask: [.titled], backing: .buffered, defer: false)
-        window.contentView = webView
-        window.setFrameOrigin(NSPoint(x: -30000, y: -30000))
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        window = HeadlessHarness.offscreenHostActive(webView, size: frame.size)
 
         guard let indexURL = OuroResources.web("index", "html") else {
             throw SurfaceError("index.html not found")
