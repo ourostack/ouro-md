@@ -24,6 +24,7 @@ on:
       - 'scripts/package-release.sh'
       - 'scripts/check-hosted-installer.sh'
       - 'scripts/check-live-update-path.sh'
+      - 'scripts/check-shell-dependency.sh'
       - 'scripts/check-signing-readiness.sh'
       - 'scripts/pr-preflight.sh'
       - 'scripts/release-policy.sh'
@@ -74,6 +75,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: ./scripts/release-policy.sh freshness --mode main
+
+      - name: Verify release package shell guard
+        run: ./scripts/release-policy.sh selftest-package-guards
 
       - name: Check if release already exists
         id: check

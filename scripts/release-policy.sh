@@ -24,6 +24,7 @@ usage:
   scripts/release-policy.sh release-exists --version X.Y.Z [--repo OWNER/REPO]
   scripts/release-policy.sh scan [PATH...]
   scripts/release-policy.sh selftest-pr-base
+  scripts/release-policy.sh selftest-package-guards
   scripts/release-policy.sh verify-local --version X.Y.Z --sha SHA --zip ZIP --manifest MANIFEST
   scripts/release-policy.sh verify-published [--repo OWNER/REPO] [--version X.Y.Z] [--sha SHA]
 USAGE
@@ -111,7 +112,7 @@ release_relevant_path() {
     # installed, or verified for publish, DOES gate a release.
     Package.swift|Package.resolved|make-app.sh) return 0 ;;
     Sources/*|Resources/*|web/*) return 0 ;;
-    scripts/check-hosted-installer.sh|scripts/check-live-update-path.sh|scripts/check-signing-readiness.sh|scripts/package-release.sh|scripts/pr-preflight.sh) return 0 ;;
+    scripts/check-hosted-installer.sh|scripts/check-live-update-path.sh|scripts/check-shell-dependency.sh|scripts/check-signing-readiness.sh|scripts/package-release.sh|scripts/pr-preflight.sh) return 0 ;;
     scripts/verify-packaged-app.sh|scripts/verify-release-version.sh|scripts/release-policy.sh) return 0 ;;
     .github/workflows/release.yml) return 0 ;;
     *) return 1 ;;
@@ -498,6 +499,7 @@ selftest_paths_mode() {
     Sources/OuroMDCore/OuroMDRelease.swift
     Sources/OuroMD/web/bridge.js
     make-app.sh
+    scripts/check-shell-dependency.sh
     scripts/verify-release-version.sh
     scripts/release-policy.sh
   )
@@ -521,6 +523,28 @@ selftest_paths_mode() {
     ! release_relevant_path "$p" || fail "paths selftest: '$p' should NOT gate a release but does"
   done
   echo "release policy paths selftest ok"
+}
+
+selftest_package_guards_mode() {
+  python3 <<'PY'
+from pathlib import Path
+
+package = Path("scripts/package-release.sh").read_text(encoding="utf-8")
+guard = "./scripts/check-shell-dependency.sh"
+build = "./make-app.sh"
+
+if guard not in package:
+    raise SystemExit("package-release.sh must run scripts/check-shell-dependency.sh")
+if build not in package:
+    raise SystemExit("package-release.sh no longer runs make-app.sh; update this selftest")
+if package.index(guard) > package.index(build):
+    raise SystemExit("package-release.sh must run scripts/check-shell-dependency.sh before make-app.sh")
+
+workflow = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
+if "scripts/check-shell-dependency.sh" not in workflow:
+    raise SystemExit("release.yml must treat scripts/check-shell-dependency.sh as release-path input")
+PY
+  echo "release package guard selftest ok"
 }
 
 release_exists_mode() {
@@ -705,6 +729,7 @@ case "$cmd" in
   release-exists) release_exists_mode "$@" ;;
   scan) scan_mode "$@" ;;
   selftest-pr-base) selftest_pr_base_mode "$@" ;;
+  selftest-package-guards) selftest_package_guards_mode "$@" ;;
   selftest-paths) selftest_paths_mode "$@" ;;
   verify-local) verify_local_mode "$@" ;;
   verify-published) verify_published_mode "$@" ;;
