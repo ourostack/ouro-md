@@ -42,6 +42,27 @@ final class MarkdownTidyTests: XCTestCase {
         XCTAssertEqual(MarkdownTidy.tidy("para\n\n---\n\nmore"), "para\n\n---\n\nmore")
     }
 
+    func testDoesNotRewriteNonTableLinesThatMerelyUseSeparatorCharacters() {
+        // AN-003: a bullet list item whose content is a pipe (only `|:- ` chars,
+        // a pipe and a dash) must NOT be classified as a table separator and
+        // rewritten — that would silently corrupt content on save.
+        XCTAssertEqual(MarkdownTidy.tidy("- |"), "- |")
+        XCTAssertEqual(MarkdownTidy.tidy("- | -"), "- | -")
+        // AN-002 negative control: an alignment-only line (pipes + colons, no
+        // dash) is not a delimiter row — pins the "every cell is :?-+:?" guard.
+        XCTAssertEqual(MarkdownTidy.tidy("| : | : |"), "| : | : |")
+        // Empty cells aren't a delimiter row either.
+        XCTAssertEqual(MarkdownTidy.tidy("| |"), "| |")
+        XCTAssertEqual(MarkdownTidy.tidy("||"), "||")
+    }
+
+    func testExpandsCompactAndNoSpaceSeparators() {
+        // Real delimiter rows must still expand, including the no-space form.
+        XCTAssertEqual(MarkdownTidy.tidy("| A |\n|---|\n| 1 |"), "| A |\n| --- |\n| 1 |")
+        XCTAssertEqual(MarkdownTidy.tidy("| A | B |\n|-|:-:|\n| 1 | 2 |"),
+                       "| A | B |\n| --- | :---: |\n| 1 | 2 |")
+    }
+
     func testDoesNotTouchFencedCode() {
         // Lines that look like separators, and blank lines, inside a code fence
         // must be preserved exactly.
