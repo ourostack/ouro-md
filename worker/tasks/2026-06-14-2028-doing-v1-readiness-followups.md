@@ -1,9 +1,14 @@
 # Doing: Ouro MD V1 Readiness Follow-Ups
 
-**Status**: REVIEWING
+**Status**: done
 **Execution Mode**: direct
 **Created**: 2026-06-14 20:28 PDT
 **Artifacts**: ./2026-06-14-2028-doing-v1-readiness-followups/
+
+> Closeout note (2026-06-25): this follow-up shipped in PR #3
+> (`https://github.com/ourostack/ouro-md/pull/3`), merge
+> `636a1c814840cae880a85714c7e08339679b46e2`, and release `v0.9.2`.
+> The folder-scan performance item is now closed in the audit backlog.
 
 ## Objective
 Complete the remaining dogfood-readiness follow-ups from the Desk task's `Next`
@@ -52,8 +57,8 @@ section without adding licensing/payment work or Developer ID signing/notarizati
 - [x] `swift run ouro-md --renderprobe`
 - [x] `swift run ouro-md --roundtrip sample.md`
 - [x] CLI footnote smoke
-- [ ] Package release with embedded PostHog configuration
-- [ ] Publish GitHub release `v0.9.2`
-- [ ] Live installer smoke from `https://ouro.bot/ouro-md-install.sh`
-- [ ] In-app update path smoke from `v0.9.1` to `v0.9.2`
-- [ ] Harsh cold reviewer gate
+- [x] Package release with embedded PostHog configuration
+- [x] Publish GitHub release `v0.9.2`
+- [x] Live installer smoke from `https://ouro.bot/ouro-md-install.sh`
+- [x] In-app update path smoke from `v0.9.1` to `v0.9.2`
+- [x] Harsh cold reviewer gate

@@ -1,10 +1,16 @@
 ---
-status: in_progress
+status: done
 execution_mode: direct
 branch: worker/ouro-md-human-use-readiness
 planning: worker/tasks/2026-06-14-2236-planning-human-use-readiness.md
 created: 2026-06-14-2236
 ---
+
+> Closeout note (2026-06-25): this sweep shipped in PR #4
+> (`https://github.com/ourostack/ouro-md/pull/4`), merge
+> `69e9b3cff735aabd4b8e4ca9eff5e6f42a308c1e`, and release `v0.9.3`.
+> Final stress, package, live installer, and update-path evidence lives in the
+> artifact directory.
 
 ## Goal
 
@@ -24,7 +30,7 @@ Execute the human-use readiness sweep described in the planning doc, patch reach
   - Output: README/PRIVACY/docs updates, uninstall/reset docs, issue templates, and v1 acceptance checklist.
   - Acceptance: docs match actual product/release behavior and exclude deferred signing/licensing work.
 
-- [ ] Unit 4 - Full verification and harsh review
+- [x] Unit 4 - Full verification and harsh review
   - Output: full test/build/probe/stress logs, final reviewer convergence, and PR/release handoff evidence.
   - Acceptance: branch is clean, pushed, reviewed, and either merged/published or clearly ready with no blocking residual.
 
@@ -33,7 +39,7 @@ Execute the human-use readiness sweep described in the planning doc, patch reach
 - [x] Unit 1 complete.
 - [x] Unit 2 complete.
 - [x] Unit 3 complete.
-- [ ] Unit 4 complete.
+- [x] Unit 4 complete.
 
 ## Evidence Directory
 

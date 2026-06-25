@@ -1,8 +1,12 @@
 # Ouro MD Full System Audit
 
-**Status**: NEEDS_REVIEW
+**Status**: done
 **Created**: 2026-06-14 15:19
 **Branch**: worker/ouro-md-auto-updater
+
+> Closeout note (2026-06-25): the routed audit backlog is closed. A-001 through
+> A-007 shipped across PR #1 (`v0.9.1`) and the later v1-readiness follow-up
+> PR #3 (`v0.9.2`); see `audit-backlog.md` for terminal dispositions.
 
 ## System Summary
 
