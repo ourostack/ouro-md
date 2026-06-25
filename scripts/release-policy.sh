@@ -25,6 +25,7 @@ usage:
   scripts/release-policy.sh scan [PATH...]
   scripts/release-policy.sh selftest-pr-base
   scripts/release-policy.sh selftest-package-guards
+  scripts/release-policy.sh selftest-shell-dependency-watch
   scripts/release-policy.sh verify-local --version X.Y.Z --sha SHA --zip ZIP --manifest MANIFEST
   scripts/release-policy.sh verify-published [--repo OWNER/REPO] [--version X.Y.Z] [--sha SHA]
 USAGE
@@ -547,6 +548,49 @@ PY
   echo "release package guard selftest ok"
 }
 
+selftest_shell_dependency_watch_mode() {
+  bash -n scripts/refresh-shell-dependency.sh
+  python3 <<'PY'
+from pathlib import Path
+
+workflow = Path(".github/workflows/shell-dependency-watch.yml").read_text(encoding="utf-8")
+refresh = Path("scripts/refresh-shell-dependency.sh").read_text(encoding="utf-8")
+
+workflow_needles = [
+    "workflow_dispatch:",
+    "repository_dispatch:",
+    "ouro-native-apple-app-shell-main-updated",
+    "schedule:",
+    "contents: write",
+    "pull-requests: write",
+    "macos-14",
+    "./scripts/check-shell-dependency.sh",
+    "./scripts/refresh-shell-dependency.sh",
+    "automation/ouro-md-refresh-shell-dependency",
+    "already has the desired tree",
+    "no open PR was found; creating one",
+    "gh pr create",
+]
+for needle in workflow_needles:
+    if needle not in workflow:
+        raise SystemExit(f"shell-dependency-watch.yml must contain {needle!r}")
+
+refresh_needles = [
+    "./scripts/check-shell-dependency.sh",
+    "git status --porcelain",
+    "non_shell_pin_snapshot",
+    'swift package update "$identity"',
+    "./scripts/bump-version.sh",
+    "releaseHighlights",
+    "./scripts/verify-release-version.sh",
+]
+for needle in refresh_needles:
+    if needle not in refresh:
+        raise SystemExit(f"refresh-shell-dependency.sh must contain {needle!r}")
+PY
+  echo "shell dependency watch selftest ok"
+}
+
 release_exists_mode() {
   local repo="${GITHUB_REPOSITORY:-$repo_default}"
   local version=""
@@ -730,6 +774,7 @@ case "$cmd" in
   scan) scan_mode "$@" ;;
   selftest-pr-base) selftest_pr_base_mode "$@" ;;
   selftest-package-guards) selftest_package_guards_mode "$@" ;;
+  selftest-shell-dependency-watch) selftest_shell_dependency_watch_mode "$@" ;;
   selftest-paths) selftest_paths_mode "$@" ;;
   verify-local) verify_local_mode "$@" ;;
   verify-published) verify_published_mode "$@" ;;
