@@ -63,6 +63,28 @@ final class MarkdownTidyTests: XCTestCase {
                        "| A | B |\n| --- | :---: |\n| 1 | 2 |")
     }
 
+    func testTidyIsIdempotent() {
+        // tidy must be a fixed point: applying it twice equals applying it once.
+        // Negative control — any non-idempotent normalization (e.g. an expanded
+        // separator the classifier no longer recognizes, or blank-collapse that
+        // keeps eating blanks) makes the second application differ and fails here.
+        let inputs = [
+            "| A | B |\n| - | - |\n| 1 | 2 |",                 // separator expansion
+            "a\n\n\n\nb",                                       // blank-run collapse
+            "---\ntitle: x\nstatus: done\n---\n# H\n\nBody",    // front-matter blank restore
+            "```\n| - | - |\n\n\nx\n```",                       // fenced content untouched
+            "# H\n\n- a\n- b\n\n> quote\n\ntext",               // mixed prose
+            "| A |\n|---|\n| 1 |",                              // no-space separator
+            "- |\n- list item",                                // non-table lines (left as-is)
+            "",                                                 // empty input
+        ]
+        for input in inputs {
+            let once = MarkdownTidy.tidy(input)
+            XCTAssertEqual(MarkdownTidy.tidy(once), once,
+                           "tidy is not idempotent for \(input.debugDescription)")
+        }
+    }
+
     func testDoesNotTouchFencedCode() {
         // Lines that look like separators, and blank lines, inside a code fence
         // must be preserved exactly.

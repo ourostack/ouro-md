@@ -54,7 +54,9 @@ convergence-failure report, not "good enough."
 |---|---|---|
 | baseline | P1 ✓ · P3 ✓ · P2/P5 pending | `check-coverage.sh`: HTMLDocument 100%, MarkdownTidy 75/75 line + 50/50 region 100%. Determinism: scope tests give identical results across runs (the runner's timing line varies but is not asserted output). P2/P5 from the audit workflow (3 adversarial reviewers, running).
 | audit | **energy = 3** (AN-001, AN-002, AN-003) | 3-reviewer audit: SEC-1/P5-security CLEAN; found AN-001 (idempotency unasserted), AN-002 (HIGH: dash-guard no negative control), AN-003 (RT-1b: `- \|` rewritten — empirically confirmed real bug). AN-004 (CRLF) refuted/deferred. |
-| iter-1 (AN-003 fix) | energy 3 → **1** pending gate | PR-1: rewrote `isTableSeparator` as a real delimiter-row check + `isDelimiterCell`; added negative controls (AN-002) + bullet/no-table tests (AN-003) + no-space-separator tests. 240 tests green, P1 still 100% (MarkdownTidy 87/87 line, 59/59 region). Closes AN-002+AN-003 → **P5 gate running** (2 reviewers). Remaining: AN-001. |
+| iter-1 (AN-003 fix) | energy 3 → **1** | PR-1 (#56, shipped 0.9.43): rewrote `isTableSeparator` as a real delimiter-row check + `isDelimiterCell`; added negative controls (AN-002) + bullet/no-table tests (AN-003) + no-space-separator tests. P1 still 100% (MarkdownTidy 87/87 line, 59/59 region). **P5 gate: 2 reviewers, both approve, zero surviving CRITICAL/HIGH.** Closed AN-002+AN-003. |
+| iter-2 (AN-001) | energy 1 → **0** | PR-2 (test-only): added `testTidyIsIdempotent` (RT-1a) — 8-input fixed-point assertion, passes; negative control for any non-idempotent change. Closes AN-001. |
+| re-measure | **energy = 0** | P1 ✓ (100% line+region) · P3 ✓ (deterministic) · P2 ✓ (idempotency + dash-guard + bullet controls all present) · P5 ✓ (SEC-1 clean; AN-003 fix gated, no surviving CRITICAL/HIGH) · P6 (CI on PR-2). AN-004 deferred (not a rubric violation). **→ ANNEALED** pending PR-2 CI + a fresh confirmation pass. |
 
 ---
 
@@ -85,7 +87,7 @@ violation of the instantiated rubric → not counted (anti-regress).
 **Blast radius**: self-contained (test-only)
 **Fix shape**: Add a test asserting `tidy(tidy(x))==tidy(x)` over a battery (tables, blank runs, front matter, fences, plain). Negative control: a non-idempotent change fails it.
 **Prerequisites**: none.
-**Status**: open
+**Status**: fixed (PR-2, test-only)
 
 ## [AN-002] — `isTableSeparator`'s `contains("-")` guard has no negative control
 **Criterion**: P2
