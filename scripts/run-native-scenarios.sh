@@ -33,6 +33,7 @@ run() {
 
 run_with_timeout "${OURO_UNDO_SCENARIO_TIMEOUT_SECONDS:-180}" --undotest
 run --wraptest
+run --linktest
 run --renderprobe
 run --mermaidcliptest
 run --reloadrendertest
