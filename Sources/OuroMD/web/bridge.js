@@ -223,6 +223,31 @@
       e.stopImmediatePropagation();
       document.execCommand("insertText", false, "[" + selected + "](" + text.trim() + ")");
     }, true);
+
+    // ⌘-click a link to open it in the default browser. A contenteditable
+    // surface never fires WebKit's .linkActivated navigation (a plain click
+    // just places the caret), and Vditor's own window.open is dropped because
+    // the app installs no WKUIDelegate — so without this, links are dead. We
+    // use ⌘-click (not plain click) so plain clicks stay free for editing.
+    document.addEventListener("click", function (e) {
+      if (!e.metaKey || !e.target || !e.target.closest) { return; }
+      if (!e.target.closest("#editor")) { return; }
+      var url = "";
+      // WYSIWYG mode and the Split/preview pane render a real <a href>.
+      var a = e.target.closest("a[href]");
+      if (a) { url = a.href || a.getAttribute("href") || ""; }
+      // IR (live-preview) mode renders a link as <span data-type="a"> with no
+      // href — the URL is the text of its .vditor-ir__marker--link child.
+      if (!url) {
+        var node = e.target.closest('span[data-type="a"]');
+        var marker = node && node.querySelector(".vditor-ir__marker--link");
+        if (marker) { url = (marker.textContent || "").trim(); }
+      }
+      if (!url) { return; }
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      post("openURL", { url: url });
+    }, true);
   }
 
   function create() {

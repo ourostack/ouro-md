@@ -134,6 +134,17 @@ struct EditorWebView: NSViewRepresentable {
                 }
             case "activeHeading":
                 if let index = body["index"] as? Int { model.setActiveHeading(index) }
+            case "openURL":
+                // ⌘-click on a link in the editable area: the bridge resolved the
+                // anchor's href and asks us to open it. Same scheme allow-list as
+                // the navigation delegate so the editor can't be coaxed into
+                // opening file:// or other unexpected schemes.
+                if let urlString = body["url"] as? String,
+                   let url = URL(string: urlString),
+                   let scheme = url.scheme?.lowercased(),
+                   ["http", "https", "mailto"].contains(scheme) {
+                    NSWorkspace.shared.open(url)
+                }
             default:
                 break
             }
