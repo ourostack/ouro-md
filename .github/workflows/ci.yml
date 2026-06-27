@@ -44,6 +44,10 @@ jobs:
         run: ./scripts/release-policy.sh scan .
       - name: Verify shared shell dependency freshness
         run: ./scripts/check-shell-dependency.sh
+      - name: Verify shared shell boundary selftest
+        run: ./scripts/check-shell-boundary.sh --selftest
+      - name: Verify shared shell boundary
+        run: ./scripts/check-shell-boundary.sh
       - name: Check signing and notarization readiness
         run: ./scripts/check-signing-readiness.sh
       - name: Run tests

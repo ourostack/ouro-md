@@ -63,7 +63,7 @@ struct OuroMDAboutView: View {
     }
 }
 
-struct ReleaseUpdateControls: View {
+struct OuroMDReleaseControls: View {
     @ObservedObject var updateCoordinator: OuroMDUpdateCoordinator
     var showTitle: Bool
 
@@ -82,7 +82,7 @@ struct ReleaseUpdateControls: View {
     }
 }
 
-struct UpdateInstalledConfirmationView: View {
+struct OuroMDUpdateInstalledNotice: View {
     let version: String
     let onOpenAbout: () -> Void
     let onDismiss: () -> Void
@@ -98,72 +98,5 @@ struct UpdateInstalledConfirmationView: View {
             onDismiss: onDismiss
         )
         .frame(width: 360)
-    }
-}
-
-extension OuroMDUpdateCoordinator {
-    var appShellUpdateState: ReleaseUpdateViewState {
-        ReleaseUpdateViewState(
-            kind: appShellUpdateKind,
-            statusLine: releaseUpdateStatusLine,
-            metadata: appShellUpdateMetadata,
-            detail: appShellUpdateDetail,
-            warning: appShellUpdateWarning,
-            canReviewUpdate: updateBadgeText != nil,
-            canOpenReleasePage: releasePageURL != nil
-        )
-    }
-
-    var appShellUpdateActions: ReleaseUpdateActions {
-        ReleaseUpdateActions(
-            checkForUpdates: { Task { await self.checkForUpdatesAndPromptInstall() } },
-            reviewUpdate: { self.presentUpdatePrompt() },
-            openReleasePage: {
-                if let url = self.releasePageURL {
-                    NSWorkspace.shared.open(url)
-                }
-            }
-        )
-    }
-
-    var appShellUpdateKind: ReleaseUpdateStateKind {
-        if isChecking { return .checking }
-        if isInstalling { return .installing }
-        if stagedUpdateVersion != nil { return .readyToRelaunch }
-        if let status = releaseUpdateStatusKind {
-            switch status {
-            case .current: return .current
-            case .updateAvailable: return .updateAvailable
-            case .unavailable: return .unavailable
-            }
-        }
-        if recentlyInstalledVersion != nil { return .installed }
-        return .notChecked
-    }
-
-    var appShellUpdateMetadata: [ReleaseUpdateMetadataItem] {
-        var items: [ReleaseUpdateMetadataItem] = []
-        if let latest = latestKnownVersion {
-            items.append(ReleaseUpdateMetadataItem(id: "latest", label: "Latest", value: latest))
-        }
-        if let published = releasePublishedAtText {
-            items.append(ReleaseUpdateMetadataItem(id: "published", label: "Published", value: published))
-        }
-        items.append(ReleaseUpdateMetadataItem(id: "channel", label: "Channel", value: "Direct download"))
-        return items
-    }
-
-    var appShellUpdateDetail: String? {
-        guard let snapshot = releaseSnapshot, snapshot.status == .updateAvailable, snapshot.hasInstallableAssets else {
-            return nil
-        }
-        return "Before installing, Ouro MD verifies the release manifest, SHA-256 checksum, byte count, bundle identity, and newer version."
-    }
-
-    var appShellUpdateWarning: String? {
-        guard let snapshot = releaseSnapshot, snapshot.status == .updateAvailable, !snapshot.hasInstallableAssets else {
-            return nil
-        }
-        return "A newer release exists, but the app archive or manifest is missing."
     }
 }

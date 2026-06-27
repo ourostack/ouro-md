@@ -66,7 +66,7 @@ struct PreferencesView: View {
             preferenceRow("Updates") {
                 VStack(alignment: .leading, spacing: 8) {
                     Toggle("Check for updates automatically", isOn: Binding(get: { updateCoordinator.autoUpdateEnabled }, set: { updateCoordinator.setAutoUpdateEnabled($0) }))
-                    ReleaseUpdateControls(updateCoordinator: updateCoordinator, showTitle: false)
+                    OuroMDReleaseControls(updateCoordinator: updateCoordinator, showTitle: false)
                 }
             }
 

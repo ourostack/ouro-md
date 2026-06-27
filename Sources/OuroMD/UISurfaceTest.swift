@@ -67,12 +67,12 @@ final class UISurfaceTester {
         }
         waitUntil(timeout: 3) { availableUpdateCoordinator.releaseSnapshot != nil }
         let availableUpdateSize = fittingSize(
-            ReleaseUpdateControls(updateCoordinator: availableUpdateCoordinator, showTitle: true)
+            OuroMDReleaseControls(updateCoordinator: availableUpdateCoordinator, showTitle: true)
                 .frame(width: 560, alignment: .leading),
             constrainedTo: NSSize(width: 560, height: 220)
         )
         let availableUpdateText = renderedText(
-            ReleaseUpdateControls(updateCoordinator: availableUpdateCoordinator, showTitle: true)
+            OuroMDReleaseControls(updateCoordinator: availableUpdateCoordinator, showTitle: true)
                 .frame(width: 560, alignment: .leading),
             constrainedTo: NSSize(width: 560, height: 220)
         )

@@ -116,6 +116,7 @@ release_relevant_path() {
     Sources/*|Resources/*|web/*) return 0 ;;
     scripts/lib/app-version.sh) return 0 ;;
     scripts/check-hosted-installer.sh|scripts/check-live-update-path.sh|scripts/check-shell-dependency.sh|scripts/check-signing-readiness.sh|scripts/package-release.sh|scripts/pr-preflight.sh) return 0 ;;
+    scripts/check-shell-boundary.sh|scripts/shell-boundary-allowlist.txt) return 0 ;;
     scripts/verify-packaged-app.sh|scripts/verify-release-version.sh|scripts/release-policy.sh) return 0 ;;
     .github/workflows/release.yml) return 0 ;;
     *) return 1 ;;
@@ -504,6 +505,8 @@ selftest_paths_mode() {
     make-app.sh
     scripts/lib/app-version.sh
     scripts/check-shell-dependency.sh
+    scripts/check-shell-boundary.sh
+    scripts/shell-boundary-allowlist.txt
     scripts/verify-release-version.sh
     scripts/release-policy.sh
   )
@@ -545,10 +548,27 @@ if package.index(guard) > package.index(build):
     raise SystemExit("package-release.sh must run scripts/check-shell-dependency.sh before make-app.sh")
 
 workflow = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
-if "scripts/check-shell-dependency.sh" not in workflow:
-    raise SystemExit("release.yml must treat scripts/check-shell-dependency.sh as release-path input")
-if "scripts/lib/app-version.sh" not in workflow:
-    raise SystemExit("release.yml must treat scripts/lib/app-version.sh as release-path input")
+for path in (
+    "scripts/check-shell-dependency.sh",
+    "scripts/check-shell-boundary.sh",
+    "scripts/shell-boundary-allowlist.txt",
+    "scripts/lib/app-version.sh",
+):
+    if path not in workflow:
+        raise SystemExit(f"release.yml must treat {path} as release-path input")
+
+ci = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+preflight = Path("scripts/pr-preflight.sh").read_text(encoding="utf-8")
+surfaces = (
+    ("ci.yml", ci, "run: ./scripts/check-shell-boundary.sh --selftest", "run: ./scripts/check-shell-boundary.sh"),
+    ("pr-preflight.sh", preflight, "./scripts/check-shell-boundary.sh --selftest", "./scripts/check-shell-boundary.sh"),
+)
+for surface, text, selftest_line, scan_line in surfaces:
+    lines = {line.strip() for line in text.splitlines()}
+    if selftest_line not in lines:
+        raise SystemExit(f"{surface} must run {selftest_line}")
+    if scan_line not in lines:
+        raise SystemExit(f"{surface} must run {scan_line}")
 PY
   echo "release package guard selftest ok"
 }
