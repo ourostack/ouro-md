@@ -71,6 +71,10 @@ if hasFlag("--linktest") {
     LinkTester().run()
 }
 
+if hasFlag("--wrapgluetest") {
+    WrapGlueTester().run()
+}
+
 if hasFlag("--tablewraptest") {
     let width = Double(argValue("--tablewrap-width") ?? "") ?? 480
     let height = Double(argValue("--tablewrap-height") ?? "") ?? 640
