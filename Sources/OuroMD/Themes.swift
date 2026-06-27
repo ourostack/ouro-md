@@ -218,6 +218,7 @@ private func readerCSS(_ p: Palette) -> String {
     td{border:1px solid \(p.cellBorder);padding:6px 13px;white-space:normal;overflow-wrap:normal;word-break:normal;vertical-align:top;max-width:42rem;}
     th.ouro-code-only-cell,td.ouro-code-only-cell{min-width:max-content;max-width:none;}
     th.ouro-long-cell,td.ouro-long-cell{min-width:16rem;}
+    .ouro-nowrap{white-space:nowrap;}
     td code,th code{white-space:nowrap;display:inline-block;max-width:100%;overflow-x:auto;vertical-align:bottom;}
     img{max-width:100%;}
     """
@@ -319,6 +320,7 @@ private func editorCSS(_ p: Palette) -> String {
     .vditor-reset table td{border:1px solid \(p.cellBorder)!important;padding:6px 13px!important;color:\(p.fg)!important;background:transparent!important;white-space:normal!important;overflow-wrap:normal!important;word-break:normal!important;vertical-align:top!important;max-width:42rem;}
     .vditor-reset table th.ouro-code-only-cell,.vditor-reset table td.ouro-code-only-cell{min-width:max-content!important;max-width:none!important;}
     .vditor-reset table th.ouro-long-cell,.vditor-reset table td.ouro-long-cell{min-width:16rem!important;}
+    .vditor-reset .ouro-nowrap{white-space:nowrap!important;}
     .vditor-reset table td code,.vditor-reset table th code{white-space:nowrap!important;display:inline-block!important;max-width:100%!important;overflow-x:auto!important;vertical-align:bottom!important;}
 
     .vditor-reset img{max-width:100%;}

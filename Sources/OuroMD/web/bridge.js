@@ -631,6 +631,7 @@
     styleAlerts();
     updateAlertEditing();
     annotateTableCellSizing();
+    annotateNoOrphanGlue();
     annotateScrollableTables();
     resetTableScrollIfNeeded();
     resetNewTableScroll(document);
@@ -675,6 +676,62 @@
         cell.classList.add("ouro-long-cell");
       }
     }
+  }
+
+  // Keep a line wrap from orphaning a leading list-style enumerator from its
+  // word ("3.⏎Instructions") or a bracket from the inline code/link it hugs
+  // ("(code⏎)"). We surround the run with a white-space:nowrap span. This is a
+  // render-only decoration: it provably does not change getValue (the Markdown
+  // round-trips byte-identically — see --wrapgluetest), and Vditor regenerates
+  // the DOM on every render, so these spans are transient and re-applied.
+  var ENUM_RE = /^(\s*)((?:\d{1,3}|[a-zA-Z]|[ivxlcdm]{1,6}|[IVXLCDM]{1,6})[.)])(\s+)(\S+)/;
+
+  function annotateNoOrphanGlue() {
+    var blocks = document.querySelectorAll(
+      "#editor p,#editor li,#editor td,#editor th,#editor h1,#editor h2,#editor h3,#editor h4,#editor h5,#editor h6");
+    for (var i = 0; i < blocks.length; i++) { glueLeadingEnumerator(blocks[i]); }
+    var atoms = document.querySelectorAll('#editor span[data-type="code"],#editor span[data-type="a"]');
+    for (var j = 0; j < atoms.length; j++) { glueBracketedAtom(atoms[j]); }
+  }
+
+  function glueLeadingEnumerator(block) {
+    var walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (n) {
+        if (!n.nodeValue || !n.nodeValue.trim()) { return NodeFilter.FILTER_REJECT; }
+        if (n.parentNode && n.parentNode.closest(".vditor-ir__marker,.ouro-nowrap")) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var node = walker.nextNode();
+    if (!node) { return; }
+    var m = ENUM_RE.exec(node.nodeValue);
+    if (!m) { return; }
+    var end = m[1].length + m[2].length + m[3].length + m[4].length;
+    if (end > node.nodeValue.length) { return; }
+    wrapRange(node, m[1].length, node, end);
+  }
+
+  function glueBracketedAtom(atom) {
+    if (atom.parentNode && atom.parentNode.closest(".ouro-nowrap")) { return; }
+    var prev = atom.previousSibling, next = atom.nextSibling;
+    if (!prev || prev.nodeType !== 3 || !next || next.nodeType !== 3) { return; }
+    var open = /([(\[{])(\s?)$/.exec(prev.nodeValue);
+    var close = /^(\s?)([)\]}])/.exec(next.nodeValue);
+    if (!open || !close) { return; }
+    wrapRange(prev, prev.nodeValue.length - open[0].length, next, close[0].length);
+  }
+
+  function wrapRange(startNode, startOff, endNode, endOff) {
+    try {
+      var r = document.createRange();
+      r.setStart(startNode, startOff);
+      r.setEnd(endNode, endOff);
+      var span = document.createElement("span");
+      span.className = "ouro-nowrap";
+      r.surroundContents(span);
+    } catch (e) { /* leave the run as-is if the range can't be surrounded */ }
   }
 
   function schedulePostRender() {
