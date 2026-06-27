@@ -14,4 +14,8 @@ fi
   exit 1
 }
 
+if [[ "${1:-}" == "--selftest" ]]; then
+  exec "$checker" --selftest
+fi
+
 exec "$checker" --repo "$ROOT" --allowlist "$ROOT/scripts/shell-boundary-allowlist.txt"

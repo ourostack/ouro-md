@@ -269,6 +269,7 @@ final class AccessibilityAuditTester {
             "Sources/OuroMD/Sidebar.swift",
             "Sources/OuroMD/OuroMDShellAdapter.swift",
             "Sources/OuroMD/AppInfoView.swift",
+            "Sources/OuroMD/AppDelegate.swift",
         ]
         let appSources = sourcePaths
             .compactMap { try? String(contentsOf: root.appendingPathComponent($0), encoding: .utf8) }
@@ -290,6 +291,7 @@ final class AccessibilityAuditTester {
             ".accessibilityLabel(\"Command\")",
             ".accessibilityLabel(\"Close command palette\")",
             "AppShellCommandReferenceView(",
+            "shellWindows.close(id: \"keyboard-shortcuts\")",
             ".accessibilityLabel(\"Document status\")",
             ".accessibilityLabel(\"Find\")",
             ".accessibilityLabel(\"Replace\")",

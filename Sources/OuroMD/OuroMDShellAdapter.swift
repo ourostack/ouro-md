@@ -7,11 +7,13 @@ typealias ShortcutBadge = AppShellShortcutBadge
 
 struct CommandReferenceView: View {
     let items: [CommandPaletteItem]
+    var onDone: (() -> Void)?
 
     var body: some View {
         AppShellCommandReferenceView(
             items: items.map(\.appShellCommandReferenceItem),
-            preferredSectionOrder: Self.sectionOrder
+            preferredSectionOrder: Self.sectionOrder,
+            onDone: onDone
         )
     }
 

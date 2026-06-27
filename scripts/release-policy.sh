@@ -506,6 +506,7 @@ selftest_paths_mode() {
     scripts/lib/app-version.sh
     scripts/check-shell-dependency.sh
     scripts/check-shell-boundary.sh
+    scripts/shell-boundary-allowlist.txt
     scripts/verify-release-version.sh
     scripts/release-policy.sh
   )
@@ -547,14 +548,20 @@ if package.index(guard) > package.index(build):
     raise SystemExit("package-release.sh must run scripts/check-shell-dependency.sh before make-app.sh")
 
 workflow = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
-if "scripts/check-shell-dependency.sh" not in workflow:
-    raise SystemExit("release.yml must treat scripts/check-shell-dependency.sh as release-path input")
-if "scripts/lib/app-version.sh" not in workflow:
-    raise SystemExit("release.yml must treat scripts/lib/app-version.sh as release-path input")
+for path in (
+    "scripts/check-shell-dependency.sh",
+    "scripts/check-shell-boundary.sh",
+    "scripts/shell-boundary-allowlist.txt",
+    "scripts/lib/app-version.sh",
+):
+    if path not in workflow:
+        raise SystemExit(f"release.yml must treat {path} as release-path input")
 
 ci = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
 preflight = Path("scripts/pr-preflight.sh").read_text(encoding="utf-8")
 for surface, text in (("ci.yml", ci), ("pr-preflight.sh", preflight)):
+    if "scripts/check-shell-boundary.sh --selftest" not in text:
+        raise SystemExit(f"{surface} must run scripts/check-shell-boundary.sh --selftest")
     if "scripts/check-shell-boundary.sh" not in text:
         raise SystemExit(f"{surface} must run scripts/check-shell-boundary.sh")
 PY

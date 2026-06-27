@@ -318,7 +318,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
     @objc func showKeyboardShortcuts(_ sender: Any?) {
         shellWindows.present(id: "keyboard-shortcuts", spec: OuroMDShellWindow.keyboardShortcuts) {
-            CommandReferenceView(items: CommandPaletteCatalog.items())
+            CommandReferenceView(items: CommandPaletteCatalog.items()) { [weak self] in
+                self?.shellWindows.close(id: "keyboard-shortcuts")
+            }
         }
     }
 
