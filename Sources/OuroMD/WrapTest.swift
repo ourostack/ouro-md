@@ -22,10 +22,10 @@ final class WrapTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         guard let indexURL = OuroResources.web("index", "html") else {
             FileHandle.standardError.write(Data("wraptest: index.html not found\n".utf8)); exit(1)
         }
-        HeadlessHarness.offscreenHost(webView, size: NSSize(width: 800, height: 600))
+        HeadlessHarness.offscreenHostActive(webView, size: NSSize(width: 800, height: 600))
 
         webView.loadFileURL(indexURL, allowingReadAccessTo: indexURL.deletingLastPathComponent())
-        DispatchQueue.main.asyncAfter(deadline: .now() + 25) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 60) {
             FileHandle.standardError.write(Data("wraptest: timed out\n".utf8)); exit(1)
         }
         app.run()
@@ -42,6 +42,7 @@ final class WrapTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
             let link = body["link"] as? String ?? "?"
             let pairInsert = body["pairInsert"] as? String ?? "?"
             let skipOver = body["skipOver"] as? String ?? "?"
+            let curlySkip = body["curlySkip"] as? String ?? "?"
             let deletePair = body["deletePair"] as? String ?? "?"
             let checks: [(String, String, Bool)] = [
                 ("type \" over selection", quote, quote.contains("\"world\"")),
@@ -49,6 +50,7 @@ final class WrapTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
                 ("paste url over selection", link, link.contains("[world](https://x.com)")),
                 ("auto-pair ( then x", pairInsert, pairInsert.contains("hello(x)")),
                 ("skip over typed )", skipOver, skipOver.replacingOccurrences(of: "\n", with: "").contains("()x")),
+                ("skip over a curly close-quote", curlySkip, curlySkip.replacingOccurrences(of: "\n", with: "").contains("a”xb")),
                 ("backspace deletes pair", deletePair, deletePair.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             ]
             var allOK = true
@@ -107,9 +109,10 @@ final class WrapTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         trial("hello world", function () { selectWord("world"); pasteURL('https://x.com'); }, function (v) { out.link = v;
         trial("hello", function () { caretInNode("hello", 5); typeKey('('); document.execCommand('insertText', false, 'x'); }, function (v) { out.pairInsert = v;
         trial("()", function () { caretInNode("()", 1); typeKey(')'); document.execCommand('insertText', false, 'x'); }, function (v) { out.skipOver = v;
+        trial("a”b", function () { caretInNode("a”b", 1); typeKey('"'); document.execCommand('insertText', false, 'x'); }, function (v) { out.curlySkip = v;
         trial("()", function () { caretInNode("()", 1); typeKey('Backspace'); }, function (v) { out.deletePair = v;
-          window.webkit.messageHandlers.ouro.postMessage({ type: "wraptest", quote: out.quote, paren: out.paren, link: out.link, pairInsert: out.pairInsert, skipOver: out.skipOver, deletePair: out.deletePair });
-        }); }); }); }); }); });
+          window.webkit.messageHandlers.ouro.postMessage({ type: "wraptest", quote: out.quote, paren: out.paren, link: out.link, pairInsert: out.pairInsert, skipOver: out.skipOver, curlySkip: out.curlySkip, deletePair: out.deletePair });
+        }); }); }); }); }); }); });
       }, 500);
     })();
     """
