@@ -36,6 +36,8 @@ jobs:
         run: ./scripts/release-policy.sh selftest-package-guards
       - name: Verify shell dependency watch automation
         run: ./scripts/release-policy.sh selftest-shell-dependency-watch
+      - name: Verify live update runner policy
+        run: ./scripts/release-policy.sh selftest-live-update-runner
       - name: Verify release policy path classification
         run: ./scripts/release-policy.sh selftest-paths
       - name: Scan source policy

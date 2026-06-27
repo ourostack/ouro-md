@@ -26,6 +26,7 @@ usage:
   scripts/release-policy.sh selftest-pr-base
   scripts/release-policy.sh selftest-package-guards
   scripts/release-policy.sh selftest-shell-dependency-watch
+  scripts/release-policy.sh selftest-live-update-runner
   scripts/release-policy.sh verify-local --version X.Y.Z --sha SHA --zip ZIP --manifest MANIFEST
   scripts/release-policy.sh verify-published [--repo OWNER/REPO] [--version X.Y.Z] [--sha SHA]
 USAGE
@@ -595,6 +596,30 @@ PY
   echo "shell dependency watch selftest ok"
 }
 
+selftest_live_update_runner_mode() {
+  python3 <<'PY'
+from pathlib import Path
+
+script = Path("scripts/check-live-update-path.sh").read_text(encoding="utf-8")
+for forbidden in ("OURO_MD_EXE", ".build/debug/ouro-md"):
+    if forbidden in script:
+        raise SystemExit(f"check-live-update-path.sh must not run current-source {forbidden} as the updater under test")
+
+required = [
+    'runner_app="$tmp/runner/Ouro MD.app"',
+    'runner_exe="$runner_app/Contents/MacOS/ouro-md"',
+    'runner_version="$(exe_version "$runner_exe" || true)"',
+    '"$runner_exe" \\',
+    '--liveupdatetest',
+    '--live-update-destination "$dest"',
+]
+for needle in required:
+    if needle not in script:
+        raise SystemExit(f"check-live-update-path.sh must contain {needle!r}")
+PY
+  echo "live update runner selftest ok"
+}
+
 release_exists_mode() {
   local repo="${GITHUB_REPOSITORY:-$repo_default}"
   local version=""
@@ -779,6 +804,7 @@ case "$cmd" in
   selftest-pr-base) selftest_pr_base_mode "$@" ;;
   selftest-package-guards) selftest_package_guards_mode "$@" ;;
   selftest-shell-dependency-watch) selftest_shell_dependency_watch_mode "$@" ;;
+  selftest-live-update-runner) selftest_live_update_runner_mode "$@" ;;
   selftest-paths) selftest_paths_mode "$@" ;;
   verify-local) verify_local_mode "$@" ;;
   verify-published) verify_published_mode "$@" ;;
