@@ -1,0 +1,5 @@
+# path	pattern	reason
+Sources/OuroMD/AppDelegate.swift	NSAlert()	App-domain unsaved quit and direct-update prompt alerts are still app-specific.
+Sources/OuroMD/AppModel.swift	NSAlert()	Document save/reload/export prompts are editor-domain behavior, not reusable shell chrome.
+Sources/OuroMD/DocumentWindowController.swift	NSAlert()	Document dirty/deleted prompts are editor-domain behavior, not reusable shell chrome.
+Sources/OuroMD/AccessibilityAuditTest.swift	AppShellCommandReferenceView(	Source audit verifies OuroMDShellAdapter still mounts the shared command-reference surface.

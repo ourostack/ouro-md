@@ -37,6 +37,12 @@ final class AccessibilityAuditTester {
         invalidModel.searchRegexp = true
         invalidModel.runFolderSearch()
 
+        let availableUpdateCoordinator = makeAvailableUpdateCoordinator()
+        let availableTask = Task {
+            await availableUpdateCoordinator.checkForReleaseUpdate()
+        }
+        waitUntil(timeout: 3) { availableUpdateCoordinator.releaseSnapshot != nil }
+
         let updateCoordinator = makeInstallingUpdateCoordinator()
         let installingTask = Task {
             await updateCoordinator.checkForReleaseUpdate()
@@ -57,18 +63,9 @@ final class AccessibilityAuditTester {
         .union(accessibilityStrings(OuroMDAboutView(updateCoordinator: makeCurrentUpdateCoordinator()), size: NSSize(width: 540, height: 540)))
         .union(accessibilityStrings(UpdateProgressView(updateCoordinator: updateCoordinator), size: NSSize(width: 440, height: 190)))
         let shellText = renderedText(OuroMDAboutView(updateCoordinator: makeCurrentUpdateCoordinator()), size: NSSize(width: 540, height: 540))
-            .union(renderedText(OuroAppShellUI.ReleaseUpdateControls(
-                state: shellAvailableUpdateState,
-                actions: shellUpdateActions,
-                labels: ReleaseUpdateActionLabels(
-                    check: "Check for Updates",
-                    review: "Review Update",
-                    install: "Install & Relaunch",
-                    openRelease: "Open Release"
-                ),
-                showTitle: true
-            ).frame(width: 560, alignment: .leading), size: NSSize(width: 560, height: 220)))
-            .union(renderedText(UpdateInstalledConfirmationView(version: "0.10.0", onOpenAbout: {}, onDismiss: {}), size: NSSize(width: 380, height: 140)))
+            .union(renderedText(OuroMDReleaseControls(updateCoordinator: availableUpdateCoordinator, showTitle: true)
+                .frame(width: 560, alignment: .leading), size: NSSize(width: 560, height: 220)))
+            .union(renderedText(OuroMDUpdateInstalledNotice(version: "0.10.0", onOpenAbout: {}, onDismiss: {}), size: NSSize(width: 380, height: 140)))
 
         let runtimeRequired = ["Light", "Dark", "Outline", "Files", "Search"]
         let missingRuntime = runtimeRequired.filter { expected in
@@ -138,6 +135,7 @@ final class AccessibilityAuditTester {
 
         model.teardown()
         invalidModel.teardown()
+        availableTask.cancel()
         try? FileManager.default.removeItem(at: root)
         exit(labelsOK && menu.coverageOK && menu.conflicts.isEmpty ? 0 : 1)
     }
@@ -269,7 +267,7 @@ final class AccessibilityAuditTester {
         let sourcePaths = [
             "Sources/OuroMD/ContentView.swift",
             "Sources/OuroMD/Sidebar.swift",
-            "Sources/OuroMD/CommandReferenceView.swift",
+            "Sources/OuroMD/OuroMDShellAdapter.swift",
             "Sources/OuroMD/AppInfoView.swift",
         ]
         let appSources = sourcePaths
@@ -291,8 +289,7 @@ final class AccessibilityAuditTester {
             ".accessibilityLabel(\"Command palette\")",
             ".accessibilityLabel(\"Command\")",
             ".accessibilityLabel(\"Close command palette\")",
-            ".accessibilityLabel(\"Keyboard shortcuts\")",
-            ".accessibilityLabel(\"Search commands\")",
+            "AppShellCommandReferenceView(",
             ".accessibilityLabel(\"Document status\")",
             ".accessibilityLabel(\"Find\")",
             ".accessibilityLabel(\"Replace\")",
@@ -444,6 +441,18 @@ final class AccessibilityAuditTester {
         )
     }
 
+    private func makeAvailableUpdateCoordinator() -> OuroMDUpdateCoordinator {
+        let defaults = UserDefaults(suiteName: "ouro-accessibility-available-\(UUID().uuidString)") ?? .standard
+        return OuroMDUpdateCoordinator(
+            defaults: defaults,
+            checker: {
+                self.availableUpdateSnapshot()
+            },
+            terminate: {},
+            telemetry: { _, _ in }
+        )
+    }
+
     private func makeCurrentUpdateCoordinator() -> OuroMDUpdateCoordinator {
         let defaults = UserDefaults(suiteName: "ouro-accessibility-current-\(UUID().uuidString)") ?? .standard
         return OuroMDUpdateCoordinator(
@@ -478,28 +487,6 @@ final class AccessibilityAuditTester {
                 ReleaseUpdateAsset(name: "Ouro-MD-0.10.0.manifest.json", downloadURL: "https://example.test/Ouro-MD-0.10.0.manifest.json", size: 50),
             ],
             detail: "Version 0.10.0 is available."
-        )
-    }
-
-    private var shellAvailableUpdateState: ReleaseUpdateViewState {
-        ReleaseUpdateViewState(
-            kind: .updateAvailable,
-            statusLine: "Version 0.10.0 is available.",
-            metadata: [
-                ReleaseUpdateMetadataItem(id: "latest", label: "Latest", value: "0.10.0"),
-                ReleaseUpdateMetadataItem(id: "channel", label: "Channel", value: "Direct download"),
-            ],
-            detail: "Before installing, Ouro MD verifies the release manifest, SHA-256 checksum, byte count, bundle identity, and newer version.",
-            canReviewUpdate: true,
-            canOpenReleasePage: true
-        )
-    }
-
-    private var shellUpdateActions: ReleaseUpdateActions {
-        ReleaseUpdateActions(
-            checkForUpdates: {},
-            reviewUpdate: {},
-            openReleasePage: {}
         )
     }
 

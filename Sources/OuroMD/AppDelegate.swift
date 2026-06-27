@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import OuroAppShellAppKit
 import OuroMDCore
 import SwiftUI
 
@@ -11,10 +12,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private lazy var fallbackModel = AppModel()
     private let defaults = UserDefaults.standard
     let updateCoordinator = OuroMDUpdateCoordinator()
+    private let shellWindows = AppShellWindowPresenter()
     private var updateCancellables: Set<AnyCancellable> = []
     private var undoRedoShortcutMonitor: UndoRedoShortcutMonitor?
-    private var updateProgressWindow: NSWindow?
-    private var updateConfirmationWindow: NSWindow?
     var recentDocumentURLsProvider: () -> [URL] = { NSDocumentController.shared.recentDocumentURLs }
     var clearRecentDocumentsHandler: (Any?) -> Void = { NSDocumentController.shared.clearRecentDocuments($0) }
 
@@ -118,48 +118,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     }
 
     private func showUpdateProgressWindow() {
-        if updateProgressWindow == nil {
-            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 420, height: 160),
-                             styleMask: [.titled], backing: .buffered, defer: false)
-            w.title = "Software Update"
-            w.isReleasedWhenClosed = false
-            w.center()
-            updateProgressWindow = w
+        shellWindows.present(id: "update-progress", spec: OuroMDShellWindow.updateProgress) {
+            UpdateProgressView(updateCoordinator: updateCoordinator)
         }
-        updateProgressWindow?.contentViewController = NSHostingController(
-            rootView: UpdateProgressView(updateCoordinator: updateCoordinator)
-        )
-        updateProgressWindow?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
     }
 
     private func closeUpdateProgressWindow() {
-        updateProgressWindow?.orderOut(nil)
+        shellWindows.close(id: "update-progress")
     }
 
     private func showUpdateInstalledConfirmation(version: String) {
-        if updateConfirmationWindow == nil {
-            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 360, height: 140),
-                             styleMask: [.titled, .closable], backing: .buffered, defer: false)
-            w.title = "Ouro MD Updated"
-            w.isReleasedWhenClosed = false
-            w.center()
-            updateConfirmationWindow = w
-        }
-        updateConfirmationWindow?.contentViewController = NSHostingController(
-            rootView: UpdateInstalledConfirmationView(
+        shellWindows.present(id: "update-installed", spec: OuroMDShellWindow.updateInstalled) {
+            OuroMDUpdateInstalledNotice(
                 version: version,
                 onOpenAbout: { [weak self] in
-                    self?.updateConfirmationWindow?.orderOut(nil)
+                    self?.shellWindows.close(id: "update-installed")
                     self?.showAbout(nil)
                 },
                 onDismiss: { [weak self] in
-                    self?.updateConfirmationWindow?.orderOut(nil)
+                    self?.shellWindows.close(id: "update-installed")
                 }
             )
-        )
-        updateConfirmationWindow?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        }
     }
 
     private func openInitial(_ path: String?) {
@@ -325,47 +305,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         )
     }
 
-    private var prefsWindow: NSWindow?
-    private var keyboardShortcutsWindow: NSWindow?
-    private var aboutWindow: NSWindow?
-
     @objc func showPreferences(_ sender: Any?) {
-        if prefsWindow == nil {
-            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 560, height: 430),
-                             styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
-            w.title = "Preferences"
-            w.minSize = NSSize(width: 520, height: 400)
-            w.isReleasedWhenClosed = false
-            w.center()
-            prefsWindow = w
-        }
-        // Re-bind to the active window's model each time it opens.
-        prefsWindow?.contentViewController = NSHostingController(
-            rootView: PreferencesView(
+        shellWindows.present(id: "preferences", spec: OuroMDShellWindow.preferences) {
+            // Re-bind to the active window's model each time it opens.
+            PreferencesView(
                 model: model,
                 updateCoordinator: updateCoordinator,
                 telemetry: OuroMDTelemetry.shared
             )
-        )
-        prefsWindow?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        }
     }
 
     @objc func showKeyboardShortcuts(_ sender: Any?) {
-        if keyboardShortcutsWindow == nil {
-            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 560, height: 620),
-                             styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
-            w.title = "Keyboard Shortcuts"
-            w.minSize = NSSize(width: 520, height: 500)
-            w.isReleasedWhenClosed = false
-            w.center()
-            keyboardShortcutsWindow = w
+        shellWindows.present(id: "keyboard-shortcuts", spec: OuroMDShellWindow.keyboardShortcuts) {
+            CommandReferenceView(items: CommandPaletteCatalog.items())
         }
-        keyboardShortcutsWindow?.contentViewController = NSHostingController(
-            rootView: CommandReferenceView(items: CommandPaletteCatalog.items())
-        )
-        keyboardShortcutsWindow?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
     }
 
     @objc func showWhatsNew(_ sender: Any?) {
@@ -405,23 +359,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     // MARK: - Menu actions
 
     @objc func showAbout(_ sender: Any?) {
-        if aboutWindow == nil {
-            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 520),
-                             styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
-            w.title = "About Ouro MD"
-            w.minSize = NSSize(width: 500, height: 480)
-            w.isReleasedWhenClosed = false
-            w.center()
-            aboutWindow = w
-        }
-        aboutWindow?.contentViewController = NSHostingController(
-            rootView: OuroMDAboutView(
+        shellWindows.present(id: "about", spec: OuroMDShellWindow.about) {
+            OuroMDAboutView(
                 updateCoordinator: updateCoordinator,
-                onDismiss: { [weak self] in self?.aboutWindow?.orderOut(nil) }
+                onDismiss: { [weak self] in self?.shellWindows.close(id: "about") }
             )
-        )
-        aboutWindow?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        }
     }
 
     @objc func checkForUpdates(_ sender: Any?) {
