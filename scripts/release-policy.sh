@@ -559,11 +559,16 @@ for path in (
 
 ci = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
 preflight = Path("scripts/pr-preflight.sh").read_text(encoding="utf-8")
-for surface, text in (("ci.yml", ci), ("pr-preflight.sh", preflight)):
-    if "scripts/check-shell-boundary.sh --selftest" not in text:
-        raise SystemExit(f"{surface} must run scripts/check-shell-boundary.sh --selftest")
-    if "scripts/check-shell-boundary.sh" not in text:
-        raise SystemExit(f"{surface} must run scripts/check-shell-boundary.sh")
+surfaces = (
+    ("ci.yml", ci, "run: ./scripts/check-shell-boundary.sh --selftest", "run: ./scripts/check-shell-boundary.sh"),
+    ("pr-preflight.sh", preflight, "./scripts/check-shell-boundary.sh --selftest", "./scripts/check-shell-boundary.sh"),
+)
+for surface, text, selftest_line, scan_line in surfaces:
+    lines = {line.strip() for line in text.splitlines()}
+    if selftest_line not in lines:
+        raise SystemExit(f"{surface} must run {selftest_line}")
+    if scan_line not in lines:
+        raise SystemExit(f"{surface} must run {scan_line}")
 PY
   echo "release package guard selftest ok"
 }
