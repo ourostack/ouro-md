@@ -211,6 +211,13 @@ MainActor.assumeIsolated {
         appDelegate.initialFilePath = firstFile
     }
 
+    // A Markdown editor must keep literal quotes and dashes: macOS smart
+    // substitution would silently curl " into “ ” (corrupting the source on
+    // save) and also defeats the auto-pair skip-over. Turn it off for our app's
+    // text input before any editor view comes up.
+    UserDefaults.standard.set(false, forKey: "NSAutomaticQuoteSubstitutionEnabled")
+    UserDefaults.standard.set(false, forKey: "NSAutomaticDashSubstitutionEnabled")
+
     let application = NSApplication.shared
     application.setActivationPolicy(.regular)
     application.delegate = appDelegate

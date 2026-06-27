@@ -169,7 +169,15 @@
       return false;
     }
 
-    if (AUTO_CLOSE[e.key] && ctx.after === e.key) {
+    // Skip over a just-typed closer instead of inserting a duplicate. For the
+    // double quote we also skip when the char ahead is a *curly* variant (“ ”),
+    // because macOS smart-quote substitution can replace the straight closer we
+    // inserted — without this tolerance the user gets a doubled quote and has to
+    // arrow past it. (We also disable that substitution natively, but this keeps
+    // the behaviour correct even if it's re-enabled or already in the document.)
+    var aheadIsCloser = AUTO_CLOSE[e.key] && ctx.after === e.key;
+    var aheadIsCurlyQuote = e.key === '"' && (ctx.after === "“" || ctx.after === "”");
+    if (aheadIsCloser || aheadIsCurlyQuote) {
       ctx.sel.modify("move", "forward", "character");
       return true;
     }
