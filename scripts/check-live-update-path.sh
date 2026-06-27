@@ -58,37 +58,28 @@ from_url="$(jq -r --arg tag "v$from_version" --arg name "$from_zip" '
 
 echo "==> downloading older release $from_version"
 curl -fL "$from_url" -o "$tmp/$from_zip"
-mkdir -p "$tmp/older" "$tmp/install"
+mkdir -p "$tmp/older" "$tmp/runner" "$tmp/install"
 ditto -x -k "$tmp/$from_zip" "$tmp/older"
 
 older_app="$(find "$tmp/older" -type d -name 'Ouro MD.app' -prune -print -quit)"
 [[ -n "$older_app" && -d "$older_app" ]] || fail "older release archive did not contain Ouro MD.app"
 dest="$tmp/install/Ouro MD.app"
+runner_app="$tmp/runner/Ouro MD.app"
 ditto "$older_app" "$dest"
+ditto "$older_app" "$runner_app"
 
 installed_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$dest/Contents/Info.plist")"
 [[ "$installed_version" == "$from_version" ]] || fail "older app version $installed_version did not match $from_version"
 
-exe="${OURO_MD_EXE:-.build/debug/ouro-md}"
-source_version="$(./scripts/verify-release-version.sh --print)"
-if [[ ! -x "$exe" ]]; then
-  swift build
-else
-  current_exe_version="$(exe_version "$exe" || true)"
-  if [[ "$current_exe_version" != "$source_version" ]]; then
-    [[ -z "${OURO_MD_EXE:-}" ]] || fail "OURO_MD_EXE points at version ${current_exe_version:-unknown}, expected $source_version: $exe"
-    echo "==> rebuilding stale ouro-md executable (${current_exe_version:-unknown} -> $source_version)"
-    swift build
-  fi
-fi
-[[ -x "$exe" ]] || fail "ouro-md executable not found or not executable: $exe"
-current_exe_version="$(exe_version "$exe" || true)"
-[[ "$current_exe_version" == "$source_version" ]] || fail "ouro-md executable version ${current_exe_version:-unknown} did not match source version $source_version: $exe"
+runner_exe="$runner_app/Contents/MacOS/ouro-md"
+[[ -x "$runner_exe" ]] || fail "older release runner executable not found or not executable: $runner_exe"
+runner_version="$(exe_version "$runner_exe" || true)"
+[[ "$runner_version" == "$from_version" ]] || fail "older release runner version ${runner_version:-unknown} did not match $from_version: $runner_exe"
 
-echo "==> exercising live updater $from_version -> $latest_version"
+echo "==> exercising live updater runner $runner_version -> $latest_version"
 timeout_seconds="${OURO_MD_LIVE_UPDATE_TIMEOUT_SECONDS:-240}"
 timeout_marker="$tmp/live-update-timeout"
-"$exe" \
+"$runner_exe" \
   --liveupdatetest \
   --live-update-from-version "$from_version" \
   --live-update-to-version "$latest_version" \
@@ -113,4 +104,7 @@ wait "$watchdog_pid" 2>/dev/null || true
 [[ ! -e "$timeout_marker" ]] || fail "live updater timed out after ${timeout_seconds}s"
 [[ "$live_status" -eq 0 ]] || fail "live updater failed with status $live_status"
 
-echo "live update path verified: $from_version -> $latest_version"
+updated_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$dest/Contents/Info.plist")"
+[[ "$updated_version" == "$latest_version" ]] || fail "updated app version $updated_version did not match $latest_version"
+
+echo "live update path verified: runner $runner_version updated destination $from_version -> $latest_version"
