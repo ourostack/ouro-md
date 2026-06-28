@@ -25,6 +25,7 @@ let package = Package(
             dependencies: [
                 "OuroMDCore",
                 .product(name: "OuroAppShellAppKit", package: "ouro-native-apple-app-shell"),
+                .product(name: "OuroAppShellContract", package: "ouro-native-apple-app-shell"),
                 .product(name: "OuroAppShellCore", package: "ouro-native-apple-app-shell"),
                 .product(name: "OuroAppShellUI", package: "ouro-native-apple-app-shell"),
                 .product(name: "Markdown", package: "swift-markdown")
@@ -38,7 +39,11 @@ let package = Package(
         ),
         .testTarget(
             name: "OuroMDTests",
-            dependencies: ["OuroMD", "OuroMDCore"],
+            dependencies: [
+                "OuroMD",
+                "OuroMDCore",
+                .product(name: "OuroAppShellConsumerTesting", package: "ouro-native-apple-app-shell")
+            ],
             swiftSettings: [
                 .swiftLanguageMode(.v5)
             ]
