@@ -17,7 +17,7 @@ struct CommandReferenceView: View {
         )
     }
 
-    private static let sectionOrder = ["File", "Edit", "Format", "Paragraph", "View", "Themes", "Help", "Other"]
+    static let sectionOrder = ["File", "Edit", "Format", "Paragraph", "View", "Themes", "Help", "Other"]
 }
 
 func spokenShortcut(_ shortcut: String) -> String {

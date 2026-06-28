@@ -28,7 +28,11 @@ final class ReleaseUpdateTests: XCTestCase {
         XCTAssertEqual(configuration.identity.repository, OuroMDRelease.repository)
         XCTAssertEqual(configuration.identity.version, OuroMDRelease.version)
         XCTAssertEqual(configuration.identity.userAgent, OuroMDRelease.userAgent)
-        XCTAssertEqual(configuration.releasePolicy, .stable())
+        XCTAssertEqual(configuration.releasePolicy, OuroMDShellContract.releaseUpdatePolicy)
+        XCTAssertEqual(
+            configuration.releasePolicy,
+            .stable(assetNamingPolicy: .versionedArchiveAndManifest(namePrefix: "Ouro-MD-"))
+        )
         XCTAssertFalse(configuration.includePrereleases)
         XCTAssertEqual(
             configuration.releasesURL.absoluteString,
@@ -52,7 +56,7 @@ final class ReleaseUpdateTests: XCTestCase {
         XCTAssertEqual(configuration.identity.appName, OuroMDRelease.appName)
         XCTAssertEqual(configuration.identity.bundleIdentifier, OuroMDRelease.bundleIdentifier)
         XCTAssertEqual(configuration.identity.userAgent, OuroMDRelease.userAgent)
-        XCTAssertEqual(configuration.releasePolicy, .stable())
+        XCTAssertEqual(configuration.releasePolicy, OuroMDShellContract.releaseUpdatePolicy)
         XCTAssertEqual(configuration.releasesURL, releasesURL)
         XCTAssertEqual(configuration.timeout, 42)
     }

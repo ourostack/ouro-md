@@ -23,7 +23,7 @@ enum OuroMDReleaseUpdate {
                 version: currentVersion,
                 userAgent: OuroMDRelease.userAgent
             ),
-            releasePolicy: .stable(),
+            releasePolicy: OuroMDShellContract.releaseUpdatePolicy,
             releasesURL: releasesURL,
             timeout: timeout
         )
