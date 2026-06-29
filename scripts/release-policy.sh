@@ -577,6 +577,7 @@ selftest_shell_dependency_watch_mode() {
   bash -n scripts/refresh-shell-dependency.sh
   python3 <<'PY'
 from pathlib import Path
+import re
 
 workflow = Path(".github/workflows/shell-dependency-watch.yml").read_text(encoding="utf-8")
 refresh = Path("scripts/refresh-shell-dependency.sh").read_text(encoding="utf-8")
@@ -594,11 +595,20 @@ workflow_needles = [
     "automation/ouro-md-refresh-shell-dependency",
     "already has the desired tree",
     "no open PR was found; creating one",
-    "gh pr create",
+    "write_manual_pr_summary",
+    "run_pr_command",
+    "GITHUB_STEP_SUMMARY",
+    "Manual PR command",
+    "gh pr create --repo",
+    'run_pr_command "updating refresh PR #${existing}" gh pr edit',
+    'run_pr_command "commenting on refresh PR #${existing}" gh pr comment',
+    'run_pr_command "creating refresh PR" gh pr create',
 ]
 for needle in workflow_needles:
     if needle not in workflow:
         raise SystemExit(f"shell-dependency-watch.yml must contain {needle!r}")
+if re.search(r"^\s+gh pr (create|edit|comment)\b", workflow, re.MULTILINE):
+    raise SystemExit("shell-dependency-watch.yml must route PR create/edit/comment through run_pr_command")
 
 refresh_needles = [
     "./scripts/check-shell-dependency.sh",
@@ -613,6 +623,59 @@ for needle in refresh_needles:
     if needle not in refresh:
         raise SystemExit(f"refresh-shell-dependency.sh must contain {needle!r}")
 PY
+
+  local tmp
+  tmp="$(mktemp -d)"
+  (
+    trap 'rm -rf "$tmp"' EXIT
+    python3 - "$tmp/pr-fallback.sh" <<'PY'
+from pathlib import Path
+import sys
+
+workflow = Path(".github/workflows/shell-dependency-watch.yml").read_text(encoding="utf-8")
+lines = workflow.splitlines()
+start = next(index for index, line in enumerate(lines) if 'repo="${GITHUB_REPOSITORY:-ourostack/ouro-md}"' in line)
+end = next(index for index, line in enumerate(lines[start:], start) if 'existing="$(gh pr list' in line)
+prefix = "          "
+block = []
+for line in lines[start:end]:
+    if not line:
+        block.append("")
+        continue
+    if not line.startswith(prefix):
+        raise SystemExit(f"unexpected workflow indentation while extracting PR fallback: {line!r}")
+    block.append(line[len(prefix):])
+Path(sys.argv[1]).write_text("\n".join(block) + "\n", encoding="utf-8")
+PY
+    bash -n "$tmp/pr-fallback.sh"
+    cat > "$tmp/gh" <<'SH'
+#!/usr/bin/env bash
+printf 'GraphQL: GitHub Actions is not permitted to create or approve pull requests (createPullRequest): %s\n' "$*" >&2
+exit 42
+SH
+    chmod +x "$tmp/gh"
+    : > "$tmp/body.md"
+    cat > "$tmp/run-fallback.sh" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+branch="automation/ouro-md-refresh-shell-dependency"
+title="Refresh shared shell dependency"
+source "$1"
+run_pr_command "creating refresh PR" gh pr create --repo "$repo" --base main --head "$branch" --title "$title" --body-file "$2"
+echo "run_pr_command should exit 0 after writing the manual PR summary" >&2
+exit 99
+SH
+    chmod +x "$tmp/run-fallback.sh"
+    PATH="$tmp:$PATH" \
+      GITHUB_REPOSITORY="ourostack/ouro-md" \
+      GITHUB_STEP_SUMMARY="$tmp/summary.md" \
+      bash "$tmp/run-fallback.sh" "$tmp/pr-fallback.sh" "$tmp/body.md"
+    grep -Fq "Shell dependency refresh needs a PR" "$tmp/summary.md"
+    grep -Fq "automation/ouro-md-refresh-shell-dependency" "$tmp/summary.md"
+    grep -Fq "https://github.com/ourostack/ouro-md/compare/main...automation/ouro-md-refresh-shell-dependency" "$tmp/summary.md"
+    grep -Fq 'gh pr create --repo "ourostack/ouro-md" --base main --head "automation/ouro-md-refresh-shell-dependency" --title "Refresh shared shell dependency" --fill' "$tmp/summary.md"
+    grep -Fq "createPullRequest" "$tmp/summary.md"
+  )
   echo "shell dependency watch selftest ok"
 }
 

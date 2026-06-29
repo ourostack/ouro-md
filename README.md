@@ -6,7 +6,7 @@ ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
 in careful typography on a centered page. Type Markdown and watch it render in
 place — switch themes live, and read the same document four different ways.
 
-> **Status:** v0.9.58. Reads and edits Markdown today. Not yet Developer-ID
+> **Status:** v0.9.59. Reads and edits Markdown today. Not yet Developer-ID
 > signed or notarized — see [First launch](#first-launch).
 
 ---
@@ -86,7 +86,9 @@ For install or update problems, see
 Shell dependency drift is watched by **Shell Dependency Watch**. The workflow runs
 daily, on demand, and from `repository_dispatch`; when the shared native app shell
 pin is stale, it refreshes `Package.resolved`, bumps the patch version, and opens
-or updates a single refresh PR.
+or updates a single refresh PR when repository permissions allow it. If GitHub
+blocks PR creation, the workflow still pushes the stable automation branch and
+writes the compare link plus manual `gh pr create` command to the run summary.
 
 To ship: run `./scripts/bump-version.sh <x.y.z>` — it rewrites `OuroMDRelease.version`,
 the release date, and this README status line in one shot (`make-app.sh` derives its
