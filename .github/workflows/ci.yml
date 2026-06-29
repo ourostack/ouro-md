@@ -40,6 +40,8 @@ jobs:
         run: ./scripts/release-policy.sh selftest-live-update-runner
       - name: Verify release policy path classification
         run: ./scripts/release-policy.sh selftest-paths
+      - name: Verify version bump guard
+        run: ./scripts/bump-version.sh --selftest
       - name: Scan source policy
         run: ./scripts/release-policy.sh scan .
       - name: Verify shared shell dependency freshness
