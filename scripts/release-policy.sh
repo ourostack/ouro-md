@@ -537,6 +537,7 @@ selftest_package_guards_mode() {
 from pathlib import Path
 
 package = Path("scripts/package-release.sh").read_text(encoding="utf-8")
+checker = Path("scripts/check-shell-dependency.sh").read_text(encoding="utf-8")
 guard = "./scripts/check-shell-dependency.sh"
 build = "./make-app.sh"
 
@@ -546,6 +547,18 @@ if build not in package:
     raise SystemExit("package-release.sh no longer runs make-app.sh; update this selftest")
 if package.index(guard) > package.index(build):
     raise SystemExit("package-release.sh must run scripts/check-shell-dependency.sh before make-app.sh")
+if "git ls-remote" in checker:
+    raise SystemExit("check-shell-dependency.sh must not require every shell main commit to be pinned")
+for needle in (
+    "Shell CI/contract-only commits are intentionally ignored",
+    "git clone --quiet --filter=blob:none --no-checkout --single-branch --branch main",
+    "git -C \"$tmp\" log -n 1 --format=%H HEAD -- Package.swift Sources",
+    "git -C \"$tmp\" merge-base --is-ancestor \"$package_revision\" \"$resolved_revision\"",
+    "latest package-relevant",
+    "has no newer package-relevant shell changes",
+):
+    if needle not in checker:
+        raise SystemExit(f"check-shell-dependency.sh must contain {needle!r}")
 
 workflow = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
 for path in (
