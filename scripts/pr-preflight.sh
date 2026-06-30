@@ -8,6 +8,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 ./scripts/check-shell-dependency.sh
+./scripts/check-app-control-deck.py
 ./scripts/check-shell-boundary.sh --selftest
 ./scripts/check-shell-boundary.sh
 

@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "app": {
+    "name": "Ouro MD",
+    "repository": "ourostack/ouro-md",
+    "shell_adapter": "Sources/OuroMD/OuroMDShellAdapter.swift"
+  },
+  "shell": {
+    "package_identity": "ouro-native-apple-app-shell",
+    "url": "https://github.com/ourostack/ouro-native-apple-app-shell.git",
+    "branch": "main",
+    "freshness_guard": "scripts/check-shell-dependency.sh",
+    "boundary_guard": "scripts/check-shell-boundary.sh"
+  },
+  "dependency_policy": {
+    "branch_dependencies": [
+      {
+        "identity": "ouro-native-apple-app-shell",
+        "url": "https://github.com/ourostack/ouro-native-apple-app-shell.git",
+        "branch": "main",
+        "allowed_reason": "Shared shell intentionally tracks main and is guarded by scripts/check-shell-dependency.sh plus shell CI downstream checks."
+      }
+    ],
+    "non_shell_policy": "Direct non-shell dependencies must use revision, exact, or version requirements; floating branch requirements are rejected."
+  }
+}
