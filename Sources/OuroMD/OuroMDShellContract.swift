@@ -50,14 +50,33 @@ enum OuroMDShellContract {
             ],
             settings: OuroAppShellSettingsContract(
                 entryPoint: "Ouro MD > Settings",
+                sharedSections: [
+                    .updates(entryPoint: "Ouro MD > Settings > Updates"),
+                    .telemetry(entryPoint: "Ouro MD > Settings > Telemetry"),
+                    .privacy(entryPoint: "Ouro MD > Settings > Telemetry"),
+                    .about(entryPoint: "Help > About Ouro MD"),
+                    .keyboardShortcuts(entryPoint: "Help > Keyboard Shortcuts")
+                ],
                 appOwnedSections: [
                     "Appearance",
                     "Theme",
                     "Auto-save",
                     "Auto-pair",
-                    "Updates",
-                    "Telemetry",
                     "Text size"
+                ]
+            ),
+            privacyDiagnostics: OuroAppShellPrivacyDiagnosticsContract(
+                telemetryConsentEntryPoint: "Ouro MD > Settings > Telemetry",
+                privacyDocumentURL: URL(string: "https://github.com/ourostack/ouro-md/blob/main/PRIVACY.md")!,
+                diagnosticsExportDisclosure: "Ouro MD privacy documentation describes anonymous telemetry and local-first document handling.",
+                supportBundleContents: ["app version", "bundle id", "macOS version", "architecture", "anonymous install id"],
+                redactionGuarantees: [
+                    "no document contents",
+                    "no filenames",
+                    "no folder paths",
+                    "no search queries",
+                    "no clipboard contents",
+                    "no raw error messages"
                 ]
             )
         )
