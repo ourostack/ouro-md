@@ -86,15 +86,15 @@ Make shared shell adoption declarative for current and future Ouro native apps b
 **What**: Run the new validation plus existing shell dependency/boundary checks practical for this lane.
 **Acceptance**: Commands pass without warnings.
 
-### ⬜ Unit 3a: Workbench Control Deck Tests
+### ✅ Unit 3a: Workbench Control Deck Tests
 **What**: Add validation that checks shell dependency policy plus structured coverage/digest policy.
 **Acceptance**: Validation fails before the Workbench control deck exists.
 
-### ⬜ Unit 3b: Workbench Control Deck Implementation
+### ✅ Unit 3b: Workbench Control Deck Implementation
 **What**: Add `config/ouro-app-control-deck.json`, structured coverage/digest policy, validation script, and CI/preflight wiring.
 **Acceptance**: Coverage allowlist and scenario digest policy have machine-readable owner/revalidation metadata.
 
-### ⬜ Unit 3c: Workbench Verification
+### ✅ Unit 3c: Workbench Verification
 **What**: Run the new validation and practical existing policy checks.
 **Acceptance**: Commands pass without warnings.
 
@@ -117,3 +117,4 @@ Make shared shell adoption declarative for current and future Ouro native apps b
 - 2026-06-29 22:00 Doing reviewer gates converged: granularity, validation, ambiguity, quality, tinfoil, and stranger-with-candy passes found no blocker or major findings.
 - 2026-06-29 22:06 Unit 1 complete: shell commit `78d0564` added `scripts/downstream-consumers.json`, manifest-driven smoke command lookup, `--print-matrix`, `--keep-worktree`, default completed-clone cleanup, workflow matrix derivation, and adoption docs. Verification: `scripts/check-downstream-consumers.sh --selftest`, `scripts/check-downstream-consumers.sh --print-matrix`, `scripts/check-downstream-consumers.sh --warn-pins-current`, and `git diff --check` passed.
 - 2026-06-29 22:12 Unit 2 complete: Ouro MD commit `1c999ca` added `config/ouro-app-control-deck.json`, `scripts/check-app-control-deck.py`, CI/preflight wiring, and pinned `swift-markdown` to revision `4661b550c55abde97d14e35b89e094084669f40a`. Verification: validator negative selftest, real validator, `swift package resolve`, `scripts/check-shell-boundary.sh --selftest`, `scripts/check-shell-boundary.sh`, `scripts/check-shell-dependency.sh`, and `git diff --check` passed.
+- 2026-06-29 22:18 Unit 3 complete: Workbench commit `6902bdd` added `config/ouro-app-control-deck.json`, `scripts/check-app-control-deck.py`, CI/preflight wiring, structured coverage allowlist metadata, and scenario digest policy for standard/deep verifier runs. Verification: validator negative selftest, real validator, `scripts/check-shell-boundary.sh --selftest`, `scripts/check-shell-boundary.sh`, `scripts/check-shell-dependency.sh`, and `git diff --check` passed.
