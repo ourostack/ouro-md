@@ -1,0 +1,4 @@
+==> ouro-md --undotest
+PASS multi-step undo/redo: edit=ONE TWOAlpha line.\n undo1=ONEAlpha line.\n undo2=Alpha line.\n redo1=ONEAlpha line.\n redo2=ONE TWOAlpha line.\n
+==> ouro-md --wraptest
+wraptest: timed out

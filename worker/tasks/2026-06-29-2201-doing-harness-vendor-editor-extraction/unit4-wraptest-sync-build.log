@@ -1,0 +1,10 @@
+Building for debugging...
+[0/4] Write sources
+[1/4] Write swift-version--58304C5D6DBC2206.txt
+[3/6] Compiling OuroMD WrapTest.swift
+[4/6] Emitting module OuroMD
+[5/7] Compiling OuroMD main.swift
+[5/8] Write Objects.LinkFileList
+[6/8] Linking ouro-md
+[7/8] Applying ouro-md
+Build complete! (1.85s)

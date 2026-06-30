@@ -1,0 +1,7 @@
+undotest: loading /Users/arimendelow/Projects/ouro-md-worker-harness-vendor-editor/.build/arm64-apple-macosx/debug/ouro-md_OuroMD.bundle/web/index.html
+undotest: editor ready; waiting for navigation finish
+undotest: navigation finished; waiting for editor ready
+undotest: editor ready and navigation finished; running undo script
+undotest: script step: multi-step undo/redo
+undotest: script dispatched
+PASS multi-step undo/redo: edit=ONE TWOAlpha line.\n undo1=ONEAlpha line.\n undo2=Alpha line.\n redo1=ONEAlpha line.\n redo2=ONE TWOAlpha line.\n

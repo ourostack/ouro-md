@@ -1,0 +1,7 @@
+type " over selection: hello "world"   OK ✓
+type ( over selection: hello (world)   OK ✓
+paste url over selection: hello [world](https://x.com)   OK ✓
+auto-pair ( then x: hello(x)   OK ✓
+skip over typed ): ()x   OK ✓
+skip over a curly close-quote: a”xb   OK ✓
+backspace deletes pair:    OK ✓

@@ -1,0 +1,231 @@
+{
+  "schemaVersion": 1,
+  "owner": "Ouro MD",
+  "purpose": "Inventory every shipped non-GUI CLI entry point in Sources/OuroMD/main.swift and distinguish public/maintainer CLI from hidden diagnostic harness modes.",
+  "guarantees": [
+    "Modes are reachable only by explicit command-line flags before normal GUI launch.",
+    "Hidden diagnostic harness modes are allowed to ship in release artifacts because packaged-app verification depends on them.",
+    "Hidden diagnostic harness modes must not upload private document contents or run during normal app launch.",
+    "Adding, removing, or reclassifying a mode requires updating this manifest and the policy check."
+  ],
+  "modes": [
+    {
+      "flag": "--help",
+      "category": "public-maintainer-cli",
+      "source": "Sources/OuroMD/main.swift",
+      "privacy": "Prints static local help text."
+    },
+    {
+      "flag": "--version",
+      "category": "public-maintainer-cli",
+      "source": "Sources/OuroMD/main.swift",
+      "privacy": "Prints local version/build metadata."
+    },
+    {
+      "flag": "--bundleprobe",
+      "category": "public-maintainer-cli",
+      "source": "Sources/OuroMD/main.swift",
+      "privacy": "Prints local bundle/resource paths for packaging diagnostics."
+    },
+    {
+      "flag": "--list-themes",
+      "category": "public-maintainer-cli",
+      "source": "Sources/OuroMD/main.swift",
+      "privacy": "Prints static local theme identifiers and display names."
+    },
+    {
+      "flag": "--render",
+      "category": "public-maintainer-cli",
+      "source": "Sources/OuroMD/main.swift",
+      "privacy": "Reads the caller-provided local Markdown file and writes rendered HTML to stdout."
+    },
+    {
+      "flag": "--roundtrip",
+      "category": "public-maintainer-cli",
+      "source": "Sources/OuroMD/main.swift",
+      "privacy": "Reads and writes caller-provided local Markdown paths only."
+    },
+    {
+      "flag": "--shoot",
+      "category": "public-maintainer-cli",
+      "source": "Sources/OuroMD/main.swift",
+      "privacy": "Reads a caller-provided local Markdown file and writes a caller-provided local screenshot path."
+    },
+    {
+      "flag": "--undotest",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-native-scenarios.sh", "scripts/verify-packaged-app.sh"],
+      "privacy": "Uses synthetic local editor content only."
+    },
+    {
+      "flag": "--wraptest",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-native-scenarios.sh"],
+      "privacy": "Uses synthetic local editor content only."
+    },
+    {
+      "flag": "--linktest",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-native-scenarios.sh"],
+      "privacy": "Uses synthetic local editor content only."
+    },
+    {
+      "flag": "--wrapgluetest",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-native-scenarios.sh"],
+      "privacy": "Uses synthetic local editor content only."
+    },
+    {
+      "flag": "--tablewraptest",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-native-scenarios.sh"],
+      "privacy": "Uses synthetic content or checked-in fixtures unless the caller explicitly passes a local --tablewrap-file."
+    },
+    {
+      "flag": "--codewraptest",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-native-scenarios.sh"],
+      "privacy": "Uses synthetic local editor content only."
+    },
+    {
+      "flag": "--alerttest",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/verify-packaged-app.sh"],
+      "privacy": "Uses synthetic local alert/callout content only."
+    },
+    {
+      "flag": "--mermaidcliptest",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-native-scenarios.sh"],
+      "privacy": "Uses synthetic local diagram content only."
+    },
+    {
+      "flag": "--reloadrendertest",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-native-scenarios.sh"],
+      "privacy": "Uses synthetic local editor content only."
+    },
+    {
+      "flag": "--darkdiagramtest",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-native-scenarios.sh"],
+      "privacy": "Uses synthetic local diagram content only."
+    },
+    {
+      "flag": "--selectionblurtest",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-native-scenarios.sh"],
+      "privacy": "Uses synthetic local selection content only."
+    },
+    {
+      "flag": "--copyflavortest",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-native-scenarios.sh"],
+      "privacy": "Uses synthetic local copy/pasteboard content only."
+    },
+    {
+      "flag": "--renderprobe",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-native-scenarios.sh"],
+      "privacy": "Uses synthetic local render probe content only."
+    },
+    {
+      "flag": "--performanceprobe",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-native-scenarios.sh"],
+      "privacy": "Uses synthetic local performance probe content only."
+    },
+    {
+      "flag": "--accessibilityaudit",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-native-scenarios.sh"],
+      "privacy": "Inspects local synthetic/native accessibility surfaces only."
+    },
+    {
+      "flag": "--markdownparitytest",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-native-scenarios.sh"],
+      "privacy": "Uses synthetic local Markdown parity fixtures only."
+    },
+    {
+      "flag": "--visualqatest",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-visual-qa.sh"],
+      "privacy": "Uses checked-in visual fixtures unless the caller explicitly passes a local --visualqa-file."
+    },
+    {
+      "flag": "--searchrevealtest",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-native-scenarios.sh"],
+      "privacy": "Uses synthetic local search content only."
+    },
+    {
+      "flag": "--uisurfacetest",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-native-scenarios.sh"],
+      "privacy": "Inspects local native UI surfaces without user document contents."
+    },
+    {
+      "flag": "--editorsurfacetest",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-native-scenarios.sh"],
+      "privacy": "Inspects local editor surfaces with synthetic content only."
+    },
+    {
+      "flag": "--firstlaunchtest",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-native-scenarios.sh"],
+      "privacy": "Exercises local first-launch UI state with synthetic/default data only."
+    },
+    {
+      "flag": "--liveupdatetest",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/check-live-update-path.sh"],
+      "privacy": "Downloads public release metadata/assets and mutates only the caller-provided destination app bundle."
+    }
+  ]
+}
