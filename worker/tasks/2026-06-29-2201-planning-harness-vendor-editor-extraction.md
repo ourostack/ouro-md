@@ -33,14 +33,14 @@ Formalize Ouro MD's shipped CLI and diagnostic harness boundary, add durable pro
 - Editing Ouro Workbench or the shared shell, except for small adapter docs if an Ouro MD check requires it.
 
 ## Completion Criteria
-- [ ] A-017 has a documented and machine-checked shipped diagnostic harness contract.
-- [ ] A-018 has a documented and machine-checked Vditor vendor provenance policy.
-- [ ] A-036 has a concrete extraction plan with candidates, ordering, tests, and A-013 disposition.
-- [ ] New checks are part of PR preflight or release-policy selftests so CI/local validation can catch drift.
-- [ ] Existing release freshness behavior remains intentional for harness-only edits and Vditor/resource edits.
-- [ ] 100% test coverage on all new code
-- [ ] All tests pass
-- [ ] No warnings
+- [x] A-017 has a documented and machine-checked shipped diagnostic harness contract.
+- [x] A-018 has a documented and machine-checked Vditor vendor provenance policy.
+- [x] A-036 has a concrete extraction plan with candidates, ordering, tests, and A-013 disposition.
+- [x] New checks are part of PR preflight or release-policy selftests so CI/local validation can catch drift.
+- [x] Existing release freshness behavior remains intentional for harness-only edits and Vditor/resource edits.
+- [x] 100% test coverage on all new code
+- [x] All tests pass
+- [x] No warnings
 
 ## Code Coverage Requirements
 **MANDATORY: 100% coverage on all new code.**
@@ -79,3 +79,4 @@ Current Vditor inventory at planning time: `Sources/OuroMD/web/vditor` contains 
 - 2026-06-29 22:01 Created
 - 2026-06-29 22:05 Addressed reviewer findings by separating public/maintainer CLI modes from hidden diagnostic harness modes and naming the policy files.
 - 2026-06-29 22:08 Approved after reviewer gate convergence.
+- 2026-06-29 22:55 Completed with full PR preflight passing.

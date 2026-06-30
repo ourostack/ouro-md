@@ -1,6 +1,6 @@
 # Doing: Harness, Vendor, And Editor Extraction Guardrails
 
-**Status**: READY_FOR_EXECUTION
+**Status**: done
 **Execution Mode**: direct
 **Created**: 2026-06-29 22:08
 **Planning**: ./2026-06-29-2201-planning-harness-vendor-editor-extraction.md
@@ -22,14 +22,14 @@ Formalize Ouro MD's shipped CLI and diagnostic harness boundary, add durable pro
 - A-013: Keep Ouro MD Core Editor Decomposition On The Radar
 
 ## Completion Criteria
-- [ ] A-017 has a documented and machine-checked shipped diagnostic harness contract.
-- [ ] A-018 has a documented and machine-checked Vditor vendor provenance policy.
-- [ ] A-036 has a concrete extraction plan with candidates, ordering, tests, and A-013 disposition.
-- [ ] New checks are part of PR preflight or release-policy selftests so CI/local validation can catch drift.
-- [ ] Existing release freshness behavior remains intentional for harness-only edits and Vditor/resource edits.
-- [ ] 100% test coverage on all new code
-- [ ] All tests pass
-- [ ] No warnings
+- [x] A-017 has a documented and machine-checked shipped diagnostic harness contract.
+- [x] A-018 has a documented and machine-checked Vditor vendor provenance policy.
+- [x] A-036 has a concrete extraction plan with candidates, ordering, tests, and A-013 disposition.
+- [x] New checks are part of PR preflight or release-policy selftests so CI/local validation can catch drift.
+- [x] Existing release freshness behavior remains intentional for harness-only edits and Vditor/resource edits.
+- [x] 100% test coverage on all new code
+- [x] All tests pass
+- [x] No warnings
 
 ## Code Coverage Requirements
 **MANDATORY: 100% coverage on all new code.**
@@ -94,7 +94,7 @@ Formalize Ouro MD's shipped CLI and diagnostic harness boundary, add durable pro
 **Output**: `docs/appkit-webkit-extraction-plan.md`.
 **Acceptance**: The document cites current files, names first candidate extractions, states validation requirements, and explicitly prevents broad editor-core decomposition in this lane.
 
-### ⬜ Unit 4: Final Validation, Review, And PR Prep
+### ✅ Unit 4: Final Validation, Review, And PR Prep
 **What**: Run local validation for changed checks, Swift build/tests as practical, shell boundary/preflight slices, and a cold self-review of the diff.
 **Output**: Final validation logs and reviewer notes in the artifacts directory.
 **Acceptance**: Changed checks pass; Swift build/test status is recorded; reviewer BLOCKER/MAJOR findings are resolved or proven non-applicable.
@@ -115,3 +115,4 @@ Formalize Ouro MD's shipped CLI and diagnostic harness boundary, add durable pro
 - 2026-06-29 22:20 Unit 1 complete: added shipped CLI/harness policy manifest, drift checker, preflight hook, and release-policy selftest.
 - 2026-06-29 22:29 Unit 2 complete: added Vditor vendor manifest, tracked-file digest checker, preflight hook, and release-policy selftest.
 - 2026-06-29 22:35 Unit 3 complete: added AppKit/WebKit extraction plan with tested candidate ordering and A-013 radar disposition.
+- 2026-06-29 22:55 Unit 4 complete: full `scripts/pr-preflight.sh` passed after refreshing the shell pin and stabilizing `--wraptest`.
