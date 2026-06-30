@@ -27,6 +27,7 @@ usage:
   scripts/release-policy.sh selftest-release-api-fallback
   scripts/release-policy.sh selftest-package-guards
   scripts/release-policy.sh selftest-harness-policy
+  scripts/release-policy.sh selftest-vditor-vendor
   scripts/release-policy.sh selftest-shell-dependency-watch
   scripts/release-policy.sh selftest-live-update-runner
   scripts/release-policy.sh verify-local --version X.Y.Z --sha SHA --zip ZIP --manifest MANIFEST
@@ -756,6 +757,12 @@ selftest_harness_policy_mode() {
   echo "harness policy selftest ok"
 }
 
+selftest_vditor_vendor_mode() {
+  bash -n scripts/check-vditor-vendor.sh
+  ./scripts/check-vditor-vendor.sh
+  echo "vditor vendor selftest ok"
+}
+
 selftest_shell_dependency_watch_mode() {
   bash -n scripts/refresh-shell-dependency.sh
   python3 <<'PY'
@@ -1071,6 +1078,7 @@ case "$cmd" in
   selftest-release-api-fallback) selftest_release_api_fallback_mode "$@" ;;
   selftest-package-guards) selftest_package_guards_mode "$@" ;;
   selftest-harness-policy) selftest_harness_policy_mode "$@" ;;
+  selftest-vditor-vendor) selftest_vditor_vendor_mode "$@" ;;
   selftest-shell-dependency-watch) selftest_shell_dependency_watch_mode "$@" ;;
   selftest-live-update-runner) selftest_live_update_runner_mode "$@" ;;
   selftest-paths) selftest_paths_mode "$@" ;;

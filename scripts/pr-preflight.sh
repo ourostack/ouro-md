@@ -11,6 +11,7 @@ cd "$ROOT"
 ./scripts/check-shell-boundary.sh --selftest
 ./scripts/check-shell-boundary.sh
 ./scripts/check-shipped-harness-policy.sh
+./scripts/check-vditor-vendor.sh
 
 base_ref="${OURO_PR_BASE_REF:-${GITHUB_BASE_REF:-main}}"
 
