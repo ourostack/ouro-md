@@ -62,15 +62,15 @@ Make shared shell adoption declarative for current and future Ouro native apps b
 **Output**: Concrete manifest and script target list.
 **Acceptance**: Evidence recorded in progress log and no referenced path is stale.
 
-### ⬜ Unit 1a: Shell Consumer Manifest Tests
+### ✅ Unit 1a: Shell Consumer Manifest Tests
 **What**: Add shell selftest coverage that fails until downstream manifest validation, command lookup, workflow JSON export, and clone cleanup flag behavior exist.
 **Acceptance**: New selftests fail red on the current hardcoded implementation.
 
-### ⬜ Unit 1b: Shell Consumer Manifest Implementation
+### ✅ Unit 1b: Shell Consumer Manifest Implementation
 **What**: Add shell-owned downstream consumer JSON manifest, update checker to read commands from it, add `--print-matrix`, add `--keep-worktree`, and update workflows/docs.
 **Acceptance**: Selftests pass and downstream consumer names/commands no longer require a shell script case branch.
 
-### ⬜ Unit 1c: Shell Verification
+### ✅ Unit 1c: Shell Verification
 **What**: Run shell selftests and matrix export validation.
 **Acceptance**: `scripts/check-downstream-consumers.sh --selftest`, `--print-matrix`, `scripts/shell-doctor.sh --selftest`, and relevant workflow syntax checks pass where available.
 
@@ -115,3 +115,4 @@ Make shared shell adoption declarative for current and future Ouro native apps b
 ## Progress Log
 - 2026-06-29 22:00 Created from planning doc
 - 2026-06-29 22:00 Doing reviewer gates converged: granularity, validation, ambiguity, quality, tinfoil, and stranger-with-candy passes found no blocker or major findings.
+- 2026-06-29 22:06 Unit 1 complete: shell commit `78d0564` added `scripts/downstream-consumers.json`, manifest-driven smoke command lookup, `--print-matrix`, `--keep-worktree`, default completed-clone cleanup, workflow matrix derivation, and adoption docs. Verification: `scripts/check-downstream-consumers.sh --selftest`, `scripts/check-downstream-consumers.sh --print-matrix`, `scripts/check-downstream-consumers.sh --warn-pins-current`, and `git diff --check` passed.
