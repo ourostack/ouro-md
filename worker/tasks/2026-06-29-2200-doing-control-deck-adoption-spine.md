@@ -74,15 +74,15 @@ Make shared shell adoption declarative for current and future Ouro native apps b
 **What**: Run shell selftests and matrix export validation.
 **Acceptance**: `scripts/check-downstream-consumers.sh --selftest`, `--print-matrix`, `scripts/shell-doctor.sh --selftest`, and relevant workflow syntax checks pass where available.
 
-### ⬜ Unit 2a: Ouro MD Control Deck Tests
+### ✅ Unit 2a: Ouro MD Control Deck Tests
 **What**: Add manifest validation that rejects non-shell branch dependencies unless policy explicitly allows them.
 **Acceptance**: Validation fails before the app control deck/policy is added.
 
-### ⬜ Unit 2b: Ouro MD Control Deck Implementation
+### ✅ Unit 2b: Ouro MD Control Deck Implementation
 **What**: Add `config/ouro-app-control-deck.json`, validation script, CI/preflight wiring where appropriate, and docs for dependency pinning policy.
 **Acceptance**: Validation passes with the shell main dependency allowed and `swift-markdown` policy made explicit.
 
-### ⬜ Unit 2c: Ouro MD Verification
+### ✅ Unit 2c: Ouro MD Verification
 **What**: Run the new validation plus existing shell dependency/boundary checks practical for this lane.
 **Acceptance**: Commands pass without warnings.
 
@@ -116,3 +116,4 @@ Make shared shell adoption declarative for current and future Ouro native apps b
 - 2026-06-29 22:00 Created from planning doc
 - 2026-06-29 22:00 Doing reviewer gates converged: granularity, validation, ambiguity, quality, tinfoil, and stranger-with-candy passes found no blocker or major findings.
 - 2026-06-29 22:06 Unit 1 complete: shell commit `78d0564` added `scripts/downstream-consumers.json`, manifest-driven smoke command lookup, `--print-matrix`, `--keep-worktree`, default completed-clone cleanup, workflow matrix derivation, and adoption docs. Verification: `scripts/check-downstream-consumers.sh --selftest`, `scripts/check-downstream-consumers.sh --print-matrix`, `scripts/check-downstream-consumers.sh --warn-pins-current`, and `git diff --check` passed.
+- 2026-06-29 22:12 Unit 2 complete: Ouro MD commit `1c999ca` added `config/ouro-app-control-deck.json`, `scripts/check-app-control-deck.py`, CI/preflight wiring, and pinned `swift-markdown` to revision `4661b550c55abde97d14e35b89e094084669f40a`. Verification: validator negative selftest, real validator, `swift package resolve`, `scripts/check-shell-boundary.sh --selftest`, `scripts/check-shell-boundary.sh`, `scripts/check-shell-dependency.sh`, and `git diff --check` passed.
