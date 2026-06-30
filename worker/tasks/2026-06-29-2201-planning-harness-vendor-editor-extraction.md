@@ -4,7 +4,7 @@
 **Created**: 2026-06-29 22:01
 
 ## Goal
-Formalize Ouro MD's shipped diagnostic harness boundary, add durable provenance policy for vendored Vditor assets, and define a testable AppKit/WebKit extraction plan so future editor decomposition work starts from evidence instead of file size alone.
+Formalize Ouro MD's shipped CLI and diagnostic harness boundary, add durable provenance policy for vendored Vditor assets, and define a testable AppKit/WebKit extraction plan so future editor decomposition work starts from evidence instead of file size alone.
 
 ## Upstream Work Items
 - A-017: Formalize Ouro MD's Shipped Harness/Probe Boundary
@@ -17,9 +17,9 @@ Formalize Ouro MD's shipped diagnostic harness boundary, add durable provenance 
 ## Scope
 
 ### In Scope
-- Add a machine-readable shipped diagnostic harness policy for the CLI-only `--*test` / `--*probe` / scenario modes routed from `Sources/OuroMD/main.swift`.
+- Add `docs/shipped-cli-and-harness-policy.json` as a machine-readable inventory for all shipped non-GUI CLI modes routed from `Sources/OuroMD/main.swift`, with public/maintainer modes classified separately from hidden diagnostic harness modes.
 - Add a script-enforced check that the harness policy matches `main.swift`, `scripts/run-native-scenarios.sh`, and release-relevance classification.
-- Add a machine-readable Vditor vendor manifest describing upstream source, version/provenance, license, refresh policy, asset digest, and validation commands.
+- Add `docs/vditor-vendor-manifest.json` describing upstream source, version/provenance, license, refresh policy, asset digest, and validation commands.
 - Add a script-enforced check that Vditor vendored files still match the manifest and that release/preflight runs the check.
 - Add an AppKit/WebKit extraction plan document identifying candidate seams for a future `OuroMDAppSupport` or `OuroMDEditorSupport` library, test strategy, ordering, and explicit non-goals.
 - Keep A-013 as radar only by documenting that broad `AppModel.swift` / `web/bridge.js` decomposition is deferred until the A-036 extraction plan proves the next split.
@@ -54,14 +54,14 @@ Formalize Ouro MD's shipped diagnostic harness boundary, add durable provenance 
 
 ## Decisions Made
 - Use repo-local policy files under `docs/` rather than a shell-owned manifest for this lane, because the work items are Ouro MD-specific and the user asked to keep write scope primarily in Ouro MD.
-- Treat `--render`, `--shoot`, `--roundtrip`, `--bundleprobe`, `--version`, `--help`, and `--list-themes` as public/maintainer CLI modes, not hidden diagnostic harness modes.
+- Treat `--render`, `--shoot`, `--roundtrip`, `--bundleprobe`, `--version`, `--help`, and `--list-themes` as shipped public/maintainer CLI modes that must appear in the policy inventory, but not as hidden diagnostic harness modes.
 - Treat hidden harness modes as shipped diagnostic modes: allowed in release artifacts, reachable only by explicit flags, no normal GUI launch path, no private document upload, and covered by scenario/preflight checks.
 - Use SHA-256 digests over the tracked vendored Vditor files to detect accidental edits without storing hundreds of per-file hashes in the manifest.
 - A-013 remains deferred until A-036's plan identifies the first low-risk extraction candidate and associated tests.
 
 ## Context / References
-- Source backlog: `origin/worker/shared-shell-systems-audit:worker/tasks/2026-06-29-2135-audit-shared-shell-split/audit-backlog.md`
-- PERT lane: `origin/worker/shared-shell-systems-audit:worker/tasks/2026-06-29-2135-audit-shared-shell-split/pert-chart.md`
+- Source backlog reference loaded with `git show`: `origin/worker/shared-shell-systems-audit:worker/tasks/2026-06-29-2135-audit-shared-shell-split/audit-backlog.md`
+- PERT lane reference loaded with `git show`: `origin/worker/shared-shell-systems-audit:worker/tasks/2026-06-29-2135-audit-shared-shell-split/pert-chart.md`
 - Harness flags: `Sources/OuroMD/main.swift`
 - Harness runners: `scripts/run-native-scenarios.sh`, `scripts/run-visual-qa.sh`, `scripts/verify-packaged-app.sh`
 - Release classifier: `scripts/release-policy.sh`
@@ -77,3 +77,4 @@ Current Vditor inventory at planning time: `Sources/OuroMD/web/vditor` contains 
 
 ## Progress Log
 - 2026-06-29 22:01 Created
+- 2026-06-29 22:05 Addressed reviewer findings by separating public/maintainer CLI modes from hidden diagnostic harness modes and naming the policy files.
