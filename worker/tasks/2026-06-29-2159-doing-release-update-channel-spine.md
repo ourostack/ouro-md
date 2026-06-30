@@ -67,3 +67,4 @@ Acceptance: All feasible validations pass; residual blockers are limited to true
 - 2026-06-29 22:06 Created doing doc after planning approval under autopilot.
 - 2026-06-29 22:13 Unit 1 complete: added red shell tests for capability modes, channel descriptors, release metadata, lifecycle presentation, and staging primitives. Red evidence saved in `unit-1-red-shell-tests.log`.
 - 2026-06-29 22:15 Unit 2 complete: implemented shell channel descriptors, explicit install capability modes, release metadata, lifecycle presentation input, and staged update/apply value primitives. `swift test --filter 'AppIdentityTests|AppUpdateTests|ReleaseUpdateViewStateTests|OuroAppShellContractTests'` passed with 34 tests.
+- 2026-06-29 22:16 Shell full validation passed: `swift test` ran 79 tests with 0 failures.
