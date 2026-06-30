@@ -23,7 +23,7 @@ enum OuroMDShellContract {
             requiredSurfaces: requiredSurfaces,
             releaseUpdates: OuroAppShellReleaseUpdateContract(
                 policy: releaseUpdatePolicy,
-                supportsInstallAndRelaunch: true,
+                installCapability: .reviewThenInstall,
                 supportsReleasePage: true
             ),
             about: OuroAppShellAboutContract(

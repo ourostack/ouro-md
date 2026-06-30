@@ -28,8 +28,10 @@ final class OuroMDShellContractTests: XCTestCase {
         XCTAssertEqual(contract.identity.releasePageURL.absoluteString, "https://github.com/ourostack/ouro-md/releases/latest")
 
         XCTAssertEqual(contract.releaseUpdates?.policy, OuroMDReleaseUpdate.configuration().releasePolicy)
-        XCTAssertEqual(contract.releaseUpdates?.supportsInstallAndRelaunch, true)
+        XCTAssertEqual(contract.releaseUpdates?.installCapability, .reviewThenInstall)
+        XCTAssertEqual(contract.releaseUpdates?.supportsInstallAndRelaunch, false)
         XCTAssertEqual(contract.releaseUpdates?.supportsReleasePage, true)
+        XCTAssertEqual(contract.identity.distributionChannel.descriptor.displayName, "Direct download")
 
         XCTAssertEqual(contract.about?.subtitle, "Markdown editor for fast local writing.")
         XCTAssertEqual(contract.about?.repositoryURL?.absoluteString, "https://github.com/ourostack/ouro-md")

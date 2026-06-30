@@ -91,15 +91,26 @@ private extension CommandPaletteItem {
 
 extension OuroMDUpdateCoordinator {
     var appShellUpdateState: ReleaseUpdateViewState {
-        ReleaseUpdateViewState(
-            kind: appShellUpdateKind,
-            statusLine: releaseUpdateStatusLine,
-            metadata: appShellUpdateMetadata,
-            detail: appShellUpdateDetail,
-            warning: appShellUpdateWarning,
-            canReviewUpdate: updateBadgeText != nil,
-            canOpenReleasePage: releasePageURL != nil
+        var state = ReleaseUpdateViewState.from(
+            presentation: ReleaseUpdatePresentationInput(
+                snapshot: releaseSnapshot,
+                channel: OuroMDShellContract.identity.distributionChannel,
+                installCapability: OuroMDShellContract.contract.releaseUpdates?.installCapability ?? .none,
+                isChecking: isChecking,
+                isInstalling: isInstalling,
+                installStatus: isInstalling ? installStatus : nil,
+                installError: installProgress.phase == .failed ? installProgress.detail : nil,
+                stagedUpdateVersion: stagedUpdateVersion,
+                recentlyInstalledVersion: recentlyInstalledVersion,
+                installPlan: releaseSnapshot.map { OuroMDUpdatePlanner.plan(from: $0) }
+            )
         )
+        state.statusLine = releaseUpdateStatusLine
+        state.canReviewUpdate = updateBadgeText != nil
+        state.canInstallUpdate = false
+        state.warning = appShellUpdateWarning ?? state.warning
+        state.detail = appShellUpdateDetail ?? state.detail
+        return state
     }
 
     var appShellUpdateActions: ReleaseUpdateActions {
@@ -112,33 +123,6 @@ extension OuroMDUpdateCoordinator {
                 }
             }
         )
-    }
-
-    var appShellUpdateKind: ReleaseUpdateStateKind {
-        if isChecking { return .checking }
-        if isInstalling { return .installing }
-        if stagedUpdateVersion != nil { return .readyToRelaunch }
-        if let status = releaseUpdateStatusKind {
-            switch status {
-            case .current: return .current
-            case .updateAvailable: return .updateAvailable
-            case .unavailable: return .unavailable
-            }
-        }
-        if recentlyInstalledVersion != nil { return .installed }
-        return .notChecked
-    }
-
-    var appShellUpdateMetadata: [ReleaseUpdateMetadataItem] {
-        var items: [ReleaseUpdateMetadataItem] = []
-        if let latest = latestKnownVersion {
-            items.append(ReleaseUpdateMetadataItem(id: "latest", label: "Latest", value: latest))
-        }
-        if let published = releasePublishedAtText {
-            items.append(ReleaseUpdateMetadataItem(id: "published", label: "Published", value: published))
-        }
-        items.append(ReleaseUpdateMetadataItem(id: "channel", label: "Channel", value: "Direct download"))
-        return items
     }
 
     var appShellUpdateDetail: String? {
