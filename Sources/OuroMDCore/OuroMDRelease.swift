@@ -10,5 +10,6 @@ public enum OuroMDRelease {
     public static let releaseHighlights = [
         "Refresh shared shell adoption controls and dependency policy metadata.",
         "Add shipped diagnostic harness and Vditor vendor provenance checks to keep release artifacts auditable.",
+        "Declare shared-shell settings, telemetry, privacy diagnostics, and visual-validation surfaces for downstream policy checks.",
     ]
 }
