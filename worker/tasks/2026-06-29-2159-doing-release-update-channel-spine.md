@@ -15,7 +15,7 @@ direct
 - [x] Shell install capability modes and channel descriptors are implemented and tested.
 - [x] Shell release lifecycle presentation helper and release metadata/policy units are implemented and tested.
 - [x] Shared staging/apply value primitives are implemented and adopted or type-aliased by consumers where safe.
-- [ ] Ouro MD declares review/prompt install capability and uses channel-derived presentation/copy.
+- [x] Ouro MD declares review/prompt install capability and uses channel-derived presentation/copy.
 - [ ] Workbench declares direct install/relaunch capability and uses shell lifecycle presentation helpers.
 - [ ] Targeted shell, Ouro MD, and Workbench validations pass or have documented hard blockers.
 - [ ] PR/merge path is attempted where safe, with terminal evidence recorded.
@@ -38,7 +38,7 @@ Output: Shell source files updated under `Sources/OuroAppShellCore`, `Sources/Ou
 
 Acceptance: Shell tests pass and existing APIs remain source-compatible for consumers where practical.
 
-### ⬜ Unit 3: Ouro MD Consumer Adoption
+### ✅ Unit 3: Ouro MD Consumer Adoption
 
 What: Update Ouro MD contract and adapter tests/code to declare review/prompt install capability and use shell channel/presentation helpers without claiming direct shell install.
 
@@ -68,3 +68,4 @@ Acceptance: All feasible validations pass; residual blockers are limited to true
 - 2026-06-29 22:13 Unit 1 complete: added red shell tests for capability modes, channel descriptors, release metadata, lifecycle presentation, and staging primitives. Red evidence saved in `unit-1-red-shell-tests.log`.
 - 2026-06-29 22:15 Unit 2 complete: implemented shell channel descriptors, explicit install capability modes, release metadata, lifecycle presentation input, and staged update/apply value primitives. `swift test --filter 'AppIdentityTests|AppUpdateTests|ReleaseUpdateViewStateTests|OuroAppShellContractTests'` passed with 34 tests.
 - 2026-06-29 22:16 Shell full validation passed: `swift test` ran 79 tests with 0 failures.
+- 2026-06-29 22:17 Unit 3 complete: Ouro MD now declares `.reviewThenInstall`, routes update state through shell presentation input, and preserves review-only/direct-install-suppressed actions. Targeted MD tests passed with 4 tests.
