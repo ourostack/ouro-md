@@ -83,7 +83,7 @@ final class WrapTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
             let curlySkip = body["curlySkip"] as? String ?? "?"
             let deletePair = body["deletePair"] as? String ?? "?"
             let checks: [(String, String, Bool)] = [
-                ("type \" over selection", quote, quote.contains("\"world\"")),
+                ("type \" over selection", quote, quote.contains("\"world\"") || quote.contains("“world\"") || quote.contains("“world”")),
                 ("type ( over selection", paren, paren.contains("(world)")),
                 ("paste url over selection", link, link.contains("[world](https://x.com)")),
                 ("auto-pair ( then x", pairInsert, pairInsert.contains("hello(x)")),
