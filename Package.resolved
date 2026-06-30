@@ -1,5 +1,5 @@
 {
-  "originHash" : "265fcf1f0dfcdc1d6b65fc74c94c766acbef279694d8daccc6c28267b746eccc",
+  "originHash" : "f56b3264ec9553088960db95417214d9be33aa1eb19e634bd1e9fb1c792e20ba",
   "pins" : [
     {
       "identity" : "ouro-native-apple-app-shell",
@@ -24,7 +24,6 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-markdown.git",
       "state" : {
-        "branch" : "main",
         "revision" : "4661b550c55abde97d14e35b89e094084669f40a"
       }
     }

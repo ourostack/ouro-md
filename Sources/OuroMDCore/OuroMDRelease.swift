@@ -8,6 +8,6 @@ public enum OuroMDRelease {
     public static let userAgent = "OuroMD/\(version)"
     public static let releaseDate = "2026-06-29"
     public static let releaseHighlights = [
-        "Refresh the shared native app shell dependency to latest main.",
+        "Refresh the shared native app shell dependency, adoption controls, and dependency policy metadata.",
     ]
 }
