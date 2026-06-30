@@ -54,22 +54,22 @@ Formalize Ouro MD's shipped CLI and diagnostic harness boundary, add durable pro
 
 **CRITICAL: Every unit header MUST start with status emoji (⬜ for new units).**
 
-### ⬜ Unit 0: Setup/Research
+### ✅ Unit 0: Setup/Research
 **What**: Create the artifacts directory, capture current harness flags and Vditor digest inputs, and verify the existing preflight/release-policy hooks that need to call new checks.
 **Output**: Notes/logs under `./2026-06-29-2201-doing-harness-vendor-editor-extraction/`.
 **Acceptance**: Evidence includes current `main.swift` flags, native scenario flags, Vditor tracked-file count/digest, and release-policy command locations.
 
-### ⬜ Unit 1a: Shipped CLI/Harness Policy — Tests
+### ✅ Unit 1a: Shipped CLI/Harness Policy — Tests
 **What**: Add failing script selftests for a missing `docs/shipped-cli-and-harness-policy.json`, drift between policy and `Sources/OuroMD/main.swift`, native scenario coverage drift, and release classifier drift for harness-only files.
 **Output**: A new check path, likely `scripts/check-shipped-harness-policy.sh`, plus a release-policy/preflight assertion that calls it.
 **Acceptance**: The new test/check fails before the policy manifest and implementation are added.
 
-### ⬜ Unit 1b: Shipped CLI/Harness Policy — Implementation
+### ✅ Unit 1b: Shipped CLI/Harness Policy — Implementation
 **What**: Add `docs/shipped-cli-and-harness-policy.json`, implement the policy checker, and wire it into `scripts/pr-preflight.sh` and `scripts/release-policy.sh selftest-package-guards` or a dedicated selftest command.
 **Output**: Manifest and executable script with deterministic validation.
 **Acceptance**: Harness policy check passes; release-policy selftests pass; hidden diagnostic modes remain explicit and public CLI modes are classified separately.
 
-### ⬜ Unit 1c: Shipped CLI/Harness Policy — Coverage & Refactor
+### ✅ Unit 1c: Shipped CLI/Harness Policy — Coverage & Refactor
 **What**: Run shell syntax checks and focused policy selftests; refactor the checker only if readability or failure output is weak.
 **Output**: Validation logs in the artifacts directory.
 **Acceptance**: `bash -n` and focused selftests pass with clear output and no warnings.
@@ -111,3 +111,5 @@ Formalize Ouro MD's shipped CLI and diagnostic harness boundary, add durable pro
 ## Progress Log
 - 2026-06-29 22:08 Created from planning doc
 - 2026-06-29 22:10 Local doing-doc review pass completed after external reviewer daemon became unavailable; units are concrete, source paths exist, and execution can proceed under autopilot.
+- 2026-06-29 22:20 Unit 0 complete: captured current flags, scenario coverage, Vditor inventory, and release/preflight hook points.
+- 2026-06-29 22:20 Unit 1 complete: added shipped CLI/harness policy manifest, drift checker, preflight hook, and release-policy selftest.
