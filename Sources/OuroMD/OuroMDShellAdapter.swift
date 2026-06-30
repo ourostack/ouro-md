@@ -1,5 +1,6 @@
 import AppKit
 import OuroAppShellAppKit
+import OuroAppShellContract
 import OuroAppShellUI
 import SwiftUI
 
@@ -64,7 +65,30 @@ enum OuroMDShellWindow {
     )
 }
 
-private extension CommandPaletteItem {
+extension CommandPaletteItem {
+    static func sortedForAppShellCommandReference(_ items: [CommandPaletteItem]) -> [CommandPaletteItem] {
+        items.sorted { lhs, rhs in
+            let lhsSection = CommandReferenceView.sectionOrder.firstIndex(of: lhs.appShellSection) ?? Int.max
+            let rhsSection = CommandReferenceView.sectionOrder.firstIndex(of: rhs.appShellSection) ?? Int.max
+            if lhsSection != rhsSection {
+                return lhsSection < rhsSection
+            }
+            return lhs.id < rhs.id
+        }
+    }
+
+    var appShellCommandSurface: OuroAppShellCommandSurface {
+        OuroAppShellCommandSurface(
+            id: id,
+            title: title,
+            section: appShellSection,
+            shortcut: shortcut,
+            menuPath: appShellMenuPath,
+            commandPaletteTitle: title,
+            referenceTitle: title
+        )
+    }
+
     var appShellCommandReferenceItem: AppShellCommandReferenceItem {
         AppShellCommandReferenceItem(
             id: id,
@@ -73,6 +97,55 @@ private extension CommandPaletteItem {
             shortcut: shortcut,
             keywords: keywords
         )
+    }
+
+    var appShellMenuPath: String? {
+        switch id {
+        case "file.new": return "File > New"
+        case "file.open": return "File > Open..."
+        case "file.open-folder": return "File > Open Folder..."
+        case "file.save": return "File > Save"
+        case "file.save-as": return "File > Save As..."
+        case "file.export-html": return "File > Export > HTML..."
+        case "file.export-pdf": return "File > Export > PDF..."
+        case "file.print": return "File > Print..."
+        case "edit.command-palette": return "Edit > Command Palette..."
+        case "edit.find": return "Edit > Find > Find..."
+        case "edit.replace": return "Edit > Find > Replace..."
+        case "edit.find-next": return "Edit > Find > Find Next"
+        case "edit.find-previous": return "Edit > Find > Find Previous"
+        case "edit.paste-plain": return "Edit > Paste as Plain Text"
+        case "edit.copy-markdown": return "Edit > Copy as > Markdown"
+        case "edit.copy-html": return "Edit > Copy as > Rendered (HTML)"
+        case "format.bold": return "Format > Bold"
+        case "format.italic": return "Format > Italic"
+        case "format.strike": return "Format > Strikethrough"
+        case "format.code": return "Format > Inline Code"
+        case "format.link": return "Format > Insert Link"
+        case "view.source": return "View > Source Code Mode"
+        case "view.focus": return "View > Focus Mode"
+        case "view.typewriter": return "View > Typewriter Mode"
+        case "view.toggle-sidebar": return "View > Toggle Sidebar"
+        case "view.search-sidebar": return "View > Search"
+        case "view.files-sidebar": return "View > File Tree"
+        case "view.outline-sidebar": return "View > Outline"
+        case "view.actual-size": return "View > Actual Size"
+        case "view.zoom-in": return "View > Zoom In"
+        case "view.zoom-out": return "View > Zoom Out"
+        case "help.about": return "Ouro MD > About Ouro MD"
+        case "help.whats-new": return "Help > What's New"
+        case "help.check-updates": return "Help > Check for Updates..."
+        case "help.open-latest-release": return "Help > Open Latest Release"
+        case "help.keyboard-shortcuts": return "Help > Keyboard Shortcuts..."
+        default:
+            if id.hasPrefix("paragraph.") {
+                return "Paragraph > \(title)"
+            }
+            if id.hasPrefix("theme.") {
+                return "Themes > \(title.replacingOccurrences(of: "Theme: ", with: ""))"
+            }
+            return nil
+        }
     }
 
     var appShellSection: String {
@@ -86,6 +159,12 @@ private extension CommandPaletteItem {
         case "help": return "Help"
         default: return "Other"
         }
+    }
+}
+
+extension Array where Element == CommandPaletteItem {
+    func sortedForAppShellCommandReference() -> [CommandPaletteItem] {
+        CommandPaletteItem.sortedForAppShellCommandReference(self)
     }
 }
 

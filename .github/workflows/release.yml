@@ -1,8 +1,9 @@
 name: Release
 
 # Cuts a GitHub release automatically when the version bumps on main.
-# To ship: bump VERSION in make-app.sh + OuroMDRelease.swift, merge to main —
-# this builds the app, packages the zip + manifest, and publishes v<VERSION>.
+# To ship: run ./scripts/bump-version.sh <x.y.z>, merge to main, and let
+# make-app.sh derive the app version from OuroMDRelease.swift. This builds the
+# app, packages the zip + manifest, and publishes v<VERSION>.
 # It no-ops if a release for that version already exists, so ordinary merges
 # (docs, refactors) don't trigger anything.
 #

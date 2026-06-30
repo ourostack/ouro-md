@@ -13,6 +13,7 @@ final class OuroMDShellContractTests: XCTestCase {
             contract,
             OuroMDShellContract.requiredSurfaces
         )
+        OuroAppShellContractAssertions.assertCommandManifestMatchesReference(contract)
     }
 
     @MainActor
@@ -40,6 +41,24 @@ final class OuroMDShellContractTests: XCTestCase {
         XCTAssertEqual(contract.commandReference?.commandCount, CommandPaletteCatalog.items().count)
         XCTAssertEqual(contract.commandReference?.sections, CommandReferenceView.sectionOrder)
         XCTAssertEqual(contract.commandReference?.entryPoint, "Help > Keyboard Shortcuts")
+
+        OuroAppShellContractAssertions.assertCommandManifest(
+            contract,
+            matches: CommandPaletteCatalog.items().sortedForAppShellCommandReference().map(\.appShellCommandSurface)
+        )
+    }
+
+    @MainActor
+    func testShellCommandManifestPinsPublicSurfaceSemantics() throws {
+        let commands = Dictionary(uniqueKeysWithValues: try XCTUnwrap(OuroMDShellContract.contract.commandManifest).commands.map { ($0.id, $0) })
+
+        XCTAssertEqual(commands["help.whats-new"]?.title, "What's New")
+        XCTAssertEqual(commands["help.whats-new"]?.section, "Help")
+        XCTAssertEqual(commands["help.whats-new"]?.menuPath, "Help > What's New")
+        XCTAssertEqual(commands["help.whats-new"]?.referenceTitle, "What's New")
+        XCTAssertEqual(commands["help.keyboard-shortcuts"]?.shortcut, "⌘?")
+        XCTAssertEqual(commands["edit.command-palette"]?.menuPath, "Edit > Command Palette...")
+        XCTAssertEqual(commands["paragraph.h1"]?.menuPath, "Paragraph > Heading 1")
     }
 
     @MainActor
