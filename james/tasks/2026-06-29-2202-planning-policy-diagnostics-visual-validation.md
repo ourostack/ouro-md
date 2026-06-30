@@ -1,7 +1,7 @@
 # Planning: Shared Shell Policy Diagnostics Visual Validation
 
-**Status**: drafting
-**Created**: pending initial commit
+**Status**: NEEDS_REVIEW
+**Created**: 2026-06-29 22:02
 
 ## Goal
 Implement the policy/diagnostics/visual-validation lane for the shared Ouro native app shell campaign across Ouro MD, Ouro Workbench, and the shared shell. The lane should turn settings/telemetry, privacy/diagnostics, Swift strictness, visual surface coverage, and native UI testing strategy from audit backlog items into enforceable docs, contracts, manifests, scripts, and tests where feasible.
@@ -74,4 +74,4 @@ Implement the policy/diagnostics/visual-validation lane for the shared Ouro nati
 The shell already has `OuroAppShellSettingsContract(entryPoint:appOwnedSections:)` and a `.telemetry` boundary surface, but no shared section descriptors, telemetry consent envelope, privacy/diagnostics descriptor, or manifest-owned visual surface rows. Ouro MD declares Updates and Telemetry as app-owned settings sections and has `PRIVACY.md`; Workbench declares Software Updates and support diagnostics in README/recovery docs and keeps ViewInspector pinned to test targets only.
 
 ## Progress Log
-- pending initial commit Created
+- 2026-06-29 22:02 Created
