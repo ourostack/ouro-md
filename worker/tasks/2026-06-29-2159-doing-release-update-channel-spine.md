@@ -71,3 +71,4 @@ Acceptance: All feasible validations pass; residual blockers are limited to true
 - 2026-06-29 22:17 Unit 3 complete: Ouro MD now declares `.reviewThenInstall`, routes update state through shell presentation input, and preserves review-only/direct-install-suppressed actions. Targeted MD tests passed with 4 tests.
 - 2026-06-29 22:21 Unit 4 complete: Workbench now declares `.directInstallAndRelaunch`, routes update state through shell presentation input, and keeps Workbench-specific retry/detail copy as overrides. Targeted Workbench shell presentation tests passed with 17 tests.
 - 2026-06-29 22:22 Shell PR #28 merged to `main` at `e4f1d9f`; consumer `Package.resolved` files updated to that shell revision. Post-merge targeted validations passed: MD 4 tests, Workbench 17 tests.
+- 2026-06-29 22:29 Local shell validation passed while hosted app CI remained queued: MD and Workbench `check-shell-dependency.sh` and `check-shell-boundary.sh`.
