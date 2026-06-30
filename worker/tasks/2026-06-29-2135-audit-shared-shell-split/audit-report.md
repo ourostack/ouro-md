@@ -83,3 +83,34 @@ The next roadmap should start with release/update lifecycle unification and adap
 
 I did not run full Swift test suites for all repos because this audit did not modify product code. The Workbench reviewer did run `scripts/check-shell-boundary.sh --selftest`, `scripts/check-shell-boundary.sh`, and `scripts/check-shell-dependency.sh` for the Workbench slice.
 
+## Expansion Pass: 2026-06-29 21:52
+
+The second pass intentionally looked for "what else logically follows?" rather
+than only new high-severity findings. It widened the inventory to hidden probe
+surfaces, vendor resources, coverage/dependency policy, macOS/platform skew,
+third-app adoption friction, settings/telemetry surfaces, and release-channel
+evolution.
+
+Additional observations:
+
+- Ouro MD ships more than twenty `*Test.swift`/`*Probe.swift` harness files in
+  the executable target, reachable through hidden CLI flags in `main.swift`.
+  That is powerful dogfood infrastructure, but it needs an explicit product vs.
+  harness boundary so release review can reason about what ships.
+- Ouro MD vendors a 23 MB Vditor distribution under app resources. The presence
+  of a license file is good; the remaining gap is provenance/update/security
+  policy so agents know how and when to refresh it.
+- The shell docs already admit settings chrome and telemetry consent/common
+  envelope should move shellward. With two apps present, that is no longer a
+  hypothetical future concern.
+- The direct-download updater work should be designed with future signed,
+  notarized, and App Store channels in mind, even while direct download remains
+  the dogfood/default channel.
+- Workbench's coverage discipline is unusually strong, but its allowlist and
+  digest machinery are now large enough to deserve their own control-deck
+  manifest before more apps copy the pattern.
+
+Comprehensiveness stop condition for this pass: after the expanded scans, the
+remaining observations either duplicated A-001 through A-038, were intentional
+test-fixture/provenance strings, or were too product-dependent to route without
+a separate product audit.
