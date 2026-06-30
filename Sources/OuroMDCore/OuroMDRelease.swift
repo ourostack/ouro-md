@@ -8,6 +8,7 @@ public enum OuroMDRelease {
     public static let userAgent = "OuroMD/\(version)"
     public static let releaseDate = "2026-06-29"
     public static let releaseHighlights = [
+        "Refresh shared shell adoption controls and dependency policy metadata.",
         "Add shipped diagnostic harness and Vditor vendor provenance checks to keep release artifacts auditable.",
     ]
 }
