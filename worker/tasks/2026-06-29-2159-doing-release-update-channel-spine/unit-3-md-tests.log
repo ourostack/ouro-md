@@ -1,0 +1,39 @@
+Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/7] Emitting module OuroMD
+[4/7] Compiling OuroMD OuroMDShellAdapter.swift
+[5/9] Compiling OuroMD UISurfaceTest.swift
+[6/9] Compiling OuroMD AppInfoView.swift
+[6/11] Write Objects.LinkFileList
+[7/11] Linking ouro-md
+[8/11] Applying ouro-md
+[10/13] Compiling OuroMDTests OuroMDUpdateCoordinatorTests.swift
+[11/13] Emitting module OuroMDTests
+[11/13] Write Objects.LinkFileList
+[12/13] Linking ouro-mdPackageTests
+Build complete! (4.53s)
+Test Suite 'Selected tests' started at 2026-06-29 22:16:50.989.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-29 22:16:50.990.
+Test Suite 'OuroMDShellContractTests' started at 2026-06-29 22:16:50.990.
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractDocumentsUtilityWindowsAndSettingsEntryPoint]' started.
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractDocumentsUtilityWindowsAndSettingsEntryPoint]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractIsValidAndDeclaresSharedSurfaces]' started.
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractIsValidAndDeclaresSharedSurfaces]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractMatchesRuntimeIdentityReleaseAndShortcutSurfaces]' started.
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractMatchesRuntimeIdentityReleaseAndShortcutSurfaces]' passed (0.000 seconds).
+Test Suite 'OuroMDShellContractTests' passed at 2026-06-29 22:16:50.992.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'OuroMDUpdateCoordinatorTests' started at 2026-06-29 22:16:50.992.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAppShellUpdateActionsExposeReviewButKeepDirectInstallBehindOuroMDPrompt]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAppShellUpdateActionsExposeReviewButKeepDirectInstallBehindOuroMDPrompt]' passed (0.003 seconds).
+Test Suite 'OuroMDUpdateCoordinatorTests' passed at 2026-06-29 22:16:50.995.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.003 (0.003) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-29 22:16:50.995.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.005 (0.005) seconds
+Test Suite 'Selected tests' passed at 2026-06-29 22:16:50.995.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.005 (0.006) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

@@ -1,0 +1,57 @@
+[0/1] Planning build
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+[1/7] Write sources
+[5/15] Compiling OuroAppShellCore ShellBoundary.swift
+[6/15] Compiling OuroAppShellCore ReleaseUpdatePolicy.swift
+[7/15] Compiling OuroAppShellCore ReleaseAssetNamingPolicy.swift
+[8/15] Compiling OuroAppShellCore ReleaseVersionIdentity.swift
+[9/15] Compiling OuroAppShellCore AppUpdate.swift
+[10/15] Emitting module OuroAppShellCore
+[11/15] Compiling OuroAppShellCore AppIdentity.swift
+[12/15] Compiling OuroAppShellCore ReleaseUpdate.swift
+[12/16] Write sources
+[14/25] Emitting module OuroAppShellUI
+[15/25] Compiling OuroAppShellUI UpdateInstalledConfirmationView.swift
+[16/25] Compiling OuroAppShellUI ReleaseUpdateViewState.swift
+[17/25] Compiling OuroAppShellContract OuroAppShellContract.swift
+[18/25] Emitting module OuroAppShellContract
+[19/25] Compiling OuroAppShellUI ReleaseUpdateControls.swift
+[20/25] Compiling OuroAppShellUI AppShellAboutView.swift
+[21/25] Compiling OuroAppShellUI AppShellAboutModel.swift
+[22/25] Compiling OuroAppShellUI AppShellCommandReferenceView.swift
+[23/27] Compiling OuroAppShellAppKit AppShellWindowPresenter.swift
+[24/27] Emitting module OuroAppShellAppKit
+[24/30] Write Objects.LinkFileList
+[24/30] Write sources
+[27/32] Emitting module OuroAppShellConsumerTesting
+[28/32] Compiling OuroAppShellConsumerTesting OuroAppShellContractAssertions.swift
+[28/32] Linking ouro-md
+[29/32] Applying ouro-md
+[30/32] Write Objects.LinkFileList
+[31/32] Linking ouro-mdPackageTests
+Build complete! (6.83s)
+Test Suite 'Selected tests' started at 2026-06-29 22:22:08.403.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-29 22:22:08.404.
+Test Suite 'OuroMDShellContractTests' started at 2026-06-29 22:22:08.404.
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractDocumentsUtilityWindowsAndSettingsEntryPoint]' started.
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractDocumentsUtilityWindowsAndSettingsEntryPoint]' passed (0.003 seconds).
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractIsValidAndDeclaresSharedSurfaces]' started.
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractIsValidAndDeclaresSharedSurfaces]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractMatchesRuntimeIdentityReleaseAndShortcutSurfaces]' started.
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractMatchesRuntimeIdentityReleaseAndShortcutSurfaces]' passed (0.000 seconds).
+Test Suite 'OuroMDShellContractTests' passed at 2026-06-29 22:22:08.408.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.003 (0.004) seconds
+Test Suite 'OuroMDUpdateCoordinatorTests' started at 2026-06-29 22:22:08.408.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAppShellUpdateActionsExposeReviewButKeepDirectInstallBehindOuroMDPrompt]' started.
+Test Case '-[OuroMDTests.OuroMDUpdateCoordinatorTests testAppShellUpdateActionsExposeReviewButKeepDirectInstallBehindOuroMDPrompt]' passed (0.008 seconds).
+Test Suite 'OuroMDUpdateCoordinatorTests' passed at 2026-06-29 22:22:08.417.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.008 (0.008) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-29 22:22:08.417.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.012 (0.013) seconds
+Test Suite 'Selected tests' passed at 2026-06-29 22:22:08.417.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.012 (0.014) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

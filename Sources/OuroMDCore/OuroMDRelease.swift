@@ -8,7 +8,7 @@ public enum OuroMDRelease {
     public static let userAgent = "OuroMD/\(version)"
     public static let releaseDate = "2026-06-30"
     public static let releaseHighlights = [
-        "Refresh shared shell adoption controls and dependency policy metadata.",
+        "Refresh the shared native app shell dependency, adoption controls, and dependency policy metadata.",
         "Add shipped diagnostic harness and Vditor vendor provenance checks to keep release artifacts auditable.",
         "Declare shared-shell settings, telemetry, privacy diagnostics, and visual-validation surfaces for downstream policy checks.",
         "Declare the shared shell command manifest so keyboard shortcuts, menus, and What's New ownership stay in sync.",
