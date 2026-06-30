@@ -33,12 +33,12 @@ Implement the policy/diagnostics/visual-validation lane for the shared Ouro nati
 - Do not depend on A-023 implementation for this lane; if A-021 cannot fully enforce runtime command/action parity without A-023, record that as a manifest boundary and validate the feasible manifest layer.
 
 ## Completion Criteria
-- [ ] A-015 is represented by shell settings-section and telemetry-envelope roadmap/docs, plus contract data/tests where feasible.
-- [ ] A-020 is represented by a cross-repo Swift strictness matrix and a validation command or script check.
-- [ ] A-021 is represented by a shell-owned visual surface manifest and validation path that covers shell surfaces and consumer expectations.
-- [ ] A-029 is represented by a shell privacy/diagnostics descriptor contract with validator/tests and consumer declarations.
-- [ ] A-030 is represented by a native-app UI testing strategy doc and any feasible helper/manifest routing support.
-- [ ] Ouro MD and Ouro Workbench consume or validate the new contract fields without moving app-owned behavior into the shell.
+- [ ] A-015 is complete when shell docs define the shared settings-section taxonomy and telemetry consent/envelope boundary, `OuroAppShellSettingsContract` can declare shared section descriptors, and shell tests reject malformed settings descriptors.
+- [ ] A-020 is complete when a checked-in strictness matrix lists every Swift target in the three `Package.swift` files with current language mode, target posture, blockers, and the exact validation command; a script verifies the matrix still mentions all current targets.
+- [ ] A-021 is complete when a shell-owned visual surface manifest file declares required states for About, update controls, settings entry, command reference, and utility windows, and `scripts/ui-surface-probe.sh` validates that the manifest is parseable and represented by the shell probe.
+- [ ] A-029 is complete when `OuroAppShellContract` includes a privacy/diagnostics descriptor with fields for telemetry consent entry, privacy doc URL, diagnostics export disclosure, support-bundle contents, and redaction guarantees; validator tests cover missing/blank invalid descriptors; MD and Workbench declare descriptors.
+- [ ] A-030 is complete when shell docs map native app surface types to ViewInspector, shell surface probe, app harness, accessibility tree, and screenshot/OCR gates, and the visual surface manifest records the selected validation tool per surface row.
+- [ ] Ouro MD and Ouro Workbench consume or validate the new contract fields by compiling contract declarations and passing shell consumer assertion tests; verification must not require moving app-owned event names, support bundle collectors, or domain settings behavior into shell.
 - [ ] 100% test coverage on all new code
 - [ ] All tests pass
 - [ ] No warnings
@@ -52,13 +52,13 @@ Implement the policy/diagnostics/visual-validation lane for the shared Ouro nati
 
 ## Open Questions
 - [ ] A-021 depends on A-023 in the upstream PERT chart. Decision under autopilot: implement the manifest/probe layer now and leave deeper runtime parity assertions to A-023-owned helpers.
-- [ ] The repo-local `subagents/work-planner.md` and `subagents/work-doer.md` files are absent in the current Ouro MD checkout. Decision under autopilot: use installed Work Suite skill files and record the absence as source-check evidence.
 
 ## Decisions Made
 - Use dedicated branches/worktrees named `james/policy-diagnostics-visual-validation` for all three repos: `/Users/arimendelow/Projects/ouro-md-james-policy`, `/Users/arimendelow/Projects/ouro-workbench-james-policy`, and `/Users/arimendelow/Projects/ouro-shell-james-policy`.
 - Keep shell additions generic: settings sections, telemetry consent/envelope requirements, privacy/diagnostics descriptors, surface manifest rows, and testing-tool routing live in shell; consumer-specific settings labels, event names, support bundle implementation, and domain diagnostics stay in the apps.
 - Treat human approval gates as disabled by the operator's autopilot mandate; use reviewer gates and concrete validation instead.
 - Keep A-020 to a matrix and validation policy. Do not change Swift language modes as part of this lane.
+- The repo-local `subagents/work-planner.md` and `subagents/work-doer.md` source-of-truth files are absent in the current Ouro MD checkout; use installed Work Suite skill files and record the absence as source-check evidence.
 
 ## Context / References
 - Source backlog: Ouro MD `origin/worker/shared-shell-systems-audit:worker/tasks/2026-06-29-2135-audit-shared-shell-split/audit-backlog.md`
@@ -75,3 +75,4 @@ The shell already has `OuroAppShellSettingsContract(entryPoint:appOwnedSections:
 
 ## Progress Log
 - 2026-06-29 22:02 Created
+- 2026-06-29 22:02 Reviewer gate found measurable-criteria blocker; tightened completion criteria and moved subagent-source absence to decisions/evidence.
