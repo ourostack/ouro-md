@@ -36,6 +36,11 @@ enum OuroMDShellContract {
                 sections: CommandReferenceView.sectionOrder,
                 entryPoint: "Help > Keyboard Shortcuts"
             ),
+            commandManifest: OuroAppShellCommandSurfaceManifest(
+                commands: CommandPaletteCatalog.items()
+                    .sortedForAppShellCommandReference()
+                    .map(\.appShellCommandSurface)
+            ),
             utilityWindows: [
                 .init(id: "update-progress", surface: .releaseUpdates, title: OuroMDShellWindow.updateProgress.title),
                 .init(id: "update-installed", surface: .releaseUpdates, title: OuroMDShellWindow.updateInstalled.title),
