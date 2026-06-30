@@ -11,7 +11,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/ourostack/ouro-native-apple-app-shell.git", branch: "main"),
-        .package(url: "https://github.com/apple/swift-markdown.git", branch: "main")
+        .package(url: "https://github.com/apple/swift-markdown.git", revision: "4661b550c55abde97d14e35b89e094084669f40a")
     ],
     targets: [
         .target(

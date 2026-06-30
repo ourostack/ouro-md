@@ -48,6 +48,8 @@ jobs:
         run: ./scripts/release-policy.sh scan .
       - name: Verify shared shell dependency freshness
         run: ./scripts/check-shell-dependency.sh
+      - name: Verify app control deck
+        run: ./scripts/check-app-control-deck.py
       - name: Verify shared shell boundary selftest
         run: ./scripts/check-shell-boundary.sh --selftest
       - name: Verify shared shell boundary
