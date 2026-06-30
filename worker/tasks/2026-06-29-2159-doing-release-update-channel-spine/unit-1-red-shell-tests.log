@@ -1,0 +1,544 @@
+Building for debugging...
+[0/19] Write sources
+[7/19] /Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/.build/arm64-apple-macosx/debug/OuroAppShellPackageTests.derived/runner.swift
+[7/19] Write sources
+[12/19] Write OuroAppShellUISurfaceProbe-entitlement.plist
+[13/19] Write swift-version--58304C5D6DBC2206.txt
+[15/27] Compiling OuroAppShellCore ShellBoundary.swift
+[16/27] Compiling OuroAppShellCore ReleaseVersionIdentity.swift
+[17/27] Compiling OuroAppShellCore ReleaseUpdatePolicy.swift
+[18/27] Compiling OuroAppShellCore ReleaseAssetNamingPolicy.swift
+[19/27] Compiling OuroAppShellCore AppUpdate.swift
+[20/27] Compiling OuroAppShellCore AppIdentity.swift
+[21/27] Compiling OuroAppShellCore ReleaseUpdate.swift
+[22/27] Emitting module OuroAppShellCore
+[23/36] Compiling OuroAppShellContract OuroAppShellContract.swift
+[24/36] Emitting module OuroAppShellContract
+[25/40] Compiling OuroAppShellUI UpdateInstalledConfirmationView.swift
+[26/40] Compiling OuroAppShellUI ReleaseUpdateViewState.swift
+[27/40] Compiling OuroAppShellUI AppShellCommandReferenceView.swift
+[28/40] Compiling OuroAppShellUI AppShellAboutView.swift
+[29/40] Emitting module OuroAppShellUI
+[30/40] Compiling OuroAppShellUI ReleaseUpdateControls.swift
+[31/40] Compiling OuroAppShellUI AppShellAboutModel.swift
+[32/49] Emitting module OuroAppShellAppKit
+[33/49] Compiling OuroAppShellAppKit AppShellWindowPresenter.swift
+[34/58] Compiling OuroAppShellConsumerTesting OuroAppShellContractAssertions.swift
+[35/58] Emitting module OuroAppShellConsumerTesting
+[36/60] Compiling OuroAppShellUISurfaceProbe main.swift
+[37/60] Emitting module OuroAppShellUISurfaceProbe
+[37/60] Write Objects.LinkFileList
+[39/60] Compiling OuroAppShellUITests UpdateInstalledConfirmationTests.swift
+[40/60] Compiling OuroAppShellUITests AppShellAboutModelTests.swift
+[41/60] Emitting module OuroAppShellUITests
+[42/60] Compiling OuroAppShellUITests AppShellCommandReferenceTests.swift
+[43/60] Compiling OuroAppShellUITests ReleaseUpdateViewStateTests.swift
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:187:27: error: cannot find 'ReleaseUpdatePresentationInput' in scope
+185 |     func testLifecyclePresentationDerivesChannelAwareCheckingAndInstallModes() {
+186 |         let checking = ReleaseUpdateViewState.from(
+187 |             presentation: ReleaseUpdatePresentationInput(
+    |                           `- error: cannot find 'ReleaseUpdatePresentationInput' in scope
+188 |                 snapshot: nil,
+189 |                 channel: .appStore,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:187:27: error: extra argument 'presentation' in call
+185 |     func testLifecyclePresentationDerivesChannelAwareCheckingAndInstallModes() {
+186 |         let checking = ReleaseUpdateViewState.from(
+187 |             presentation: ReleaseUpdatePresentationInput(
+    |                           `- error: extra argument 'presentation' in call
+188 |                 snapshot: nil,
+189 |                 channel: .appStore,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:187:13: error: missing argument for parameter 'snapshot' in call
+185 |     func testLifecyclePresentationDerivesChannelAwareCheckingAndInstallModes() {
+186 |         let checking = ReleaseUpdateViewState.from(
+187 |             presentation: ReleaseUpdatePresentationInput(
+    |             `- error: missing argument for parameter 'snapshot' in call
+188 |                 snapshot: nil,
+189 |                 channel: .appStore,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Sources/OuroAppShellUI/ReleaseUpdateViewState.swift:121:24: note: 'from(snapshot:installPlan:channel:)' declared here
+119 |     }
+120 | 
+121 |     public static func from(
+    |                        `- note: 'from(snapshot:installPlan:channel:)' declared here
+122 |         snapshot: ReleaseUpdateSnapshot,
+123 |         installPlan: Result<AppUpdatePlan, AppUpdatePlanError>? = nil,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:188:27: error: 'nil' requires a contextual type
+186 |         let checking = ReleaseUpdateViewState.from(
+187 |             presentation: ReleaseUpdatePresentationInput(
+188 |                 snapshot: nil,
+    |                           `- error: 'nil' requires a contextual type
+189 |                 channel: .appStore,
+190 |                 installCapability: .none,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:189:27: error: cannot infer contextual base in reference to member 'appStore'
+187 |             presentation: ReleaseUpdatePresentationInput(
+188 |                 snapshot: nil,
+189 |                 channel: .appStore,
+    |                           `- error: cannot infer contextual base in reference to member 'appStore'
+190 |                 installCapability: .none,
+191 |                 isChecking: true
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:190:37: error: cannot infer contextual base in reference to member 'none'
+188 |                 snapshot: nil,
+189 |                 channel: .appStore,
+190 |                 installCapability: .none,
+    |                                     `- error: cannot infer contextual base in reference to member 'none'
+191 |                 isChecking: true
+192 |             )
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:195:40: error: type 'Equatable' has no member 'checking'
+193 |         )
+194 | 
+195 |         XCTAssertEqual(checking.kind, .checking)
+    |                                        `- error: type 'Equatable' has no member 'checking'
+196 |         XCTAssertEqual(checking.statusLine, "Checking for updates...")
+197 |         XCTAssertEqual(checking.metadata, [ReleaseUpdateMetadataItem(id: "channel", label: "Channel", value: "App Store")])
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:201:27: error: cannot find 'ReleaseUpdatePresentationInput' in scope
+199 | 
+200 |         let available = ReleaseUpdateViewState.from(
+201 |             presentation: ReleaseUpdatePresentationInput(
+    |                           `- error: cannot find 'ReleaseUpdatePresentationInput' in scope
+202 |                 snapshot: ReleaseUpdateSnapshot(
+203 |                     status: .updateAvailable,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:201:27: error: extra argument 'presentation' in call
+199 | 
+200 |         let available = ReleaseUpdateViewState.from(
+201 |             presentation: ReleaseUpdatePresentationInput(
+    |                           `- error: extra argument 'presentation' in call
+202 |                 snapshot: ReleaseUpdateSnapshot(
+203 |                     status: .updateAvailable,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:201:13: error: missing argument for parameter 'snapshot' in call
+199 | 
+200 |         let available = ReleaseUpdateViewState.from(
+201 |             presentation: ReleaseUpdatePresentationInput(
+    |             `- error: missing argument for parameter 'snapshot' in call
+202 |                 snapshot: ReleaseUpdateSnapshot(
+203 |                     status: .updateAvailable,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Sources/OuroAppShellUI/ReleaseUpdateViewState.swift:121:24: note: 'from(snapshot:installPlan:channel:)' declared here
+119 |     }
+120 | 
+121 |     public static func from(
+    |                        `- note: 'from(snapshot:installPlan:channel:)' declared here
+122 |         snapshot: ReleaseUpdateSnapshot,
+123 |         installPlan: Result<AppUpdatePlan, AppUpdatePlanError>? = nil,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:214:27: error: cannot infer contextual base in reference to member 'developerIDDirect'
+212 |                     detail: "Version 0.9.25 is available."
+213 |                 ),
+214 |                 channel: .developerIDDirect,
+    |                           `- error: cannot infer contextual base in reference to member 'developerIDDirect'
+215 |                 installCapability: .reviewThenInstall
+216 |             )
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:215:37: error: cannot infer contextual base in reference to member 'reviewThenInstall'
+213 |                 ),
+214 |                 channel: .developerIDDirect,
+215 |                 installCapability: .reviewThenInstall
+    |                                     `- error: cannot infer contextual base in reference to member 'reviewThenInstall'
+216 |             )
+217 |         )
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:227:27: error: cannot find 'ReleaseUpdatePresentationInput' in scope
+225 |     func testLifecyclePresentationDerivesInstallingReadyInstalledAndFailedStates() {
+226 |         let installing = ReleaseUpdateViewState.from(
+227 |             presentation: ReleaseUpdatePresentationInput(
+    |                           `- error: cannot find 'ReleaseUpdatePresentationInput' in scope
+228 |                 snapshot: nil,
+229 |                 channel: .directDownload,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:227:27: error: extra argument 'presentation' in call
+225 |     func testLifecyclePresentationDerivesInstallingReadyInstalledAndFailedStates() {
+226 |         let installing = ReleaseUpdateViewState.from(
+227 |             presentation: ReleaseUpdatePresentationInput(
+    |                           `- error: extra argument 'presentation' in call
+228 |                 snapshot: nil,
+229 |                 channel: .directDownload,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:227:13: error: missing argument for parameter 'snapshot' in call
+225 |     func testLifecyclePresentationDerivesInstallingReadyInstalledAndFailedStates() {
+226 |         let installing = ReleaseUpdateViewState.from(
+227 |             presentation: ReleaseUpdatePresentationInput(
+    |             `- error: missing argument for parameter 'snapshot' in call
+228 |                 snapshot: nil,
+229 |                 channel: .directDownload,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Sources/OuroAppShellUI/ReleaseUpdateViewState.swift:121:24: note: 'from(snapshot:installPlan:channel:)' declared here
+119 |     }
+120 | 
+121 |     public static func from(
+    |                        `- note: 'from(snapshot:installPlan:channel:)' declared here
+122 |         snapshot: ReleaseUpdateSnapshot,
+123 |         installPlan: Result<AppUpdatePlan, AppUpdatePlanError>? = nil,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:228:27: error: 'nil' requires a contextual type
+226 |         let installing = ReleaseUpdateViewState.from(
+227 |             presentation: ReleaseUpdatePresentationInput(
+228 |                 snapshot: nil,
+    |                           `- error: 'nil' requires a contextual type
+229 |                 channel: .directDownload,
+230 |                 installCapability: .directInstallAndRelaunch,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:229:27: error: cannot infer contextual base in reference to member 'directDownload'
+227 |             presentation: ReleaseUpdatePresentationInput(
+228 |                 snapshot: nil,
+229 |                 channel: .directDownload,
+    |                           `- error: cannot infer contextual base in reference to member 'directDownload'
+230 |                 installCapability: .directInstallAndRelaunch,
+231 |                 isInstalling: true,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:230:37: error: cannot infer contextual base in reference to member 'directInstallAndRelaunch'
+228 |                 snapshot: nil,
+229 |                 channel: .directDownload,
+230 |                 installCapability: .directInstallAndRelaunch,
+    |                                     `- error: cannot infer contextual base in reference to member 'directInstallAndRelaunch'
+231 |                 isInstalling: true,
+232 |                 installStatus: "Installing 0.9.25..."
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:235:42: error: type 'Equatable' has no member 'installing'
+233 |             )
+234 |         )
+235 |         XCTAssertEqual(installing.kind, .installing)
+    |                                          `- error: type 'Equatable' has no member 'installing'
+236 |         XCTAssertEqual(installing.detail, "Installing 0.9.25...")
+237 | 
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:239:27: error: cannot find 'ReleaseUpdatePresentationInput' in scope
+237 | 
+238 |         let ready = ReleaseUpdateViewState.from(
+239 |             presentation: ReleaseUpdatePresentationInput(
+    |                           `- error: cannot find 'ReleaseUpdatePresentationInput' in scope
+240 |                 snapshot: nil,
+241 |                 channel: .directDownload,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:239:27: error: extra argument 'presentation' in call
+237 | 
+238 |         let ready = ReleaseUpdateViewState.from(
+239 |             presentation: ReleaseUpdatePresentationInput(
+    |                           `- error: extra argument 'presentation' in call
+240 |                 snapshot: nil,
+241 |                 channel: .directDownload,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:239:13: error: missing argument for parameter 'snapshot' in call
+237 | 
+238 |         let ready = ReleaseUpdateViewState.from(
+239 |             presentation: ReleaseUpdatePresentationInput(
+    |             `- error: missing argument for parameter 'snapshot' in call
+240 |                 snapshot: nil,
+241 |                 channel: .directDownload,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Sources/OuroAppShellUI/ReleaseUpdateViewState.swift:121:24: note: 'from(snapshot:installPlan:channel:)' declared here
+119 |     }
+120 | 
+121 |     public static func from(
+    |                        `- note: 'from(snapshot:installPlan:channel:)' declared here
+122 |         snapshot: ReleaseUpdateSnapshot,
+123 |         installPlan: Result<AppUpdatePlan, AppUpdatePlanError>? = nil,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:240:27: error: 'nil' requires a contextual type
+238 |         let ready = ReleaseUpdateViewState.from(
+239 |             presentation: ReleaseUpdatePresentationInput(
+240 |                 snapshot: nil,
+    |                           `- error: 'nil' requires a contextual type
+241 |                 channel: .directDownload,
+242 |                 installCapability: .readyToRelaunch,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:241:27: error: cannot infer contextual base in reference to member 'directDownload'
+239 |             presentation: ReleaseUpdatePresentationInput(
+240 |                 snapshot: nil,
+241 |                 channel: .directDownload,
+    |                           `- error: cannot infer contextual base in reference to member 'directDownload'
+242 |                 installCapability: .readyToRelaunch,
+243 |                 stagedUpdateVersion: "0.9.25"
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:242:37: error: cannot infer contextual base in reference to member 'readyToRelaunch'
+240 |                 snapshot: nil,
+241 |                 channel: .directDownload,
+242 |                 installCapability: .readyToRelaunch,
+    |                                     `- error: cannot infer contextual base in reference to member 'readyToRelaunch'
+243 |                 stagedUpdateVersion: "0.9.25"
+244 |             )
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:246:37: error: type 'Equatable' has no member 'readyToRelaunch'
+244 |             )
+245 |         )
+246 |         XCTAssertEqual(ready.kind, .readyToRelaunch)
+    |                                     `- error: type 'Equatable' has no member 'readyToRelaunch'
+247 |         XCTAssertTrue(ready.canInstallUpdate)
+248 | 
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:250:27: error: cannot find 'ReleaseUpdatePresentationInput' in scope
+248 | 
+249 |         let installed = ReleaseUpdateViewState.from(
+250 |             presentation: ReleaseUpdatePresentationInput(
+    |                           `- error: cannot find 'ReleaseUpdatePresentationInput' in scope
+251 |                 snapshot: nil,
+252 |                 channel: .directDownload,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:250:27: error: extra argument 'presentation' in call
+248 | 
+249 |         let installed = ReleaseUpdateViewState.from(
+250 |             presentation: ReleaseUpdatePresentationInput(
+    |                           `- error: extra argument 'presentation' in call
+251 |                 snapshot: nil,
+252 |                 channel: .directDownload,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:250:13: error: missing argument for parameter 'snapshot' in call
+248 | 
+249 |         let installed = ReleaseUpdateViewState.from(
+250 |             presentation: ReleaseUpdatePresentationInput(
+    |             `- error: missing argument for parameter 'snapshot' in call
+251 |                 snapshot: nil,
+252 |                 channel: .directDownload,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Sources/OuroAppShellUI/ReleaseUpdateViewState.swift:121:24: note: 'from(snapshot:installPlan:channel:)' declared here
+119 |     }
+120 | 
+121 |     public static func from(
+    |                        `- note: 'from(snapshot:installPlan:channel:)' declared here
+122 |         snapshot: ReleaseUpdateSnapshot,
+123 |         installPlan: Result<AppUpdatePlan, AppUpdatePlanError>? = nil,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:251:27: error: 'nil' requires a contextual type
+249 |         let installed = ReleaseUpdateViewState.from(
+250 |             presentation: ReleaseUpdatePresentationInput(
+251 |                 snapshot: nil,
+    |                           `- error: 'nil' requires a contextual type
+252 |                 channel: .directDownload,
+253 |                 installCapability: .directInstallAndRelaunch,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:252:27: error: cannot infer contextual base in reference to member 'directDownload'
+250 |             presentation: ReleaseUpdatePresentationInput(
+251 |                 snapshot: nil,
+252 |                 channel: .directDownload,
+    |                           `- error: cannot infer contextual base in reference to member 'directDownload'
+253 |                 installCapability: .directInstallAndRelaunch,
+254 |                 recentlyInstalledVersion: "0.9.25"
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:253:37: error: cannot infer contextual base in reference to member 'directInstallAndRelaunch'
+251 |                 snapshot: nil,
+252 |                 channel: .directDownload,
+253 |                 installCapability: .directInstallAndRelaunch,
+    |                                     `- error: cannot infer contextual base in reference to member 'directInstallAndRelaunch'
+254 |                 recentlyInstalledVersion: "0.9.25"
+255 |             )
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:257:41: error: type 'Equatable' has no member 'installed'
+255 |             )
+256 |         )
+257 |         XCTAssertEqual(installed.kind, .installed)
+    |                                         `- error: type 'Equatable' has no member 'installed'
+258 |         XCTAssertEqual(installed.statusLine, "Updated to 0.9.25 on this launch.")
+259 | 
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:261:27: error: cannot find 'ReleaseUpdatePresentationInput' in scope
+259 | 
+260 |         let failed = ReleaseUpdateViewState.from(
+261 |             presentation: ReleaseUpdatePresentationInput(
+    |                           `- error: cannot find 'ReleaseUpdatePresentationInput' in scope
+262 |                 snapshot: nil,
+263 |                 channel: .directDownload,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:261:27: error: extra argument 'presentation' in call
+259 | 
+260 |         let failed = ReleaseUpdateViewState.from(
+261 |             presentation: ReleaseUpdatePresentationInput(
+    |                           `- error: extra argument 'presentation' in call
+262 |                 snapshot: nil,
+263 |                 channel: .directDownload,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:261:13: error: missing argument for parameter 'snapshot' in call
+259 | 
+260 |         let failed = ReleaseUpdateViewState.from(
+261 |             presentation: ReleaseUpdatePresentationInput(
+    |             `- error: missing argument for parameter 'snapshot' in call
+262 |                 snapshot: nil,
+263 |                 channel: .directDownload,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Sources/OuroAppShellUI/ReleaseUpdateViewState.swift:121:24: note: 'from(snapshot:installPlan:channel:)' declared here
+119 |     }
+120 | 
+121 |     public static func from(
+    |                        `- note: 'from(snapshot:installPlan:channel:)' declared here
+122 |         snapshot: ReleaseUpdateSnapshot,
+123 |         installPlan: Result<AppUpdatePlan, AppUpdatePlanError>? = nil,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:262:27: error: 'nil' requires a contextual type
+260 |         let failed = ReleaseUpdateViewState.from(
+261 |             presentation: ReleaseUpdatePresentationInput(
+262 |                 snapshot: nil,
+    |                           `- error: 'nil' requires a contextual type
+263 |                 channel: .directDownload,
+264 |                 installCapability: .directInstallAndRelaunch,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:263:27: error: cannot infer contextual base in reference to member 'directDownload'
+261 |             presentation: ReleaseUpdatePresentationInput(
+262 |                 snapshot: nil,
+263 |                 channel: .directDownload,
+    |                           `- error: cannot infer contextual base in reference to member 'directDownload'
+264 |                 installCapability: .directInstallAndRelaunch,
+265 |                 installError: "Install failed."
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:264:37: error: cannot infer contextual base in reference to member 'directInstallAndRelaunch'
+262 |                 snapshot: nil,
+263 |                 channel: .directDownload,
+264 |                 installCapability: .directInstallAndRelaunch,
+    |                                     `- error: cannot infer contextual base in reference to member 'directInstallAndRelaunch'
+265 |                 installError: "Install failed."
+266 |             )
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellUITests/ReleaseUpdateViewStateTests.swift:268:38: error: type 'Equatable' has no member 'failed'
+266 |             )
+267 |         )
+268 |         XCTAssertEqual(failed.kind, .failed)
+    |                                      `- error: type 'Equatable' has no member 'failed'
+269 |         XCTAssertEqual(failed.warning, "Install failed.")
+270 |     }
+[44/60] Emitting module OuroAppShellContractTests
+[45/60] Compiling OuroAppShellContractTests OuroAppShellContractTests.swift
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellContractTests/OuroAppShellContractTests.swift:111:55: error: incorrect argument label in call (have 'policy:installCapability:supportsReleasePage:', expected 'policy:supportsInstallAndRelaunch:supportsReleasePage:')
+109 | 
+110 |     func testReleaseUpdateContractSupportsExplicitInstallCapabilityModes() throws {
+111 |         let review = OuroAppShellReleaseUpdateContract(
+    |                                                       `- error: incorrect argument label in call (have 'policy:installCapability:supportsReleasePage:', expected 'policy:supportsInstallAndRelaunch:supportsReleasePage:')
+112 |             policy: .stable(),
+113 |             installCapability: .reviewThenInstall,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellContractTests/OuroAppShellContractTests.swift:113:33: error: type 'Bool' has no member 'reviewThenInstall'
+111 |         let review = OuroAppShellReleaseUpdateContract(
+112 |             policy: .stable(),
+113 |             installCapability: .reviewThenInstall,
+    |                                 `- error: type 'Bool' has no member 'reviewThenInstall'
+114 |             supportsReleasePage: true
+115 |         )
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellContractTests/OuroAppShellContractTests.swift:116:55: error: incorrect argument label in call (have 'policy:installCapability:supportsReleasePage:', expected 'policy:supportsInstallAndRelaunch:supportsReleasePage:')
+114 |             supportsReleasePage: true
+115 |         )
+116 |         let direct = OuroAppShellReleaseUpdateContract(
+    |                                                       `- error: incorrect argument label in call (have 'policy:installCapability:supportsReleasePage:', expected 'policy:supportsInstallAndRelaunch:supportsReleasePage:')
+117 |             policy: .stable(),
+118 |             installCapability: .directInstallAndRelaunch,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellContractTests/OuroAppShellContractTests.swift:118:33: error: type 'Bool' has no member 'directInstallAndRelaunch'
+116 |         let direct = OuroAppShellReleaseUpdateContract(
+117 |             policy: .stable(),
+118 |             installCapability: .directInstallAndRelaunch,
+    |                                 `- error: type 'Bool' has no member 'directInstallAndRelaunch'
+119 |             supportsReleasePage: true
+120 |         )
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellContractTests/OuroAppShellContractTests.swift:124:51: error: type 'Equatable' has no member 'reviewThenInstall'
+122 |         XCTAssertFalse(review.supportsInstallAndRelaunch)
+123 |         XCTAssertTrue(direct.supportsInstallAndRelaunch)
+124 |         XCTAssertEqual(review.installCapability, .reviewThenInstall)
+    |                                                   `- error: type 'Equatable' has no member 'reviewThenInstall'
+125 | 
+126 |         let encoded = try JSONEncoder().encode(review)
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellContractTests/OuroAppShellContractTests.swift:141:62: error: incorrect argument label in call (have 'policy:installCapability:supportsReleasePage:', expected 'policy:supportsInstallAndRelaunch:supportsReleasePage:')
+139 |             ),
+140 |             requiredSurfaces: [.appIdentity, .releaseUpdates, .about, .keyboardShortcuts, .windowChrome, .settings],
+141 |             releaseUpdates: OuroAppShellReleaseUpdateContract(
+    |                                                              `- error: incorrect argument label in call (have 'policy:installCapability:supportsReleasePage:', expected 'policy:supportsInstallAndRelaunch:supportsReleasePage:')
+142 |                 policy: .buildMatchedPrerelease(namePrefix: "OuroWorkbench-"),
+143 |                 installCapability: .directInstallAndRelaunch,
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellContractTests/OuroAppShellContractTests.swift:143:37: error: type 'Bool' has no member 'directInstallAndRelaunch'
+141 |             releaseUpdates: OuroAppShellReleaseUpdateContract(
+142 |                 policy: .buildMatchedPrerelease(namePrefix: "OuroWorkbench-"),
+143 |                 installCapability: .directInstallAndRelaunch,
+    |                                     `- error: type 'Bool' has no member 'directInstallAndRelaunch'
+144 |                 supportsReleasePage: true
+145 |             ),
+[46/60] Compiling OuroAppShellCoreTests AppIdentityTests.swift
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellCoreTests/AppIdentityTests.swift:44:59: error: value of type 'DistributionChannel' has no member 'descriptor'
+42 | 
+43 |     func testDistributionChannelsExposeUserFacingDescriptors() {
+44 |         XCTAssertEqual(DistributionChannel.directDownload.descriptor.displayName, "Direct download")
+   |                                                           `- error: value of type 'DistributionChannel' has no member 'descriptor'
+45 |         XCTAssertEqual(DistributionChannel.developerIDDirect.descriptor.displayName, "Developer ID direct download")
+46 |         XCTAssertEqual(DistributionChannel.appStore.descriptor.displayName, "App Store")
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellCoreTests/AppIdentityTests.swift:45:62: error: value of type 'DistributionChannel' has no member 'descriptor'
+43 |     func testDistributionChannelsExposeUserFacingDescriptors() {
+44 |         XCTAssertEqual(DistributionChannel.directDownload.descriptor.displayName, "Direct download")
+45 |         XCTAssertEqual(DistributionChannel.developerIDDirect.descriptor.displayName, "Developer ID direct download")
+   |                                                              `- error: value of type 'DistributionChannel' has no member 'descriptor'
+46 |         XCTAssertEqual(DistributionChannel.appStore.descriptor.displayName, "App Store")
+47 |         XCTAssertTrue(DistributionChannel.directDownload.descriptor.supportsInAppInstall)
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellCoreTests/AppIdentityTests.swift:46:53: error: value of type 'DistributionChannel' has no member 'descriptor'
+44 |         XCTAssertEqual(DistributionChannel.directDownload.descriptor.displayName, "Direct download")
+45 |         XCTAssertEqual(DistributionChannel.developerIDDirect.descriptor.displayName, "Developer ID direct download")
+46 |         XCTAssertEqual(DistributionChannel.appStore.descriptor.displayName, "App Store")
+   |                                                     `- error: value of type 'DistributionChannel' has no member 'descriptor'
+47 |         XCTAssertTrue(DistributionChannel.directDownload.descriptor.supportsInAppInstall)
+48 |         XCTAssertTrue(DistributionChannel.developerIDDirect.descriptor.requiresSignedInstaller)
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellCoreTests/AppIdentityTests.swift:47:58: error: value of type 'DistributionChannel' has no member 'descriptor'
+45 |         XCTAssertEqual(DistributionChannel.developerIDDirect.descriptor.displayName, "Developer ID direct download")
+46 |         XCTAssertEqual(DistributionChannel.appStore.descriptor.displayName, "App Store")
+47 |         XCTAssertTrue(DistributionChannel.directDownload.descriptor.supportsInAppInstall)
+   |                                                          `- error: value of type 'DistributionChannel' has no member 'descriptor'
+48 |         XCTAssertTrue(DistributionChannel.developerIDDirect.descriptor.requiresSignedInstaller)
+49 |         XCTAssertFalse(DistributionChannel.appStore.descriptor.supportsInAppInstall)
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellCoreTests/AppIdentityTests.swift:48:61: error: value of type 'DistributionChannel' has no member 'descriptor'
+46 |         XCTAssertEqual(DistributionChannel.appStore.descriptor.displayName, "App Store")
+47 |         XCTAssertTrue(DistributionChannel.directDownload.descriptor.supportsInAppInstall)
+48 |         XCTAssertTrue(DistributionChannel.developerIDDirect.descriptor.requiresSignedInstaller)
+   |                                                             `- error: value of type 'DistributionChannel' has no member 'descriptor'
+49 |         XCTAssertFalse(DistributionChannel.appStore.descriptor.supportsInAppInstall)
+50 |     }
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellCoreTests/AppIdentityTests.swift:49:53: error: value of type 'DistributionChannel' has no member 'descriptor'
+47 |         XCTAssertTrue(DistributionChannel.directDownload.descriptor.supportsInAppInstall)
+48 |         XCTAssertTrue(DistributionChannel.developerIDDirect.descriptor.requiresSignedInstaller)
+49 |         XCTAssertFalse(DistributionChannel.appStore.descriptor.supportsInAppInstall)
+   |                                                     `- error: value of type 'DistributionChannel' has no member 'descriptor'
+50 |     }
+51 | 
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellCoreTests/AppIdentityTests.swift:53:24: error: cannot find 'AppReleaseMetadata' in scope
+51 | 
+52 |     func testReleaseMetadataCarriesChannelHighlightsAndShellPin() throws {
+53 |         let metadata = AppReleaseMetadata(
+   |                        `- error: cannot find 'AppReleaseMetadata' in scope
+54 |             appName: "Ouro MD",
+55 |             version: "0.9.61",
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellCoreTests/AppIdentityTests.swift:59:23: error: cannot infer contextual base in reference to member 'directDownload'
+57 |             releaseDate: "2026-06-29",
+58 |             repository: "ourostack/ouro-md",
+59 |             channel: .directDownload,
+   |                       `- error: cannot infer contextual base in reference to member 'directDownload'
+60 |             highlights: ["Shared shell adoption"],
+61 |             shellRevision: "38a98a2"
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellCoreTests/AppIdentityTests.swift:69:48: error: cannot find 'AppReleaseMetadata' in scope
+67 | 
+68 |         let encoded = try JSONEncoder().encode(metadata)
+69 |         let decoded = try JSONDecoder().decode(AppReleaseMetadata.self, from: encoded)
+   |                                                `- error: cannot find 'AppReleaseMetadata' in scope
+70 |         XCTAssertEqual(decoded, metadata)
+71 |     }
+
+/Users/arimendelow/Projects/ouro-native-apple-app-shell-worker-release-update-channel-spine/Tests/OuroAppShellCoreTests/AppIdentityTests.swift:69:41: error: failed to produce diagnostic for expression; please submit a bug report (https://swift.org/contributing/#reporting-bugs)
+67 | 
+68 |         let encoded = try JSONEncoder().encode(metadata)
+69 |         let decoded = try JSONDecoder().decode(AppReleaseMetadata.self, from: encoded)
+   |                                         `- error: failed to produce diagnostic for expression; please submit a bug report (https://swift.org/contributing/#reporting-bugs)
+70 |         XCTAssertEqual(decoded, metadata)
+71 |     }
+[47/60] Compiling OuroAppShellCoreTests ReleaseUpdatePolicyTests.swift
+[48/60] Emitting module OuroAppShellConsumerTestingTests
+error: cancelled
+[48/60] Linking OuroAppShellUISurfaceProbe
+error: fatalError
