@@ -13,11 +13,18 @@ planning artifacts or task bundles.
 - [Uninstall / Reset](UNINSTALL_RESET.md): removal and reset procedures.
 - [V1 Acceptance](V1_ACCEPTANCE.md): acceptance criteria for the v1 product
   surface.
+- [Shipped CLI And Harness Policy](shipped-cli-and-harness-policy.json):
+  machine-checked inventory of public CLI and hidden diagnostic harness modes.
+- [Vditor Vendor Manifest](vditor-vendor-manifest.json): vendored editor
+  provenance, refresh policy, license path, and tracked-file digest.
 
 ## Architecture And Shell Boundary
 
 - [AGENTS](../AGENTS.md): repo-specific agent rules, including shared native app
   shell ownership and the `OuroMDShellAdapter` boundary.
+- [AppKit/WebKit Extraction Plan](appkit-webkit-extraction-plan.md): gradual
+  extraction path for testable app/editor support libraries and A-013 radar
+  disposition.
 - `Sources/OuroMD/OuroMDShellAdapter.swift`: app-specific shared-shell mapping.
 - `scripts/check-shell-boundary.sh`: CI/preflight guard for shell ownership.
 
