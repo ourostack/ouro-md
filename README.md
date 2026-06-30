@@ -72,6 +72,8 @@ checks in **Settings** if you prefer to update manually.
 For uninstall/reset steps, see [docs/UNINSTALL_RESET.md](docs/UNINSTALL_RESET.md).
 For install or update problems, see
 [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+For a map of current source-of-truth docs versus historical task artifacts, see
+[docs/INDEX.md](docs/INDEX.md).
 
 ### Cutting a release (maintainers)
 
