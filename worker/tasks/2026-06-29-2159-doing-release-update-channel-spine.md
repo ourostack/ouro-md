@@ -22,7 +22,7 @@ direct
 
 ## Units
 
-### ⬜ Unit 1: Shell Release Contract Tests
+### ✅ Unit 1: Shell Release Contract Tests
 
 What: Add failing shell tests for install capability modes, channel descriptors, release metadata, lifecycle presentation derivation, and staging primitive value semantics.
 
@@ -65,3 +65,4 @@ Acceptance: All feasible validations pass; residual blockers are limited to true
 ## Progress Log
 
 - 2026-06-29 22:06 Created doing doc after planning approval under autopilot.
+- 2026-06-29 22:13 Unit 1 complete: added red shell tests for capability modes, channel descriptors, release metadata, lifecycle presentation, and staging primitives. Red evidence saved in `unit-1-red-shell-tests.log`.
