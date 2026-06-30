@@ -2,6 +2,8 @@
 
 Canonical source: `worker/tasks/2026-06-29-2135-audit-shared-shell-split/audit-report.md`
 
+PERT sequencing: `worker/tasks/2026-06-29-2135-audit-shared-shell-split/pert-chart.md`
+
 Routing rules:
 
 - `planner-required`: needs design/ownership sequencing before edits.

@@ -74,6 +74,8 @@ I feel good about the split as a foundation. I would not roll it back or pause a
 
 The next roadmap should start with release/update lifecycle unification and adapter-boundary tightening, because that is where all three repos already show pressure. After that, the Workbench view/view-model decomposition and shell control-deck consolidation become the structural work that makes future shared surfaces cheaper.
 
+The backlog is also sequenced as a PERT chart in `pert-chart.md`.
+
 ## Validation Performed
 
 - Read AGENTS/README/architecture docs in all three repos.
