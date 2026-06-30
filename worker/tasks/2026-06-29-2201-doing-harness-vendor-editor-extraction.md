@@ -89,7 +89,7 @@ Formalize Ouro MD's shipped CLI and diagnostic harness boundary, add durable pro
 **Output**: Validation logs in the artifacts directory.
 **Acceptance**: Focused vendor validation and release-policy selftests pass with no warnings.
 
-### ⬜ Unit 3: AppKit/WebKit Extraction Plan And A-013 Radar
+### ✅ Unit 3: AppKit/WebKit Extraction Plan And A-013 Radar
 **What**: Add a concrete extraction plan document for future `OuroMDAppSupport` / `OuroMDEditorSupport` candidates, including command catalog, update presentation, file/folder state, editor bridge policy, test gates, ordering, and explicit A-013 deferral.
 **Output**: `docs/appkit-webkit-extraction-plan.md`.
 **Acceptance**: The document cites current files, names first candidate extractions, states validation requirements, and explicitly prevents broad editor-core decomposition in this lane.
@@ -114,3 +114,4 @@ Formalize Ouro MD's shipped CLI and diagnostic harness boundary, add durable pro
 - 2026-06-29 22:20 Unit 0 complete: captured current flags, scenario coverage, Vditor inventory, and release/preflight hook points.
 - 2026-06-29 22:20 Unit 1 complete: added shipped CLI/harness policy manifest, drift checker, preflight hook, and release-policy selftest.
 - 2026-06-29 22:29 Unit 2 complete: added Vditor vendor manifest, tracked-file digest checker, preflight hook, and release-policy selftest.
+- 2026-06-29 22:35 Unit 3 complete: added AppKit/WebKit extraction plan with tested candidate ordering and A-013 radar disposition.
