@@ -17,7 +17,7 @@ direct
 - [x] Shared staging/apply value primitives are implemented and adopted or type-aliased by consumers where safe.
 - [x] Ouro MD declares review/prompt install capability and uses channel-derived presentation/copy.
 - [x] Workbench declares direct install/relaunch capability and uses shell lifecycle presentation helpers.
-- [ ] Targeted shell, Ouro MD, and Workbench validations pass or have documented hard blockers.
+- [x] Targeted shell, Ouro MD, and Workbench validations pass or have documented hard blockers.
 - [ ] PR/merge path is attempted where safe, with terminal evidence recorded.
 
 ## Units
@@ -70,3 +70,4 @@ Acceptance: All feasible validations pass; residual blockers are limited to true
 - 2026-06-29 22:16 Shell full validation passed: `swift test` ran 79 tests with 0 failures.
 - 2026-06-29 22:17 Unit 3 complete: Ouro MD now declares `.reviewThenInstall`, routes update state through shell presentation input, and preserves review-only/direct-install-suppressed actions. Targeted MD tests passed with 4 tests.
 - 2026-06-29 22:21 Unit 4 complete: Workbench now declares `.directInstallAndRelaunch`, routes update state through shell presentation input, and keeps Workbench-specific retry/detail copy as overrides. Targeted Workbench shell presentation tests passed with 17 tests.
+- 2026-06-29 22:22 Shell PR #28 merged to `main` at `e4f1d9f`; consumer `Package.resolved` files updated to that shell revision. Post-merge targeted validations passed: MD 4 tests, Workbench 17 tests.
