@@ -1,6 +1,6 @@
 # Planning: Shared Shell Policy Diagnostics Visual Validation
 
-**Status**: NEEDS_REVIEW
+**Status**: approved
 **Created**: 2026-06-29 22:02
 
 ## Goal
@@ -76,3 +76,4 @@ The shell already has `OuroAppShellSettingsContract(entryPoint:appOwnedSections:
 ## Progress Log
 - 2026-06-29 22:02 Created
 - 2026-06-29 22:02 Reviewer gate found measurable-criteria blocker; tightened completion criteria and moved subagent-source absence to decisions/evidence.
+- 2026-06-29 22:02 Approved after Round 2 reviewer gate convergence.
