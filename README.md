@@ -6,7 +6,7 @@ ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
 in careful typography on a centered page. Type Markdown and watch it render in
 place — switch themes live, and read the same document four different ways.
 
-> **Status:** v0.9.61. Reads and edits Markdown today. Not yet Developer-ID
+> **Status:** v0.9.66. Reads and edits Markdown today. Not yet Developer-ID
 > signed or notarized — see [First launch](#first-launch).
 
 ---
@@ -72,6 +72,8 @@ checks in **Settings** if you prefer to update manually.
 For uninstall/reset steps, see [docs/UNINSTALL_RESET.md](docs/UNINSTALL_RESET.md).
 For install or update problems, see
 [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+For a map of current source-of-truth docs versus historical task artifacts, see
+[docs/INDEX.md](docs/INDEX.md).
 
 ### Cutting a release (maintainers)
 

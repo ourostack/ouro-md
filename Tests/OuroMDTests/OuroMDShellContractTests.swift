@@ -13,6 +13,7 @@ final class OuroMDShellContractTests: XCTestCase {
             contract,
             OuroMDShellContract.requiredSurfaces
         )
+        OuroAppShellContractAssertions.assertCommandManifestMatchesReference(contract)
     }
 
     @MainActor
@@ -28,8 +29,10 @@ final class OuroMDShellContractTests: XCTestCase {
         XCTAssertEqual(contract.identity.releasePageURL.absoluteString, "https://github.com/ourostack/ouro-md/releases/latest")
 
         XCTAssertEqual(contract.releaseUpdates?.policy, OuroMDReleaseUpdate.configuration().releasePolicy)
-        XCTAssertEqual(contract.releaseUpdates?.supportsInstallAndRelaunch, true)
+        XCTAssertEqual(contract.releaseUpdates?.installCapability, .reviewThenInstall)
+        XCTAssertEqual(contract.releaseUpdates?.supportsInstallAndRelaunch, false)
         XCTAssertEqual(contract.releaseUpdates?.supportsReleasePage, true)
+        XCTAssertEqual(contract.identity.distributionChannel.descriptor.displayName, "Direct download")
 
         XCTAssertEqual(contract.about?.subtitle, "Markdown editor for fast local writing.")
         XCTAssertEqual(contract.about?.repositoryURL?.absoluteString, "https://github.com/ourostack/ouro-md")
@@ -38,6 +41,24 @@ final class OuroMDShellContractTests: XCTestCase {
         XCTAssertEqual(contract.commandReference?.commandCount, CommandPaletteCatalog.items().count)
         XCTAssertEqual(contract.commandReference?.sections, CommandReferenceView.sectionOrder)
         XCTAssertEqual(contract.commandReference?.entryPoint, "Help > Keyboard Shortcuts")
+
+        OuroAppShellContractAssertions.assertCommandManifest(
+            contract,
+            matches: CommandPaletteCatalog.items().sortedForAppShellCommandReference().map(\.appShellCommandSurface)
+        )
+    }
+
+    @MainActor
+    func testShellCommandManifestPinsPublicSurfaceSemantics() throws {
+        let commands = Dictionary(uniqueKeysWithValues: try XCTUnwrap(OuroMDShellContract.contract.commandManifest).commands.map { ($0.id, $0) })
+
+        XCTAssertEqual(commands["help.whats-new"]?.title, "What's New")
+        XCTAssertEqual(commands["help.whats-new"]?.section, "Help")
+        XCTAssertEqual(commands["help.whats-new"]?.menuPath, "Help > What's New")
+        XCTAssertEqual(commands["help.whats-new"]?.referenceTitle, "What's New")
+        XCTAssertEqual(commands["help.keyboard-shortcuts"]?.shortcut, "⌘?")
+        XCTAssertEqual(commands["edit.command-palette"]?.menuPath, "Edit > Command Palette...")
+        XCTAssertEqual(commands["paragraph.h1"]?.menuPath, "Paragraph > Heading 1")
     }
 
     @MainActor
@@ -67,14 +88,32 @@ final class OuroMDShellContractTests: XCTestCase {
         ])
 
         XCTAssertEqual(contract.settings?.entryPoint, "Ouro MD > Settings")
+        XCTAssertEqual(contract.settings?.sharedSections.map(\.kind), [
+            .updates,
+            .telemetry,
+            .privacy,
+            .about,
+            .keyboardShortcuts
+        ])
         XCTAssertEqual(contract.settings?.appOwnedSections, [
             "Appearance",
             "Theme",
             "Auto-save",
             "Auto-pair",
-            "Updates",
-            "Telemetry",
             "Text size"
+        ])
+
+        XCTAssertEqual(contract.privacyDiagnostics?.telemetryConsentEntryPoint, "Ouro MD > Settings > Telemetry")
+        XCTAssertEqual(contract.privacyDiagnostics?.privacyDocumentURL.absoluteString, "https://github.com/ourostack/ouro-md/blob/main/PRIVACY.md")
+        XCTAssertEqual(contract.privacyDiagnostics?.diagnosticsExportDisclosure, "Ouro MD privacy documentation describes anonymous telemetry and local-first document handling.")
+        XCTAssertEqual(contract.privacyDiagnostics?.supportBundleContents, ["app version", "bundle id", "macOS version", "architecture", "anonymous install id"])
+        XCTAssertEqual(contract.privacyDiagnostics?.redactionGuarantees, [
+            "no document contents",
+            "no filenames",
+            "no folder paths",
+            "no search queries",
+            "no clipboard contents",
+            "no raw error messages"
         ])
     }
 }

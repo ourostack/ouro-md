@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "vendorRoot": "Sources/OuroMD/web/vditor",
+  "upstreamPackage": "vditor",
+  "upstreamRepository": "https://github.com/Vanessa219/vditor",
+  "upstreamVersion": "unknown-pre-existing-vendored-dist",
+  "license": "MIT",
+  "licensePath": "Sources/OuroMD/web/vditor/LICENSE",
+  "trackedDigest": {
+    "algorithm": "sha256-path-and-bytes-v1",
+    "fileCount": 529,
+    "sha256": "131ab78f5a7ef4100cd995af58773d050be73d5101f42040944f8839889b66d1"
+  },
+  "refresh": {
+    "source": "Use the published npm vditor package or an explicit upstream git commit. The current pre-existing snapshot did not carry a recoverable upstream version string, so the next intentional refresh must replace upstreamVersion with an exact package version or commit.",
+    "buildCommand": "npm pack vditor@<version> or build upstream Vditor from a pinned commit using upstream instructions",
+    "copyCommand": "Replace Sources/OuroMD/web/vditor/LICENSE and Sources/OuroMD/web/vditor/dist from the pinned upstream artifact, then recompute trackedDigest with scripts/check-vditor-vendor.sh guidance.",
+    "validationCommands": [
+      "./scripts/check-vditor-vendor.sh",
+      "swift build",
+      "OURO_MD_EXE=.build/debug/ouro-md ./scripts/run-native-scenarios.sh",
+      "./scripts/release-policy.sh selftest-vditor-vendor"
+    ]
+  },
+  "policy": [
+    "Do not hand-edit minified or generated files under Sources/OuroMD/web/vditor/dist.",
+    "Patch Ouro MD integration behavior in Sources/OuroMD/web/bridge.js, Swift code, or an explicitly documented refresh patch rather than silently editing vendored Vditor assets.",
+    "Any Vditor refresh must update this manifest, explain the upstream source, and pass the validation commands."
+  ]
+}
