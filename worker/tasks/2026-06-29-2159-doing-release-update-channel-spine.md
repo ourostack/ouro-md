@@ -16,7 +16,7 @@ direct
 - [x] Shell release lifecycle presentation helper and release metadata/policy units are implemented and tested.
 - [x] Shared staging/apply value primitives are implemented and adopted or type-aliased by consumers where safe.
 - [x] Ouro MD declares review/prompt install capability and uses channel-derived presentation/copy.
-- [ ] Workbench declares direct install/relaunch capability and uses shell lifecycle presentation helpers.
+- [x] Workbench declares direct install/relaunch capability and uses shell lifecycle presentation helpers.
 - [ ] Targeted shell, Ouro MD, and Workbench validations pass or have documented hard blockers.
 - [ ] PR/merge path is attempted where safe, with terminal evidence recorded.
 
@@ -46,7 +46,7 @@ Output: Ouro MD adapter/contract/tests updated.
 
 Acceptance: Targeted Ouro MD tests pass; update UI still exposes review/open release, not direct shell install.
 
-### ⬜ Unit 4: Workbench Consumer Adoption
+### ✅ Unit 4: Workbench Consumer Adoption
 
 What: Update Workbench contract and presenter/tests to use shell capability/channel/presentation helpers while preserving direct install/relaunch behavior.
 
@@ -69,3 +69,4 @@ Acceptance: All feasible validations pass; residual blockers are limited to true
 - 2026-06-29 22:15 Unit 2 complete: implemented shell channel descriptors, explicit install capability modes, release metadata, lifecycle presentation input, and staged update/apply value primitives. `swift test --filter 'AppIdentityTests|AppUpdateTests|ReleaseUpdateViewStateTests|OuroAppShellContractTests'` passed with 34 tests.
 - 2026-06-29 22:16 Shell full validation passed: `swift test` ran 79 tests with 0 failures.
 - 2026-06-29 22:17 Unit 3 complete: Ouro MD now declares `.reviewThenInstall`, routes update state through shell presentation input, and preserves review-only/direct-install-suppressed actions. Targeted MD tests passed with 4 tests.
+- 2026-06-29 22:21 Unit 4 complete: Workbench now declares `.directInstallAndRelaunch`, routes update state through shell presentation input, and keeps Workbench-specific retry/detail copy as overrides. Targeted Workbench shell presentation tests passed with 17 tests.
