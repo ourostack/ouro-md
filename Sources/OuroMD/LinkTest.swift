@@ -47,7 +47,7 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
             let opened = openedURL ?? ""
             let checks: [(String, String, Bool)] = [
                 ("IR link node rendered for [text](url)", "found=\(found)", found),
-                ("⌘-click posts openURL with the link's URL", "opened=\(opened)", opened == "https://ouro.bot")
+                ("⌘-mousedown posts openURL with the link's URL", "opened=\(opened)", opened == "https://ouro.bot")
             ]
             var allOK = true
             for (label, value, ok) in checks {
@@ -67,9 +67,11 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
           var node = document.querySelector('#editor span[data-type="a"]');
           var target = node && (node.querySelector('.vditor-ir__link') || node);
           var found = !!target;
-          // ⌘-click the link; the bridge should preventDefault + post openURL.
+          // ⌘-mousedown the link; the bridge now opens on mousedown (macOS
+          // WKWebView does not reliably fire a `click` for a ⌘-click in a
+          // contenteditable), so this is the event the real fix depends on.
           if (found) {
-            target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, metaKey: true }));
+            target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, metaKey: true }));
           }
           setTimeout(function () {
             window.webkit.messageHandlers.ouro.postMessage({ type: "linkprobe", found: found });
