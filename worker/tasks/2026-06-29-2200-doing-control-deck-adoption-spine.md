@@ -1,6 +1,6 @@
 # Doing: Control Deck Adoption Spine
 
-**Status**: READY_FOR_EXECUTION
+**Status**: IN_REVIEW
 **Execution Mode**: direct
 **Created**: 2026-06-29 22:00
 **Planning**: ./2026-06-29-2200-planning-control-deck-adoption-spine.md
@@ -24,15 +24,15 @@ Make shared shell adoption declarative for current and future Ouro native apps b
 - A-033
 
 ## Completion Criteria
-- [ ] Shell downstream consumer checks are driven by a declarative manifest.
-- [ ] CI matrices for downstream consumers are derived from the manifest.
-- [ ] Ouro MD and Workbench have app-local control deck manifests.
-- [ ] Non-shell branch dependencies are rejected unless explicitly covered by policy.
-- [ ] Workbench coverage and scenario digest policy is structured and validated.
-- [ ] Downstream clones are cleaned by default or explicitly retained by flag.
-- [ ] 100% test coverage on all new code
-- [ ] All tests pass
-- [ ] No warnings
+- [x] Shell downstream consumer checks are driven by a declarative manifest.
+- [x] CI matrices for downstream consumers are derived from the manifest.
+- [x] Ouro MD and Workbench have app-local control deck manifests.
+- [x] Non-shell branch dependencies are rejected unless explicitly covered by policy.
+- [x] Workbench coverage and scenario digest policy is structured and validated.
+- [x] Downstream clones are cleaned by default or explicitly retained by flag.
+- [x] 100% test coverage on all new code
+- [x] All tests pass
+- [x] No warnings
 
 ## Code Coverage Requirements
 **MANDATORY: 100% coverage on all new code.**
@@ -57,7 +57,7 @@ Make shared shell adoption declarative for current and future Ouro native apps b
 
 **CRITICAL: Every unit header MUST start with status emoji (⬜ for new units).**
 
-### ⬜ Unit 0: Setup/Research
+### ✅ Unit 0: Setup/Research
 **What**: Read audit items, shell downstream scripts, consumer dependency scripts, Workbench coverage policy, and CI workflows.
 **Output**: Concrete manifest and script target list.
 **Acceptance**: Evidence recorded in progress log and no referenced path is stale.
@@ -98,7 +98,7 @@ Make shared shell adoption declarative for current and future Ouro native apps b
 **What**: Run the new validation and practical existing policy checks.
 **Acceptance**: Commands pass without warnings.
 
-### ⬜ Unit 4: Cross-Repo Review, PRs, Merge
+### 🔄 Unit 4: Cross-Repo Review, PRs, Merge
 **What**: Run cold self-review, push branches, create PRs, wait for checks, merge where safe, and clean worktrees when terminal.
 **Output**: PRs/commits and validation evidence.
 **Acceptance**: No ready lane work remains except hard external blockers.
@@ -118,3 +118,7 @@ Make shared shell adoption declarative for current and future Ouro native apps b
 - 2026-06-29 22:06 Unit 1 complete: shell commit `78d0564` added `scripts/downstream-consumers.json`, manifest-driven smoke command lookup, `--print-matrix`, `--keep-worktree`, default completed-clone cleanup, workflow matrix derivation, and adoption docs. Verification: `scripts/check-downstream-consumers.sh --selftest`, `scripts/check-downstream-consumers.sh --print-matrix`, `scripts/check-downstream-consumers.sh --warn-pins-current`, and `git diff --check` passed.
 - 2026-06-29 22:12 Unit 2 complete: Ouro MD commit `1c999ca` added `config/ouro-app-control-deck.json`, `scripts/check-app-control-deck.py`, CI/preflight wiring, and pinned `swift-markdown` to revision `4661b550c55abde97d14e35b89e094084669f40a`. Verification: validator negative selftest, real validator, `swift package resolve`, `scripts/check-shell-boundary.sh --selftest`, `scripts/check-shell-boundary.sh`, `scripts/check-shell-dependency.sh`, and `git diff --check` passed.
 - 2026-06-29 22:18 Unit 3 complete: Workbench commit `6902bdd` added `config/ouro-app-control-deck.json`, `scripts/check-app-control-deck.py`, CI/preflight wiring, structured coverage allowlist metadata, and scenario digest policy for standard/deep verifier runs. Verification: validator negative selftest, real validator, `scripts/check-shell-boundary.sh --selftest`, `scripts/check-shell-boundary.sh`, `scripts/check-shell-dependency.sh`, and `git diff --check` passed.
+- 2026-06-29 22:24 Shell verification complete: `swift test -Xswiftc -warnings-as-errors -Xswiftc -strict-concurrency=complete` passed with 72 tests and 0 failures.
+- 2026-06-29 22:26 Cross-repo downstream validation complete from the shell branch: Ouro MD smoke passed with 236 tests and 0 failures; Workbench smoke passed with 4,476 tests, 1 expected skip, and 0 failures. Completed downstream clones were removed by default.
+- 2026-06-29 22:30 CI repair: refreshed the shared shell pins in Ouro MD (`2c64a64`, rebased to `ba8683a`) and Workbench (`e4fdece`) after shell `main` advanced to package-relevant revision `e4f1d9f105399c3f5a6dc1d9188d541d43aa18dd`; local shell dependency and control-deck checks passed in both consumers.
+- 2026-06-29 22:34 PRs opened: shell https://github.com/ourostack/ouro-native-apple-app-shell/pull/31, Ouro MD https://github.com/ourostack/ouro-md/pull/83, Workbench https://github.com/ourostack/ouro-workbench/pull/416. Shell PR CI passed: coverage, Swift tests, downstream contract, and both downstream matrix jobs.
