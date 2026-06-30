@@ -215,7 +215,7 @@ Building for debugging...
 [195/197] Linking ouro-md
 [196/197] Applying ouro-md
 Build complete! (16.62s)
-==> swift test 
+==> swift test
 [0/1] Planning build
 Building for debugging...
 [0/6] Write sources
