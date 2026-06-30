@@ -10,6 +10,7 @@ cd "$ROOT"
 ./scripts/check-shell-dependency.sh
 ./scripts/check-shell-boundary.sh --selftest
 ./scripts/check-shell-boundary.sh
+./scripts/check-shipped-harness-policy.sh
 
 base_ref="${OURO_PR_BASE_REF:-${GITHUB_BASE_REF:-main}}"
 
