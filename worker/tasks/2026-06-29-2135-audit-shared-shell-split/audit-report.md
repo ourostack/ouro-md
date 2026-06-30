@@ -76,6 +76,36 @@ The next roadmap should start with release/update lifecycle unification and adap
 
 The backlog is also sequenced as a PERT chart in `pert-chart.md`.
 
+## Implementation Outcome: 2026-06-30
+
+The PERT backlog was executed under the Work Suite/autopilot campaign that
+followed this audit. All non-deferred lanes reached terminal state with merged
+PRs and green required checks across the touched repositories.
+
+Merged implementation lanes:
+
+- Release/update channel spine: shell #28, Workbench #418, Ouro MD #85.
+- Boundary/public surface spine: shell #29, Workbench #414, Ouro MD #81.
+- Control deck/downstream adoption spine: shell #31, Workbench #416, Ouro MD
+  #83.
+- Workbench architecture/docs hygiene: Workbench #415, plus docs-index PRs
+  shell #30 and Ouro MD #82.
+- Policy/diagnostics/visual validation: shell #32, Workbench #417, Ouro MD
+  #84.
+- Ouro MD harness/vendor/editor extraction: Ouro MD #86.
+
+Deferred or superseded observations remained deferred by design:
+
+- A-013 stayed a radar item behind the landed AppKit/WebKit extraction plan.
+- A-031 stayed deferred until a future shell feature or third app forces a
+  platform-floor decision.
+- A-037 was superseded by the landed `What's New` semantics work.
+
+Terminal validation included each affected repo's required CI checks. The app
+PRs repeatedly cleared App bundle, Coverage, Native scenario verifier, and Swift
+tests after merge-race repairs; shared shell PRs cleared Swift tests, coverage,
+downstream contract, and downstream app checks where applicable.
+
 ## Validation Performed
 
 - Read AGENTS/README/architecture docs in all three repos.
