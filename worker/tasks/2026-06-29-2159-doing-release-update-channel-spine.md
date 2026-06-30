@@ -12,9 +12,9 @@ direct
 
 ## Completion Criteria
 
-- [ ] Shell install capability modes and channel descriptors are implemented and tested.
-- [ ] Shell release lifecycle presentation helper and release metadata/policy units are implemented and tested.
-- [ ] Shared staging/apply value primitives are implemented and adopted or type-aliased by consumers where safe.
+- [x] Shell install capability modes and channel descriptors are implemented and tested.
+- [x] Shell release lifecycle presentation helper and release metadata/policy units are implemented and tested.
+- [x] Shared staging/apply value primitives are implemented and adopted or type-aliased by consumers where safe.
 - [ ] Ouro MD declares review/prompt install capability and uses channel-derived presentation/copy.
 - [ ] Workbench declares direct install/relaunch capability and uses shell lifecycle presentation helpers.
 - [ ] Targeted shell, Ouro MD, and Workbench validations pass or have documented hard blockers.
@@ -30,7 +30,7 @@ Output: Shell test files updated under `Tests/OuroAppShellCoreTests`, `Tests/Our
 
 Acceptance: New tests fail before implementation because the new APIs do not exist or do not produce the expected values.
 
-### ⬜ Unit 2: Shell Release Contract Implementation
+### ✅ Unit 2: Shell Release Contract Implementation
 
 What: Implement additive shell APIs for `ReleaseInstallCapability`, channel descriptors, `AppReleaseMetadata`, lifecycle presentation input/builder, release policy assertion helpers, and generic staged update/apply value primitives.
 
@@ -66,3 +66,4 @@ Acceptance: All feasible validations pass; residual blockers are limited to true
 
 - 2026-06-29 22:06 Created doing doc after planning approval under autopilot.
 - 2026-06-29 22:13 Unit 1 complete: added red shell tests for capability modes, channel descriptors, release metadata, lifecycle presentation, and staging primitives. Red evidence saved in `unit-1-red-shell-tests.log`.
+- 2026-06-29 22:15 Unit 2 complete: implemented shell channel descriptors, explicit install capability modes, release metadata, lifecycle presentation input, and staged update/apply value primitives. `swift test --filter 'AppIdentityTests|AppUpdateTests|ReleaseUpdateViewStateTests|OuroAppShellContractTests'` passed with 34 tests.
