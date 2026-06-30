@@ -74,17 +74,17 @@ Formalize Ouro MD's shipped CLI and diagnostic harness boundary, add durable pro
 **Output**: Validation logs in the artifacts directory.
 **Acceptance**: `bash -n` and focused selftests pass with clear output and no warnings.
 
-### ⬜ Unit 2a: Vditor Vendor Provenance — Tests
+### ✅ Unit 2a: Vditor Vendor Provenance — Tests
 **What**: Add failing validation for missing `docs/vditor-vendor-manifest.json`, stale digest, missing license path, missing refresh validation commands, and accidental edits under `Sources/OuroMD/web/vditor`.
 **Output**: A new check path, likely `scripts/check-vditor-vendor.sh`, and preflight/release-policy call assertions.
 **Acceptance**: The check fails before the manifest is added.
 
-### ⬜ Unit 2b: Vditor Vendor Provenance — Implementation
+### ✅ Unit 2b: Vditor Vendor Provenance — Implementation
 **What**: Add the Vditor manifest with upstream/package/license/provenance/update policy/digest, implement the checker, and wire it into PR preflight and release-policy selftests.
 **Output**: Manifest and deterministic vendor provenance check.
 **Acceptance**: Vditor vendor check passes against the current vendored tree and fails on digest/provenance drift.
 
-### ⬜ Unit 2c: Vditor Vendor Provenance — Coverage & Refactor
+### ✅ Unit 2c: Vditor Vendor Provenance — Coverage & Refactor
 **What**: Run shell syntax checks, focused vendor check, and release-policy selftests; tune failure messages if needed.
 **Output**: Validation logs in the artifacts directory.
 **Acceptance**: Focused vendor validation and release-policy selftests pass with no warnings.
@@ -113,3 +113,4 @@ Formalize Ouro MD's shipped CLI and diagnostic harness boundary, add durable pro
 - 2026-06-29 22:10 Local doing-doc review pass completed after external reviewer daemon became unavailable; units are concrete, source paths exist, and execution can proceed under autopilot.
 - 2026-06-29 22:20 Unit 0 complete: captured current flags, scenario coverage, Vditor inventory, and release/preflight hook points.
 - 2026-06-29 22:20 Unit 1 complete: added shipped CLI/harness policy manifest, drift checker, preflight hook, and release-policy selftest.
+- 2026-06-29 22:29 Unit 2 complete: added Vditor vendor manifest, tracked-file digest checker, preflight hook, and release-policy selftest.
