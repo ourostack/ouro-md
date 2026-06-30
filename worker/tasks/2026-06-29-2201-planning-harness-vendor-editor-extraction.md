@@ -1,6 +1,6 @@
 # Planning: Harness, Vendor, And Editor Extraction Guardrails
 
-**Status**: drafting
+**Status**: approved
 **Created**: 2026-06-29 22:01
 
 ## Goal
@@ -78,3 +78,4 @@ Current Vditor inventory at planning time: `Sources/OuroMD/web/vditor` contains 
 ## Progress Log
 - 2026-06-29 22:01 Created
 - 2026-06-29 22:05 Addressed reviewer findings by separating public/maintainer CLI modes from hidden diagnostic harness modes and naming the policy files.
+- 2026-06-29 22:08 Approved after reviewer gate convergence.
