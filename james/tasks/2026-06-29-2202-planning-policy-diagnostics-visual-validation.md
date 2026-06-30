@@ -33,15 +33,15 @@ Implement the policy/diagnostics/visual-validation lane for the shared Ouro nati
 - Do not depend on A-023 implementation for this lane; if A-021 cannot fully enforce runtime command/action parity without A-023, record that as a manifest boundary and validate the feasible manifest layer.
 
 ## Completion Criteria
-- [ ] A-015 is complete when shell docs define the shared settings-section taxonomy and telemetry consent/envelope boundary, `OuroAppShellSettingsContract` can declare shared section descriptors, and shell tests reject malformed settings descriptors.
-- [ ] A-020 is complete when a checked-in strictness matrix lists every Swift target in the three `Package.swift` files with current language mode, target posture, blockers, and the exact validation command; a script verifies the matrix still mentions all current targets.
-- [ ] A-021 is complete when a shell-owned visual surface manifest file declares required states for About, update controls, settings entry, command reference, and utility windows, and `scripts/ui-surface-probe.sh` validates that the manifest is parseable and represented by the shell probe.
-- [ ] A-029 is complete when `OuroAppShellContract` includes a privacy/diagnostics descriptor with fields for telemetry consent entry, privacy doc URL, diagnostics export disclosure, support-bundle contents, and redaction guarantees; validator tests cover missing/blank invalid descriptors; MD and Workbench declare descriptors.
-- [ ] A-030 is complete when shell docs map native app surface types to ViewInspector, shell surface probe, app harness, accessibility tree, and screenshot/OCR gates, and the visual surface manifest records the selected validation tool per surface row.
-- [ ] Ouro MD and Ouro Workbench consume or validate the new contract fields by compiling contract declarations and passing shell consumer assertion tests; verification must not require moving app-owned event names, support bundle collectors, or domain settings behavior into shell.
-- [ ] 100% test coverage on all new code
-- [ ] All tests pass
-- [ ] No warnings
+- [x] A-015 is complete when shell docs define the shared settings-section taxonomy and telemetry consent/envelope boundary, `OuroAppShellSettingsContract` can declare shared section descriptors, and shell tests reject malformed settings descriptors.
+- [x] A-020 is complete when a checked-in strictness matrix lists every Swift target in the three `Package.swift` files with current language mode, target posture, blockers, and the exact validation command; a script verifies the matrix still mentions all current targets.
+- [x] A-021 is complete when a shell-owned visual surface manifest file declares required states for About, update controls, settings entry, command reference, and utility windows, and `scripts/ui-surface-probe.sh` validates that the manifest is parseable and represented by the shell probe.
+- [x] A-029 is complete when `OuroAppShellContract` includes a privacy/diagnostics descriptor with fields for telemetry consent entry, privacy doc URL, diagnostics export disclosure, support-bundle contents, and redaction guarantees; validator tests cover missing/blank invalid descriptors; MD and Workbench declare descriptors.
+- [x] A-030 is complete when shell docs map native app surface types to ViewInspector, shell surface probe, app harness, accessibility tree, and screenshot/OCR gates, and the visual surface manifest records the selected validation tool per surface row.
+- [x] Ouro MD and Ouro Workbench consume or validate the new contract fields by compiling contract declarations and passing shell consumer assertion tests; verification must not require moving app-owned event names, support bundle collectors, or domain settings behavior into shell.
+- [x] 100% test coverage on all new code
+- [x] All tests pass
+- [x] No warnings
 
 ## Code Coverage Requirements
 **MANDATORY: 100% coverage on all new code.**
@@ -77,3 +77,4 @@ The shell already has `OuroAppShellSettingsContract(entryPoint:appOwnedSections:
 - 2026-06-29 22:02 Created
 - 2026-06-29 22:02 Reviewer gate found measurable-criteria blocker; tightened completion criteria and moved subagent-source absence to decisions/evidence.
 - 2026-06-29 22:02 Approved after Round 2 reviewer gate convergence.
+- 2026-06-29 22:17 Synced completion criteria after implementation and validation.

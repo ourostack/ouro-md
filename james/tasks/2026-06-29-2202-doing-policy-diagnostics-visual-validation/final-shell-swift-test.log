@@ -1,0 +1,208 @@
+[0/1] Planning build
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.18s)
+Test Suite 'All tests' started at 2026-06-29 22:16:56.909.
+Test Suite 'OuroAppShellPackageTests.xctest' started at 2026-06-29 22:16:56.910.
+Test Suite 'AppIdentityTests' started at 2026-06-29 22:16:56.910.
+Test Case '-[OuroAppShellCoreTests.AppIdentityTests testDefaultUserAgentFallsBackWhenAppNameHasNoTokenCharacters]' started.
+Test Case '-[OuroAppShellCoreTests.AppIdentityTests testDefaultUserAgentFallsBackWhenAppNameHasNoTokenCharacters]' passed (0.001 seconds).
+Test Case '-[OuroAppShellCoreTests.AppIdentityTests testIdentityDefaultsDerivedURLsAndUserAgent]' started.
+Test Case '-[OuroAppShellCoreTests.AppIdentityTests testIdentityDefaultsDerivedURLsAndUserAgent]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.AppIdentityTests testIdentityPreservesExplicitFieldsAndCodableChannel]' started.
+Test Case '-[OuroAppShellCoreTests.AppIdentityTests testIdentityPreservesExplicitFieldsAndCodableChannel]' passed (0.000 seconds).
+Test Suite 'AppIdentityTests' passed at 2026-06-29 22:16:56.912.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'AppShellAboutModelTests' started at 2026-06-29 22:16:56.912.
+Test Case '-[OuroAppShellUITests.AppShellAboutModelTests testAboutModelDerivesIdentityBackedDefaults]' started.
+Test Case '-[OuroAppShellUITests.AppShellAboutModelTests testAboutModelDerivesIdentityBackedDefaults]' passed (0.000 seconds).
+Test Case '-[OuroAppShellUITests.AppShellAboutModelTests testAboutModelVersionLineUsesBuildWhenPresent]' started.
+Test Case '-[OuroAppShellUITests.AppShellAboutModelTests testAboutModelVersionLineUsesBuildWhenPresent]' passed (0.000 seconds).
+Test Case '-[OuroAppShellUITests.AppShellAboutModelTests testWhatsNewVisibility]' started.
+Test Case '-[OuroAppShellUITests.AppShellAboutModelTests testWhatsNewVisibility]' passed (0.000 seconds).
+Test Suite 'AppShellAboutModelTests' passed at 2026-06-29 22:16:56.912.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'AppShellCommandReferenceTests' started at 2026-06-29 22:16:56.912.
+Test Case '-[OuroAppShellUITests.AppShellCommandReferenceTests testEmptyFilterAndSectionOrdering]' started.
+Test Case '-[OuroAppShellUITests.AppShellCommandReferenceTests testEmptyFilterAndSectionOrdering]' passed (0.000 seconds).
+Test Case '-[OuroAppShellUITests.AppShellCommandReferenceTests testFilterUsesTitleKeywordsAndShortcutSynonyms]' started.
+Test Case '-[OuroAppShellUITests.AppShellCommandReferenceTests testFilterUsesTitleKeywordsAndShortcutSynonyms]' passed (0.000 seconds).
+Test Case '-[OuroAppShellUITests.AppShellCommandReferenceTests testSpokenShortcut]' started.
+Test Case '-[OuroAppShellUITests.AppShellCommandReferenceTests testSpokenShortcut]' passed (0.000 seconds).
+Test Case '-[OuroAppShellUITests.AppShellCommandReferenceTests testViewKeepsConfigurationForApps]' started.
+Test Case '-[OuroAppShellUITests.AppShellCommandReferenceTests testViewKeepsConfigurationForApps]' passed (0.000 seconds).
+Test Suite 'AppShellCommandReferenceTests' passed at 2026-06-29 22:16:56.914.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'AppShellWindowSpecTests' started at 2026-06-29 22:16:56.914.
+Test Case '-[OuroAppShellCoreTests.AppShellWindowSpecTests testPresenterClearsMinSizeWhenReusedSpecOmitsIt]' started.
+Test Case '-[OuroAppShellCoreTests.AppShellWindowSpecTests testPresenterClearsMinSizeWhenReusedSpecOmitsIt]' passed (0.139 seconds).
+Test Case '-[OuroAppShellCoreTests.AppShellWindowSpecTests testPresenterReusesWindowAndAppliesUpdatedSpec]' started.
+Test Case '-[OuroAppShellCoreTests.AppShellWindowSpecTests testPresenterReusesWindowAndAppliesUpdatedSpec]' passed (0.025 seconds).
+Test Case '-[OuroAppShellCoreTests.AppShellWindowSpecTests testWindowSpecDefaultsAndOverrides]' started.
+Test Case '-[OuroAppShellCoreTests.AppShellWindowSpecTests testWindowSpecDefaultsAndOverrides]' passed (0.000 seconds).
+Test Suite 'AppShellWindowSpecTests' passed at 2026-06-29 22:16:57.078.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.164 (0.164) seconds
+Test Suite 'AppUpdateTests' started at 2026-06-29 22:16:57.078.
+Test Case '-[OuroAppShellCoreTests.AppUpdateTests testAutoUpdatePolicy]' started.
+Test Case '-[OuroAppShellCoreTests.AppUpdateTests testAutoUpdatePolicy]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.AppUpdateTests testManifestDecodesWithExtraReleaseFields]' started.
+Test Case '-[OuroAppShellCoreTests.AppUpdateTests testManifestDecodesWithExtraReleaseFields]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.AppUpdateTests testPlanFailureCasesAndDescriptions]' started.
+Test Case '-[OuroAppShellCoreTests.AppUpdateTests testPlanFailureCasesAndDescriptions]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.AppUpdateTests testPlanFiltersThroughSnapshotPolicy]' started.
+Test Case '-[OuroAppShellCoreTests.AppUpdateTests testPlanFiltersThroughSnapshotPolicy]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.AppUpdateTests testPlanPicksZipAndManifestAssets]' started.
+Test Case '-[OuroAppShellCoreTests.AppUpdateTests testPlanPicksZipAndManifestAssets]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.AppUpdateTests testPlanRejectsBadAndPlainHTTPURLsByDefaultButCanAllowHTTP]' started.
+Test Case '-[OuroAppShellCoreTests.AppUpdateTests testPlanRejectsBadAndPlainHTTPURLsByDefaultButCanAllowHTTP]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.AppUpdateTests testVerifyFailureCasesAndDescriptions]' started.
+Test Case '-[OuroAppShellCoreTests.AppUpdateTests testVerifyFailureCasesAndDescriptions]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.AppUpdateTests testVerifyPassesForVersionAndBuildUpdates]' started.
+Test Case '-[OuroAppShellCoreTests.AppUpdateTests testVerifyPassesForVersionAndBuildUpdates]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.AppUpdateTests testWorkbenchFixturesArePlanCompatible]' started.
+Test Case '-[OuroAppShellCoreTests.AppUpdateTests testWorkbenchFixturesArePlanCompatible]' passed (0.000 seconds).
+Test Suite 'AppUpdateTests' passed at 2026-06-29 22:16:57.081.
+	 Executed 9 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'OuroAppShellContractAssertionsTests' started at 2026-06-29 22:16:57.081.
+Test Case '-[OuroAppShellConsumerTestingTests.OuroAppShellContractAssertionsTests testAdapterLibraryFixtureUsesHelper]' started.
+Test Case '-[OuroAppShellConsumerTestingTests.OuroAppShellContractAssertionsTests testAdapterLibraryFixtureUsesHelper]' passed (0.000 seconds).
+Test Case '-[OuroAppShellConsumerTestingTests.OuroAppShellContractAssertionsTests testAssertValidSurfacesConsumerContractFailures]' started.
+XCTExpectFailure: matcher accepted Assertion Failure at OuroAppShellContractAssertionsTests.swift:63: XCTAssertTrue failed - emptyIdentityField: Identity fields must not be empty.
+missingAbout(about): About requires an about contract.
+OuroAppShellContractAssertionsTests.swift:63: Expected failure in -[OuroAppShellConsumerTestingTests.OuroAppShellContractAssertionsTests testAssertValidSurfacesConsumerContractFailures]: XCTAssertTrue failed - emptyIdentityField: Identity fields must not be empty.
+missingAbout(about): About requires an about contract.Reason: (invalid consumer contracts should fail the assertion helper)
+Test Case '-[OuroAppShellConsumerTestingTests.OuroAppShellContractAssertionsTests testAssertValidSurfacesConsumerContractFailures]' passed (0.104 seconds).
+Test Case '-[OuroAppShellConsumerTestingTests.OuroAppShellContractAssertionsTests testExecutableLocalAdapterFixtureUsesHelper]' started.
+Test Case '-[OuroAppShellConsumerTestingTests.OuroAppShellContractAssertionsTests testExecutableLocalAdapterFixtureUsesHelper]' passed (0.000 seconds).
+Test Case '-[OuroAppShellConsumerTestingTests.OuroAppShellContractAssertionsTests testMessageFormatsIssuesForConsumerFailures]' started.
+Test Case '-[OuroAppShellConsumerTestingTests.OuroAppShellContractAssertionsTests testMessageFormatsIssuesForConsumerFailures]' passed (0.000 seconds).
+Test Suite 'OuroAppShellContractAssertionsTests' passed at 2026-06-29 22:16:57.186.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.105 (0.106) seconds
+Test Suite 'OuroAppShellContractTests' started at 2026-06-29 22:16:57.186.
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testContractIsCodable]' started.
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testContractIsCodable]' passed (0.001 seconds).
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testSettingsContractDeclaresSharedSections]' started.
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testSettingsContractDeclaresSharedSections]' passed (0.000 seconds).
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testValidationRejectsAppOwnedAndDuplicateRequiredSurfaces]' started.
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testValidationRejectsAppOwnedAndDuplicateRequiredSurfaces]' passed (0.000 seconds).
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testValidationRejectsInvalidOptionalDescriptors]' started.
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testValidationRejectsInvalidOptionalDescriptors]' passed (0.000 seconds).
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testValidationRejectsMalformedSettingsSectionsAndDiagnostics]' started.
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testValidationRejectsMalformedSettingsSectionsAndDiagnostics]' passed (0.000 seconds).
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testValidationRequiresDescriptorsForRequiredShellSurfaces]' started.
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testValidationRequiresDescriptorsForRequiredShellSurfaces]' passed (0.000 seconds).
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testValidContractDeclaresSharedShellSurfaces]' started.
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testValidContractDeclaresSharedShellSurfaces]' passed (0.000 seconds).
+Test Suite 'OuroAppShellContractTests' passed at 2026-06-29 22:16:57.189.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'ReleaseAssetNamingPolicyTests' started at 2026-06-29 22:16:57.189.
+Test Case '-[OuroAppShellCoreTests.ReleaseAssetNamingPolicyTests testBuildMatchedPolicyMatchesVersionAndBuildAwareAssets]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseAssetNamingPolicyTests testBuildMatchedPolicyMatchesVersionAndBuildAwareAssets]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseAssetNamingPolicyTests testLatestBuildExtractsHighestNumericBuildFromMatchingAssetsOnly]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseAssetNamingPolicyTests testLatestBuildExtractsHighestNumericBuildFromMatchingAssetsOnly]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseAssetNamingPolicyTests testLegacyWorkbenchPolicyUsesBuildMatchedNaming]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseAssetNamingPolicyTests testLegacyWorkbenchPolicyUsesBuildMatchedNaming]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseAssetNamingPolicyTests testSimplePolicyAcceptsPlainArchivesAndManifests]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseAssetNamingPolicyTests testSimplePolicyAcceptsPlainArchivesAndManifests]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseAssetNamingPolicyTests testVersionedPolicyCanMatchWithoutBuildMarker]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseAssetNamingPolicyTests testVersionedPolicyCanMatchWithoutBuildMarker]' passed (0.000 seconds).
+Test Suite 'ReleaseAssetNamingPolicyTests' passed at 2026-06-29 22:16:57.190.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'ReleaseUpdatePolicyTests' started at 2026-06-29 22:16:57.190.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdatePolicyTests testBuildMatchedPrereleasePolicyPairsPrereleasesWithBuildAwareAssetNaming]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdatePolicyTests testBuildMatchedPrereleasePolicyPairsPrereleasesWithBuildAwareAssetNaming]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdatePolicyTests testCustomPolicyKeepsBothKnobsExplicit]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdatePolicyTests testCustomPolicyKeepsBothKnobsExplicit]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdatePolicyTests testLegacyWorkbenchPolicyUsesBuildMatchedPrereleases]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdatePolicyTests testLegacyWorkbenchPolicyUsesBuildMatchedPrereleases]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdatePolicyTests testStablePolicyCanCarryVersionedAssetNaming]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdatePolicyTests testStablePolicyCanCarryVersionedAssetNaming]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdatePolicyTests testStablePolicyDefaultsToPlainAssetsAndSkipsPrereleases]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdatePolicyTests testStablePolicyDefaultsToPlainAssetsAndSkipsPrereleases]' passed (0.000 seconds).
+Test Suite 'ReleaseUpdatePolicyTests' passed at 2026-06-29 22:16:57.190.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'ReleaseUpdateTests' started at 2026-06-29 22:16:57.190.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testCheckReturnsSnapshotAndUnavailableOnLoaderFailure]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testCheckReturnsSnapshotAndUnavailableOnLoaderFailure]' passed (0.001 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testConfigurationDerivesDefaultsAndRequestHeaders]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testConfigurationDerivesDefaultsAndRequestHeaders]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testDefaultDataLoaderReturnsBodyAndThrowsOnBadResponses]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testDefaultDataLoaderReturnsBodyAndThrowsOnBadResponses]' passed (0.014 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testMalformedReleaseJSONThrows]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testMalformedReleaseJSONThrows]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testSnapshotKeepsFirstComparableReleaseWhenVersionAndBuildAreTied]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testSnapshotKeepsFirstComparableReleaseWhenVersionAndBuildAreTied]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testSnapshotReportsCurrentUnavailableAndNoPublishedRelease]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testSnapshotReportsCurrentUnavailableAndNoPublishedRelease]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testSnapshotReportsStableUpdateWithPublishedMetadataAndInstallableAssets]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testSnapshotReportsStableUpdateWithPublishedMetadataAndInstallableAssets]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testSnapshotSelectsHighestComparableStableReleaseInsteadOfAPIOrder]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testSnapshotSelectsHighestComparableStableReleaseInsteadOfAPIOrder]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testSnapshotSelectsStableSameCoreReleaseInsteadOfPrereleaseAPIOrder]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testSnapshotSelectsStableSameCoreReleaseInsteadOfPrereleaseAPIOrder]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testSnapshotSkipsMalformedEligibleReleaseWhenComparableLaterReleaseExists]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testSnapshotSkipsMalformedEligibleReleaseWhenComparableLaterReleaseExists]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testSnapshotSkipsPrereleasesByDefaultAndCanIncludeThem]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testSnapshotSkipsPrereleasesByDefaultAndCanIncludeThem]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testSnapshotTreatsStableSameCoreReleaseAsNewerThanCurrentPrerelease]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testSnapshotTreatsStableSameCoreReleaseAsNewerThanCurrentPrerelease]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testWorkbenchSnapshotPreservesBuildAwareSemantics]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testWorkbenchSnapshotPreservesBuildAwareSemantics]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testWorkbenchSnapshotSelectsBestBuildAwareReleaseInsteadOfAPIOrder]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseUpdateTests testWorkbenchSnapshotSelectsBestBuildAwareReleaseInsteadOfAPIOrder]' passed (0.000 seconds).
+Test Suite 'ReleaseUpdateTests' passed at 2026-06-29 22:16:57.209.
+	 Executed 14 tests, with 0 failures (0 unexpected) in 0.018 (0.019) seconds
+Test Suite 'ReleaseUpdateViewStateTests' started at 2026-06-29 22:16:57.209.
+Test Case '-[OuroAppShellUITests.ReleaseUpdateViewStateTests testActionLabelsCanBeCustomized]' started.
+Test Case '-[OuroAppShellUITests.ReleaseUpdateViewStateTests testActionLabelsCanBeCustomized]' passed (0.000 seconds).
+Test Case '-[OuroAppShellUITests.ReleaseUpdateViewStateTests testMetadataItemsCanUseExplicitIDsForDuplicateLabels]' started.
+Test Case '-[OuroAppShellUITests.ReleaseUpdateViewStateTests testMetadataItemsCanUseExplicitIDsForDuplicateLabels]' passed (0.001 seconds).
+Test Case '-[OuroAppShellUITests.ReleaseUpdateViewStateTests testNotCheckedFactoryAndMetadataIdentity]' started.
+Test Case '-[OuroAppShellUITests.ReleaseUpdateViewStateTests testNotCheckedFactoryAndMetadataIdentity]' passed (0.000 seconds).
+Test Case '-[OuroAppShellUITests.ReleaseUpdateViewStateTests testPrimaryActionsAndDisplayDetailPreferWarnings]' started.
+Test Case '-[OuroAppShellUITests.ReleaseUpdateViewStateTests testPrimaryActionsAndDisplayDetailPreferWarnings]' passed (0.000 seconds).
+Test Case '-[OuroAppShellUITests.ReleaseUpdateViewStateTests testReadyToRelaunchUsesRelaunchActionCopy]' started.
+Test Case '-[OuroAppShellUITests.ReleaseUpdateViewStateTests testReadyToRelaunchUsesRelaunchActionCopy]' passed (0.000 seconds).
+Test Case '-[OuroAppShellUITests.ReleaseUpdateViewStateTests testStateKindsExposeLabelsTonesAndProgress]' started.
+Test Case '-[OuroAppShellUITests.ReleaseUpdateViewStateTests testStateKindsExposeLabelsTonesAndProgress]' passed (0.000 seconds).
+Test Case '-[OuroAppShellUITests.ReleaseUpdateViewStateTests testViewStateCanDeriveFromCurrentSnapshot]' started.
+Test Case '-[OuroAppShellUITests.ReleaseUpdateViewStateTests testViewStateCanDeriveFromCurrentSnapshot]' passed (0.000 seconds).
+Test Case '-[OuroAppShellUITests.ReleaseUpdateViewStateTests testViewStateCanDeriveInstallableUpdateFromSnapshotAndPlan]' started.
+Test Case '-[OuroAppShellUITests.ReleaseUpdateViewStateTests testViewStateCanDeriveInstallableUpdateFromSnapshotAndPlan]' passed (0.000 seconds).
+Test Case '-[OuroAppShellUITests.ReleaseUpdateViewStateTests testViewStateCanDeriveUnavailableSnapshot]' started.
+Test Case '-[OuroAppShellUITests.ReleaseUpdateViewStateTests testViewStateCanDeriveUnavailableSnapshot]' passed (0.000 seconds).
+Test Case '-[OuroAppShellUITests.ReleaseUpdateViewStateTests testViewStateDerivesUnavailableInstallDetailFromPlanFailure]' started.
+Test Case '-[OuroAppShellUITests.ReleaseUpdateViewStateTests testViewStateDerivesUnavailableInstallDetailFromPlanFailure]' passed (0.000 seconds).
+Test Suite 'ReleaseUpdateViewStateTests' passed at 2026-06-29 22:16:57.212.
+	 Executed 10 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'ReleaseVersionIdentityTests' started at 2026-06-29 22:16:57.212.
+Test Case '-[OuroAppShellCoreTests.ReleaseVersionIdentityTests testReleaseVersionIdentityBuildComparison]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseVersionIdentityTests testReleaseVersionIdentityBuildComparison]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseVersionIdentityTests testReleaseVersionIdentityLabelsAndVersionComparison]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseVersionIdentityTests testReleaseVersionIdentityLabelsAndVersionComparison]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ReleaseVersionIdentityTests testSemanticVersionParsesAndComparesMajorMinorPatchAndPrereleasePrecedence]' started.
+Test Case '-[OuroAppShellCoreTests.ReleaseVersionIdentityTests testSemanticVersionParsesAndComparesMajorMinorPatchAndPrereleasePrecedence]' passed (0.000 seconds).
+Test Suite 'ReleaseVersionIdentityTests' passed at 2026-06-29 22:16:57.213.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'ShellBoundaryTests' started at 2026-06-29 22:16:57.213.
+Test Case '-[OuroAppShellCoreTests.ShellBoundaryTests testBoundaryDecisionIsCodable]' started.
+Test Case '-[OuroAppShellCoreTests.ShellBoundaryTests testBoundaryDecisionIsCodable]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ShellBoundaryTests testBoundaryOwnersClassifyAdaptersAndApps]' started.
+Test Case '-[OuroAppShellCoreTests.ShellBoundaryTests testBoundaryOwnersClassifyAdaptersAndApps]' passed (0.000 seconds).
+Test Case '-[OuroAppShellCoreTests.ShellBoundaryTests testBoundaryOwnersClassifySharedNativeSurfaces]' started.
+Test Case '-[OuroAppShellCoreTests.ShellBoundaryTests testBoundaryOwnersClassifySharedNativeSurfaces]' passed (0.000 seconds).
+Test Suite 'ShellBoundaryTests' passed at 2026-06-29 22:16:57.213.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'UpdateInstalledConfirmationTests' started at 2026-06-29 22:16:57.213.
+Test Case '-[OuroAppShellUITests.UpdateInstalledConfirmationTests testDefaultAndCustomOpenAboutLabels]' started.
+Test Case '-[OuroAppShellUITests.UpdateInstalledConfirmationTests testDefaultAndCustomOpenAboutLabels]' passed (0.000 seconds).
+Test Suite 'UpdateInstalledConfirmationTests' passed at 2026-06-29 22:16:57.214.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.000 (0.000) seconds
+Test Suite 'OuroAppShellPackageTests.xctest' passed at 2026-06-29 22:16:57.214.
+	 Executed 74 tests, with 0 failures (0 unexpected) in 0.300 (0.304) seconds
+Test Suite 'All tests' passed at 2026-06-29 22:16:57.214.
+	 Executed 74 tests, with 0 failures (0 unexpected) in 0.300 (0.305) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

@@ -1,0 +1,19 @@
+Visual surface manifest: ok
+[0/1] Planning build
+Building for debugging...
+[0/3] Write swift-version--58304C5D6DBC2206.txt
+Build of product 'OuroAppShellUISurfaceProbe' complete! (0.16s)
+about-current: 520x500, pixels=85253/1209600, ink=0.070, min=0.010, ocr=17
+about-available: 520x500, pixels=120088/1254400, ink=0.096, min=0.010, ocr=20
+updates-notChecked: 284x118, pixels=20588/367200, ink=0.056, min=0.010, ocr=5
+updates-checking: 265x119, pixels=9486/367200, ink=0.026, min=0.010, ocr=5
+updates-current: 255x140, pixels=20559/367200, ink=0.056, min=0.010, ocr=6
+updates-updateAvailable: 596x140, pixels=55394/367200, ink=0.151, min=0.010, ocr=9
+updates-installing: 263x119, pixels=18113/367200, ink=0.049, min=0.010, ocr=5
+updates-readyToRelaunch: 326x118, pixels=29808/367200, ink=0.081, min=0.010, ocr=6
+updates-installed: 260x118, pixels=17942/367200, ink=0.049, min=0.010, ocr=5
+updates-unavailable: 326x140, pixels=34560/367200, ink=0.094, min=0.010, ocr=7
+updates-failed: 454x140, pixels=41261/367200, ink=0.112, min=0.010, ocr=8
+installed-confirmation: 360x110, pixels=25763/331200, ink=0.078, min=0.010, ocr=4
+command-reference: 560x620, pixels=30187/1686400, ink=0.018, min=0.010, ocr=12
+OuroAppShell UI surface probe: ok

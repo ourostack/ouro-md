@@ -1,0 +1,63 @@
+[0/1] Planning build
+Building for debugging...
+[0/7] Write sources
+[1/7] Write swift-version--58304C5D6DBC2206.txt
+[3/25] Emitting module OuroAppShellUITests
+[4/25] Compiling OuroAppShellUITests AppShellAboutModelTests.swift
+[5/25] Emitting module OuroAppShellCoreTests
+[6/25] Compiling OuroAppShellCoreTests ReleaseVersionIdentityTests.swift
+[7/25] Compiling OuroAppShellUITests UpdateInstalledConfirmationTests.swift
+[8/25] Compiling OuroAppShellCoreTests ReleaseAssetNamingPolicyTests.swift
+[9/25] Compiling OuroAppShellCoreTests ShellBoundaryTests.swift
+[10/25] Emitting module OuroAppShellUISurfaceProbe
+[11/25] Compiling OuroAppShellUITests AppShellCommandReferenceTests.swift
+[12/25] Compiling OuroAppShellUITests ReleaseUpdateViewStateTests.swift
+[13/25] Compiling OuroAppShellCoreTests AppUpdateTests.swift
+[14/25] Compiling OuroAppShellCoreTests AppIdentityTests.swift
+[15/25] Compiling OuroAppShellCoreTests AppShellWindowSpecTests.swift
+[16/25] Compiling OuroAppShellCoreTests ReleaseUpdatePolicyTests.swift
+[17/25] Compiling OuroAppShellCoreTests ReleaseUpdateTests.swift
+[18/25] Compiling OuroAppShellContract OuroAppShellContract.swift
+[19/25] Emitting module OuroAppShellContract
+[20/29] Compiling OuroAppShellUISurfaceProbe main.swift
+[20/29] Write Objects.LinkFileList
+[22/29] Emitting module OuroAppShellContractTests
+[23/29] Emitting module OuroAppShellConsumerTesting
+[24/29] Compiling OuroAppShellConsumerTesting OuroAppShellContractAssertions.swift
+[25/29] Compiling OuroAppShellContractTests OuroAppShellContractTests.swift
+[26/31] Emitting module OuroAppShellConsumerTestingTests
+[27/31] Compiling OuroAppShellConsumerTestingTests OuroAppShellContractAssertionsTests.swift
+[27/33] Linking OuroAppShellUISurfaceProbe
+[28/33] Applying OuroAppShellUISurfaceProbe
+[30/33] Emitting module OuroAppShellPackageTests
+[31/33] Compiling OuroAppShellPackageTests runner.swift
+[31/33] Write Objects.LinkFileList
+[32/33] Linking OuroAppShellPackageTests
+Build complete! (3.91s)
+Test Suite 'Selected tests' started at 2026-06-29 22:10:39.484.
+Test Suite 'OuroAppShellPackageTests.xctest' started at 2026-06-29 22:10:39.484.
+Test Suite 'OuroAppShellContractTests' started at 2026-06-29 22:10:39.484.
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testContractIsCodable]' started.
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testContractIsCodable]' passed (0.002 seconds).
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testSettingsContractDeclaresSharedSections]' started.
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testSettingsContractDeclaresSharedSections]' passed (0.000 seconds).
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testValidationRejectsAppOwnedAndDuplicateRequiredSurfaces]' started.
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testValidationRejectsAppOwnedAndDuplicateRequiredSurfaces]' passed (0.000 seconds).
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testValidationRejectsInvalidOptionalDescriptors]' started.
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testValidationRejectsInvalidOptionalDescriptors]' passed (0.000 seconds).
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testValidationRejectsMalformedSettingsSectionsAndDiagnostics]' started.
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testValidationRejectsMalformedSettingsSectionsAndDiagnostics]' passed (0.000 seconds).
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testValidationRequiresDescriptorsForRequiredShellSurfaces]' started.
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testValidationRequiresDescriptorsForRequiredShellSurfaces]' passed (0.000 seconds).
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testValidContractDeclaresSharedShellSurfaces]' started.
+Test Case '-[OuroAppShellContractTests.OuroAppShellContractTests testValidContractDeclaresSharedShellSurfaces]' passed (0.000 seconds).
+Test Suite 'OuroAppShellContractTests' passed at 2026-06-29 22:10:39.488.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.003 (0.004) seconds
+Test Suite 'OuroAppShellPackageTests.xctest' passed at 2026-06-29 22:10:39.488.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.003 (0.004) seconds
+Test Suite 'Selected tests' passed at 2026-06-29 22:10:39.488.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.003 (0.004) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
