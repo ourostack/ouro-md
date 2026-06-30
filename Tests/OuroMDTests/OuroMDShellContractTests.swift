@@ -67,14 +67,32 @@ final class OuroMDShellContractTests: XCTestCase {
         ])
 
         XCTAssertEqual(contract.settings?.entryPoint, "Ouro MD > Settings")
+        XCTAssertEqual(contract.settings?.sharedSections.map(\.kind), [
+            .updates,
+            .telemetry,
+            .privacy,
+            .about,
+            .keyboardShortcuts
+        ])
         XCTAssertEqual(contract.settings?.appOwnedSections, [
             "Appearance",
             "Theme",
             "Auto-save",
             "Auto-pair",
-            "Updates",
-            "Telemetry",
             "Text size"
+        ])
+
+        XCTAssertEqual(contract.privacyDiagnostics?.telemetryConsentEntryPoint, "Ouro MD > Settings > Telemetry")
+        XCTAssertEqual(contract.privacyDiagnostics?.privacyDocumentURL.absoluteString, "https://github.com/ourostack/ouro-md/blob/main/PRIVACY.md")
+        XCTAssertEqual(contract.privacyDiagnostics?.diagnosticsExportDisclosure, "Ouro MD privacy documentation describes anonymous telemetry and local-first document handling.")
+        XCTAssertEqual(contract.privacyDiagnostics?.supportBundleContents, ["app version", "bundle id", "macOS version", "architecture", "anonymous install id"])
+        XCTAssertEqual(contract.privacyDiagnostics?.redactionGuarantees, [
+            "no document contents",
+            "no filenames",
+            "no folder paths",
+            "no search queries",
+            "no clipboard contents",
+            "no raw error messages"
         ])
     }
 }
