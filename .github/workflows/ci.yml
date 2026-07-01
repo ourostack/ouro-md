@@ -55,7 +55,11 @@ jobs:
       - name: Verify shared shell boundary
         run: ./scripts/check-shell-boundary.sh
       - name: Check signing and notarization readiness
-        run: ./scripts/check-signing-readiness.sh
+        run: |
+          ./scripts/check-signing-readiness.sh
+          ./scripts/check-signing-readiness.sh --selftest
+          ./scripts/sign-notarize-app.sh --selftest
+          ./scripts/prepare-ci-signing-assets.sh
       - name: Run tests
         run: ./scripts/swift-test-budget.sh
       - name: Upload Swift test timings
