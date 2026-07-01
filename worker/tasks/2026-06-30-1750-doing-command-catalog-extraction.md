@@ -50,12 +50,12 @@ Extract the command palette catalog models and filtering policy from the AppKit/
 
 **CRITICAL: Every unit header MUST start with status emoji (⬜ for new units).**
 
-### ⬜ Unit 0: Setup/Research
+### ✅ Unit 0: Setup/Research
 **What**: Verify command catalog call sites, PR #87 overlap, package target layout, and coverage script behavior.
 **Output**: Notes in this doing doc progress log and artifacts as needed.
 **Acceptance**: Scope remains limited to command catalog support extraction and excludes PR #87 files.
 
-### ⬜ Unit 1a: Command Catalog Support Boundary — Tests
+### ✅ Unit 1a: Command Catalog Support Boundary — Tests
 **What**: Add focused `OuroMDAppSupportTests` proving filtering, shortcut aliases, empty/result limits, and theme command generation against the future support target API.
 **Output**: New support-target tests committed before implementation.
 **Acceptance**: Focused tests fail because `OuroMDAppSupport` does not exist yet.
@@ -82,3 +82,5 @@ Extract the command palette catalog models and filtering policy from the AppKit/
 ## Progress Log
 - 2026-06-30 17:51 Created from planning doc
 - 2026-06-30 17:51 Doing reviewer gates converged: granularity, validation, ambiguity, quality, Tinfoil Hat, and Stranger With Candy passes found no blocker/major issues. Units are atomic and cite real source/test targets.
+- 2026-06-30 17:51 Unit 0 complete: verified command catalog scope, package layout, coverage gate, and PR #87 file overlap.
+- 2026-06-30 17:51 Unit 1a complete: added `OuroMDAppSupportTests`; red phase fails because product `OuroMDAppSupport` is not yet present.

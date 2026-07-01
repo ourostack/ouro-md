@@ -4,8 +4,8 @@
 - Worktree: `/Users/arimendelow/Projects/worktrees/ouro-md-command-catalog-extraction`
 - Planning doc: `worker/tasks/2026-06-30-1750-planning-command-catalog-extraction.md`
 - Doing doc: `worker/tasks/2026-06-30-1750-doing-command-catalog-extraction.md`
-- Gate state: planning and doing reviewer gates converged under autopilot.
-- Next action: execute Unit 0, then TDD Unit 1a/1b/1c.
+- Gate state: planning and doing reviewer gates converged under autopilot; Unit 0 and Unit 1a complete.
+- Next action: implement Unit 1b.
 
 ## Terminal Evidence
 
