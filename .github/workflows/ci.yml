@@ -32,6 +32,8 @@ jobs:
         run: ./scripts/release-policy.sh freshness
       - name: Verify release policy PR base handling
         run: ./scripts/release-policy.sh selftest-pr-base
+      - name: Verify release API fallback
+        run: ./scripts/release-policy.sh selftest-release-api-fallback
       - name: Verify release package shell guard
         run: ./scripts/release-policy.sh selftest-package-guards
       - name: Verify shell dependency watch automation
@@ -46,6 +48,8 @@ jobs:
         run: ./scripts/release-policy.sh scan .
       - name: Verify shared shell dependency freshness
         run: ./scripts/check-shell-dependency.sh
+      - name: Verify app control deck
+        run: ./scripts/check-app-control-deck.py
       - name: Verify shared shell boundary selftest
         run: ./scripts/check-shell-boundary.sh --selftest
       - name: Verify shared shell boundary
@@ -125,7 +129,7 @@ jobs:
           [ -n "$latest" ] || latest="$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
           sudo xcode-select -s "$latest/Contents/Developer"
           swift --version
-      - name: Enforce 100% line+region coverage on OuroMDCore
+      - name: Enforce 100% line+region coverage on pure support targets
         run: ./scripts/check-coverage.sh
       - name: Upload coverage test timings
         if: always()

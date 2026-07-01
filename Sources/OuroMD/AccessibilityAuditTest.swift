@@ -1,5 +1,6 @@
 import AppKit
 import OuroAppShellUI
+import OuroMDAppSupport
 import OuroMDCore
 import SwiftUI
 import Vision

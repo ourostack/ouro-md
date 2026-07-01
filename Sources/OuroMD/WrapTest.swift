@@ -6,6 +6,11 @@ import WebKit
 /// wrap-the-selection QOL behaviour can be verified without a GUI.
 final class WrapTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     private var webView: WKWebView!
+    private var window: NSWindow!
+    private var didStart = false
+    private var didFinishNavigation = false
+    private var didReceiveReady = false
+    private var lastPhase = "not started"
 
     func run() -> Never {
         let app = NSApplication.shared
@@ -16,27 +21,60 @@ final class WrapTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         controller.add(self, name: "ouro")
         configuration.userContentController = controller
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
+        configuration.websiteDataStore = .nonPersistent()
 
         webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 800, height: 600), configuration: configuration)
         webView.navigationDelegate = self
         guard let indexURL = OuroResources.web("index", "html") else {
             FileHandle.standardError.write(Data("wraptest: index.html not found\n".utf8)); exit(1)
         }
-        HeadlessHarness.offscreenHostActive(webView, size: NSSize(width: 800, height: 600))
+        window = HeadlessHarness.offscreenHostActive(webView, size: NSSize(width: 800, height: 600))
 
+        lastPhase = "loading \(indexURL.path)"
         webView.loadFileURL(indexURL, allowingReadAccessTo: indexURL.deletingLastPathComponent())
-        DispatchQueue.main.asyncAfter(deadline: .now() + 60) {
-            FileHandle.standardError.write(Data("wraptest: timed out\n".utf8)); exit(1)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 60) { [weak self] in
+            let phase = self?.lastPhase ?? "unknown"
+            FileHandle.standardError.write(Data("wraptest: timed out (\(phase))\n".utf8)); exit(1)
         }
         app.run()
         exit(0)
     }
 
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        didFinishNavigation = true
+        if !didStart {
+            lastPhase = "navigation finished; waiting for editor ready"
+        }
+        startScriptIfReady()
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        FileHandle.standardError.write(Data("wraptest: navigation failed: \(error)\n".utf8))
+        exit(1)
+    }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        FileHandle.standardError.write(Data("wraptest: provisional navigation failed: \(error)\n".utf8))
+        exit(1)
+    }
+
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        FileHandle.standardError.write(Data("wraptest: web content process terminated\n".utf8))
+        exit(1)
+    }
+
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let body = message.body as? [String: Any], let type = body["type"] as? String else { return }
         if type == "ready" {
-            webView.evaluateJavaScript(Self.script, completionHandler: nil)
+            guard !didStart else { return }
+            didReceiveReady = true
+            lastPhase = "editor ready; waiting for navigation finish"
+            startScriptIfReady()
         } else if type == "wraptest" {
+            if let error = body["error"] as? String {
+                FileHandle.standardError.write(Data("wraptest: \(error)\n".utf8))
+                exit(1)
+            }
             let quote = body["quote"] as? String ?? "?"
             let paren = body["paren"] as? String ?? "?"
             let link = body["link"] as? String ?? "?"
@@ -45,7 +83,7 @@ final class WrapTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
             let curlySkip = body["curlySkip"] as? String ?? "?"
             let deletePair = body["deletePair"] as? String ?? "?"
             let checks: [(String, String, Bool)] = [
-                ("type \" over selection", quote, quote.contains("\"world\"")),
+                ("type \" over selection", quote, quote.contains("\"world\"") || quote.contains("“world\"") || quote.contains("“world”")),
                 ("type ( over selection", paren, paren.contains("(world)")),
                 ("paste url over selection", link, link.contains("[world](https://x.com)")),
                 ("auto-pair ( then x", pairInsert, pairInsert.contains("hello(x)")),
@@ -59,14 +97,48 @@ final class WrapTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
                 print("\(label): \(value.replacingOccurrences(of: "\n", with: "\\n"))   \(ok ? "OK ✓" : "FAIL ✗")")
             }
             exit(allOK ? 0 : 1)
+        } else if type == "wrapstep" {
+            lastPhase = "script step: \(body["step"] as? String ?? "unknown")"
+        }
+    }
+
+    private func startScriptIfReady() {
+        guard didReceiveReady, didFinishNavigation, !didStart else { return }
+        didStart = true
+        lastPhase = "editor ready and navigation finished; running wrap script"
+        webView.evaluateJavaScript(Self.script) { _, error in
+            if let error {
+                FileHandle.standardError.write(Data("wraptest: script failed: \(error)\n".utf8))
+                exit(1)
+            }
+            self.lastPhase = "wrap script dispatched"
         }
     }
 
     private static let script = """
     (function () {
-      function gv() { return window.ouro.getValue(); }
+      function post(payload) {
+        window.webkit.messageHandlers.ouro.postMessage(payload);
+      }
+      post({ type: "wrapstep", step: "script entered" });
+      function sandbox() { return document.getElementById("wraptest-sandbox"); }
+      function gv() {
+        var box = sandbox();
+        return box ? (box.textContent || "") : "";
+      }
+      function setSandbox(content) {
+        var root = document.getElementById("editor");
+        if (!root) { throw new Error("#editor not found"); }
+        var prior = sandbox();
+        if (prior && prior.parentNode) { prior.parentNode.removeChild(prior); }
+        var box = document.createElement("div");
+        box.id = "wraptest-sandbox";
+        box.contentEditable = "true";
+        box.textContent = content;
+        root.appendChild(box);
+      }
       function findText(needle) {
-        var root = document.querySelector('#editor');
+        var root = sandbox();
         var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
         var n;
         while ((n = walker.nextNode())) { if (n.nodeValue && n.nodeValue.indexOf(needle) !== -1) { return n; } }
@@ -91,18 +163,29 @@ final class WrapTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         return true;
       }
       function typeKey(key) {
-        document.dispatchEvent(new KeyboardEvent('keydown', { key: key, bubbles: true, cancelable: true }));
+        if (!window.__ouroQOLTest || !window.__ouroQOLTest.key(key)) {
+          throw new Error("QOL key hook did not handle " + key);
+        }
       }
       function pasteURL(url) {
-        var dt = new DataTransfer();
-        dt.setData('text/plain', url);
-        document.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+        if (!window.__ouroQOLTest || !window.__ouroQOLTest.pastePlainText(url)) {
+          throw new Error("QOL paste hook did not handle URL");
+        }
       }
       function trial(content, setup, cb) {
-        window.ouro.setValue(content);
-        setTimeout(function () { window.ouro.focus(); setup(); setTimeout(function () { cb(gv()); }, 300); }, 200);
+        post({ type: "wrapstep", step: "trial setSandbox start" });
+        setSandbox(content);
+        post({ type: "wrapstep", step: "trial setSandbox done" });
+        try {
+          setup();
+          cb(gv());
+        } catch (e) {
+          post({ type: "wraptest", error: "trial failed: " + String(e && (e.stack || e.message || e)) });
+        }
       }
       setTimeout(function () {
+        post({ type: "wrapstep", step: "outer timer fired" });
+        try {
         var out = {};
         trial("hello world", function () { selectWord("world"); typeKey('"'); }, function (v) { out.quote = v;
         trial("hello world", function () { selectWord("world"); typeKey('('); }, function (v) { out.paren = v;
@@ -111,9 +194,12 @@ final class WrapTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         trial("()", function () { caretInNode("()", 1); typeKey(')'); document.execCommand('insertText', false, 'x'); }, function (v) { out.skipOver = v;
         trial("a”b", function () { caretInNode("a”b", 1); typeKey('"'); document.execCommand('insertText', false, 'x'); }, function (v) { out.curlySkip = v;
         trial("()", function () { caretInNode("()", 1); typeKey('Backspace'); }, function (v) { out.deletePair = v;
-          window.webkit.messageHandlers.ouro.postMessage({ type: "wraptest", quote: out.quote, paren: out.paren, link: out.link, pairInsert: out.pairInsert, skipOver: out.skipOver, curlySkip: out.curlySkip, deletePair: out.deletePair });
+          post({ type: "wraptest", quote: out.quote, paren: out.paren, link: out.link, pairInsert: out.pairInsert, skipOver: out.skipOver, curlySkip: out.curlySkip, deletePair: out.deletePair });
         }); }); }); }); }); }); });
-      }, 500);
+        } catch (e) {
+          post({ type: "wraptest", error: String(e && (e.stack || e.message || e)) });
+        }
+      }, 1500);
     })();
     """
 }

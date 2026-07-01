@@ -11,7 +11,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/ourostack/ouro-native-apple-app-shell.git", branch: "main"),
-        .package(url: "https://github.com/apple/swift-markdown.git", branch: "main")
+        .package(url: "https://github.com/apple/swift-markdown.git", revision: "4661b550c55abde97d14e35b89e094084669f40a")
     ],
     targets: [
         .target(
@@ -20,9 +20,16 @@ let package = Package(
                 .swiftLanguageMode(.v5)
             ]
         ),
+        .target(
+            name: "OuroMDAppSupport",
+            swiftSettings: [
+                .swiftLanguageMode(.v5)
+            ]
+        ),
         .executableTarget(
             name: "OuroMD",
             dependencies: [
+                "OuroMDAppSupport",
                 "OuroMDCore",
                 .product(name: "OuroAppShellAppKit", package: "ouro-native-apple-app-shell"),
                 .product(name: "OuroAppShellContract", package: "ouro-native-apple-app-shell"),
@@ -41,8 +48,18 @@ let package = Package(
             name: "OuroMDTests",
             dependencies: [
                 "OuroMD",
+                "OuroMDAppSupport",
                 "OuroMDCore",
                 .product(name: "OuroAppShellConsumerTesting", package: "ouro-native-apple-app-shell")
+            ],
+            swiftSettings: [
+                .swiftLanguageMode(.v5)
+            ]
+        ),
+        .testTarget(
+            name: "OuroMDAppSupportTests",
+            dependencies: [
+                "OuroMDAppSupport"
             ],
             swiftSettings: [
                 .swiftLanguageMode(.v5)

@@ -1,0 +1,126 @@
+diff --git a/README.md b/README.md
+index fc38975..38b2efe 100644
+--- a/README.md
++++ b/README.md
+@@ -6,7 +6,7 @@ ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
+ in careful typography on a centered page. Type Markdown and watch it render in
+ place — switch themes live, and read the same document four different ways.
+ 
+-> **Status:** v0.9.57. Reads and edits Markdown today. Not yet Developer-ID
++> **Status:** v0.9.67. Reads and edits Markdown today. Not yet Developer-ID
+ > signed or notarized — see [First launch](#first-launch).
+ 
+ ---
+diff --git a/Sources/OuroMD/LinkTest.swift b/Sources/OuroMD/LinkTest.swift
+index 1a73b0f..43736d2 100644
+--- a/Sources/OuroMD/LinkTest.swift
++++ b/Sources/OuroMD/LinkTest.swift
+@@ -47,7 +47,7 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
+             let opened = openedURL ?? ""
+             let checks: [(String, String, Bool)] = [
+                 ("IR link node rendered for [text](url)", "found=\(found)", found),
+-                ("⌘-click posts openURL with the link's URL", "opened=\(opened)", opened == "https://ouro.bot")
++                ("⌘-mousedown posts openURL with the link's URL", "opened=\(opened)", opened == "https://ouro.bot")
+             ]
+             var allOK = true
+             for (label, value, ok) in checks {
+@@ -67,9 +67,11 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
+           var node = document.querySelector('#editor span[data-type="a"]');
+           var target = node && (node.querySelector('.vditor-ir__link') || node);
+           var found = !!target;
+-          // ⌘-click the link; the bridge should preventDefault + post openURL.
++          // ⌘-mousedown the link; the bridge now opens on mousedown (macOS
++          // WKWebView does not reliably fire a `click` for a ⌘-click in a
++          // contenteditable), so this is the event the real fix depends on.
+           if (found) {
+-            target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, metaKey: true }));
++            target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, metaKey: true }));
+           }
+           setTimeout(function () {
+             window.webkit.messageHandlers.ouro.postMessage({ type: "linkprobe", found: found });
+diff --git a/Sources/OuroMD/web/bridge.js b/Sources/OuroMD/web/bridge.js
+index 213407e..63839cb 100644
+--- a/Sources/OuroMD/web/bridge.js
++++ b/Sources/OuroMD/web/bridge.js
+@@ -233,29 +233,47 @@
+     }, true);
+ 
+     // ⌘-click a link to open it in the default browser. A contenteditable
+-    // surface never fires WebKit's .linkActivated navigation (a plain click
+-    // just places the caret), and Vditor's own window.open is dropped because
+-    // the app installs no WKUIDelegate — so without this, links are dead. We
+-    // use ⌘-click (not plain click) so plain clicks stay free for editing.
+-    document.addEventListener("click", function (e) {
+-      if (!e.metaKey || !e.target || !e.target.closest) { return; }
+-      if (!e.target.closest("#editor")) { return; }
+-      var url = "";
++    // surface never fires WebKit's .linkActivated navigation, and Vditor's own
++    // window.open is dropped because the app installs no WKUIDelegate — so
++    // without this, links are dead. We require ⌘ (not a plain click) so plain
++    // clicks stay free for editing.
++    //
++    // We handle the gesture on BOTH `mousedown` and `click`, de-duped to fire
++    // once. macOS WKWebView does not reliably synthesize a `click` for a
++    // ⌘-click inside contenteditable (the mousedown often just places the caret
++    // and no click follows), so a click-only handler silently does nothing on
++    // the real app even though it works under synthetic dispatch. `mousedown` is
++    // delivered reliably; `click` stays as a belt-and-suspenders fallback.
++    function resolveEditorLinkURL(target) {
++      if (!target || !target.closest || !target.closest("#editor")) { return ""; }
+       // WYSIWYG mode and the Split/preview pane render a real <a href>.
+-      var a = e.target.closest("a[href]");
+-      if (a) { url = a.href || a.getAttribute("href") || ""; }
++      var a = target.closest("a[href]");
++      if (a) { return a.href || a.getAttribute("href") || ""; }
+       // IR (live-preview) mode renders a link as <span data-type="a"> with no
+       // href — the URL is the text of its .vditor-ir__marker--link child.
+-      if (!url) {
+-        var node = e.target.closest('span[data-type="a"]');
+-        var marker = node && node.querySelector(".vditor-ir__marker--link");
+-        if (marker) { url = (marker.textContent || "").trim(); }
+-      }
++      var node = target.closest('span[data-type="a"]');
++      var marker = node && node.querySelector(".vditor-ir__marker--link");
++      if (marker) { return (marker.textContent || "").trim(); }
++      return "";
++    }
++    var lastLinkOpenAt = 0;
++    function maybeOpenEditorLink(e) {
++      if (!e.metaKey) { return; }
++      var url = resolveEditorLinkURL(e.target);
+       if (!url) { return; }
++      // Swallow the whole gesture (caret placement, Vditor handlers, the
++      // synthesized click) so a ⌘-click opens instead of editing.
+       e.preventDefault();
+       e.stopImmediatePropagation();
++      // One open per gesture: mousedown fires first; the click ~ms later is
++      // suppressed here without re-opening.
++      var now = Date.now();
++      if (now - lastLinkOpenAt < 700) { return; }
++      lastLinkOpenAt = now;
+       post("openURL", { url: url });
+-    }, true);
++    }
++    document.addEventListener("mousedown", maybeOpenEditorLink, true);
++    document.addEventListener("click", maybeOpenEditorLink, true);
+   }
+ 
+   function create() {
+diff --git a/Sources/OuroMDCore/OuroMDRelease.swift b/Sources/OuroMDCore/OuroMDRelease.swift
+index da9e114..4502349 100644
+--- a/Sources/OuroMDCore/OuroMDRelease.swift
++++ b/Sources/OuroMDCore/OuroMDRelease.swift
+@@ -4,10 +4,10 @@ public enum OuroMDRelease {
+     public static let appName = "Ouro MD"
+     public static let bundleIdentifier = "org.ourostack.ouro-md"
+     public static let repository = "ourostack/ouro-md"
+-    public static let version = "0.9.57"
++    public static let version = "0.9.67"
+     public static let userAgent = "OuroMD/\(version)"
+-    public static let releaseDate = "2026-06-28"
++    public static let releaseDate = "2026-06-30"
+     public static let releaseHighlights = [
+-        "Pin the merged shell adoption doctor release so shared shell freshness checks validate against the current Ouro app shell.",
++        "⌘-click a link in the editor to open it in your browser — now fires on mousedown so it works on the live editing surface, where macOS didn't reliably deliver the click it previously depended on.",
+     ]
+ }

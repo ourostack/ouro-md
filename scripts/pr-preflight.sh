@@ -8,14 +8,18 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 ./scripts/check-shell-dependency.sh
+./scripts/check-app-control-deck.py
 ./scripts/check-shell-boundary.sh --selftest
 ./scripts/check-shell-boundary.sh
+./scripts/check-shipped-harness-policy.sh
+./scripts/check-vditor-vendor.sh
 
 base_ref="${OURO_PR_BASE_REF:-${GITHUB_BASE_REF:-main}}"
 
 ./scripts/verify-release-version.sh
 ./scripts/release-policy.sh freshness --mode pr --base-ref "$base_ref"
 ./scripts/release-policy.sh selftest-pr-base
+./scripts/release-policy.sh selftest-release-api-fallback
 ./scripts/release-policy.sh selftest-package-guards
 ./scripts/release-policy.sh selftest-shell-dependency-watch
 ./scripts/release-policy.sh selftest-live-update-runner

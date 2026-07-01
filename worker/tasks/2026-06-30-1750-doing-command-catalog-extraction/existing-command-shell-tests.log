@@ -1,0 +1,38 @@
+[0/1] Planning build
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.42s)
+Test Suite 'Selected tests' started at 2026-06-30 18:00:01.632.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-30 18:00:01.634.
+Test Suite 'CommandPaletteTests' started at 2026-06-30 18:00:01.634.
+Test Case '-[OuroMDTests.CommandPaletteTests testCatalogCarriesShortcutMetadataForPowerUserDiscovery]' started.
+Test Case '-[OuroMDTests.CommandPaletteTests testCatalogCarriesShortcutMetadataForPowerUserDiscovery]' passed (0.005 seconds).
+Test Case '-[OuroMDTests.CommandPaletteTests testCatalogFiltersByMultipleTermsAndLimitsDefaultSuggestions]' started.
+Test Case '-[OuroMDTests.CommandPaletteTests testCatalogFiltersByMultipleTermsAndLimitsDefaultSuggestions]' passed (0.004 seconds).
+Test Case '-[OuroMDTests.CommandPaletteTests testCatalogIncludesEditorMenuCommandsWithoutShortcuts]' started.
+Test Case '-[OuroMDTests.CommandPaletteTests testCatalogIncludesEditorMenuCommandsWithoutShortcuts]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.CommandPaletteTests testPaletteDispatchesFormatModeSidebarAndThemeActions]' started.
+Test Case '-[OuroMDTests.CommandPaletteTests testPaletteDispatchesFormatModeSidebarAndThemeActions]' passed (0.004 seconds).
+Test Case '-[OuroMDTests.CommandPaletteTests testPaletteVisibilityAndFindCommandsResetQuery]' started.
+Test Case '-[OuroMDTests.CommandPaletteTests testPaletteVisibilityAndFindCommandsResetQuery]' passed (0.000 seconds).
+Test Suite 'CommandPaletteTests' passed at 2026-06-30 18:00:01.648.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.013 (0.014) seconds
+Test Suite 'OuroMDShellContractTests' started at 2026-06-30 18:00:01.648.
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellCommandManifestPinsPublicSurfaceSemantics]' started.
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellCommandManifestPinsPublicSurfaceSemantics]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractDocumentsUtilityWindowsAndSettingsEntryPoint]' started.
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractDocumentsUtilityWindowsAndSettingsEntryPoint]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractIsValidAndDeclaresSharedSurfaces]' started.
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractIsValidAndDeclaresSharedSurfaces]' passed (0.003 seconds).
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractMatchesRuntimeIdentityReleaseAndShortcutSurfaces]' started.
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractMatchesRuntimeIdentityReleaseAndShortcutSurfaces]' passed (0.002 seconds).
+Test Suite 'OuroMDShellContractTests' passed at 2026-06-30 18:00:01.656.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.009 (0.009) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-30 18:00:01.656.
+	 Executed 9 tests, with 0 failures (0 unexpected) in 0.022 (0.023) seconds
+Test Suite 'Selected tests' passed at 2026-06-30 18:00:01.657.
+	 Executed 9 tests, with 0 failures (0 unexpected) in 0.022 (0.024) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

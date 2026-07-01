@@ -232,6 +232,37 @@
       document.execCommand("insertText", false, "[" + selected + "](" + text.trim() + ")");
     }, true);
 
+    // Deterministic diagnostic hook for the shipped headless harnesses. It calls
+    // the same QOL helpers as the real key/paste listeners without depending on
+    // WebKit synthetic key-event delivery, which can hang under off-screen tests.
+    window.__ouroQOLTest = {
+      key: function (key) {
+        if (!selectionInEditor()) { return false; }
+        var selected = selectedText();
+        if (selected) {
+          var close = WRAP_PAIRS[key];
+          if (close === undefined) { return false; }
+          wrapSelection(key, close, selected);
+          return true;
+        }
+        return handleAutoPair({
+          key: key,
+          metaKey: false,
+          ctrlKey: false,
+          altKey: false,
+          isComposing: false
+        });
+      },
+      pastePlainText: function (text) {
+        if (!selectionInEditor()) { return false; }
+        var selected = selectedText();
+        text = (text || "").trim();
+        if (!selected || !looksLikeURL(text)) { return false; }
+        document.execCommand("insertText", false, "[" + selected + "](" + text + ")");
+        return true;
+      }
+    };
+
     // ⌘-click a link to open it in the default browser. A contenteditable
     // surface never fires WebKit's .linkActivated navigation, and Vditor's own
     // window.open is dropped because the app installs no WKUIDelegate — so

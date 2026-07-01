@@ -1,0 +1,5 @@
+shipped harness policy ok
+shipped harness policy ok
+harness policy selftest ok
+release policy paths selftest ok
+release package guard selftest ok

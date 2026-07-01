@@ -1,0 +1,57 @@
+[1/1] Compiling plugin GenerateManual
+[2/2] Compiling plugin GenerateDoccReference
+Building for debugging...
+[2/11] Write sources
+[3/11] Write swift-version--58304C5D6DBC2206.txt
+[5/7] Compiling OuroWorkbenchCoreTests WorkbenchShellPresentationTests.swift
+[6/7] Emitting module OuroWorkbenchCoreTests
+[6/8] Write Objects.LinkFileList
+[7/8] Linking OuroWorkbenchPackageTests
+Build complete! (13.67s)
+Test Suite 'Selected tests' started at 2026-06-29 22:20:51.718.
+Test Suite 'OuroWorkbenchPackageTests.xctest' started at 2026-06-29 22:20:51.721.
+Test Suite 'WorkbenchShellPresentationTests' started at 2026-06-29 22:20:51.721.
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testAboutPresentationBuildsShellModelFromWorkbenchReleaseIdentity]' started.
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testAboutPresentationBuildsShellModelFromWorkbenchReleaseIdentity]' passed (0.002 seconds).
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testCheckingPresentationSuppressesStaleActionsAndWarnings]' started.
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testCheckingPresentationSuppressesStaleActionsAndWarnings]' passed (0.001 seconds).
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testCommandReferenceMapsGuideIntoShellItems]' started.
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testCommandReferenceMapsGuideIntoShellItems]' passed (0.000 seconds).
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testFailedPresentationPrefersInstallErrorWarning]' started.
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testFailedPresentationPrefersInstallErrorWarning]' passed (0.000 seconds).
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testInstallingPresentationUsesProgressLineAndDisablesInstall]' started.
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testInstallingPresentationUsesProgressLineAndDisablesInstall]' passed (0.000 seconds).
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testMissingReleaseURLDisablesOpenReleasePage]' started.
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testMissingReleaseURLDisablesOpenReleasePage]' passed (0.000 seconds).
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testShellAboutViewConstructsSharedAboutBody]' started.
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testShellAboutViewConstructsSharedAboutBody]' passed (0.000 seconds).
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testShellContractDocumentsUtilityWindowsAndSettingsEntryPoint]' started.
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testShellContractDocumentsUtilityWindowsAndSettingsEntryPoint]' passed (0.000 seconds).
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testShellContractIsValidAndDeclaresSharedSurfaces]' started.
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testShellContractIsValidAndDeclaresSharedSurfaces]' passed (0.000 seconds).
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testShellContractMatchesRuntimeIdentityReleaseAndShortcutSurfaces]' started.
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testShellContractMatchesRuntimeIdentityReleaseAndShortcutSurfaces]' passed (0.000 seconds).
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testShellUpdatePanelViewConstructsSharedReleaseBody]' started.
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testShellUpdatePanelViewConstructsSharedReleaseBody]' passed (0.000 seconds).
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testStagedPresentationIsReadyToRelaunchAndPrefersStagedReleaseLabel]' started.
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testStagedPresentationIsReadyToRelaunchAndPrefersStagedReleaseLabel]' passed (0.000 seconds).
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testUnavailablePresentationPreservesSnapshotDetailWithoutActions]' started.
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testUnavailablePresentationPreservesSnapshotDetailWithoutActions]' passed (0.000 seconds).
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testUpdatePresentationBeforeCheckKeepsOnlyChannelMetadata]' started.
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testUpdatePresentationBeforeCheckKeepsOnlyChannelMetadata]' passed (0.000 seconds).
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testUpdatePresentationForCurrentReleaseExposesCurrentAndChannel]' started.
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testUpdatePresentationForCurrentReleaseExposesCurrentAndChannel]' passed (0.000 seconds).
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testUpdatePresentationForInstallableReleaseEnablesReviewInstallAndReleasePage]' started.
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testUpdatePresentationForInstallableReleaseEnablesReviewInstallAndReleasePage]' passed (0.000 seconds).
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testUpdatePresentationForReleaseWithoutInstallableAssetsWarnsWithoutInstall]' started.
+Test Case '-[OuroWorkbenchCoreTests.WorkbenchShellPresentationTests testUpdatePresentationForReleaseWithoutInstallableAssetsWarnsWithoutInstall]' passed (0.000 seconds).
+Test Suite 'WorkbenchShellPresentationTests' passed at 2026-06-29 22:20:51.729.
+	 Executed 17 tests, with 0 failures (0 unexpected) in 0.006 (0.008) seconds
+Test Suite 'OuroWorkbenchPackageTests.xctest' passed at 2026-06-29 22:20:51.729.
+	 Executed 17 tests, with 0 failures (0 unexpected) in 0.006 (0.008) seconds
+Test Suite 'Selected tests' passed at 2026-06-29 22:20:51.729.
+	 Executed 17 tests, with 0 failures (0 unexpected) in 0.006 (0.011) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

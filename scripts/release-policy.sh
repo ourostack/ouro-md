@@ -24,7 +24,10 @@ usage:
   scripts/release-policy.sh release-exists --version X.Y.Z [--repo OWNER/REPO]
   scripts/release-policy.sh scan [PATH...]
   scripts/release-policy.sh selftest-pr-base
+  scripts/release-policy.sh selftest-release-api-fallback
   scripts/release-policy.sh selftest-package-guards
+  scripts/release-policy.sh selftest-harness-policy
+  scripts/release-policy.sh selftest-vditor-vendor
   scripts/release-policy.sh selftest-shell-dependency-watch
   scripts/release-policy.sh selftest-live-update-runner
   scripts/release-policy.sh verify-local --version X.Y.Z --sha SHA --zip ZIP --manifest MANIFEST
@@ -185,7 +188,62 @@ PY
 
 release_list_json() {
   local repo="$1"
-  gh release list --repo "$repo" --limit 100 --json tagName,isDraft,isPrerelease,isLatest
+  local json
+  if command -v gh >/dev/null 2>&1 \
+    && json="$(gh release list --repo "$repo" --limit 100 --json tagName,isDraft,isPrerelease,isLatest 2>/dev/null)" \
+    && printf '%s' "$json" | json_valid; then
+    printf '%s\n' "$json"
+    return 0
+  fi
+
+  release_list_rest_json "$repo"
+}
+
+json_valid() {
+  python3 -c 'import json, sys; json.load(sys.stdin)' >/dev/null 2>&1
+}
+
+github_api_get() {
+  local url="$1"
+  local token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
+  local args=(-fsSL -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28")
+  if [[ -n "$token" ]]; then
+    if curl "${args[@]}" -H "Authorization: Bearer $token" "$url"; then
+      return 0
+    fi
+  fi
+  curl "${args[@]}" "$url"
+}
+
+github_repo_api_url() {
+  local repo="$1"
+  [[ "$repo" == */* ]] || return 2
+  printf 'https://api.github.com/repos/%s' "$repo"
+}
+
+url_encode() {
+  python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$1"
+}
+
+release_list_rest_json() {
+  local repo="$1"
+  local api
+  api="$(github_repo_api_url "$repo")" || return $?
+  github_api_get "$api/releases?per_page=100" | python3 -c '
+import json
+import sys
+
+releases = json.load(sys.stdin)
+print(json.dumps([
+    {
+        "tagName": release.get("tag_name", ""),
+        "isDraft": bool(release.get("draft")),
+        "isPrerelease": bool(release.get("prerelease")),
+        "isLatest": False,
+    }
+    for release in releases
+]))
+'
 }
 
 first_stable_release_tag() {
@@ -217,7 +275,35 @@ sys.exit(1)
 release_view_json() {
   local repo="$1"
   local tag="$2"
-  gh release view "$tag" --repo "$repo" --json tagName,targetCommitish,url
+  local json
+  if command -v gh >/dev/null 2>&1 \
+    && json="$(gh release view "$tag" --repo "$repo" --json tagName,targetCommitish,url 2>/dev/null)" \
+    && printf '%s' "$json" | json_valid; then
+    printf '%s\n' "$json"
+    return 0
+  fi
+
+  release_view_rest_json "$repo" "$tag"
+}
+
+release_view_rest_json() {
+  local repo="$1"
+  local tag="$2"
+  local api encoded_tag
+  api="$(github_repo_api_url "$repo")" || return $?
+  encoded_tag="$(url_encode "$tag")"
+  github_api_get "$api/releases/tags/$encoded_tag" | python3 -c '
+import json
+import sys
+
+release = json.load(sys.stdin)
+print(json.dumps({
+    "tagName": release.get("tag_name", ""),
+    "targetCommitish": release.get("target_commitish", ""),
+    "url": release.get("html_url", ""),
+    "isPrerelease": bool(release.get("prerelease")),
+}))
+'
 }
 
 latest_release_json() {
@@ -492,6 +578,71 @@ selftest_pr_base_mode() {
   echo "release policy PR base selftest ok"
 }
 
+selftest_release_api_fallback_mode() {
+  local tmp old_path release_list release_json target
+  tmp="$(mktemp -d /tmp/ouro-md-release-api-fallback.XXXXXX)"
+  old_path="$PATH"
+  trap 'PATH="$old_path"; rm -rf "$tmp"' RETURN
+
+  cat > "$tmp/gh" <<'SH'
+#!/usr/bin/env bash
+printf 'invalid character '\''d'\'' after object key\n' >&2
+exit 1
+SH
+  cat > "$tmp/curl" <<'SH'
+#!/usr/bin/env bash
+url=""
+had_auth=0
+for arg in "$@"; do
+  case "$arg" in
+    "Authorization: Bearer stale-token") had_auth=1 ;;
+    https://api.github.com/*) url="$arg" ;;
+  esac
+done
+if [[ "$had_auth" == "1" ]]; then
+  exit 22
+fi
+
+case "$url" in
+  https://api.github.com/repos/ourostack/ouro-md/releases?per_page=100)
+    cat <<'JSON'
+[
+  {"tag_name":"v9.9.9","draft":false,"prerelease":false,"target_commitish":"stable-sha","html_url":"https://example.test/stable"},
+  {"tag_name":"v9.9.10-beta.1","draft":false,"prerelease":true,"target_commitish":"beta-sha","html_url":"https://example.test/beta"}
+]
+JSON
+    ;;
+  https://api.github.com/repos/ourostack/ouro-md/releases/tags/v9.9.9)
+    cat <<'JSON'
+{"tag_name":"v9.9.9","draft":false,"prerelease":false,"target_commitish":"stable-sha","html_url":"https://example.test/stable"}
+JSON
+    ;;
+  *)
+    printf 'unexpected curl URL: %s\n' "$url" >&2
+    exit 22
+    ;;
+esac
+SH
+  chmod +x "$tmp/gh" "$tmp/curl"
+  PATH="$tmp:$PATH"
+  GH_TOKEN=stale-token
+
+  release_list="$(release_list_json "ourostack/ouro-md")" \
+    || fail "release API fallback selftest could not list releases"
+  printf '%s' "$release_list" | release_list_has_tag "v9.9.9" \
+    || fail "release API fallback selftest did not surface v9.9.9"
+  [[ "$(printf '%s' "$release_list" | first_stable_release_tag)" == "v9.9.9" ]] \
+    || fail "release API fallback selftest did not preserve stable release ordering"
+
+  release_json="$(release_view_json "ourostack/ouro-md" "v9.9.9")" \
+    || fail "release API fallback selftest could not view release"
+  target="$(printf '%s' "$release_json" | json_get targetCommitish)"
+  [[ "$target" == "stable-sha" ]] \
+    || fail "release API fallback selftest targetCommitish was $target"
+
+  echo "release API fallback selftest ok"
+}
+
 # Locks the release_relevant_path classifier so the "test-only changes don't gate
 # a release" narrowing can't silently regress (e.g. a reordered case statement, or
 # a dropped exclusion, would quietly bring the churn back).
@@ -537,6 +688,7 @@ selftest_package_guards_mode() {
 from pathlib import Path
 
 package = Path("scripts/package-release.sh").read_text(encoding="utf-8")
+checker = Path("scripts/check-shell-dependency.sh").read_text(encoding="utf-8")
 guard = "./scripts/check-shell-dependency.sh"
 build = "./make-app.sh"
 
@@ -546,6 +698,18 @@ if build not in package:
     raise SystemExit("package-release.sh no longer runs make-app.sh; update this selftest")
 if package.index(guard) > package.index(build):
     raise SystemExit("package-release.sh must run scripts/check-shell-dependency.sh before make-app.sh")
+if "git ls-remote" in checker:
+    raise SystemExit("check-shell-dependency.sh must not require every shell main commit to be pinned")
+for needle in (
+    "Shell CI/contract-only commits are intentionally ignored",
+    "git clone --quiet --filter=blob:none --no-checkout --single-branch --branch main",
+    "git -C \"$tmp\" log -n 1 --format=%H HEAD -- Package.swift Sources",
+    "git -C \"$tmp\" merge-base --is-ancestor \"$package_revision\" \"$resolved_revision\"",
+    "latest package-relevant",
+    "has no newer package-relevant shell changes",
+):
+    if needle not in checker:
+        raise SystemExit(f"check-shell-dependency.sh must contain {needle!r}")
 
 workflow = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
 for path in (
@@ -560,23 +724,50 @@ for path in (
 ci = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
 preflight = Path("scripts/pr-preflight.sh").read_text(encoding="utf-8")
 surfaces = (
-    ("ci.yml", ci, "run: ./scripts/check-shell-boundary.sh --selftest", "run: ./scripts/check-shell-boundary.sh"),
-    ("pr-preflight.sh", preflight, "./scripts/check-shell-boundary.sh --selftest", "./scripts/check-shell-boundary.sh"),
+    (
+        "ci.yml",
+        ci,
+        "run: ./scripts/check-shell-boundary.sh --selftest",
+        "run: ./scripts/check-shell-boundary.sh",
+        "run: ./scripts/release-policy.sh selftest-release-api-fallback",
+    ),
+    (
+        "pr-preflight.sh",
+        preflight,
+        "./scripts/check-shell-boundary.sh --selftest",
+        "./scripts/check-shell-boundary.sh",
+        "./scripts/release-policy.sh selftest-release-api-fallback",
+    ),
 )
-for surface, text, selftest_line, scan_line in surfaces:
+for surface, text, selftest_line, scan_line, release_api_line in surfaces:
     lines = {line.strip() for line in text.splitlines()}
     if selftest_line not in lines:
         raise SystemExit(f"{surface} must run {selftest_line}")
     if scan_line not in lines:
         raise SystemExit(f"{surface} must run {scan_line}")
+    if release_api_line not in lines:
+        raise SystemExit(f"{surface} must run {release_api_line}")
 PY
   echo "release package guard selftest ok"
+}
+
+selftest_harness_policy_mode() {
+  bash -n scripts/check-shipped-harness-policy.sh
+  ./scripts/check-shipped-harness-policy.sh
+  echo "harness policy selftest ok"
+}
+
+selftest_vditor_vendor_mode() {
+  bash -n scripts/check-vditor-vendor.sh
+  ./scripts/check-vditor-vendor.sh
+  echo "vditor vendor selftest ok"
 }
 
 selftest_shell_dependency_watch_mode() {
   bash -n scripts/refresh-shell-dependency.sh
   python3 <<'PY'
 from pathlib import Path
+import re
 
 workflow = Path(".github/workflows/shell-dependency-watch.yml").read_text(encoding="utf-8")
 refresh = Path("scripts/refresh-shell-dependency.sh").read_text(encoding="utf-8")
@@ -594,11 +785,20 @@ workflow_needles = [
     "automation/ouro-md-refresh-shell-dependency",
     "already has the desired tree",
     "no open PR was found; creating one",
-    "gh pr create",
+    "write_manual_pr_summary",
+    "run_pr_command",
+    "GITHUB_STEP_SUMMARY",
+    "Manual PR command",
+    "gh pr create --repo",
+    'run_pr_command "updating refresh PR #${existing}" gh pr edit',
+    'run_pr_command "commenting on refresh PR #${existing}" gh pr comment',
+    'run_pr_command "creating refresh PR" gh pr create',
 ]
 for needle in workflow_needles:
     if needle not in workflow:
         raise SystemExit(f"shell-dependency-watch.yml must contain {needle!r}")
+if re.search(r"^\s+gh pr (create|edit|comment)\b", workflow, re.MULTILINE):
+    raise SystemExit("shell-dependency-watch.yml must route PR create/edit/comment through run_pr_command")
 
 refresh_needles = [
     "./scripts/check-shell-dependency.sh",
@@ -613,6 +813,59 @@ for needle in refresh_needles:
     if needle not in refresh:
         raise SystemExit(f"refresh-shell-dependency.sh must contain {needle!r}")
 PY
+
+  local tmp
+  tmp="$(mktemp -d)"
+  (
+    trap 'rm -rf "$tmp"' EXIT
+    python3 - "$tmp/pr-fallback.sh" <<'PY'
+from pathlib import Path
+import sys
+
+workflow = Path(".github/workflows/shell-dependency-watch.yml").read_text(encoding="utf-8")
+lines = workflow.splitlines()
+start = next(index for index, line in enumerate(lines) if 'repo="${GITHUB_REPOSITORY:-ourostack/ouro-md}"' in line)
+end = next(index for index, line in enumerate(lines[start:], start) if 'existing="$(gh pr list' in line)
+prefix = "          "
+block = []
+for line in lines[start:end]:
+    if not line:
+        block.append("")
+        continue
+    if not line.startswith(prefix):
+        raise SystemExit(f"unexpected workflow indentation while extracting PR fallback: {line!r}")
+    block.append(line[len(prefix):])
+Path(sys.argv[1]).write_text("\n".join(block) + "\n", encoding="utf-8")
+PY
+    bash -n "$tmp/pr-fallback.sh"
+    cat > "$tmp/gh" <<'SH'
+#!/usr/bin/env bash
+printf 'GraphQL: GitHub Actions is not permitted to create or approve pull requests (createPullRequest): %s\n' "$*" >&2
+exit 42
+SH
+    chmod +x "$tmp/gh"
+    : > "$tmp/body.md"
+    cat > "$tmp/run-fallback.sh" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+branch="automation/ouro-md-refresh-shell-dependency"
+title="Refresh shared shell dependency"
+source "$1"
+run_pr_command "creating refresh PR" gh pr create --repo "$repo" --base main --head "$branch" --title "$title" --body-file "$2"
+echo "run_pr_command should exit 0 after writing the manual PR summary" >&2
+exit 99
+SH
+    chmod +x "$tmp/run-fallback.sh"
+    PATH="$tmp:$PATH" \
+      GITHUB_REPOSITORY="ourostack/ouro-md" \
+      GITHUB_STEP_SUMMARY="$tmp/summary.md" \
+      bash "$tmp/run-fallback.sh" "$tmp/pr-fallback.sh" "$tmp/body.md"
+    grep -Fq "Shell dependency refresh needs a PR" "$tmp/summary.md"
+    grep -Fq "automation/ouro-md-refresh-shell-dependency" "$tmp/summary.md"
+    grep -Fq "https://github.com/ourostack/ouro-md/compare/main...automation/ouro-md-refresh-shell-dependency" "$tmp/summary.md"
+    grep -Fq 'gh pr create --repo "ourostack/ouro-md" --base main --head "automation/ouro-md-refresh-shell-dependency" --title "Refresh shared shell dependency" --fill' "$tmp/summary.md"
+    grep -Fq "createPullRequest" "$tmp/summary.md"
+  )
   echo "shell dependency watch selftest ok"
 }
 
@@ -772,7 +1025,7 @@ verify_published_mode() {
   local release_json=""
   local attempt
   for attempt in $(seq 1 18); do
-    if release_json="$(gh release view "$tag" --repo "$repo" --json tagName,targetCommitish,url 2>/dev/null)"; then
+    if release_json="$(release_view_json "$repo" "$tag" 2>/dev/null)"; then
       break
     fi
     sleep 5
@@ -822,7 +1075,10 @@ case "$cmd" in
   release-exists) release_exists_mode "$@" ;;
   scan) scan_mode "$@" ;;
   selftest-pr-base) selftest_pr_base_mode "$@" ;;
+  selftest-release-api-fallback) selftest_release_api_fallback_mode "$@" ;;
   selftest-package-guards) selftest_package_guards_mode "$@" ;;
+  selftest-harness-policy) selftest_harness_policy_mode "$@" ;;
+  selftest-vditor-vendor) selftest_vditor_vendor_mode "$@" ;;
   selftest-shell-dependency-watch) selftest_shell_dependency_watch_mode "$@" ;;
   selftest-live-update-runner) selftest_live_update_runner_mode "$@" ;;
   selftest-paths) selftest_paths_mode "$@" ;;
