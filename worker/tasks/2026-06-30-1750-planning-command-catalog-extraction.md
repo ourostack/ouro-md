@@ -27,12 +27,12 @@ Extract the command palette catalog models and filtering policy from the AppKit/
 - No signing, notarization, App Store, or TestFlight work.
 
 ## Completion Criteria
-- [ ] `OuroMDAppSupport` contains the command catalog model/filtering policy and does not import `AppKit`, `SwiftUI`, or `WebKit`.
-- [ ] Existing executable target call sites use the extracted catalog with an adapter for `ThemeStore.shared.themes`.
-- [ ] Tests fail before implementation and pass after implementation.
-- [ ] 100% test coverage on all new code
-- [ ] All tests pass
-- [ ] No warnings
+- [x] `OuroMDAppSupport` contains the command catalog model/filtering policy and does not import `AppKit`, `SwiftUI`, or `WebKit`.
+- [x] Existing executable target call sites use the extracted catalog with an adapter for `ThemeStore.shared.themes`.
+- [x] Tests fail before implementation and pass after implementation.
+- [x] 100% test coverage on all new code
+- [x] All tests pass
+- [x] No warnings
 
 ## Code Coverage Requirements
 **MANDATORY: 100% coverage on all new code.**
@@ -74,3 +74,4 @@ The support target should expose a minimal public API usable by the executable a
 ## Progress Log
 - 2026-06-30 17:51 Created
 - 2026-06-30 17:51 Planning reviewer gate converged: template compliance, source fidelity, scope tightness, and PR #87 exclusion checked with no blocker/major findings.
+- 2026-06-30 18:06 Completed implementation and validation; PR preflight passed.

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
-# Coverage gate for the OuroMDCore library target.
+# Coverage gate for pure library targets.
 #
 # Ouro MD is agentically authored, so the pure logic that an agent can silently
-# regress — markdown fidelity, rendering, the resource resolver, parsing — lives
-# in the OuroMDCore target and must be 100% covered by tests. This script fails
-# the build if ANY file under Sources/OuroMDCore/ is below 100% line OR region
-# coverage.
+# regress — markdown fidelity, rendering, the resource resolver, parsing, and
+# app-specific support policy — lives in pure support targets and must be 100%
+# covered by tests. This script fails the build if ANY file under a gated source
+# directory is below 100% line OR region coverage.
 #
 # Why "region" and not "branch": Swift's `--enable-code-coverage` does not emit
 # llvm branch counters (llvm-cov's Branch column is always empty for Swift). The
@@ -58,16 +58,24 @@ with open('.build/ouro-coverage.json') as fh:
     data = json.load(fh)
 
 files = data['data'][0]['files']
-core = [f for f in files if '/Sources/OuroMDCore/' in f['filename']]
-if not core:
-    print('error: no OuroMDCore files present in coverage data', file=sys.stderr)
+gated_roots = [
+    '/Sources/OuroMDCore/',
+    '/Sources/OuroMDAppSupport/',
+]
+gated = [f for f in files if any(root in f['filename'] for root in gated_roots)]
+missing_roots = [
+    root for root in gated_roots
+    if not any(root in f['filename'] for f in files)
+]
+if missing_roots:
+    print(f'error: no files present in coverage data for: {", ".join(missing_roots)}', file=sys.stderr)
     sys.exit(1)
 
 print()
 print(f'{"":3}{"file":<34}{"lines":>16}{"regions (branch)":>20}')
 print('-' * 73)
 failed = []
-for f in sorted(core, key=lambda f: f['filename']):
+for f in sorted(gated, key=lambda f: f['filename']):
     name = os.path.basename(f['filename'])
     L = f['summary']['lines']
     R = f['summary']['regions']
@@ -80,10 +88,10 @@ for f in sorted(core, key=lambda f: f['filename']):
 print('-' * 73)
 
 if failed:
-    print(f'\nFAIL: OuroMDCore must be 100% line + region covered. Uncovered: {", ".join(failed)}')
+    print(f'\nFAIL: pure Ouro MD support targets must be 100% line + region covered. Uncovered: {", ".join(failed)}')
     print('Add tests for the missing lines/branches, or move not-yet-100% logic')
     print('back to the OuroMD executable target until it is fully covered.')
     sys.exit(1)
 
-print('\nPASS: OuroMDCore is 100% line + region (branch-equivalent) covered.')
+print('\nPASS: pure Ouro MD support targets are 100% line + region (branch-equivalent) covered.')
 PY

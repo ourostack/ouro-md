@@ -1,6 +1,6 @@
 # Doing: Command Catalog Extraction
 
-**Status**: READY_FOR_EXECUTION
+**Status**: done
 **Execution Mode**: direct
 **Created**: 2026-06-30 17:51
 **Planning**: ./2026-06-30-1750-planning-command-catalog-extraction.md
@@ -20,12 +20,12 @@ Extract the command palette catalog models and filtering policy from the AppKit/
 - Extraction plan: `docs/appkit-webkit-extraction-plan.md`
 
 ## Completion Criteria
-- [ ] `OuroMDAppSupport` contains the command catalog model/filtering policy and does not import `AppKit`, `SwiftUI`, or `WebKit`.
-- [ ] Existing executable target call sites use the extracted catalog with an adapter for `ThemeStore.shared.themes`.
-- [ ] Tests fail before implementation and pass after implementation.
-- [ ] 100% test coverage on all new code
-- [ ] All tests pass
-- [ ] No warnings
+- [x] `OuroMDAppSupport` contains the command catalog model/filtering policy and does not import `AppKit`, `SwiftUI`, or `WebKit`.
+- [x] Existing executable target call sites use the extracted catalog with an adapter for `ThemeStore.shared.themes`.
+- [x] Tests fail before implementation and pass after implementation.
+- [x] 100% test coverage on all new code
+- [x] All tests pass
+- [x] No warnings
 
 ## Code Coverage Requirements
 **MANDATORY: 100% coverage on all new code.**
@@ -65,7 +65,7 @@ Extract the command palette catalog models and filtering policy from the AppKit/
 **Output**: Support target, executable adapter, package wiring, and existing call sites compile.
 **Acceptance**: Focused tests and existing command/shell tests pass with no warnings.
 
-### ⬜ Unit 1c: Command Catalog Support Boundary — Coverage & Validation
+### ✅ Unit 1c: Command Catalog Support Boundary — Coverage & Validation
 **What**: Extend `scripts/check-coverage.sh` to gate `OuroMDAppSupport`, run required local validation, and refactor only if needed.
 **Output**: Coverage gate update and validation logs in artifacts.
 **Acceptance**: New support code has 100% line/region coverage; full required local validation passes.
@@ -85,3 +85,5 @@ Extract the command palette catalog models and filtering policy from the AppKit/
 - 2026-06-30 17:51 Unit 0 complete: verified command catalog scope, package layout, coverage gate, and PR #87 file overlap.
 - 2026-06-30 17:51 Unit 1a complete: added `OuroMDAppSupportTests`; red phase fails because product `OuroMDAppSupport` is not yet present.
 - 2026-06-30 18:00 Unit 1b complete: added pure `OuroMDAppSupport`, moved command catalog policy, adapted executable `Theme` values, and kept focused support plus existing command/shell tests green.
+- 2026-06-30 18:03 Unit 1c complete: extended coverage gate to `OuroMDAppSupport`; coverage reports `CommandPaletteCatalog.swift` 102/102 lines and 17/17 regions covered.
+- 2026-06-30 18:06 Full PR preflight passed. Release metadata was bumped to `0.9.68` because preflight requires app-affecting source changes to exceed latest published `v0.9.66`; PR #87 already carries `0.9.67` on a stale base.

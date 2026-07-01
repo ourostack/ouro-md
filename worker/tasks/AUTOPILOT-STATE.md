@@ -4,12 +4,12 @@
 - Worktree: `/Users/arimendelow/Projects/worktrees/ouro-md-command-catalog-extraction`
 - Planning doc: `worker/tasks/2026-06-30-1750-planning-command-catalog-extraction.md`
 - Doing doc: `worker/tasks/2026-06-30-1750-doing-command-catalog-extraction.md`
-- Gate state: planning and doing reviewer gates converged under autopilot; Units 0, 1a, and 1b complete.
-- Next action: execute Unit 1c coverage and validation.
+- Gate state: implementation units complete; local PR preflight passed.
+- Next action: commit Unit 1c, run final review, open PR, merge after CI.
 
 ## Terminal Evidence
 
-- Not terminal yet. Implementation, PR, CI, merge, validation, and cleanup remain.
+- Not terminal yet. Implementation and local validation are complete; PR, CI, merge, and cleanup remain.
 
 ## Continuation Scan
 
