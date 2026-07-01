@@ -2,6 +2,7 @@ import AppKit
 import OuroAppShellAppKit
 import OuroAppShellContract
 import OuroAppShellUI
+import OuroMDAppSupport
 import SwiftUI
 
 typealias ShortcutBadge = AppShellShortcutBadge

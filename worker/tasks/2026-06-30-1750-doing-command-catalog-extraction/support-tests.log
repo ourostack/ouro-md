@@ -1,0 +1,255 @@
+Building for debugging...
+[0/56] /Users/arimendelow/Projects/worktrees/ouro-md-command-catalog-extraction/.build/arm64-apple-macosx/debug/ouro-mdPackageTests.derived/runner.swift
+[1/56] Write sources
+[4/56] Write ouro-md-entitlement.plist
+[5/56] Write swift-version--58304C5D6DBC2206.txt
+[6/56] Copying web
+[7/56] Compiling cmark-gfm syntax_extension.c
+[8/56] Compiling cmark-gfm xml.c
+[9/56] Compiling cmark-gfm utf8.c
+[10/56] Compiling cmark-gfm render.c
+[11/56] Compiling cmark-gfm-extensions tagfilter.c
+[12/56] Compiling cmark-gfm registry.c
+[13/56] Compiling cmark-gfm references.c
+[14/56] Compiling cmark-gfm plugin.c
+[15/56] Compiling cmark-gfm plaintext.c
+[16/56] Compiling cmark-gfm map.c
+[17/56] Compiling cmark-gfm node.c
+[18/56] Compiling cmark-gfm scanners.c
+[19/56] Compiling cmark-gfm-extensions core-extensions.c
+[20/56] Compiling cmark-gfm man.c
+[21/56] Compiling cmark-gfm linked_list.c
+[22/56] Compiling cmark-gfm iterator.c
+[23/56] Compiling cmark-gfm latex.c
+[24/56] Compiling cmark-gfm html.c
+[25/56] Compiling cmark-gfm houdini_html_u.c
+[26/56] Compiling cmark-gfm-extensions table.c
+[27/56] Compiling cmark-gfm inlines.c
+[28/56] Compiling cmark-gfm houdini_href_e.c
+[29/56] Compiling cmark-gfm houdini_html_e.c
+[30/56] Compiling cmark-gfm-extensions strikethrough.c
+[31/56] Compiling cmark-gfm footnotes.c
+[31/56] Write sources
+[34/56] Compiling cmark-gfm cmark_ctype.c
+[34/56] Write sources
+[38/56] Compiling cmark-gfm cmark.c
+[39/56] Compiling cmark-gfm buffer.c
+[40/56] Write sources
+[44/56] Compiling cmark-gfm arena.c
+[45/56] Compiling cmark-gfm commonmark.c
+[46/56] Compiling cmark-gfm blocks.c
+[47/56] Compiling CAtomic CAtomic.c
+[48/56] Compiling cmark-gfm-extensions ext_scanners.c
+[49/70] Compiling cmark-gfm-extensions tasklist.c
+[50/70] Compiling cmark-gfm-extensions autolink.c
+[52/134] Emitting module OuroAppShellCore
+[53/134] Compiling OuroAppShellCore ShellBoundary.swift
+[54/134] Compiling Markdown InlineAttributes.swift
+[55/134] Compiling Markdown Link.swift
+[56/134] Compiling Markdown Strikethrough.swift
+[57/134] Compiling Markdown Strong.swift
+[58/134] Compiling Markdown CustomInline.swift
+[59/134] Compiling Markdown InlineCode.swift
+[60/134] Compiling Markdown InlineHTML.swift
+[61/141] Compiling Markdown CodeBlock.swift
+[62/141] Compiling Markdown HTMLBlock.swift
+[63/141] Compiling Markdown Heading.swift
+[64/141] Compiling Markdown ThematicBreak.swift
+[65/141] Compiling Markdown Table.swift
+[66/141] Compiling Markdown TableBody.swift
+[67/141] Compiling Markdown TableCell.swift
+[68/141] Emitting module Markdown
+[69/141] Compiling Markdown BlockContainer.swift
+[70/141] Compiling Markdown BlockMarkup.swift
+[71/141] Compiling Markdown InlineContainer.swift
+[72/141] Compiling Markdown InlineMarkup.swift
+[73/141] Compiling Markdown ListItemContainer.swift
+[74/141] Compiling Markdown AtomicCounter.swift
+[75/141] Compiling Markdown CharacterExtensions.swift
+[76/141] Compiling Markdown PlainTextConvertibleMarkup.swift
+[77/141] Compiling Markdown RawMarkup.swift
+[78/141] Compiling Markdown BlockDirective.swift
+[79/141] Compiling Markdown BlockQuote.swift
+[80/141] Compiling Markdown CustomBlock.swift
+[81/141] Compiling Markdown DoxygenAbstract.swift
+[82/141] Compiling Markdown DoxygenDiscussion.swift
+[83/141] Compiling Markdown TableCellContainer.swift
+[84/141] Compiling Markdown TableHead.swift
+[85/141] Compiling Markdown TableRow.swift
+[86/141] Compiling Markdown Replacement.swift
+[87/141] Compiling Markdown SourceLocation.swift
+[88/141] Compiling Markdown Emphasis.swift
+[89/141] Compiling Markdown Image.swift
+[90/141] Compiling Markdown ChildIndexPath.swift
+[91/141] Compiling Markdown DirectiveArgument.swift
+[92/141] Compiling Markdown Document.swift
+[93/141] Compiling Markdown LiteralMarkup.swift
+[94/141] Compiling Markdown Markup.swift
+[95/141] Compiling Markdown MarkupChildren.swift
+[96/141] Compiling Markdown MarkupData.swift
+[97/141] Compiling Markdown LazySplitLines.swift
+[98/141] Compiling Markdown ParseOptions.swift
+[99/141] Compiling Markdown RangeAdjuster.swift
+[100/141] Compiling Markdown RangerTracker.swift
+[101/141] Compiling Markdown MarkupRewriter.swift
+[102/141] Compiling Markdown BasicBlockContainer.swift
+[103/141] Compiling Markdown BasicInlineContainer.swift
+[104/141] Compiling OuroMDCore HTMLDocument.swift
+[105/141] Compiling OuroMDCore OuroMDRelease.swift
+[106/141] Compiling Markdown DoxygenNote.swift
+[107/141] Compiling Markdown DoxygenParameter.swift
+[108/141] Compiling Markdown DoxygenReturns.swift
+[109/141] Compiling Markdown ListItem.swift
+[110/141] Compiling Markdown OrderedList.swift
+[111/141] Compiling Markdown UnorderedList.swift
+[112/141] Compiling Markdown Paragraph.swift
+[113/141] Emitting module OuroMDCore
+[114/141] Compiling OuroMDCore MarkdownTidy.swift
+[115/141] Compiling OuroAppShellCore ReleaseVersionIdentity.swift
+[116/141] Compiling OuroAppShellCore ReleaseUpdatePolicy.swift
+[117/141] Compiling OuroMDAppSupport CommandPaletteCatalog.swift
+[118/141] Emitting module OuroMDAppSupport
+[119/141] Compiling OuroAppShellCore ReleaseAssetNamingPolicy.swift
+[120/141] Compiling OuroAppShellCore AppIdentity.swift
+[121/141] Compiling OuroAppShellCore AppUpdate.swift
+[122/143] Compiling OuroAppShellCore ReleaseUpdate.swift
+[123/152] Compiling Markdown CollectionExtensions.swift
+[124/152] Compiling Markdown StringExtensions.swift
+[125/152] Compiling Markdown MarkupVisitor.swift
+[126/152] Compiling Markdown MarkupWalker.swift
+[127/152] Compiling Markdown HTMLFormatter.swift
+[128/152] Compiling Markdown MarkupFormatter.swift
+[129/152] Compiling Markdown MarkupTreeDumper.swift
+[130/152] Compiling Markdown LineBreak.swift
+[131/152] Compiling Markdown SoftBreak.swift
+[132/152] Compiling Markdown SymbolLink.swift
+[133/152] Compiling Markdown Text.swift
+[134/152] Compiling Markdown Aside.swift
+[135/152] Compiling Markdown BlockDirectiveParser.swift
+[136/152] Compiling Markdown CommonMarkConverter.swift
+[137/152] Compiling OuroAppShellContract OuroAppShellContract.swift
+[138/152] Emitting module OuroAppShellContract
+[139/154] Compiling OuroAppShellUI ReleaseUpdateViewState.swift
+[140/154] Compiling OuroAppShellUI UpdateInstalledConfirmationView.swift
+[141/154] Compiling OuroAppShellUI AppShellCommandReferenceView.swift
+[142/154] Emitting module OuroAppShellUI
+[143/154] Compiling OuroAppShellUI AppShellAboutView.swift
+[144/154] Compiling OuroAppShellUI AppShellAboutModel.swift
+[145/154] Compiling OuroAppShellUI ReleaseUpdateControls.swift
+[146/156] Compiling OuroAppShellAppKit AppShellWindowPresenter.swift
+[147/156] Emitting module OuroAppShellAppKit
+[148/156] Compiling OuroAppShellConsumerTesting OuroAppShellContractAssertions.swift
+[149/156] Emitting module OuroAppShellConsumerTesting
+[150/207] Compiling OuroMDAppSupportTests CommandPaletteCatalogTests.swift
+[151/207] Emitting module OuroMDAppSupportTests
+[152/207] Emitting module OuroMD
+[153/212] Compiling OuroMD Welcome.swift
+[154/212] Compiling OuroMD WrapGlueProbe.swift
+[155/212] Compiling OuroMD WrapTest.swift
+[156/212] Compiling OuroMD main.swift
+[157/212] Compiling OuroMD resource_bundle_accessor.swift
+[158/212] Compiling OuroMD OuroMDUpdate.swift
+[159/212] Compiling OuroMD OuroMDUpdateCoordinator.swift
+[160/212] Compiling OuroMD OuroMDUpdateInstaller.swift
+[161/212] Compiling OuroMD OuroResources.swift
+[162/212] Compiling OuroMD PerformanceProbe.swift
+[163/212] Compiling OuroMD CodeWrapTest.swift
+[164/212] Compiling OuroMD CommandPaletteCatalogAdapter.swift
+[165/212] Compiling OuroMD ContentSearcher.swift
+[166/212] Compiling OuroMD ContentView.swift
+[167/212] Compiling OuroMD CopyFlavorTest.swift
+[168/212] Compiling OuroMD DarkDiagramTest.swift
+[169/212] Compiling OuroMD FolderBrowser.swift
+[170/212] Compiling OuroMD FolderDisplay.swift
+[171/212] Compiling OuroMD HeadlessHarness.swift
+[172/212] Compiling OuroMD LinkTest.swift
+[173/212] Compiling OuroMD LiveUpdateTest.swift
+[174/212] Compiling OuroMD MarkdownParityTest.swift
+[175/212] Compiling OuroMD ReleaseUpdate.swift
+[176/212] Compiling OuroMD ReloadRenderTest.swift
+[177/212] Compiling OuroMD RenderProbe.swift
+[178/212] Compiling OuroMD RoundTrip.swift
+[179/212] Compiling OuroMD SearchRevealTest.swift
+[180/212] Compiling OuroMD MarkdownRenderer.swift
+[181/212] Compiling OuroMD MenuBuilder.swift
+[182/212] Compiling OuroMD MermaidClipTest.swift
+[183/212] Compiling OuroMD OuroMDShellAdapter.swift
+[184/212] Compiling OuroMD OuroMDShellContract.swift
+[185/212] Compiling OuroMD OuroMDTelemetry.swift
+[186/212] Compiling OuroMD DocumentWindowController.swift
+[187/212] Compiling OuroMD EditorSurfaceTest.swift
+[188/212] Compiling OuroMD EditorWebView.swift
+[189/212] Compiling OuroMD Export.swift
+[190/212] Compiling OuroMD FileWatcher.swift
+[191/212] Compiling OuroMD FirstLaunchTest.swift
+[192/212] Compiling OuroMD SelectionBlurTest.swift
+[193/212] Compiling OuroMD Sidebar.swift
+[194/212] Compiling OuroMD Snapshot.swift
+[195/212] Compiling OuroMD TableWrapTest.swift
+[196/212] Compiling OuroMD TerminationSaveCoordinator.swift
+[197/212] Compiling OuroMD Themes.swift
+[198/212] Compiling OuroMD UISurfaceTest.swift
+[199/212] Compiling OuroMD UndoRedoCommandRouter.swift
+[200/212] Compiling OuroMD UndoTest.swift
+[201/212] Compiling OuroMD VisualQATest.swift
+[202/212] Compiling OuroMD AccessibilityAuditTest.swift
+[203/212] Compiling OuroMD AlertMarkerTest.swift
+[204/212] Compiling OuroMD AppDelegate.swift
+[205/212] Compiling OuroMD AppInfoView.swift
+[206/212] Compiling OuroMD AppModel.swift
+[207/212] Compiling OuroMD CLI.swift
+[207/212] Write Objects.LinkFileList
+[208/212] Linking ouro-md
+[209/212] Applying ouro-md
+[211/236] Compiling OuroMDTests OutlineTreeTests.swift
+[212/236] Compiling OuroMDTests ReleaseUpdateTests.swift
+[213/236] Compiling OuroMDTests FolderBrowserTests.swift
+[214/236] Compiling OuroMDTests FolderDisplayTests.swift
+[215/236] Compiling OuroMDTests HTMLDocumentTests.swift
+[216/238] Compiling OuroMDTests AppDelegateLaunchTests.swift
+[217/238] Compiling OuroMDTests AppDelegateWindowRoutingTests.swift
+[218/238] Compiling OuroMDTests AppModelDeletionTests.swift
+[219/238] Compiling OuroMDTests MarkdownRendererTests.swift
+[220/238] Compiling OuroMDTests MarkdownTidyTests.swift
+[221/238] Compiling OuroMDTests OuroMDShellContractTests.swift
+[222/238] Compiling OuroMDTests TableLayoutPolicyTests.swift
+[223/238] Compiling OuroMDTests TerminationSaveCoordinatorTests.swift
+[224/238] Compiling OuroMDTests OuroMDUpdateInstallerTests.swift
+[225/238] Compiling OuroMDTests OuroMDUpdateTests.swift
+[226/238] Compiling OuroMDTests DocumentWindowControllerTests.swift
+[227/238] Compiling OuroMDTests EditorWebViewTests.swift
+[228/238] Compiling OuroMDTests FileWatcherTests.swift
+[229/238] Compiling OuroMDTests AppModelReloadTests.swift
+[230/238] Compiling OuroMDTests CommandPaletteTests.swift
+[231/238] Compiling OuroMDTests ContentSearcherTests.swift
+[232/238] Compiling OuroMDTests OuroMDTelemetryTests.swift
+[233/238] Compiling OuroMDTests OuroMDUpdateCoordinatorTests.swift
+[234/238] Emitting module OuroMDTests
+[235/238] Compiling OuroMDTests ThemeAccessibilityTests.swift
+[236/238] Compiling OuroMDTests UndoRedoRoutingTests.swift
+[237/240] Compiling ouro_mdPackageTests runner.swift
+[238/240] Emitting module ouro_mdPackageTests
+[238/240] Write Objects.LinkFileList
+[239/240] Linking ouro-mdPackageTests
+Build complete! (27.19s)
+Test Suite 'Selected tests' started at 2026-06-30 17:59:55.790.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-06-30 17:59:55.790.
+Test Suite 'CommandPaletteCatalogTests' started at 2026-06-30 17:59:55.790.
+Test Case '-[OuroMDAppSupportTests.CommandPaletteCatalogTests testCatalogCarriesShortcutMetadataForPowerUserDiscovery]' started.
+Test Case '-[OuroMDAppSupportTests.CommandPaletteCatalogTests testCatalogCarriesShortcutMetadataForPowerUserDiscovery]' passed (0.001 seconds).
+Test Case '-[OuroMDAppSupportTests.CommandPaletteCatalogTests testCatalogFiltersByMultipleTermsShortcutAliasesAndLimits]' started.
+Test Case '-[OuroMDAppSupportTests.CommandPaletteCatalogTests testCatalogFiltersByMultipleTermsShortcutAliasesAndLimits]' passed (0.004 seconds).
+Test Case '-[OuroMDAppSupportTests.CommandPaletteCatalogTests testCatalogHonorsResultLimit]' started.
+Test Case '-[OuroMDAppSupportTests.CommandPaletteCatalogTests testCatalogHonorsResultLimit]' passed (0.000 seconds).
+Test Case '-[OuroMDAppSupportTests.CommandPaletteCatalogTests testCatalogIncludesThemeCommandsFromDescriptors]' started.
+Test Case '-[OuroMDAppSupportTests.CommandPaletteCatalogTests testCatalogIncludesThemeCommandsFromDescriptors]' passed (0.000 seconds).
+Test Suite 'CommandPaletteCatalogTests' passed at 2026-06-30 17:59:55.796.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.005 (0.006) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-06-30 17:59:55.796.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.005 (0.006) seconds
+Test Suite 'Selected tests' passed at 2026-06-30 17:59:55.796.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.005 (0.007) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

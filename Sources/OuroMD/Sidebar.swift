@@ -1,3 +1,4 @@
+import OuroMDAppSupport
 import SwiftUI
 
 enum SidebarMode: String {

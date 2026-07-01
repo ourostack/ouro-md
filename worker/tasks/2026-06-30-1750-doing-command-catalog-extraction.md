@@ -60,7 +60,7 @@ Extract the command palette catalog models and filtering policy from the AppKit/
 **Output**: New support-target tests committed before implementation.
 **Acceptance**: Focused tests fail because `OuroMDAppSupport` does not exist yet.
 
-### ⬜ Unit 1b: Command Catalog Support Boundary — Implementation
+### ✅ Unit 1b: Command Catalog Support Boundary — Implementation
 **What**: Add `OuroMDAppSupport`, move `CommandPaletteItem`/`CommandPaletteCatalog` into it, add a theme descriptor adapter in `OuroMD`, and update imports/call sites.
 **Output**: Support target, executable adapter, package wiring, and existing call sites compile.
 **Acceptance**: Focused tests and existing command/shell tests pass with no warnings.
@@ -84,3 +84,4 @@ Extract the command palette catalog models and filtering policy from the AppKit/
 - 2026-06-30 17:51 Doing reviewer gates converged: granularity, validation, ambiguity, quality, Tinfoil Hat, and Stranger With Candy passes found no blocker/major issues. Units are atomic and cite real source/test targets.
 - 2026-06-30 17:51 Unit 0 complete: verified command catalog scope, package layout, coverage gate, and PR #87 file overlap.
 - 2026-06-30 17:51 Unit 1a complete: added `OuroMDAppSupportTests`; red phase fails because product `OuroMDAppSupport` is not yet present.
+- 2026-06-30 18:00 Unit 1b complete: added pure `OuroMDAppSupport`, moved command catalog policy, adapted executable `Theme` values, and kept focused support plus existing command/shell tests green.
