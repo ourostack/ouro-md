@@ -2,7 +2,7 @@
 
 **Status**: drafting
 **Execution Mode**: direct
-**Created**: pending initial commit
+**Created**: 2026-06-30 17:51
 **Planning**: ./2026-06-30-1750-planning-command-catalog-extraction.md
 **Artifacts**: ./2026-06-30-1750-doing-command-catalog-extraction/
 
@@ -80,4 +80,4 @@ Extract the command palette catalog models and filtering policy from the AppKit/
 - **Decisions made**: Update docs immediately, commit right away
 
 ## Progress Log
-- pending initial commit Created from planning doc
+- 2026-06-30 17:51 Created from planning doc

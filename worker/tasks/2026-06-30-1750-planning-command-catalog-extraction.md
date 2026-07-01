@@ -1,7 +1,7 @@
 # Planning: Command Catalog Extraction
 
 **Status**: drafting
-**Created**: pending initial commit
+**Created**: 2026-06-30 17:51
 
 ## Goal
 Extract the command palette catalog models and filtering policy from the AppKit/WebKit executable target into a small pure support target so command discovery can be tested without loading editor shell types.
@@ -72,4 +72,4 @@ The support target should expose a minimal public API usable by the executable a
 - a lightweight theme command descriptor, likely `CommandPaletteTheme`
 
 ## Progress Log
-- pending initial commit Created
+- 2026-06-30 17:51 Created
