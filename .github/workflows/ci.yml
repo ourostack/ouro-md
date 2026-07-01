@@ -129,7 +129,7 @@ jobs:
           [ -n "$latest" ] || latest="$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
           sudo xcode-select -s "$latest/Contents/Developer"
           swift --version
-      - name: Enforce 100% line+region coverage on OuroMDCore
+      - name: Enforce 100% line+region coverage on pure support targets
         run: ./scripts/check-coverage.sh
       - name: Upload coverage test timings
         if: always()

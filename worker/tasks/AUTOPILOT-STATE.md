@@ -4,7 +4,7 @@
 - Worktree: `/Users/arimendelow/Projects/worktrees/ouro-md-command-catalog-extraction`
 - Planning doc: `worker/tasks/2026-06-30-1750-planning-command-catalog-extraction.md`
 - Doing doc: `worker/tasks/2026-06-30-1750-doing-command-catalog-extraction.md`
-- Gate state: implementation units complete; local PR preflight passed.
+- Gate state: implementation units complete; self-review polish complete; local PR preflight passed.
 - Next action: commit Unit 1c, run final review, open PR, merge after CI.
 
 ## Terminal Evidence

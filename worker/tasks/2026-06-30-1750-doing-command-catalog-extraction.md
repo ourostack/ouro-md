@@ -87,3 +87,4 @@ Extract the command palette catalog models and filtering policy from the AppKit/
 - 2026-06-30 18:00 Unit 1b complete: added pure `OuroMDAppSupport`, moved command catalog policy, adapted executable `Theme` values, and kept focused support plus existing command/shell tests green.
 - 2026-06-30 18:03 Unit 1c complete: extended coverage gate to `OuroMDAppSupport`; coverage reports `CommandPaletteCatalog.swift` 102/102 lines and 17/17 regions covered.
 - 2026-06-30 18:06 Full PR preflight passed. Release metadata was bumped to `0.9.68` because preflight requires app-affecting source changes to exceed latest published `v0.9.66`; PR #87 already carries `0.9.67` on a stale base.
+- 2026-06-30 18:09 Self-review polish complete: CI coverage step label now matches the expanded pure-target coverage gate; full PR preflight reran and passed.
