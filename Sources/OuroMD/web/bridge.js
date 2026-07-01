@@ -264,29 +264,47 @@
     };
 
     // ⌘-click a link to open it in the default browser. A contenteditable
-    // surface never fires WebKit's .linkActivated navigation (a plain click
-    // just places the caret), and Vditor's own window.open is dropped because
-    // the app installs no WKUIDelegate — so without this, links are dead. We
-    // use ⌘-click (not plain click) so plain clicks stay free for editing.
-    document.addEventListener("click", function (e) {
-      if (!e.metaKey || !e.target || !e.target.closest) { return; }
-      if (!e.target.closest("#editor")) { return; }
-      var url = "";
+    // surface never fires WebKit's .linkActivated navigation, and Vditor's own
+    // window.open is dropped because the app installs no WKUIDelegate — so
+    // without this, links are dead. We require ⌘ (not a plain click) so plain
+    // clicks stay free for editing.
+    //
+    // We handle the gesture on BOTH `mousedown` and `click`, de-duped to fire
+    // once. macOS WKWebView does not reliably synthesize a `click` for a
+    // ⌘-click inside contenteditable (the mousedown often just places the caret
+    // and no click follows), so a click-only handler silently does nothing on
+    // the real app even though it works under synthetic dispatch. `mousedown` is
+    // delivered reliably; `click` stays as a belt-and-suspenders fallback.
+    function resolveEditorLinkURL(target) {
+      if (!target || !target.closest || !target.closest("#editor")) { return ""; }
       // WYSIWYG mode and the Split/preview pane render a real <a href>.
-      var a = e.target.closest("a[href]");
-      if (a) { url = a.href || a.getAttribute("href") || ""; }
+      var a = target.closest("a[href]");
+      if (a) { return a.href || a.getAttribute("href") || ""; }
       // IR (live-preview) mode renders a link as <span data-type="a"> with no
       // href — the URL is the text of its .vditor-ir__marker--link child.
-      if (!url) {
-        var node = e.target.closest('span[data-type="a"]');
-        var marker = node && node.querySelector(".vditor-ir__marker--link");
-        if (marker) { url = (marker.textContent || "").trim(); }
-      }
+      var node = target.closest('span[data-type="a"]');
+      var marker = node && node.querySelector(".vditor-ir__marker--link");
+      if (marker) { return (marker.textContent || "").trim(); }
+      return "";
+    }
+    var lastLinkOpenAt = 0;
+    function maybeOpenEditorLink(e) {
+      if (!e.metaKey) { return; }
+      var url = resolveEditorLinkURL(e.target);
       if (!url) { return; }
+      // Swallow the whole gesture (caret placement, Vditor handlers, the
+      // synthesized click) so a ⌘-click opens instead of editing.
       e.preventDefault();
       e.stopImmediatePropagation();
+      // One open per gesture: mousedown fires first; the click ~ms later is
+      // suppressed here without re-opening.
+      var now = Date.now();
+      if (now - lastLinkOpenAt < 700) { return; }
+      lastLinkOpenAt = now;
       post("openURL", { url: url });
-    }, true);
+    }
+    document.addEventListener("mousedown", maybeOpenEditorLink, true);
+    document.addEventListener("click", maybeOpenEditorLink, true);
   }
 
   function create() {
