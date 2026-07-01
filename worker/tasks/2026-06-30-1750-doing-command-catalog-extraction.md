@@ -1,0 +1,90 @@
+# Doing: Command Catalog Extraction
+
+**Status**: done
+**Execution Mode**: direct
+**Created**: 2026-06-30 17:51
+**Planning**: ./2026-06-30-1750-planning-command-catalog-extraction.md
+**Artifacts**: ./2026-06-30-1750-doing-command-catalog-extraction/
+
+## Execution Mode
+
+- **pending**: Awaiting user approval before each unit starts (non-autopilot interactive mode only; autopilot must convert this to `spawn` or `direct` unless a hard exception is present)
+- **spawn**: Spawn sub-agent for each unit (parallel/autonomous)
+- **direct**: Execute units sequentially in current session (default)
+
+## Objective
+Extract the command palette catalog models and filtering policy from the AppKit/WebKit executable target into a small pure support target so command discovery can be tested without loading editor shell types.
+
+## Upstream Work Items
+- Desk R4: `/Users/arimendelow/desk/ouro-md/native-app-shell-next-roadmap/task.md`
+- Extraction plan: `docs/appkit-webkit-extraction-plan.md`
+
+## Completion Criteria
+- [x] `OuroMDAppSupport` contains the command catalog model/filtering policy and does not import `AppKit`, `SwiftUI`, or `WebKit`.
+- [x] Existing executable target call sites use the extracted catalog with an adapter for `ThemeStore.shared.themes`.
+- [x] Tests fail before implementation and pass after implementation.
+- [x] 100% test coverage on all new code
+- [x] All tests pass
+- [x] No warnings
+
+## Code Coverage Requirements
+**MANDATORY: 100% coverage on all new code.**
+- No `[ExcludeFromCodeCoverage]` or equivalent on new code
+- All branches covered (if/else, switch, try/catch)
+- All error paths tested
+- Edge cases: null, empty, boundary values
+
+## TDD Requirements
+**Strict TDD — no exceptions:**
+1. **Tests first**: Write failing tests BEFORE any implementation
+2. **Verify failure**: Run tests, confirm they FAIL (red)
+3. **Minimal implementation**: Write just enough code to pass
+4. **Verify pass**: Run tests, confirm they PASS (green)
+5. **Refactor**: Clean up, keep tests green
+6. **No skipping**: Never write implementation without failing test first
+
+## Work Units
+
+### Legend
+⬜ Not started · 🔄 In progress · ✅ Done · ❌ Blocked
+
+**CRITICAL: Every unit header MUST start with status emoji (⬜ for new units).**
+
+### ✅ Unit 0: Setup/Research
+**What**: Verify command catalog call sites, PR #87 overlap, package target layout, and coverage script behavior.
+**Output**: Notes in this doing doc progress log and artifacts as needed.
+**Acceptance**: Scope remains limited to command catalog support extraction and excludes PR #87 files.
+
+### ✅ Unit 1a: Command Catalog Support Boundary — Tests
+**What**: Add focused `OuroMDAppSupportTests` proving filtering, shortcut aliases, empty/result limits, and theme command generation against the future support target API.
+**Output**: New support-target tests committed before implementation.
+**Acceptance**: Focused tests fail because `OuroMDAppSupport` does not exist yet.
+
+### ✅ Unit 1b: Command Catalog Support Boundary — Implementation
+**What**: Add `OuroMDAppSupport`, move `CommandPaletteItem`/`CommandPaletteCatalog` into it, add a theme descriptor adapter in `OuroMD`, and update imports/call sites.
+**Output**: Support target, executable adapter, package wiring, and existing call sites compile.
+**Acceptance**: Focused tests and existing command/shell tests pass with no warnings.
+
+### ✅ Unit 1c: Command Catalog Support Boundary — Coverage & Validation
+**What**: Extend `scripts/check-coverage.sh` to gate `OuroMDAppSupport`, run required local validation, and refactor only if needed.
+**Output**: Coverage gate update and validation logs in artifacts.
+**Acceptance**: New support code has 100% line/region coverage; full required local validation passes.
+
+## Execution
+- **TDD strictly enforced**: tests → red → implement → green → refactor
+- Commit after each phase (1a, 1b, 1c)
+- Push after each unit complete
+- Run full test suite before marking unit done
+- **All artifacts**: Save outputs, logs, data to `./2026-06-30-1750-doing-command-catalog-extraction/` directory
+- **Fixes/blockers**: Spawn sub-agent immediately — don't ask, just do it
+- **Decisions made**: Update docs immediately, commit right away
+
+## Progress Log
+- 2026-06-30 17:51 Created from planning doc
+- 2026-06-30 17:51 Doing reviewer gates converged: granularity, validation, ambiguity, quality, Tinfoil Hat, and Stranger With Candy passes found no blocker/major issues. Units are atomic and cite real source/test targets.
+- 2026-06-30 17:51 Unit 0 complete: verified command catalog scope, package layout, coverage gate, and PR #87 file overlap.
+- 2026-06-30 17:51 Unit 1a complete: added `OuroMDAppSupportTests`; red phase fails because product `OuroMDAppSupport` is not yet present.
+- 2026-06-30 18:00 Unit 1b complete: added pure `OuroMDAppSupport`, moved command catalog policy, adapted executable `Theme` values, and kept focused support plus existing command/shell tests green.
+- 2026-06-30 18:03 Unit 1c complete: extended coverage gate to `OuroMDAppSupport`; coverage reports `CommandPaletteCatalog.swift` 102/102 lines and 17/17 regions covered.
+- 2026-06-30 18:06 Full PR preflight passed. Release metadata was bumped to `0.9.68` because preflight requires app-affecting source changes to exceed latest published `v0.9.66`; PR #87 already carries `0.9.67` on a stale base.
+- 2026-06-30 18:09 Self-review polish complete: CI coverage step label now matches the expanded pure-target coverage gate; full PR preflight reran and passed.

@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import OuroAppShellAppKit
+import OuroMDAppSupport
 import OuroMDCore
 import SwiftUI
 

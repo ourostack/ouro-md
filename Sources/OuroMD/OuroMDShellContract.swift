@@ -1,5 +1,6 @@
 import Foundation
 import OuroAppShellContract
+import OuroMDAppSupport
 import OuroMDCore
 
 enum OuroMDShellContract {

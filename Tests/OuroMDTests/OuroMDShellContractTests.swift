@@ -1,6 +1,7 @@
 import XCTest
 @testable import OuroMD
 import OuroAppShellConsumerTesting
+import OuroMDAppSupport
 import OuroMDCore
 
 final class OuroMDShellContractTests: XCTestCase {

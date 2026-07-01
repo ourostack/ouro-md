@@ -1,4 +1,5 @@
 import XCTest
+import OuroMDAppSupport
 @testable import OuroMD
 
 final class CommandPaletteTests: XCTestCase {
