@@ -1,6 +1,6 @@
 # Planning: Command Catalog Extraction
 
-**Status**: drafting
+**Status**: approved
 **Created**: 2026-06-30 17:51
 
 ## Goal
@@ -73,3 +73,4 @@ The support target should expose a minimal public API usable by the executable a
 
 ## Progress Log
 - 2026-06-30 17:51 Created
+- 2026-06-30 17:51 Planning reviewer gate converged: template compliance, source fidelity, scope tightness, and PR #87 exclusion checked with no blocker/major findings.
