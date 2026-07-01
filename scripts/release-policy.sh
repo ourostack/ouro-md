@@ -118,7 +118,7 @@ release_relevant_path() {
     Package.swift|Package.resolved|make-app.sh) return 0 ;;
     Sources/*|Resources/*|web/*) return 0 ;;
     scripts/lib/app-version.sh) return 0 ;;
-    scripts/check-hosted-installer.sh|scripts/check-live-update-path.sh|scripts/check-shell-dependency.sh|scripts/check-signing-readiness.sh|scripts/package-release.sh|scripts/pr-preflight.sh) return 0 ;;
+    scripts/check-hosted-installer.sh|scripts/check-live-update-path.sh|scripts/check-shell-dependency.sh|scripts/check-signing-readiness.sh|scripts/prepare-ci-signing-assets.sh|scripts/sign-notarize-app.sh|scripts/package-release.sh|scripts/pr-preflight.sh) return 0 ;;
     scripts/check-shell-boundary.sh|scripts/shell-boundary-allowlist.txt) return 0 ;;
     scripts/verify-packaged-app.sh|scripts/verify-release-version.sh|scripts/release-policy.sh) return 0 ;;
     .github/workflows/release.yml) return 0 ;;
@@ -658,6 +658,8 @@ selftest_paths_mode() {
     scripts/check-shell-dependency.sh
     scripts/check-shell-boundary.sh
     scripts/shell-boundary-allowlist.txt
+    scripts/prepare-ci-signing-assets.sh
+    scripts/sign-notarize-app.sh
     scripts/verify-release-version.sh
     scripts/release-policy.sh
   )
@@ -689,6 +691,8 @@ from pathlib import Path
 
 package = Path("scripts/package-release.sh").read_text(encoding="utf-8")
 checker = Path("scripts/check-shell-dependency.sh").read_text(encoding="utf-8")
+signer = Path("scripts/sign-notarize-app.sh").read_text(encoding="utf-8")
+ci_signing = Path("scripts/prepare-ci-signing-assets.sh").read_text(encoding="utf-8")
 guard = "./scripts/check-shell-dependency.sh"
 build = "./make-app.sh"
 
@@ -698,6 +702,31 @@ if build not in package:
     raise SystemExit("package-release.sh no longer runs make-app.sh; update this selftest")
 if package.index(guard) > package.index(build):
     raise SystemExit("package-release.sh must run scripts/check-shell-dependency.sh before make-app.sh")
+for needle in (
+    "OURO_RELEASE_SIGNING_MODE",
+    "OURO_REQUIRE_NOTARIZATION",
+    "./scripts/sign-notarize-app.sh",
+    '"signingMode": "${release_signing_mode}"',
+    '"notarized": ${notarized}',
+):
+    if needle not in package:
+        raise SystemExit(f"package-release.sh must contain {needle!r}")
+for needle in (
+    "APPLE_DEVELOPER_ID_CERTIFICATE_BASE64",
+    "security import",
+    "APP_STORE_CONNECT_API_KEY_BASE64",
+    "GITHUB_ENV",
+):
+    if needle not in ci_signing:
+        raise SystemExit(f"prepare-ci-signing-assets.sh must contain {needle!r}")
+for needle in (
+    "--options runtime",
+    "xcrun notarytool submit",
+    "xcrun stapler staple",
+    "spctl --assess",
+):
+    if needle not in signer:
+        raise SystemExit(f"sign-notarize-app.sh must contain {needle!r}")
 if "git ls-remote" in checker:
     raise SystemExit("check-shell-dependency.sh must not require every shell main commit to be pinned")
 for needle in (
@@ -717,6 +746,8 @@ for path in (
     "scripts/check-shell-boundary.sh",
     "scripts/shell-boundary-allowlist.txt",
     "scripts/lib/app-version.sh",
+    "scripts/prepare-ci-signing-assets.sh",
+    "scripts/sign-notarize-app.sh",
 ):
     if path not in workflow:
         raise SystemExit(f"release.yml must treat {path} as release-path input")
@@ -941,6 +972,12 @@ if manifest.get("bundleIdentifier") != "org.ourostack.ouro-md":
     errors.append(f"bundleIdentifier {manifest.get('bundleIdentifier')!r}")
 if manifest.get("gitSha") != expected_sha:
     errors.append(f"gitSha {manifest.get('gitSha')!r} != {expected_sha!r}")
+if manifest.get("signingMode") not in {"ad-hoc", "developer-id"}:
+    errors.append(f"signingMode {manifest.get('signingMode')!r}")
+if not isinstance(manifest.get("notarized"), bool):
+    errors.append(f"notarized {manifest.get('notarized')!r}")
+if manifest.get("signingMode") == "developer-id" and manifest.get("notarized") is not True:
+    errors.append("developer-id artifacts must be notarized")
 if manifest.get("archive") != os.path.basename(zip_path):
     errors.append(f"archive {manifest.get('archive')!r} != {os.path.basename(zip_path)!r}")
 

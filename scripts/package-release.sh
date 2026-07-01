@@ -55,6 +55,15 @@ fi
 APP="OuroMD.app"
 INFO="$APP/Contents/Info.plist"
 plist() { /usr/libexec/PlistBuddy -c "Print :$1" "$INFO"; }
+release_signing_mode="${OURO_RELEASE_SIGNING_MODE:-}"
+notarized=false
+
+truthy() {
+  case "$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')" in
+    1|true|yes|on) return 0 ;;
+    *) return 1 ;;
+  esac
+}
 
 if [[ -n "${POSTHOG_KEY}" ]]; then
   embedded_posthog_key="$(plist OuroMDPostHogKey 2>/dev/null || true)"
@@ -97,6 +106,15 @@ rm -rf "$stage"
 mkdir -p "$stage"
 ditto "$APP" "$stage/Ouro MD.app"
 
+if [[ "$release_signing_mode" == "developer-id" ]] || truthy "${OURO_REQUIRE_NOTARIZATION:-}"; then
+  release_signing_mode="developer-id"
+  ./scripts/check-signing-readiness.sh
+  ./scripts/sign-notarize-app.sh --app "$stage/Ouro MD.app" --app-name "Ouro MD"
+  notarized=true
+else
+  release_signing_mode="ad-hoc"
+fi
+
 echo "==> Archiving Ouro MD.app -> $archive_path"
 ditto -c -k --keepParent "$stage/Ouro MD.app" "$archive_path"
 rm -rf "$stage"
@@ -111,6 +129,8 @@ cat > "$manifest_path" <<JSON
   "version": "${version}",
   "build": "${build}",
   "gitSha": "${git_sha}",
+  "signingMode": "${release_signing_mode}",
+  "notarized": ${notarized},
   "archive": "${archive_name}",
   "sha256": "${sha256}",
   "bytes": ${bytes},

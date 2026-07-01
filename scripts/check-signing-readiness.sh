@@ -30,6 +30,17 @@ have_all() {
 command -v codesign >/dev/null 2>&1 || fail "codesign is required"
 command -v xcrun >/dev/null 2>&1 || fail "xcrun is required"
 xcrun notarytool --help >/dev/null 2>&1 || fail "xcrun notarytool is required"
+xcrun -f stapler >/dev/null 2>&1 || fail "xcrun stapler is required"
+
+if [[ "${1:-}" == "--selftest" ]]; then
+  OURO_REQUIRE_NOTARIZATION=1 OURO_CODESIGN_IDENTITY= DEVELOPER_ID_APPLICATION= "$0" >/tmp/ouro-md-signing-readiness-selftest.out 2>/tmp/ouro-md-signing-readiness-selftest.err && {
+    fail "selftest expected required notarization without identity to fail"
+  }
+  grep -F "requires OURO_CODESIGN_IDENTITY" /tmp/ouro-md-signing-readiness-selftest.err >/dev/null \
+    || fail "selftest did not exercise missing identity failure"
+  echo "signing readiness selftest ok"
+  exit 0
+fi
 
 identity="${OURO_CODESIGN_IDENTITY:-${DEVELOPER_ID_APPLICATION:-}}"
 if [[ -n "$identity" ]]; then

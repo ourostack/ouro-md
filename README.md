@@ -6,8 +6,9 @@ ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
 in careful typography on a centered page. Type Markdown and watch it render in
 place — switch themes live, and read the same document four different ways.
 
-> **Status:** v0.9.69. Reads and edits Markdown today. Not yet Developer-ID
-> signed or notarized — see [First launch](#first-launch).
+> **Status:** v0.9.70. Reads and edits Markdown today. Release tooling can
+> produce Developer-ID signed/notarized artifacts once signing credentials are
+> active; current public artifacts may still be ad-hoc — see [First launch](#first-launch).
 
 ---
 
@@ -122,7 +123,11 @@ do not accidentally ship uncommitted or unconfigured bytes; set
 Developer-ID signing/notarization is intentionally checked as a separate
 readiness gate. `scripts/check-signing-readiness.sh` verifies host tooling on
 every PR and can fail closed with `OURO_REQUIRE_NOTARIZATION=1` when release
-signing is enabled; set `OURO_VALIDATE_NOTARY_CREDENTIALS=1` only when a runner
+signing is enabled. Set `OURO_RELEASE_SIGNING_MODE=developer-id` to make
+`scripts/package-release.sh` sign with hardened runtime, submit to Apple's
+notary service, staple the ticket, and mark the manifest as
+`"signingMode": "developer-id"` / `"notarized": true`. Leave it unset for
+ad-hoc dry runs. Set `OURO_VALIDATE_NOTARY_CREDENTIALS=1` only when a runner
 should make a live notary credential call.
 
 ## Build
@@ -220,7 +225,7 @@ with document chrome, menus, file handling, and validation built for macOS.
 
 ## Roadmap
 
-- Post-dogfood Developer-ID signing + notarization
+- Enable Developer-ID signed public artifacts once Apple renewal/certificates are active
 - Smart typography (curly quotes, dashes) and clickable task checkboxes
 - Editor display of pre-existing relative-path local images (paste/drop already inlines)
 - Higher-contrast tables in the dark theme
