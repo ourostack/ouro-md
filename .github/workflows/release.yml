@@ -123,6 +123,16 @@ jobs:
 
       - name: Check signing and notarization readiness
         if: steps.check.outputs.exists == 'false' || (github.event_name == 'workflow_dispatch' && inputs.dry_run)
+        env:
+          OURO_RELEASE_SIGNING_MODE: ${{ secrets.OURO_RELEASE_SIGNING_MODE }}
+          OURO_REQUIRE_NOTARIZATION: ${{ secrets.OURO_REQUIRE_NOTARIZATION }}
+          OURO_CODESIGN_IDENTITY: ${{ secrets.OURO_CODESIGN_IDENTITY }}
+          OURO_NOTARY_PROFILE: ${{ secrets.OURO_NOTARY_PROFILE }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: ./scripts/check-signing-readiness.sh
 
       - name: Package release artifact
@@ -138,6 +148,8 @@ jobs:
           OURO_NOTARY_PROFILE: ${{ secrets.OURO_NOTARY_PROFILE }}
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: ./scripts/package-release.sh
 
