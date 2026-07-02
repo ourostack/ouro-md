@@ -213,7 +213,7 @@ final class OuroMDTelemetryTests: XCTestCase {
         let contents = root.appendingPathComponent("Contents")
         try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: true)
         var plist: [String: Any] = [
-            "CFBundleIdentifier": "org.ourostack.ouro-md.tests",
+            "CFBundleIdentifier": "bot.ouro.md.tests",
             "CFBundleExecutable": "",
             "OuroMDPostHogKey": postHogKey,
         ]
