@@ -215,6 +215,9 @@ final class AppModel: ObservableObject {
         bridge?.setOutline(showOutline)
         bridge?.setAutoPair(autoPairEnabled)
         bridge?.setZoom(zoom)
+        // A newly opened document window should be ready to type into
+        // immediately, without a stray click to place the caret first.
+        bridge?.focusEditor()
         onChromeUpdate?()
     }
 
