@@ -61,6 +61,10 @@
     --ouro-alert-color: #cf222e;
     border-left-color: #cf222e !important;
   }
+  /* The [!WARNING] marker sits on its own source line; in the reading view
+     collapse that newline so the label sits directly above the body instead of
+     leaving an empty line. Editing state keeps pre-wrap for source fidelity. */
+  .vditor-reset blockquote.ouro-alert:not(.ouro-callout-editing) > p { white-space: normal; }
 </style>
 <!-- Swapped at runtime by the native app to apply the active theme. -->
 <style id="ouro-theme"></style>
