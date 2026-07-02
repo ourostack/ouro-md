@@ -2,14 +2,13 @@ import AppKit
 import SwiftUI
 
 /// Owns one document window: its `AppModel`, the sidebar+editor split, the
-/// centered title, chrome sync, the word-count popover, and unsaved-close
+/// centered title, chrome sync, the status bar, and unsaved-close
 /// handling. Multiple instances give independent windows.
 @MainActor
 final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate {
     let model = AppModel()
     let window: NSWindow
     private var sidebarItem: NSSplitViewItem?
-    private var wordCountPopover: NSPopover?
     private var renamePopover: NSPopover?
     private var renameField: NSTextField?
     var openDocumentFromTitleClickHandler: (() -> Void)?
@@ -208,18 +207,8 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         }
     }
 
-    func toggleWordCount(_ sender: Any?) {
-        if let popover = wordCountPopover, popover.isShown {
-            popover.performClose(sender)
-            return
-        }
-        guard let contentView = window.contentView else { return }
-        let popover = NSPopover()
-        popover.behavior = .transient
-        popover.contentViewController = NSHostingController(rootView: WordCountView(model: model))
-        let anchor = NSRect(x: contentView.bounds.maxX - 80, y: 0, width: 1, height: 1)
-        popover.show(relativeTo: anchor, of: contentView, preferredEdge: .maxY)
-        wordCountPopover = popover
+    func toggleStatusBar() {
+        model.statusBarVisible.toggle()
     }
 
     func printDocument() {

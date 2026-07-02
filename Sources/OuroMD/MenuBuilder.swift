@@ -200,7 +200,7 @@ enum MenuBuilder {
         searchMI.keyEquivalentModifierMask = [.command, .shift]
 
         menu.addItem(.separator())
-        add(menu, "Toggle Word Count", #selector(AppDelegate.toggleWordCount(_:)), "", target)
+        add(menu, "Toggle Status Bar", #selector(AppDelegate.toggleStatusBar(_:)), "", target)
 
         menu.addItem(.separator())
         let actual = add(menu, "Actual Size", #selector(AppDelegate.actualSize(_:)), "0", target)

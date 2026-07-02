@@ -339,6 +339,7 @@
       cdn: "vditor",
       mode: state.mode,
       value: state.value,
+      placeholder: "Start writing — Markdown renders as you type.",
       theme: state.uiTheme,
       cache: { enable: false },
       toolbar: [],

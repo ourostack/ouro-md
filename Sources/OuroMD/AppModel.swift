@@ -75,6 +75,10 @@ final class AppModel: ObservableObject {
     @Published private(set) var charCount = 0
     @Published var sidebarVisible: Bool
     @Published var sidebarMode: SidebarMode = .outline
+    /// Bottom-corner status HUD (word/char count, mode, theme). Hidden by
+    /// default for a clean editor; toggled from View ▸ Toggle Status Bar and
+    /// kept per-session rather than persisted.
+    @Published var statusBarVisible = false
     @Published private(set) var outlineItems: [OutlineItem] = []
     @Published private(set) var activeHeadingIndex = -1
     @Published var outlineFilter = ""
@@ -146,7 +150,11 @@ final class AppModel: ObservableObject {
         )
         defaults.set(lastLightThemeID, forKey: "ouro.theme.lastLight")
         defaults.set(lastDarkThemeID, forKey: "ouro.theme.lastDark")
-        sidebarVisible = defaults.bool(forKey: "ouro.sidebar")
+        // Closed by default. Sidebar visibility is a per-session state — revealed
+        // on demand (⇧⌘L) or when a folder is opened — and deliberately not
+        // restored across launches, so the editor always opens clean instead of
+        // with the rail in your face.
+        sidebarVisible = false
         autoSaveEnabled = defaults.object(forKey: "ouro.autosave") as? Bool ?? true
         autoPairEnabled = defaults.object(forKey: "ouro.autopair") as? Bool ?? true
         zoom = defaults.object(forKey: "ouro.zoom") as? Double ?? 1.0
@@ -207,6 +215,9 @@ final class AppModel: ObservableObject {
         bridge?.setOutline(showOutline)
         bridge?.setAutoPair(autoPairEnabled)
         bridge?.setZoom(zoom)
+        // A newly opened document window should be ready to type into
+        // immediately, without a stray click to place the caret first.
+        bridge?.focusEditor()
         onChromeUpdate?()
     }
 
@@ -833,8 +844,9 @@ final class AppModel: ObservableObject {
     }
 
     func setSidebarVisible(_ visible: Bool) {
+        // Per-session only — not persisted, so the app reopens with the sidebar
+        // closed regardless of the last session's state.
         sidebarVisible = visible
-        defaults.set(visible, forKey: "ouro.sidebar")
     }
 
     func updateOutline(_ items: [OutlineItem]) {
@@ -916,7 +928,6 @@ final class AppModel: ObservableObject {
         mountedFolder = url
         sidebarMode = .files
         sidebarVisible = true
-        defaults.set(true, forKey: "ouro.sidebar")
         NSDocumentController.shared.noteNewRecentDocumentURL(url)
         startFolderWatching()
         rescanFolder()

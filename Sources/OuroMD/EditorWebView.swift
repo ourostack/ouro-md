@@ -285,7 +285,14 @@ struct EditorWebView: NSViewRepresentable {
         func undo() { eval("window.ouro && window.ouro.undo()") }
         func redo() { eval("window.ouro && window.ouro.redo()") }
 
-        func focusEditor() { eval("window.ouro && window.ouro.focus()") }
+        func focusEditor() {
+            // Route keystrokes to the editor: the WKWebView must be the window's
+            // first responder AND the contenteditable must hold the caret. Without
+            // the first-responder step, a freshly opened window swallows typing
+            // until the user clicks into the page.
+            if let webView { webView.window?.makeFirstResponder(webView) }
+            eval("window.ouro && window.ouro.focus()")
+        }
 
         func printDocument() {
             guard let webView, let window = webView.window else { return }
