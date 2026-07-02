@@ -84,6 +84,7 @@ cat > "${APP}/Contents/Info.plist" <<PLIST
     <key>LSMinimumSystemVersion</key><string>13.0</string>
     <key>LSApplicationCategoryType</key><string>${APP_CATEGORY}</string>
     <key>NSHumanReadableCopyright</key><string>Copyright © 2026 Ari Mendelow.</string>
+    <key>ITSAppUsesNonExemptEncryption</key><false/>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSPrincipalClass</key><string>NSApplication</string>
     <key>CFBundleDocumentTypes</key>
