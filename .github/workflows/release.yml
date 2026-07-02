@@ -104,6 +104,7 @@ jobs:
       - name: Check signing script contracts
         if: steps.check.outputs.exists == 'false' || (github.event_name == 'workflow_dispatch' && inputs.dry_run)
         run: |
+          ./scripts/prepare-ci-signing-assets.sh --selftest
           ./scripts/check-signing-readiness.sh --selftest
           ./scripts/sign-notarize-app.sh --selftest
 
