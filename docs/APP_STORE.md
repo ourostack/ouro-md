@@ -13,8 +13,8 @@ Create or confirm the app record before uploading:
 
 - Name: `Ouro MD`
 - Subtitle: `The Markdown App`
-- Bundle ID: `org.ourostack.ouro-md`
-- SKU: `ouro-md-macos`
+- Bundle ID: `bot.ouro.md`
+- SKU: `bot-ouro-md-macos`
 - Platform: macOS
 - Category: Developer Tools
 - Price: Free

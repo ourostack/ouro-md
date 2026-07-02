@@ -60,5 +60,5 @@ Runtime ambient PostHog environment variables do not enable telemetry.
 To reset the local anonymous telemetry id, quit Ouro MD and run:
 
 ```sh
-defaults delete org.ourostack.ouro-md ouro.telemetry.distinctID
+defaults delete bot.ouro.md ouro.telemetry.distinctID
 ```

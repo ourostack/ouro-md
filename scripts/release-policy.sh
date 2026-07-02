@@ -969,7 +969,7 @@ if manifest.get("version") != expected_version:
     errors.append(f"version {manifest.get('version')!r} != {expected_version!r}")
 if manifest.get("build") != expected_version:
     errors.append(f"build {manifest.get('build')!r} != {expected_version!r}")
-if manifest.get("bundleIdentifier") != "org.ourostack.ouro-md":
+if manifest.get("bundleIdentifier") != "bot.ouro.md":
     errors.append(f"bundleIdentifier {manifest.get('bundleIdentifier')!r}")
 if manifest.get("gitSha") != expected_sha:
     errors.append(f"gitSha {manifest.get('gitSha')!r} != {expected_sha!r}")

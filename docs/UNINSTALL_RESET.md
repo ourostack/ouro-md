@@ -23,7 +23,7 @@ This clears theme, sidebar, autosave, autopair, zoom, telemetry opt-in/out, the
 anonymous telemetry install id, and update-check preferences.
 
 ```sh
-defaults delete org.ourostack.ouro-md
+defaults delete bot.ouro.md
 ```
 
 It is normal for `defaults` to print an error if there are no preferences yet.
@@ -52,7 +52,7 @@ This removes the app, preferences, and custom theme support files:
 ```sh
 rm -rf "/Applications/Ouro MD.app"
 rm -rf "$HOME/Applications/Ouro MD.app"
-defaults delete org.ourostack.ouro-md 2>/dev/null || true
+defaults delete bot.ouro.md 2>/dev/null || true
 rm -rf "$HOME/Library/Application Support/ouro-md"
 ```
 

@@ -75,6 +75,7 @@ codesign --verify --deep --strict --verbose=2 "$APP"
 version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist")"
 bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Contents/Info.plist")"
 channel="$(/usr/libexec/PlistBuddy -c 'Print :OuroMDDistributionChannel' "$APP/Contents/Info.plist")"
+[[ "$bundle_id" == "bot.ouro.md" ]] || fail "expected canonical bundle id bot.ouro.md, got $bundle_id"
 [[ "$channel" == "app-store" ]] || fail "expected app-store distribution channel, got $channel"
 
 mkdir -p "$OUT_DIR"

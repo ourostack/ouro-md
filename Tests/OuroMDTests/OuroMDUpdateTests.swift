@@ -2,7 +2,7 @@ import XCTest
 @testable import OuroMD
 
 final class OuroMDUpdateTests: XCTestCase {
-    private let bundleIdentifier = "org.ourostack.ouro-md"
+    private let bundleIdentifier = "bot.ouro.md"
 
     private func snapshot(
         status: ReleaseUpdateStatus = .updateAvailable,

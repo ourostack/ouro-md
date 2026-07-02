@@ -157,7 +157,7 @@ APP_PATH="$ROOT/OuroMD.app"
     "$APP_PATH/Contents/MacOS/ouro-md" &
   APP_PID=$!
   sleep 5
-  HOME="$FIRST_HOME" CFFIXED_USER_HOME="$FIRST_HOME" CFPREFERENCES_AVOID_DAEMON=1 defaults read org.ourostack.ouro-md
+  HOME="$FIRST_HOME" CFFIXED_USER_HOME="$FIRST_HOME" CFPREFERENCES_AVOID_DAEMON=1 defaults read bot.ouro.md
   terminate_app_pid "$APP_PID"
   wait "$APP_PID" || true
 } > "$ARTIFACT_DIR/first-run.log" 2>&1
@@ -218,7 +218,7 @@ APP_PATH="$ROOT/OuroMD.app"
   curl -fsSL -o "$TMP_ROOT/$EXPECTED_LIVE_MANIFEST" \
     "https://github.com/ourostack/ouro-md/releases/download/$EXPECTED_LIVE_TAG/$EXPECTED_LIVE_MANIFEST"
   jq -e --arg version "$EXPECTED_LIVE_VERSION" \
-    '.version == $version and .bundleIdentifier == "org.ourostack.ouro-md"' "$TMP_ROOT/$EXPECTED_LIVE_MANIFEST"
+    '.version == $version and .bundleIdentifier == "bot.ouro.md"' "$TMP_ROOT/$EXPECTED_LIVE_MANIFEST"
   swift test --filter ReleaseUpdateTests
   swift test --filter OuroMDUpdateInstallerTests
   swift test --filter OuroMDUpdateCoordinatorTests

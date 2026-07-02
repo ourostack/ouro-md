@@ -11,7 +11,7 @@ APP_NAME="OuroMD"
 APP="${APP_NAME}.app"
 CONFIG="release"
 BIN_NAME="ouro-md"
-BUNDLE_ID="org.ourostack.ouro-md"
+BUNDLE_ID="bot.ouro.md"
 OURO_MD_DISTRIBUTION_CHANNEL="${OURO_MD_DISTRIBUTION_CHANNEL:-developer-id}"
 # Single-sourced from OuroMDRelease.swift (the version the app reports at
 # runtime); never hardcode it here or the packaged Info.plist can silently drift

@@ -41,7 +41,7 @@ bundle_id="$(plist CFBundleIdentifier)"
 git_sha="$(plist OuroMDGitSHA 2>/dev/null || true)"
 echo "packaged app: version=$version build=$build bundle=$bundle_id git=${git_sha:-unknown}"
 
-[[ "$bundle_id" == "org.ourostack.ouro-md" ]] || fail "unexpected bundle id: $bundle_id"
+[[ "$bundle_id" == "bot.ouro.md" ]] || fail "unexpected bundle id: $bundle_id"
 [[ "$build" == "$version" ]] || fail "bundle build $build did not match version $version"
 if [[ -n "$expect_git_sha" ]]; then
   [[ -n "$git_sha" ]] || fail "expected git sha $expect_git_sha but app had no OuroMDGitSHA"
