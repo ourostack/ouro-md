@@ -447,8 +447,10 @@ struct EditorPane: View {
                 Spacer()
                 HStack {
                     Spacer()
-                    DocumentStatusBar(model: model)
-                        .padding([.trailing, .bottom], 10)
+                    if model.statusBarVisible {
+                        DocumentStatusBar(model: model)
+                            .padding([.trailing, .bottom], 10)
+                    }
                 }
             }
             if model.commandPaletteVisible {

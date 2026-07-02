@@ -75,6 +75,10 @@ final class AppModel: ObservableObject {
     @Published private(set) var charCount = 0
     @Published var sidebarVisible: Bool
     @Published var sidebarMode: SidebarMode = .outline
+    /// Bottom-corner status HUD (word/char count, mode, theme). Hidden by
+    /// default for a clean editor; toggled from View ▸ Toggle Status Bar and
+    /// kept per-session rather than persisted.
+    @Published var statusBarVisible = false
     @Published private(set) var outlineItems: [OutlineItem] = []
     @Published private(set) var activeHeadingIndex = -1
     @Published var outlineFilter = ""
