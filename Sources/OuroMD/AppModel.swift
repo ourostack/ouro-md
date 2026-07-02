@@ -146,7 +146,11 @@ final class AppModel: ObservableObject {
         )
         defaults.set(lastLightThemeID, forKey: "ouro.theme.lastLight")
         defaults.set(lastDarkThemeID, forKey: "ouro.theme.lastDark")
-        sidebarVisible = defaults.bool(forKey: "ouro.sidebar")
+        // Closed by default. Sidebar visibility is a per-session state — revealed
+        // on demand (⇧⌘L) or when a folder is opened — and deliberately not
+        // restored across launches, so the editor always opens clean instead of
+        // with the rail in your face.
+        sidebarVisible = false
         autoSaveEnabled = defaults.object(forKey: "ouro.autosave") as? Bool ?? true
         autoPairEnabled = defaults.object(forKey: "ouro.autopair") as? Bool ?? true
         zoom = defaults.object(forKey: "ouro.zoom") as? Double ?? 1.0
@@ -833,8 +837,9 @@ final class AppModel: ObservableObject {
     }
 
     func setSidebarVisible(_ visible: Bool) {
+        // Per-session only — not persisted, so the app reopens with the sidebar
+        // closed regardless of the last session's state.
         sidebarVisible = visible
-        defaults.set(visible, forKey: "ouro.sidebar")
     }
 
     func updateOutline(_ items: [OutlineItem]) {
@@ -916,7 +921,6 @@ final class AppModel: ObservableObject {
         mountedFolder = url
         sidebarMode = .files
         sidebarVisible = true
-        defaults.set(true, forKey: "ouro.sidebar")
         NSDocumentController.shared.noteNewRecentDocumentURL(url)
         startFolderWatching()
         rescanFolder()
