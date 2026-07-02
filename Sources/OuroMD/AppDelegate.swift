@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private weak var activeController: DocumentWindowController?
     private lazy var fallbackModel = AppModel()
     private let defaults = UserDefaults.standard
+    private let securityScopedResources = SecurityScopedResourceStore()
     let updateCoordinator = OuroMDUpdateCoordinator()
     private let shellWindows = AppShellWindowPresenter()
     private var updateCancellables: Set<AnyCancellable> = []
@@ -70,10 +71,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             // opened document.
             DispatchQueue.main.async { [weak self] in self?.completeLaunchFallback() }
         }
-        Task { await updateCoordinator.runAutoUpdateCheckIfDue() }
-        if let version = updateCoordinator.recordObservedVersionOnLaunch() {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
-                self?.showUpdateInstalledConfirmation(version: version)
+        if OuroMDDistribution.allowsDirectUpdates() {
+            Task { await updateCoordinator.runAutoUpdateCheckIfDue() }
+            if let version = updateCoordinator.recordObservedVersionOnLaunch() {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+                    self?.showUpdateInstalledConfirmation(version: version)
+                }
             }
         }
     }
@@ -154,6 +157,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     func applicationWillTerminate(_ notification: Notification) {
         undoRedoShortcutMonitor?.invalidate()
         saveSession()
+        securityScopedResources.stopAccessingAll()
         if !updateCoordinator.applyPendingManualUpdateAndRelaunchIfNeeded() {
             updateCoordinator.applyStagedUpdateOnQuitIfNeeded()
         }
@@ -163,9 +167,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
     /// Persists the open documents + mounted folder so a relaunch reopens them.
     private func saveSession() {
-        let docs = controllers.compactMap { $0.model.currentURL?.path }
-        defaults.set(docs, forKey: "ouro.session.docs")
-        defaults.set(frontController?.model.mountedFolder?.path, forKey: "ouro.session.folder")
+        let docURLs = controllers.compactMap(\.model.currentURL)
+        defaults.set(docURLs.map(\.path), forKey: "ouro.session.docs")
+        defaults.set(
+            docURLs.compactMap(SecurityScopedResourceStore.bookmarkData(for:)),
+            forKey: "ouro.session.docBookmarks"
+        )
+
+        let folder = frontController?.model.mountedFolder
+        defaults.set(folder?.path, forKey: "ouro.session.folder")
+        defaults.set(folder.flatMap(SecurityScopedResourceStore.bookmarkData(for:)), forKey: "ouro.session.folderBookmark")
     }
 
     /// What an empty (no command-line file) launch should do, decided AFTER a
@@ -209,9 +220,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     /// The previously-open documents + mounted folder that still exist on disk.
     private func restorableSession() -> (docs: [String], folder: URL?) {
         let fm = FileManager.default
-        let docs = (defaults.array(forKey: "ouro.session.docs") as? [String] ?? []).filter { fm.fileExists(atPath: $0) }
-        let folder = defaults.string(forKey: "ouro.session.folder")
+
+        let bookmarkedDocs = (defaults.array(forKey: "ouro.session.docBookmarks") as? [Data] ?? [])
+            .compactMap(SecurityScopedResourceStore.resolveBookmark(_:))
+            .map(securityScopedResources.startAccessing(_:))
+            .filter { fm.fileExists(atPath: $0.path) }
+            .map(\.path)
+        let rawDocs = (defaults.array(forKey: "ouro.session.docs") as? [String] ?? [])
+            .filter { fm.fileExists(atPath: $0) }
+        let docs = bookmarkedDocs.isEmpty ? rawDocs : bookmarkedDocs
+
+        let bookmarkedFolder = (defaults.data(forKey: "ouro.session.folderBookmark"))
+            .flatMap(SecurityScopedResourceStore.resolveBookmark(_:))
+            .map(securityScopedResources.startAccessing(_:))
+            .flatMap { fm.fileExists(atPath: $0.path) ? $0 : nil }
+        let rawFolder = defaults.string(forKey: "ouro.session.folder")
             .flatMap { fm.fileExists(atPath: $0) ? URL(fileURLWithPath: $0) : nil }
+        let folder = bookmarkedFolder ?? rawFolder
         return (docs, folder)
     }
 
@@ -371,14 +396,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     }
 
     @objc func checkForUpdates(_ sender: Any?) {
+        guard OuroMDDistribution.allowsDirectUpdates() else { return }
         Task { await updateCoordinator.checkForUpdatesAndPromptInstall() }
     }
 
     @objc func installUpdateAndRelaunch(_ sender: Any?) {
+        guard OuroMDDistribution.allowsDirectUpdates() else { return }
         updateCoordinator.startInstallReleaseUpdate()
     }
 
     @objc func openLatestReleasePage(_ sender: Any?) {
+        guard OuroMDDistribution.allowsDirectUpdates() else { return }
         if let url = updateCoordinator.releasePageURL {
             NSWorkspace.shared.open(url)
         }
@@ -473,11 +501,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
              #selector(showPreferences(_:)),
              #selector(showKeyboardShortcuts(_:)),
              #selector(showWhatsNew(_:)),
-             #selector(checkForUpdates(_:)),
-             #selector(openLatestReleasePage(_:)),
              #selector(openProjectPage(_:)),
              #selector(reportIssue(_:)):
             return true
+        case #selector(checkForUpdates(_:)),
+             #selector(openLatestReleasePage(_:)):
+            return OuroMDDistribution.allowsDirectUpdates()
         case #selector(openRecent(_:)):
             return menuItem.representedObject is URL
         case #selector(clearRecentDocuments(_:)):
@@ -485,7 +514,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         case #selector(renameDocument(_:)):
             return hasEditor && model.currentURL != nil
         case #selector(installUpdateAndRelaunch(_:)):
-            return updateCoordinator.updateBadgeText != nil && !updateCoordinator.isInstalling
+            return OuroMDDistribution.allowsDirectUpdates()
+                && updateCoordinator.updateBadgeText != nil
+                && !updateCoordinator.isInstalling
         case #selector(undoEdit(_:)),
              #selector(redoEdit(_:)):
             // Vditor owns its undo stack, and native AppKit cannot inspect it.

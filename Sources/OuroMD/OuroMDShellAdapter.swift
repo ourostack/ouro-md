@@ -170,6 +170,16 @@ extension Array where Element == CommandPaletteItem {
 }
 
 extension OuroMDUpdateCoordinator {
+    var appShellDirectUpdateState: ReleaseUpdateViewState? {
+        guard OuroMDDistribution.allowsDirectUpdates() else { return nil }
+        return appShellUpdateState
+    }
+
+    var appShellDirectUpdateActions: ReleaseUpdateActions? {
+        guard OuroMDDistribution.allowsDirectUpdates() else { return nil }
+        return appShellUpdateActions
+    }
+
     var appShellUpdateState: ReleaseUpdateViewState {
         var state = ReleaseUpdateViewState.from(
             presentation: ReleaseUpdatePresentationInput(
@@ -195,9 +205,13 @@ extension OuroMDUpdateCoordinator {
 
     var appShellUpdateActions: ReleaseUpdateActions {
         ReleaseUpdateActions(
-            checkForUpdates: { Task { await self.checkForUpdatesAndPromptInstall() } },
+            checkForUpdates: {
+                guard OuroMDDistribution.allowsDirectUpdates() else { return }
+                Task { await self.checkForUpdatesAndPromptInstall() }
+            },
             reviewUpdate: { self.presentUpdatePrompt() },
             openReleasePage: {
+                guard OuroMDDistribution.allowsDirectUpdates() else { return }
                 if let url = self.releasePageURL {
                     NSWorkspace.shared.open(url)
                 }

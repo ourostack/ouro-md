@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 #
-# Packages a release artifact for Ouro MD: builds the app, zips it, and writes a
-# manifest.json (sha256 + byte count + bundle identity + version) alongside it.
-# Both files get attached to a GitHub release; the one-line installer
+# Packages a release artifact for Ouro MD: builds the app, zips it, creates a
+# drag-to-Applications DMG, and writes a manifest.json (sha256 + byte count +
+# bundle identity + version) alongside them. These files get attached to a GitHub release; the one-line installer
 # (web/ouro-md-install.sh) and any in-app auto-updater verify the download
 # against the manifest before installing.
 #
-#   ./scripts/package-release.sh            -> dist/Ouro-MD-<version>.{zip,manifest.json}
+#   ./scripts/package-release.sh            -> dist/Ouro-MD-<version>.{zip,dmg,manifest.json}
 #
 # After running, publish them with:
-#   gh release create v<version> dist/Ouro-MD-<version>.zip dist/Ouro-MD-<version>.manifest.json \
+#   gh release create v<version> dist/Ouro-MD-<version>.zip dist/Ouro-MD-<version>.dmg dist/Ouro-MD-<version>.manifest.json \
 #     --repo ourostack/ouro-md --target "$(git rev-parse HEAD)" \
 #     --title "Ouro MD <version>" --notes "…"
 set -euo pipefail
@@ -91,12 +91,14 @@ fi
 
 OUT_DIR="dist"
 archive_name="Ouro-MD-${version}.zip"
+dmg_name="Ouro-MD-${version}.dmg"
 manifest_name="Ouro-MD-${version}.manifest.json"
 archive_path="$OUT_DIR/$archive_name"
+dmg_path="$OUT_DIR/$dmg_name"
 manifest_path="$OUT_DIR/$manifest_name"
 
 mkdir -p "$OUT_DIR"
-rm -f "$archive_path" "$manifest_path"
+rm -f "$archive_path" "$dmg_path" "$manifest_path"
 
 # Ship the bundle under its branded, spaced name ("Ouro MD.app") so a release
 # install matches the from-source install (/Applications/Ouro MD.app) and the
@@ -117,10 +119,14 @@ fi
 
 echo "==> Archiving Ouro MD.app -> $archive_path"
 ditto -c -k --keepParent "$stage/Ouro MD.app" "$archive_path"
+echo "==> Creating Ouro MD DMG -> $dmg_path"
+./scripts/create-dmg.sh --app "$stage/Ouro MD.app" --out "$dmg_path" --volume-name "Ouro MD"
 rm -rf "$stage"
 
 sha256="$(shasum -a 256 "$archive_path" | awk '{print $1}')"
 bytes="$(stat -f %z "$archive_path")"
+dmg_sha256="$(shasum -a 256 "$dmg_path" | awk '{print $1}')"
+dmg_bytes="$(stat -f %z "$dmg_path")"
 
 cat > "$manifest_path" <<JSON
 {
@@ -134,19 +140,35 @@ cat > "$manifest_path" <<JSON
   "archive": "${archive_name}",
   "sha256": "${sha256}",
   "bytes": ${bytes},
+  "downloads": {
+    "zip": {
+      "name": "${archive_name}",
+      "sha256": "${sha256}",
+      "bytes": ${bytes},
+      "role": "auto-update"
+    },
+    "dmg": {
+      "name": "${dmg_name}",
+      "sha256": "${dmg_sha256}",
+      "bytes": ${dmg_bytes},
+      "role": "interactive-install"
+    }
+  },
   "createdAt": "${created_at}"
 }
 JSON
 
 echo "==> Wrote ${manifest_path}"
-echo "    version ${version} (build ${build}) · ${bytes} bytes · sha256 ${sha256}"
+echo "    zip ${bytes} bytes · sha256 ${sha256}"
+echo "    dmg ${dmg_bytes} bytes · sha256 ${dmg_sha256}"
 OURO_MD_EXPECT_GIT_SHA="$git_sha" ./scripts/release-policy.sh verify-local \
   --version "$version" \
   --sha "$git_sha" \
   --zip "$archive_path" \
+  --dmg "$dmg_path" \
   --manifest "$manifest_path"
 echo
 echo "Publish with:"
-echo "  gh release create v${version} \"${archive_path}\" \"${manifest_path}\" \\"
+echo "  gh release create v${version} \"${archive_path}\" \"${dmg_path}\" \"${manifest_path}\" \\"
 echo "    --repo ourostack/ouro-md --target \"$(git rev-parse HEAD)\" \\"
 echo "    --title \"Ouro MD ${version}\" --notes \"…\""
