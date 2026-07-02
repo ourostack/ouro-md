@@ -275,22 +275,48 @@
     // and no click follows), so a click-only handler silently does nothing on
     // the real app even though it works under synthetic dispatch. `mousedown` is
     // delivered reliably; `click` stays as a belt-and-suspenders fallback.
-    function resolveEditorLinkURL(target) {
+    function urlTokenAtPoint(x, y) {
+      // Bare GFM autolinks (https://… or www.…) render as plain text in IR mode
+      // — no <a> or link span to hit — so pull the URL token sitting under the
+      // click point out of the text node.
+      if (x == null || y == null || !document.caretRangeFromPoint) { return ""; }
+      var r;
+      try { r = document.caretRangeFromPoint(x, y); } catch (err) { return ""; }
+      if (!r || !r.startContainer || r.startContainer.nodeType !== 3) { return ""; }
+      var text = r.startContainer.nodeValue || "";
+      var start = r.startOffset, end = r.startOffset;
+      while (start > 0 && !/\s/.test(text.charAt(start - 1))) { start--; }
+      while (end < text.length && !/\s/.test(text.charAt(end))) { end++; }
+      var tok = text.slice(start, end).trim();
+      // GFM autolinks exclude trailing punctuation and an unbalanced ")".
+      tok = tok.replace(/[.,;:!?'"\u201c\u201d]+$/, "");
+      if (/\)$/.test(tok) && tok.split("(").length <= tok.split(")").length) {
+        tok = tok.replace(/\)+$/, "");
+      }
+      if (/^https?:\/\/\S+$/i.test(tok)) { return tok; }
+      if (/^www\.[^\s]+\.[^\s]+$/i.test(tok)) { return "https://" + tok; }
+      return "";
+    }
+
+    function resolveEditorLinkURL(target, e) {
       if (!target || !target.closest || !target.closest("#editor")) { return ""; }
       // WYSIWYG mode and the Split/preview pane render a real <a href>.
       var a = target.closest("a[href]");
       if (a) { return a.href || a.getAttribute("href") || ""; }
-      // IR (live-preview) mode renders a link as <span data-type="a"> with no
-      // href — the URL is the text of its .vditor-ir__marker--link child.
+      // IR (live-preview) mode renders a [text](url) / <url> link as a
+      // <span data-type="a"> with no href — the URL is the text of its
+      // .vditor-ir__marker--link child.
       var node = target.closest('span[data-type="a"]');
       var marker = node && node.querySelector(".vditor-ir__marker--link");
       if (marker) { return (marker.textContent || "").trim(); }
+      // Bare autolink fallback: resolve a URL token under the click.
+      if (e) { return urlTokenAtPoint(e.clientX, e.clientY); }
       return "";
     }
     var lastLinkOpenAt = 0;
     function maybeOpenEditorLink(e) {
       if (!e.metaKey) { return; }
-      var url = resolveEditorLinkURL(e.target);
+      var url = resolveEditorLinkURL(e.target, e);
       if (!url) { return; }
       // Swallow the whole gesture (caret placement, Vditor handlers, the
       // synthesized click) so a ⌘-click opens instead of editing.
