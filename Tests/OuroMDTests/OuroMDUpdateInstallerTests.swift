@@ -13,7 +13,7 @@ final class OuroMDUpdateInstallerTests: XCTestCase {
             if invocation.executablePath == "/usr/bin/ditto" {
                 try self.writeFakeApp(
                     under: URL(fileURLWithPath: invocation.arguments[3]),
-                    bundleIdentifier: "org.ourostack.ouro-md",
+                    bundleIdentifier: "bot.ouro.md",
                     version: "0.10.0"
                 )
             }
@@ -43,7 +43,7 @@ final class OuroMDUpdateInstallerTests: XCTestCase {
 
     func testStageWrapsGenericDataLoaderFailureAsDownloadError() async {
         let installer = OuroMDUpdateInstaller(
-            bundleIdentifier: "org.ourostack.ouro-md",
+            bundleIdentifier: "bot.ouro.md",
             currentVersion: "0.9.0",
             dataLoader: { _ in throw NSError(domain: "loader", code: 7) },
             processRunner: { _ in .success }
@@ -62,7 +62,7 @@ final class OuroMDUpdateInstallerTests: XCTestCase {
 
     func testStagePreservesInstallerErrorFromDataLoader() async {
         let installer = OuroMDUpdateInstaller(
-            bundleIdentifier: "org.ourostack.ouro-md",
+            bundleIdentifier: "bot.ouro.md",
             currentVersion: "0.9.0",
             dataLoader: { _ in throw OuroMDUpdateInstaller.InstallError.download("explicit") },
             processRunner: { _ in .success }
@@ -142,7 +142,7 @@ final class OuroMDUpdateInstallerTests: XCTestCase {
         } inspect: { error in
             XCTAssertEqual(
                 error,
-                .verification(.bundleIdentifierMismatch(expected: "org.ourostack.ouro-md", got: "com.example.bad"))
+                .verification(.bundleIdentifierMismatch(expected: "bot.ouro.md", got: "com.example.bad"))
             )
         }
     }
@@ -226,7 +226,7 @@ final class OuroMDUpdateInstallerTests: XCTestCase {
             if invocation.executablePath == "/usr/bin/ditto" {
                 try self.writeFakeApp(
                     under: URL(fileURLWithPath: invocation.arguments[3]),
-                    bundleIdentifier: "org.ourostack.ouro-md",
+                    bundleIdentifier: "bot.ouro.md",
                     version: "0.9.9"
                 )
             }
@@ -246,7 +246,7 @@ final class OuroMDUpdateInstallerTests: XCTestCase {
             if invocation.executablePath == "/usr/bin/ditto" {
                 try self.writeFakeApp(
                     under: URL(fileURLWithPath: invocation.arguments[3]),
-                    bundleIdentifier: "org.ourostack.ouro-md",
+                    bundleIdentifier: "bot.ouro.md",
                     version: "0.10.0"
                 )
                 return .success
@@ -464,7 +464,7 @@ final class OuroMDUpdateInstallerTests: XCTestCase {
     private func manifestData(
         sha: String,
         bytes: Int,
-        bundleIdentifier: String = "org.ourostack.ouro-md",
+        bundleIdentifier: String = "bot.ouro.md",
         version: String = "0.10.0",
         archive: String = "Ouro-MD-0.10.0.zip"
     ) -> Data {
@@ -560,7 +560,7 @@ private final class InstallerHarness {
         processRunner: @escaping @Sendable (ProcessInvocation) async throws -> ProcessResult = { _ in .success }
     ) -> OuroMDUpdateInstaller {
         OuroMDUpdateInstaller(
-            bundleIdentifier: "org.ourostack.ouro-md",
+            bundleIdentifier: "bot.ouro.md",
             currentVersion: "0.9.0",
             dataLoader: { url in
                 if url.path.hasSuffix(".manifest.json") { return manifestData }

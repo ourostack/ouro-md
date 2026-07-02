@@ -7,7 +7,7 @@ import OuroMDCore
 final class ReleaseUpdateTests: XCTestCase {
     func testReleaseDescriptorMatchesCurrentDistribution() {
         XCTAssertEqual(OuroMDRelease.appName, "Ouro MD")
-        XCTAssertEqual(OuroMDRelease.bundleIdentifier, "org.ourostack.ouro-md")
+        XCTAssertEqual(OuroMDRelease.bundleIdentifier, "bot.ouro.md")
         XCTAssertEqual(OuroMDRelease.repository, "ourostack/ouro-md")
         XCTAssertFalse(OuroMDRelease.releaseDate.isEmpty)
         XCTAssertFalse(OuroMDRelease.releaseHighlights.isEmpty)

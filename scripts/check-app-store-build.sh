@@ -15,9 +15,11 @@ OURO_MD_POSTHOG_HOST=https://us.i.posthog.com \
 ./make-app.sh >/tmp/ouro-md-app-store-build.log
 
 info="OuroMD.app/Contents/Info.plist"
+bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$info")"
 channel="$(/usr/libexec/PlistBuddy -c 'Print :OuroMDDistributionChannel' "$info")"
 category="$(/usr/libexec/PlistBuddy -c 'Print :LSApplicationCategoryType' "$info")"
 telemetry_key="$(/usr/libexec/PlistBuddy -c 'Print :OuroMDPostHogKey' "$info")"
+[[ "$bundle_id" == "bot.ouro.md" ]] || fail "expected canonical bundle id bot.ouro.md, got $bundle_id"
 [[ "$channel" == "app-store" ]] || fail "expected app-store channel, got $channel"
 [[ "$category" == "public.app-category.developer-tools" ]] || fail "expected Developer Tools category, got $category"
 [[ "$telemetry_key" == "phc_test" ]] || fail "expected embedded telemetry key in configured App Store build"
