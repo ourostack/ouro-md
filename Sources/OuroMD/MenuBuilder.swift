@@ -52,8 +52,10 @@ enum MenuBuilder {
         menu.addItem(.separator())
         let settings = add(menu, "Settings…", #selector(AppDelegate.showPreferences(_:)), ",", target)
         settings.keyEquivalentModifierMask = [.command]
-        add(menu, "Check for Updates…", #selector(AppDelegate.checkForUpdates(_:)), "", target)
-        add(menu, "Open Latest Release", #selector(AppDelegate.openLatestReleasePage(_:)), "", target)
+        if OuroMDDistribution.allowsDirectUpdates() {
+            add(menu, "Check for Updates…", #selector(AppDelegate.checkForUpdates(_:)), "", target)
+            add(menu, "Open Latest Release", #selector(AppDelegate.openLatestReleasePage(_:)), "", target)
+        }
         menu.addItem(.separator())
 
         let hide = menu.addItem(withTitle: "Hide Ouro MD",

@@ -30,7 +30,7 @@ usage:
   scripts/release-policy.sh selftest-vditor-vendor
   scripts/release-policy.sh selftest-shell-dependency-watch
   scripts/release-policy.sh selftest-live-update-runner
-  scripts/release-policy.sh verify-local --version X.Y.Z --sha SHA --zip ZIP --manifest MANIFEST
+  scripts/release-policy.sh verify-local --version X.Y.Z --sha SHA --zip ZIP [--dmg DMG] --manifest MANIFEST
   scripts/release-policy.sh verify-published [--repo OWNER/REPO] [--version X.Y.Z] [--sha SHA]
 USAGE
   exit 2
@@ -115,10 +115,10 @@ release_relevant_path() {
 
     # Anything that shapes the shipped artifact, or how it's built, packaged,
     # installed, or verified for publish, DOES gate a release.
-    Package.swift|Package.resolved|make-app.sh) return 0 ;;
+    Package.swift|Package.resolved|make-app.sh|config/app-store-entitlements.plist) return 0 ;;
     Sources/*|Resources/*|web/*) return 0 ;;
     scripts/lib/app-version.sh) return 0 ;;
-    scripts/check-hosted-installer.sh|scripts/check-live-update-path.sh|scripts/check-shell-dependency.sh|scripts/check-signing-readiness.sh|scripts/prepare-ci-signing-assets.sh|scripts/sign-notarize-app.sh|scripts/package-release.sh|scripts/pr-preflight.sh) return 0 ;;
+    scripts/check-hosted-installer.sh|scripts/check-live-update-path.sh|scripts/check-shell-dependency.sh|scripts/check-signing-readiness.sh|scripts/prepare-ci-signing-assets.sh|scripts/sign-notarize-app.sh|scripts/create-dmg.sh|scripts/check-app-store-build.sh|scripts/package-release.sh|scripts/package-app-store.sh|scripts/pr-preflight.sh) return 0 ;;
     scripts/check-shell-boundary.sh|scripts/shell-boundary-allowlist.txt) return 0 ;;
     scripts/verify-packaged-app.sh|scripts/verify-release-version.sh|scripts/release-policy.sh) return 0 ;;
     .github/workflows/release.yml) return 0 ;;
@@ -952,14 +952,15 @@ verify_manifest() {
   local version="$2"
   local sha="$3"
   local zip="$4"
+  local dmg="${5:-}"
 
-  python3 - "$manifest" "$version" "$sha" "$zip" <<'PY'
+  python3 - "$manifest" "$version" "$sha" "$zip" "$dmg" <<'PY'
 import hashlib
 import json
 import os
 import sys
 
-manifest_path, expected_version, expected_sha, zip_path = sys.argv[1:5]
+manifest_path, expected_version, expected_sha, zip_path, dmg_path = sys.argv[1:6]
 with open(manifest_path, "r", encoding="utf-8") as fh:
     manifest = json.load(fh)
 
@@ -980,6 +981,28 @@ if manifest.get("signingMode") == "developer-id" and manifest.get("notarized") i
     errors.append("developer-id artifacts must be notarized")
 if manifest.get("archive") != os.path.basename(zip_path):
     errors.append(f"archive {manifest.get('archive')!r} != {os.path.basename(zip_path)!r}")
+downloads = manifest.get("downloads")
+if downloads is not None:
+    if not isinstance(downloads, dict):
+        errors.append("downloads must be an object when present")
+    else:
+        zip_download = downloads.get("zip")
+        if not isinstance(zip_download, dict):
+            errors.append("downloads.zip must be an object")
+        else:
+            if zip_download.get("name") != os.path.basename(zip_path):
+                errors.append("downloads.zip.name mismatch")
+            if zip_download.get("role") != "auto-update":
+                errors.append("downloads.zip.role must be auto-update")
+        dmg_download = downloads.get("dmg")
+        if dmg_path:
+            if not isinstance(dmg_download, dict):
+                errors.append("downloads.dmg must be an object when --dmg is provided")
+            else:
+                if dmg_download.get("name") != os.path.basename(dmg_path):
+                    errors.append("downloads.dmg.name mismatch")
+                if dmg_download.get("role") != "interactive-install":
+                    errors.append("downloads.dmg.role must be interactive-install")
 
 with open(zip_path, "rb") as fh:
     data = fh.read()
@@ -989,6 +1012,21 @@ if manifest.get("sha256") != actual_sha:
     errors.append("sha256 mismatch")
 if manifest.get("bytes") != actual_bytes:
     errors.append(f"bytes {manifest.get('bytes')!r} != {actual_bytes!r}")
+if isinstance(downloads, dict) and isinstance(downloads.get("zip"), dict):
+    if downloads["zip"].get("sha256") != actual_sha:
+        errors.append("downloads.zip.sha256 mismatch")
+    if downloads["zip"].get("bytes") != actual_bytes:
+        errors.append("downloads.zip.bytes mismatch")
+if dmg_path:
+    with open(dmg_path, "rb") as fh:
+        dmg_data = fh.read()
+    dmg_sha = hashlib.sha256(dmg_data).hexdigest()
+    dmg_bytes = len(dmg_data)
+    if isinstance(downloads, dict) and isinstance(downloads.get("dmg"), dict):
+        if downloads["dmg"].get("sha256") != dmg_sha:
+            errors.append("downloads.dmg.sha256 mismatch")
+        if downloads["dmg"].get("bytes") != dmg_bytes:
+            errors.append("downloads.dmg.bytes mismatch")
 
 if errors:
     for error in errors:
@@ -997,10 +1035,48 @@ if errors:
 PY
 }
 
+verify_dmg_contents() {
+  local dmg="$1"
+  local sha="$2"
+  local tmp=""
+  local mount=""
+  local attached=0
+
+  command -v hdiutil >/dev/null 2>&1 || fail "hdiutil is required to verify DMG contents"
+  tmp="$(mktemp -d /tmp/ouro-md-dmg-verify.XXXXXX)"
+  mount="$tmp/mount"
+  mkdir -p "$mount"
+
+  cleanup_dmg_verify() {
+    if [[ "$attached" == "1" ]]; then
+      hdiutil detach "$mount" -quiet >/dev/null 2>&1 || true
+    fi
+    rm -rf "$tmp"
+  }
+  trap cleanup_dmg_verify RETURN
+
+  hdiutil attach "$dmg" -readonly -nobrowse -mountpoint "$mount" -quiet
+  attached=1
+
+  local app="$mount/Ouro MD.app"
+  local installed="$tmp/installed/Ouro MD.app"
+  [[ -d "$app" ]] || fail "DMG did not contain Ouro MD.app"
+  [[ -L "$mount/Applications" ]] || fail "DMG did not contain an Applications shortcut"
+  mkdir -p "$tmp/installed"
+  ditto "$app" "$installed"
+  OURO_MD_EXPECT_GIT_SHA="$sha" ./scripts/verify-packaged-app.sh "$installed"
+
+  hdiutil detach "$mount" -quiet
+  attached=0
+  rm -rf "$tmp"
+  trap - RETURN
+}
+
 verify_local_mode() {
   local version=""
   local sha=""
   local zip=""
+  local dmg=""
   local manifest=""
 
   while [[ $# -gt 0 ]]; do
@@ -1008,6 +1084,7 @@ verify_local_mode() {
       --version) version="${2:-}"; shift 2 ;;
       --sha) sha="${2:-}"; shift 2 ;;
       --zip) zip="${2:-}"; shift 2 ;;
+      --dmg) dmg="${2:-}"; shift 2 ;;
       --manifest) manifest="${2:-}"; shift 2 ;;
       *) usage ;;
     esac
@@ -1018,10 +1095,20 @@ verify_local_mode() {
   [[ -n "$zip" ]] || fail "--zip is required"
   [[ -n "$manifest" ]] || fail "--manifest is required"
   [[ -s "$zip" ]] || fail "zip missing or empty: $zip"
+  if [[ -n "$dmg" ]]; then
+    [[ -s "$dmg" ]] || fail "dmg missing or empty: $dmg"
+  fi
   [[ -s "$manifest" ]] || fail "manifest missing or empty: $manifest"
 
-  verify_manifest "$manifest" "$version" "$sha" "$zip"
-  scan_mode "$manifest" "$zip"
+  verify_manifest "$manifest" "$version" "$sha" "$zip" "$dmg"
+  if [[ -n "$dmg" ]]; then
+    verify_dmg_contents "$dmg" "$sha"
+  fi
+  if [[ -n "$dmg" ]]; then
+    scan_mode "$manifest" "$zip" "$dmg"
+  else
+    scan_mode "$manifest" "$zip"
+  fi
 
   local tmp app
   tmp="$(mktemp -d /tmp/ouro-md-local-release.XXXXXX)"
@@ -1054,6 +1141,7 @@ verify_published_mode() {
 
   local tag="v${version}"
   local zip_name="Ouro-MD-${version}.zip"
+  local dmg_name="Ouro-MD-${version}.dmg"
   local manifest_name="Ouro-MD-${version}.manifest.json"
   local tmp
   tmp="$(mktemp -d /tmp/ouro-md-published.XXXXXX)"
@@ -1080,14 +1168,17 @@ verify_published_mode() {
   [[ "$target_sha" == "$sha" ]] || fail "$tag targets $target_sha, expected $sha"
 
   gh release download "$tag" --repo "$repo" --pattern "$zip_name" --dir "$tmp" >/dev/null
+  gh release download "$tag" --repo "$repo" --pattern "$dmg_name" --dir "$tmp" >/dev/null
   gh release download "$tag" --repo "$repo" --pattern "$manifest_name" --dir "$tmp" >/dev/null
   [[ -s "$tmp/$zip_name" ]] || fail "downloaded zip missing: $zip_name"
+  [[ -s "$tmp/$dmg_name" ]] || fail "downloaded dmg missing: $dmg_name"
   [[ -s "$tmp/$manifest_name" ]] || fail "downloaded manifest missing: $manifest_name"
 
   OURO_MD_EXPECT_TELEMETRY=1 verify_local_mode \
     --version "$version" \
     --sha "$sha" \
     --zip "$tmp/$zip_name" \
+    --dmg "$tmp/$dmg_name" \
     --manifest "$tmp/$manifest_name"
 
   local install_dir="$tmp/install"

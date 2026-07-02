@@ -117,4 +117,15 @@ final class OuroMDShellContractTests: XCTestCase {
             "no raw error messages"
         ])
     }
+
+    @MainActor
+    func testAppStoreShellContractUsesStoreOwnedUpdateSemantics() {
+        let contract = OuroMDShellContract.contract(for: .appStore)
+
+        XCTAssertEqual(contract.identity.distributionChannel, .appStore)
+        XCTAssertEqual(contract.identity.distributionChannel.descriptor.displayName, "App Store")
+        XCTAssertEqual(contract.releaseUpdates?.installCapability, .some(.none))
+        XCTAssertEqual(contract.releaseUpdates?.supportsInstallAndRelaunch, false)
+        XCTAssertEqual(contract.releaseUpdates?.supportsReleasePage, false)
+    }
 }

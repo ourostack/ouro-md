@@ -19,17 +19,22 @@ enum OuroMDShellContract {
 
     @MainActor
     static var contract: OuroAppShellContract {
+        contract(for: OuroMDDistribution.channel())
+    }
+
+    @MainActor
+    static func contract(for distributionChannel: OuroMDDistributionChannel) -> OuroAppShellContract {
         OuroAppShellContract(
-            identity: identity,
+            identity: identity(for: distributionChannel),
             requiredSurfaces: requiredSurfaces,
             releaseUpdates: OuroAppShellReleaseUpdateContract(
                 policy: releaseUpdatePolicy,
-                installCapability: .reviewThenInstall,
-                supportsReleasePage: true
+                installCapability: distributionChannel.allowsDirectUpdates ? .reviewThenInstall : .none,
+                supportsReleasePage: distributionChannel.allowsDirectUpdates
             ),
             about: OuroAppShellAboutContract(
                 subtitle: "Markdown editor for fast local writing.",
-                repositoryURL: identity.repositoryURL
+                repositoryURL: identity(for: distributionChannel).repositoryURL
             ),
             commandReference: OuroAppShellCommandReferenceContract(
                 title: "Keyboard Shortcuts",
@@ -84,13 +89,17 @@ enum OuroMDShellContract {
     }
 
     static var identity: AppShellIdentity {
+        identity(for: OuroMDDistribution.channel())
+    }
+
+    static func identity(for distributionChannel: OuroMDDistributionChannel) -> AppShellIdentity {
         AppShellIdentity(
             appName: OuroMDRelease.appName,
             bundleIdentifier: OuroMDRelease.bundleIdentifier,
             repository: OuroMDRelease.repository,
             version: OuroMDRelease.version,
             userAgent: OuroMDRelease.userAgent,
-            distributionChannel: .directDownload
+            distributionChannel: distributionChannel.appShellDistributionChannel
         )
     }
 }

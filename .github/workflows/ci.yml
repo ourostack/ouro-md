@@ -48,6 +48,11 @@ jobs:
         run: ./scripts/release-policy.sh scan .
       - name: Verify shared shell dependency freshness
         run: ./scripts/check-shell-dependency.sh
+      - name: Verify App Store packaging contract
+        run: |
+          plutil -lint config/app-store-entitlements.plist
+          ./scripts/package-app-store.sh --help >/dev/null
+          ./scripts/check-app-store-build.sh
       - name: Verify app control deck
         run: ./scripts/check-app-control-deck.py
       - name: Verify shared shell boundary selftest

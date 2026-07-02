@@ -6,7 +6,7 @@ ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
 in careful typography on a centered page. Type Markdown and watch it render in
 place — switch themes live, and read the same document four different ways.
 
-> **Status:** v0.9.73. Reads and edits Markdown today. Release tooling produces
+> **Status:** v0.9.74. Reads and edits Markdown today. Release tooling produces
 > Developer-ID signed/notarized public artifacts — see [First launch](#first-launch).
 
 ---
@@ -45,10 +45,14 @@ curl -fsSL https://ouro.bot/ouro-md-install.sh | bash
 
 Downloads the latest [release](https://github.com/ourostack/ouro-md/releases),
 verifies its checksum against the published manifest, installs **Ouro MD.app** to
-`/Applications` (falls back to `~/Applications`), clears the download quarantine,
-and opens it. macOS-only; needs just `curl`, `ditto`, `shasum`. Re-run it any
-time to update to the latest release, or use **Ouro MD ▸ Check for Updates...**
-inside the app.
+`/Applications` (falls back to `~/Applications`), registers it with Launch
+Services, and opens it. macOS-only; needs just `curl`, `ditto`, `shasum`. Re-run
+it any time to update to the latest release, or use **Ouro MD ▸ Check for Updates...**
+inside the direct-download app.
+
+Prefer a Finder install? Download the signed, notarized DMG from
+`https://ouro.bot/apps/ouro-md/` or the latest GitHub release, then drag
+**Ouro MD.app** to Applications.
 
 **From source (for development):**
 
@@ -63,11 +67,9 @@ inside the app.
   shell rc automatically (skipped if you already have an `md` alias; opt out with
   `OURO_MD_NO_ALIAS=1`).
 
-The app is currently **unsigned** (ad-hoc), so the installer clears the
-quarantine flag and re-registers it with Launch Services — a plain copy into
-`/Applications` would otherwise trip Gatekeeper on first launch. Ouro MD also
-checks for verified releases in the background by default; disable automatic
-checks in **Settings** if you prefer to update manually.
+Public direct-download releases are Developer-ID signed and notarized. Ouro MD
+also checks for verified releases in the background by default; disable
+automatic checks in **Settings** if you prefer to update manually.
 
 For uninstall/reset steps, see [docs/UNINSTALL_RESET.md](docs/UNINSTALL_RESET.md).
 For install or update problems, see
@@ -96,10 +98,10 @@ To ship: run `./scripts/bump-version.sh <x.y.z>` — it rewrites `OuroMDRelease.
 the release date, and this README status line in one shot (`make-app.sh` derives its
 `VERSION` from `OuroMDRelease.swift`, so there's no third place to edit; a partial bump
 is impossible). Then update `releaseHighlights` and merge to `main`. The Release workflow builds the app,
-requires embedded PostHog telemetry for production publishes, runs packaged-app
-probes, uploads the zip/manifest, and publishes `v<VERSION>`. It no-ops when that
-tag already exists. Use workflow dispatch with `dry_run=true` to build/probe on a
-GitHub macOS runner without publishing.
+requires embedded PostHog telemetry for production direct-download publishes,
+runs packaged-app probes, uploads the zip/DMG/manifest, and publishes
+`v<VERSION>`. It no-ops when that tag already exists. Use workflow dispatch with
+`dry_run=true` to build/probe on a GitHub macOS runner without publishing.
 
 For a local package smoke:
 
@@ -109,6 +111,10 @@ For a local package smoke:
 ./scripts/check-hosted-installer.sh         # smoke the public one-line installer URL
 ./scripts/check-live-update-path.sh         # smoke older published release -> latest updater path
 ```
+
+For Mac App Store packaging, see [docs/APP_STORE.md](docs/APP_STORE.md). Store
+builds use a separate `app-store` distribution channel: sandboxed, telemetry off,
+and direct GitHub update checks disabled because the App Store owns updates.
 
 Release builds can embed anonymous PostHog telemetry by setting
 `OURO_MD_POSTHOG_KEY` and, optionally, `OURO_MD_POSTHOG_HOST` before packaging.

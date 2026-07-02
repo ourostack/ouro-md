@@ -12,6 +12,7 @@ APP="${APP_NAME}.app"
 CONFIG="release"
 BIN_NAME="ouro-md"
 BUNDLE_ID="org.ourostack.ouro-md"
+OURO_MD_DISTRIBUTION_CHANNEL="${OURO_MD_DISTRIBUTION_CHANNEL:-developer-id}"
 # Single-sourced from OuroMDRelease.swift (the version the app reports at
 # runtime); never hardcode it here or the packaged Info.plist can silently drift
 # from the runtime version on a release bump. verify-release-version.sh enforces
@@ -30,6 +31,19 @@ case "${POSTHOG_DISABLED_NORMALIZED}" in
     POSTHOG_KEY=""
     ;;
 esac
+
+case "${OURO_MD_DISTRIBUTION_CHANNEL}" in
+  developer-id|app-store|local) ;;
+  *)
+    echo "error: OURO_MD_DISTRIBUTION_CHANNEL must be developer-id, app-store, or local" >&2
+    exit 1
+    ;;
+esac
+
+APP_CATEGORY="public.app-category.productivity"
+if [[ "${OURO_MD_DISTRIBUTION_CHANNEL}" == "app-store" ]]; then
+  APP_CATEGORY="public.app-category.developer-tools"
+fi
 
 echo "==> Building (${CONFIG})…"
 swift build -c "${CONFIG}"
@@ -63,11 +77,12 @@ cat > "${APP}/Contents/Info.plist" <<PLIST
     <key>CFBundleVersion</key><string>${VERSION}</string>
     <key>CFBundleShortVersionString</key><string>${VERSION}</string>
     <key>OuroMDGitSHA</key><string>${GIT_SHA}</string>
+    <key>OuroMDDistributionChannel</key><string>${OURO_MD_DISTRIBUTION_CHANNEL}</string>
     <key>CFBundleExecutable</key><string>${BIN_NAME}</string>
     <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>LSMinimumSystemVersion</key><string>13.0</string>
-    <key>LSApplicationCategoryType</key><string>public.app-category.productivity</string>
+    <key>LSApplicationCategoryType</key><string>${APP_CATEGORY}</string>
     <key>NSHumanReadableCopyright</key><string>Copyright © 2026 Ari Mendelow.</string>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSPrincipalClass</key><string>NSApplication</string>

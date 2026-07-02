@@ -26,8 +26,8 @@ struct OuroMDAboutView: View {
     var body: some View {
         OuroAppShellUI.AppShellAboutView(
             model: aboutModel,
-            updateState: updateCoordinator.appShellUpdateState,
-            updateActions: updateCoordinator.appShellUpdateActions,
+            updateState: updateCoordinator.appShellDirectUpdateState,
+            updateActions: updateCoordinator.appShellDirectUpdateActions,
             aboutActions: AppShellAboutActions(
                 openRepository: { NSWorkspace.shared.open(repositoryURL) },
                 copyVersion: copyVersion,
@@ -68,17 +68,24 @@ struct OuroMDReleaseControls: View {
     var showTitle: Bool
 
     var body: some View {
-        OuroAppShellUI.ReleaseUpdateControls(
-            state: updateCoordinator.appShellUpdateState,
-            actions: updateCoordinator.appShellUpdateActions,
-            labels: ReleaseUpdateActionLabels(
-                check: "Check for Updates",
-                review: "Review Update",
-                install: "Install & Relaunch",
-                openRelease: "Open Release"
-            ),
-            showTitle: showTitle
-        )
+        if let state = updateCoordinator.appShellDirectUpdateState,
+           let actions = updateCoordinator.appShellDirectUpdateActions {
+            OuroAppShellUI.ReleaseUpdateControls(
+                state: state,
+                actions: actions,
+                labels: ReleaseUpdateActionLabels(
+                    check: "Check for Updates",
+                    review: "Review Update",
+                    install: "Install & Relaunch",
+                    openRelease: "Open Release"
+                ),
+                showTitle: showTitle
+            )
+        } else {
+            Text("Updates are delivered by the App Store.")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+        }
     }
 }
 
