@@ -443,7 +443,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     @objc func toggleFocusMode(_ sender: Any?) { model.toggleFocusMode(); syncChrome() }
     @objc func toggleTypewriter(_ sender: Any?) { model.toggleTypewriter(); syncChrome() }
 
-    @objc func toggleWordCount(_ sender: Any?) { frontController?.toggleWordCount(sender) }
+    @objc func toggleStatusBar(_ sender: Any?) { frontController?.toggleStatusBar() }
 
     @objc func toggleSidebar(_ sender: Any?) { frontController?.toggleSidebar() }
     @objc func showOutlineSidebar(_ sender: Any?) { frontController?.revealSidebar(mode: .outline) }
@@ -533,7 +533,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
              #selector(toggleOutline(_:)),
              #selector(toggleFocusMode(_:)),
              #selector(toggleTypewriter(_:)),
-             #selector(toggleWordCount(_:)),
+             #selector(toggleStatusBar(_:)),
              #selector(toggleSidebar(_:)),
              #selector(showOutlineSidebar(_:)),
              #selector(showFileTreeSidebar(_:)),

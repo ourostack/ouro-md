@@ -27,8 +27,9 @@ place — switch themes live, and read the same document four different ways.
 - **Sidebar.** A collapsible sidebar (**⇧⌘L**) with a live document **Outline**
   (**⌃⌘1**) and a **File Tree** (**⌃⌘3**) of the current folder.
 - **Modes & tools.** **Source Code Mode** (**⌘/**), **Focus** (**F8**) and
-  **Typewriter** (**F9**) modes, **Find** (**⌘F**), folder **Search** (**⇧⌘F**), and a word-count popover
-  (**View ▸ Toggle Word Count**).
+  **Typewriter** (**F9**) modes, **Find** (**⌘F**), and folder **Search** (**⇧⌘F**). A
+  compact **status bar** (word/char count, mode, theme) sits a toggle away
+  (**View ▸ Toggle Status Bar**) and is hidden by default.
 - **Export.** Save to themed, self-contained **HTML** or **PDF**.
 - **Images that just work.** Pasted or dropped images are embedded inline (as
   data URIs) — no upload server, no broken links.
