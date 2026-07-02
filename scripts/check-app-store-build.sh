@@ -19,10 +19,12 @@ bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$info")"
 channel="$(/usr/libexec/PlistBuddy -c 'Print :OuroMDDistributionChannel' "$info")"
 category="$(/usr/libexec/PlistBuddy -c 'Print :LSApplicationCategoryType' "$info")"
 telemetry_key="$(/usr/libexec/PlistBuddy -c 'Print :OuroMDPostHogKey' "$info")"
+uses_non_exempt_encryption="$(/usr/libexec/PlistBuddy -c 'Print :ITSAppUsesNonExemptEncryption' "$info")"
 [[ "$bundle_id" == "bot.ouro.md" ]] || fail "expected canonical bundle id bot.ouro.md, got $bundle_id"
 [[ "$channel" == "app-store" ]] || fail "expected app-store channel, got $channel"
 [[ "$category" == "public.app-category.developer-tools" ]] || fail "expected Developer Tools category, got $category"
 [[ "$telemetry_key" == "phc_test" ]] || fail "expected embedded telemetry key in configured App Store build"
+[[ "$uses_non_exempt_encryption" == "false" ]] || fail "expected ITSAppUsesNonExemptEncryption=false"
 
 OURO_MD_DISTRIBUTION_CHANNEL=app-store \
 OURO_MD_TELEMETRY_DISABLED=1 \
@@ -30,6 +32,9 @@ OURO_MD_TELEMETRY_DISABLED=1 \
 
 if /usr/libexec/PlistBuddy -c 'Print :OuroMDPostHogKey' "$info" >/dev/null 2>&1; then
   fail "OURO_MD_TELEMETRY_DISABLED=1 should omit OuroMDPostHogKey"
+fi
+if /usr/libexec/PlistBuddy -c 'Print :OuroMDPostHogHost' "$info" >/dev/null 2>&1; then
+  fail "OURO_MD_TELEMETRY_DISABLED=1 should omit OuroMDPostHogHost"
 fi
 
 echo "app-store build contract ok"

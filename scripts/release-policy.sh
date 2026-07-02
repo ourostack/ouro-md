@@ -690,6 +690,9 @@ selftest_package_guards_mode() {
 from pathlib import Path
 
 package = Path("scripts/package-release.sh").read_text(encoding="utf-8")
+app_store_package = Path("scripts/package-app-store.sh").read_text(encoding="utf-8")
+make_app = Path("make-app.sh").read_text(encoding="utf-8")
+app_store_check = Path("scripts/check-app-store-build.sh").read_text(encoding="utf-8")
 checker = Path("scripts/check-shell-dependency.sh").read_text(encoding="utf-8")
 signer = Path("scripts/sign-notarize-app.sh").read_text(encoding="utf-8")
 ci_signing = Path("scripts/prepare-ci-signing-assets.sh").read_text(encoding="utf-8")
@@ -727,6 +730,29 @@ for needle in (
 ):
     if needle not in signer:
         raise SystemExit(f"sign-notarize-app.sh must contain {needle!r}")
+for needle in (
+    "--readiness",
+    "OURO_APP_STORE_APP_IDENTITY",
+    "OURO_APP_STORE_INSTALLER_IDENTITY",
+    "APP_STORE_CONNECT_API_KEY_PATH",
+    "OURO_MD_APP_STORE_ENABLE_TELEMETRY",
+    "OURO_MD_TELEMETRY_DISABLED=1",
+    "--p8-file-path",
+    "3rd Party Mac Developer Installer: Ari Mendelow (743GT2AJ24)",
+    "ITSAppUsesNonExemptEncryption",
+    "bot.ouro.md",
+    "app-store",
+):
+    if needle not in app_store_package:
+        raise SystemExit(f"package-app-store.sh must contain {needle!r}")
+if "ITSAppUsesNonExemptEncryption" not in make_app:
+    raise SystemExit("make-app.sh must declare ITSAppUsesNonExemptEncryption")
+for needle in (
+    "ITSAppUsesNonExemptEncryption",
+    "OuroMDPostHogHost",
+):
+    if needle not in app_store_check:
+        raise SystemExit(f"check-app-store-build.sh must contain {needle!r}")
 if "git ls-remote" in checker:
     raise SystemExit("check-shell-dependency.sh must not require every shell main commit to be pinned")
 for needle in (
