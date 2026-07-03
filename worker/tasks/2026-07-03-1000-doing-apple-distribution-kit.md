@@ -64,17 +64,17 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 **Output**: `setup-repo.json`, `asc-smoke.json`, `repo-map.json`, and `secret-scan-preflight.txt` in the artifacts directory; new repo initialized and pushed if missing.
 **Acceptance**: `gh repo view ourostack/apple-distribution-kit --json nameWithOwner,visibility,defaultBranchRef,url` reports public/main; `curl https://api.appstoreconnect.apple.com/v1/apps?limit=1` through a custom ES256 JWT returns HTTP 200 in `asc-smoke.json`; `xcrun altool --generate-jwt` REST smoke behavior is recorded without token output; `find ~/Downloads -name 'AuthKey_*.p8'` is empty; `git status --short` in touched repos shows no secret files.
 
-### ⬜ Unit 1a: Shared Kit Scaffold — Tests
+### ✅ Unit 1a: Shared Kit Scaffold — Tests
 **What**: Write failing tests for CLI help/version, config discovery, manifest path resolution, JSON output mode, failure exit codes, and package exports.
 **Output**: Test files under `/Users/arimendelow/Projects/apple-distribution-kit/test/` and red-run log `unit-1a-red.log`.
 **Acceptance**: Tests fail because implementation/exported modules are missing, not because the test runner is misconfigured.
 
-### ⬜ Unit 1b: Shared Kit Scaffold — Implementation
+### ✅ Unit 1b: Shared Kit Scaffold — Implementation
 **What**: Implement TypeScript package scaffold, CLI entry point, config discovery, manifest path resolution, JSON/text output switch, and package exports.
 **Output**: `src/cli.ts`, `src/config.ts`, package metadata, TypeScript config, and green-run log `unit-1b-green.log`.
 **Acceptance**: Unit 1a tests PASS, `npm run build` passes, `node dist/cli.js --help` exits 0, and no warnings appear.
 
-### ⬜ Unit 1c: Shared Kit Scaffold — Coverage & Refactor
+### ✅ Unit 1c: Shared Kit Scaffold — Coverage & Refactor
 **What**: Add coverage enforcement and CI for no-secret package tests; refactor scaffold code only if behavior remains green.
 **Output**: Coverage config, `.github/workflows/ci.yml`, coverage report, and `unit-1c-coverage.log`.
 **Acceptance**: Coverage is 100% for scaffold code, `npm test`, `npm run build`, and CI workflow syntax checks pass.
@@ -228,3 +228,6 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 - 2026-07-03 11:58 Reworked after reviewer findings: added explicit outputs to every unit, fixed repo/worktree ownership, split finalization, added live Developer ID proof, and enumerated allowed Apple blockers/artifacts.
 - 2026-07-03 12:03 Encoded providerPublicId and screenshot/app-preview v1 policy after Round 2 adversarial review.
 - 2026-07-03 12:14 Unit 0 complete: created public `ourostack/apple-distribution-kit`, cloned `/Users/arimendelow/Projects/apple-distribution-kit` on `worker/foundation`, validated App Store Connect API key via redacted smoke, and recorded repo/secret preflight artifacts.
+- 2026-07-03 12:18 Unit 1a complete: added failing scaffold tests for CLI/config/manifest path behavior and recorded red-run evidence.
+- 2026-07-03 12:22 Unit 1b complete: implemented minimal CLI/config/manifest path foundation and recorded green test/build evidence.
+- 2026-07-03 12:27 Unit 1c complete: added CI and enforced 100% scaffold coverage with built CLI smoke evidence.
