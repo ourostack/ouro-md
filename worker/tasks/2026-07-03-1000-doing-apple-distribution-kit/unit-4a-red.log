@@ -1,0 +1,76 @@
+
+> apple-distribution-kit@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.6 /Users/arimendelow/Projects/apple-distribution-kit
+
+ ❯ test/reconcile.test.ts (4 tests | 4 failed) 4ms
+   × Apple state reconciliation > plans missing Apple resources and first app record human gate 3ms
+     → (0 , reconcileAppleState) is not a function
+   × Apple state reconciliation > does not plan resources already present remotely 0ms
+     → (0 , reconcileAppleState) is not a function
+   × Apple state reconciliation > refuses destructive deletes without the explicit flag 0ms
+     → (0 , reconcileAppleState) is not a function
+   × Apple state reconciliation > plans destructive deletes only with the explicit flag 0ms
+     → (0 , reconcileAppleState) is not a function
+ ✓ test/manifest-plan.test.ts (28 tests) 9ms
+ ✓ test/scaffold.test.ts (25 tests) 17ms
+ ✓ test/asc-client.test.ts (17 tests) 20ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/reconcile.test.ts > Apple state reconciliation > plans missing Apple resources and first app record human gate
+TypeError: (0 , reconcileAppleState) is not a function
+ ❯ test/reconcile.test.ts:45:12
+     43| describe("Apple state reconciliation", () => {
+     44|   it("plans missing Apple resources and first app record human gate", …
+     45|     expect(reconcileAppleState({ manifest: manifest(), remoteState: {}…
+       |            ^
+     46|       ok: true,
+     47|       actions: [
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  test/reconcile.test.ts > Apple state reconciliation > does not plan resources already present remotely
+TypeError: (0 , reconcileAppleState) is not a function
+ ❯ test/reconcile.test.ts:75:7
+     73|   it("does not plan resources already present remotely", () => {
+     74|     expect(
+     75|       reconcileAppleState({
+       |       ^
+     76|         manifest: manifest(),
+     77|         remoteState: {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  test/reconcile.test.ts > Apple state reconciliation > refuses destructive deletes without the explicit flag
+TypeError: (0 , reconcileAppleState) is not a function
+ ❯ test/reconcile.test.ts:93:7
+     91|   it("refuses destructive deletes without the explicit flag", () => {
+     92|     expect(
+     93|       reconcileAppleState({
+       |       ^
+     94|         manifest: manifest(),
+     95|         remoteState: {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  test/reconcile.test.ts > Apple state reconciliation > plans destructive deletes only with the explicit flag
+TypeError: (0 , reconcileAppleState) is not a function
+ ❯ test/reconcile.test.ts:111:7
+    109|   it("plans destructive deletes only with the explicit flag", () => {
+    110|     expect(
+    111|       reconcileAppleState({
+       |       ^
+    112|         manifest: manifest(),
+    113|         allowDestructiveAppleDelete: true,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  4 failed | 70 passed (74)
+   Start at  12:53:30
+   Duration  336ms (transform 111ms, setup 0ms, collect 283ms, tests 50ms, environment 1ms, prepare 200ms)
+
