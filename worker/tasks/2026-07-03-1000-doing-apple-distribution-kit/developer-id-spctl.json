@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "log": "developer-id-spctl.log",
+  "summary": [
+    ".build/developer-id-verify/Ouro MD.app: accepted",
+    "source=Notarized Developer ID"
+  ]
+}

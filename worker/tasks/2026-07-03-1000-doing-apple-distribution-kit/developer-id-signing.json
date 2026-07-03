@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "app": ".build/developer-id-verify/Ouro MD.app",
+  "identity": "Developer ID Application: Ari Mendelow (743GT2AJ24)",
+  "teamId": "743GT2AJ24",
+  "authorities": [
+    "Developer ID Application: Ari Mendelow (743GT2AJ24)",
+    "Developer ID Certification Authority",
+    "Apple Root CA"
+  ],
+  "hardenedRuntimeEvidence": "present",
+  "codesignVerifyLog": "developer-id-codesign-verify.log",
+  "codesignDisplayLog": "developer-id-codesign-display.log"
+}

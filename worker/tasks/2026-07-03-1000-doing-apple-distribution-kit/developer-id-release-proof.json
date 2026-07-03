@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "manifest": "dist/Ouro-MD-0.9.77.manifest.json",
+  "archive": "Ouro-MD-0.9.77.zip",
+  "dmg": "Ouro-MD-0.9.77.dmg",
+  "version": "0.9.77",
+  "build": "0.9.77",
+  "bundleIdentifier": "bot.ouro.md",
+  "gitSha": "3d458808589089e72f70d49a6134f00a1fd5d950",
+  "signingMode": "developer-id",
+  "notarized": true,
+  "zipSha256": "05dba9fb3c7be829fabd218976df9e016a1b1cabad09c76b4c17bd83a9f4eec1",
+  "dmgSha256": "410162b8132e7164a4d5bf67d8d4c6b34a6e9824055abf71537c3fb87b565ad6",
+  "blocker": null
+}

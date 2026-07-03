@@ -1,0 +1,29 @@
+Executable=/Users/arimendelow/Projects/ouro-md-apple-distribution-kit-adoption/.build/developer-id-verify/Ouro MD.app/Contents/MacOS/ouro-md
+Identifier=bot.ouro.md
+Format=app bundle with Mach-O thin (arm64)
+CodeDirectory v=20500 size=12375 flags=0x10000(runtime) hashes=380+3 location=embedded
+VersionPlatform=1
+VersionMin=851968
+VersionSDK=1705216
+Hash type=sha256 size=32
+CandidateCDHash sha256=bf7dc866fccf29e57f5b7bcc159e0985ca20b5bb
+CandidateCDHashFull sha256=bf7dc866fccf29e57f5b7bcc159e0985ca20b5bb97edb3c4fc29018c81ab586e
+Hash choices=sha256
+CMSDigest=bf7dc866fccf29e57f5b7bcc159e0985ca20b5bb97edb3c4fc29018c81ab586e
+CMSDigestType=2
+Executable Segment base=0
+Executable Segment limit=2555904
+Executable Segment flags=0x1
+Page size=16384
+CDHash=bf7dc866fccf29e57f5b7bcc159e0985ca20b5bb
+Signature size=8974
+Authority=Developer ID Application: Ari Mendelow (743GT2AJ24)
+Authority=Developer ID Certification Authority
+Authority=Apple Root CA
+Timestamp=Jul 3, 2026 at 1:50:02 PM
+Notarization Ticket=stapled
+Info.plist entries=17
+TeamIdentifier=743GT2AJ24
+Runtime Version=26.5.0
+Sealed Resources version=2 rules=13 files=536
+Internal requirements count=1 size=172
