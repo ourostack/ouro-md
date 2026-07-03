@@ -52,6 +52,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: ourostack/apple-distribution-kit
+          ref: worker/foundation
           path: .ci/apple-distribution-kit
       - name: Build Apple distribution kit
         working-directory: .ci/apple-distribution-kit

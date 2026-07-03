@@ -56,6 +56,28 @@ mkdir -p "$artifact_dir"
   --json >"$artifact_dir/app-store-review-prep.stdout.json"
 
 [[ -s "$review_artifact" ]] || fail "review-prep artifact was not written: $review_artifact"
+python3 <<'PY'
+from pathlib import Path
+
+package_script = Path("scripts/package-app-store.sh").read_text(encoding="utf-8")
+for needle in (
+    "./scripts/apple-distribution-kit.sh xcode run",
+    "--kind codesign",
+    "--kind productbuild",
+    "--kind altool-validate",
+    "--kind altool-upload",
+):
+    if needle not in package_script:
+        raise SystemExit(f"scripts/package-app-store.sh must delegate {needle!r} through apple-distribution-kit")
+for forbidden in (
+    "codesign --force",
+    "productbuild --component",
+    "xcrun altool --validate-app",
+    "xcrun altool --upload-package",
+):
+    if forbidden in package_script:
+        raise SystemExit(f"scripts/package-app-store.sh must not bypass apple-distribution-kit with {forbidden!r}")
+PY
 ./scripts/check-shell-boundary.sh
 
 echo "apple distribution kit contract ok"
