@@ -124,17 +124,17 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 **Output**: Coverage report and `unit-4c-coverage.log`.
 **Acceptance**: Coverage is 100% for reconciler code and snapshot plans stay stable.
 
-### ⬜ Unit 5a: Local Xcode Runner — Tests
+### ✅ Unit 5a: Local Xcode Runner — Tests
 **What**: Write failing tests for exact argv generation and result parsing for `codesign`, `productbuild`, `xcrun notarytool`, `xcrun stapler`, `spctl --assess --type execute`, `xcrun altool --validate-app`, and `xcrun altool --upload-package`.
 **Output**: Runner tests with argv/log redaction assertions and red-run log `unit-5a-red.log`.
 **Acceptance**: Tests fail on missing runner behavior; every generated command is asserted without invoking live upload/notarization.
 
-### ⬜ Unit 5b: Local Xcode Runner — Implementation
+### ✅ Unit 5b: Local Xcode Runner — Implementation
 **What**: Implement command builder, dry-run/apply separation, missing-tool detection, result parser, App Store package validation/upload wrappers, Developer ID sign/notarize/staple/spctl proof model, and channel invariant checks.
 **Output**: `src/xcode/`, generated command fixtures, and green-run log `unit-5b-green.log`.
 **Acceptance**: Unit 5a tests PASS; dry-run emits exact commands; apply refuses live upload/notarization unless explicit apply intent and required credentials are present.
 
-### ⬜ Unit 5c: Local Xcode Runner — Coverage & Refactor
+### ✅ Unit 5c: Local Xcode Runner — Coverage & Refactor
 **What**: Cover success/failure parsing, timeout/interruption, missing `xcrun`, missing identities, notarization failure states, stapler failure, and redaction edge cases.
 **Output**: Coverage report and `unit-5c-coverage.log`.
 **Acceptance**: Coverage is 100% for runner code and tests/build stay green.
@@ -240,3 +240,6 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 - 2026-07-03 12:54 Unit 4a complete: added failing Apple state reconciliation tests for missing resources, human gates, iOS dry-run blockers, and destructive-delete policy.
 - 2026-07-03 12:56 Unit 4b complete: implemented bundle/certificate/profile/app-record reconciliation and safe destructive-delete classification.
 - 2026-07-03 12:57 Unit 4c complete: verified reconciler coverage remains 100% with tests/build green.
+- 2026-07-03 12:59 Unit 5a complete: added failing Xcode command runner tests for exact argv, dry-run/apply behavior, and result parsing.
+- 2026-07-03 13:02 Unit 5b complete: implemented Xcode command builder, dry-run/apply runner, and result parser.
+- 2026-07-03 13:04 Unit 5c complete: covered Xcode runner branches to 100% and kept tests/build green.
