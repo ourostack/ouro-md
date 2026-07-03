@@ -1,0 +1,44 @@
+{
+  "coordinator": {
+    "path": "/Users/arimendelow/Projects/ouro-md-apple-release-kit-program",
+    "branch": "worker/apple-release-kit-program",
+    "commit": "a7c1418",
+    "status": "?? worker/tasks/2026-07-03-1000-doing-apple-distribution-kit/repo-map.json\n?? worker/tasks/2026-07-03-1000-doing-apple-distribution-kit/setup-repo.json"
+  },
+  "sharedKit": {
+    "path": "/Users/arimendelow/Projects/apple-distribution-kit",
+    "branch": "worker/foundation",
+    "commit": "2dd8a49",
+    "status": ""
+  },
+  "ouroMd": {
+    "path": "/Users/arimendelow/Projects/ouro-md",
+    "branch": "main",
+    "commit": "b7f6986",
+    "status": ""
+  },
+  "workbench": {
+    "path": "/Users/arimendelow/Projects/ouro-workbench",
+    "branch": "main",
+    "commit": "34921e8",
+    "status": ""
+  },
+  "spoonjoy": {
+    "path": "/Users/arimendelow/Projects/spoonjoy",
+    "branch": "master",
+    "commit": "cf849fe",
+    "status": ""
+  },
+  "appShell": {
+    "path": "/Users/arimendelow/Projects/ouro-native-apple-app-shell",
+    "branch": "main",
+    "commit": "805ff2b",
+    "status": ""
+  },
+  "skills": {
+    "path": "/Users/arimendelow/Projects/ouroboros-skills",
+    "branch": "main",
+    "commit": "8e7ae61",
+    "status": ""
+  }
+}

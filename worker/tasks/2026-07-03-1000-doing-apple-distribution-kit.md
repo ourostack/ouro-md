@@ -59,10 +59,10 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 
 **CRITICAL: Every unit header MUST start with status emoji (⬜ for new units).**
 
-### ⬜ Unit 0: Setup/Research
+### ✅ Unit 0: Setup/Research
 **What**: Create or verify public repo `ourostack/apple-distribution-kit` with default branch `main`, MIT license, secret-scanning-friendly `.gitignore`, Node/TypeScript runtime, CLI command `apple-distribution-kit`, package name `apple-distribution-kit`, and local checkout `/Users/arimendelow/Projects/apple-distribution-kit` on branch `worker/foundation`. Treat `/Users/arimendelow/Projects/ouro-md-apple-release-kit-program` as the coordinator/doc worktree only. Verify candidate local credentials at `~/Library/Application Support/AppleDistributionKit/app-store-connect/config.json`.
 **Output**: `setup-repo.json`, `asc-smoke.json`, `repo-map.json`, and `secret-scan-preflight.txt` in the artifacts directory; new repo initialized and pushed if missing.
-**Acceptance**: `gh repo view ourostack/apple-distribution-kit --json nameWithOwner,visibility,defaultBranchRef,url` reports public/main; `curl https://api.appstoreconnect.apple.com/v1/apps?limit=1` through a custom ES256 JWT returns HTTP 200 in `asc-smoke.json`; `xcrun altool --generate-jwt` rejection for REST usage is recorded without token output; `find ~/Downloads -name 'AuthKey_*.p8'` is empty; `git status --short` in touched repos shows no secret files.
+**Acceptance**: `gh repo view ourostack/apple-distribution-kit --json nameWithOwner,visibility,defaultBranchRef,url` reports public/main; `curl https://api.appstoreconnect.apple.com/v1/apps?limit=1` through a custom ES256 JWT returns HTTP 200 in `asc-smoke.json`; `xcrun altool --generate-jwt` REST smoke behavior is recorded without token output; `find ~/Downloads -name 'AuthKey_*.p8'` is empty; `git status --short` in touched repos shows no secret files.
 
 ### ⬜ Unit 1a: Shared Kit Scaffold — Tests
 **What**: Write failing tests for CLI help/version, config discovery, manifest path resolution, JSON output mode, failure exit codes, and package exports.
@@ -227,3 +227,4 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 - 2026-07-03 11:50 Created from planning doc
 - 2026-07-03 11:58 Reworked after reviewer findings: added explicit outputs to every unit, fixed repo/worktree ownership, split finalization, added live Developer ID proof, and enumerated allowed Apple blockers/artifacts.
 - 2026-07-03 12:03 Encoded providerPublicId and screenshot/app-preview v1 policy after Round 2 adversarial review.
+- 2026-07-03 12:14 Unit 0 complete: created public `ourostack/apple-distribution-kit`, cloned `/Users/arimendelow/Projects/apple-distribution-kit` on `worker/foundation`, validated App Store Connect API key via redacted smoke, and recorded repo/secret preflight artifacts.
