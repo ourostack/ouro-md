@@ -109,17 +109,17 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 **Output**: Coverage report, live smoke artifact `asc-live-smoke.json`, and `unit-3c-coverage.log`.
 **Acceptance**: Coverage is 100% for auth/client code; live artifact contains endpoint/status/count only, not JWT or private key content.
 
-### ⬜ Unit 4a: Apple State Reconciler — Tests
+### ✅ Unit 4a: Apple State Reconciler — Tests
 **What**: Write failing tests for bundle ID, certificate, provisioning profile, app-record discovery, first-app-record `requiresHuman`, destructive delete planning, manual delete flag behavior, macOS App Store lane, Developer ID lane, and iOS dry-run lane.
 **Output**: Reconciler tests, remote Apple response fixtures, snapshot plans, and red-run log `unit-4a-red.log`.
 **Acceptance**: Tests fail on missing reconciliation decisions and include unsupported `/v1/apps` creation behavior.
 
-### ⬜ Unit 4b: Apple State Reconciler — Implementation
+### ✅ Unit 4b: Apple State Reconciler — Implementation
 **What**: Implement desired-vs-remote reconcilers for bundle IDs, certificates, provisioning profiles, app record discovery, and safe/destructive plan classification.
 **Output**: `src/reconcile/`, fixture plan outputs, and green-run log `unit-4b-green.log`.
 **Acceptance**: Unit 4a tests PASS; destructive Apple deletes are refused unless `--allow-destructive-apple-delete` is present; missing first app record produces canonical `requiresHuman`.
 
-### ⬜ Unit 4c: Apple State Reconciler — Coverage & Refactor
+### ✅ Unit 4c: Apple State Reconciler — Coverage & Refactor
 **What**: Cover empty remote state, duplicate remote resources, conflicting teams/providers, unsupported certificate/profile types, and stable blocker artifacts.
 **Output**: Coverage report and `unit-4c-coverage.log`.
 **Acceptance**: Coverage is 100% for reconciler code and snapshot plans stay stable.
@@ -237,3 +237,6 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 - 2026-07-03 12:40 Unit 3a complete: added failing App Store Connect JWT/client/provider tests and recorded red-run evidence.
 - 2026-07-03 12:43 Unit 3b complete: implemented ES256 JWT signing, ASC REST client, providerPublicId resolution, and CLI smoke path.
 - 2026-07-03 12:51 Unit 3c complete: covered ASC auth/client branches to 100%, ran live redacted `asc smoke`, and recorded `asc-live-smoke.json`.
+- 2026-07-03 12:54 Unit 4a complete: added failing Apple state reconciliation tests for missing resources, human gates, iOS dry-run blockers, and destructive-delete policy.
+- 2026-07-03 12:56 Unit 4b complete: implemented bundle/certificate/profile/app-record reconciliation and safe destructive-delete classification.
+- 2026-07-03 12:57 Unit 4c complete: verified reconciler coverage remains 100% with tests/build green.
