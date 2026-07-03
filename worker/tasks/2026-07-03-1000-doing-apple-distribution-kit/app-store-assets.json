@@ -1,0 +1,15 @@
+{
+  "status": "blocked",
+  "screenshotCount": 0,
+  "appPreviewCount": 0,
+  "reviewPlanBlockers": [
+    {
+      "code": "screenshots-assets-required",
+      "message": "Screenshots/app previews must exist locally or be proven present remotely before review submission.",
+      "evidence": {
+        "channelId": "mac-app-store"
+      }
+    }
+  ],
+  "blocker": "missing screenshot/app-preview assets or remote proof"
+}

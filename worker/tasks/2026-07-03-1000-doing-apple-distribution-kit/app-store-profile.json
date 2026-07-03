@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "bundleId": "bot.ouro.md",
+  "bundleResourceId": "ALBZ38V6JH",
+  "certificateId": "8ND74L5TSU",
+  "created": true,
+  "createHttpStatus": 201,
+  "createErrors": null,
+  "lookupHttpStatus": 400,
+  "count": 0,
+  "profile": {
+    "id": "N984ZC9M2H",
+    "type": "profiles",
+    "attributes": {
+      "name": "Ouro MD Mac App Store",
+      "profileType": "MAC_APP_STORE",
+      "platform": "MAC_OS",
+      "uuid": "179e78fd-9e10-4b22-854c-154f2068344f",
+      "expirationDate": "2027-07-03T20:51:49.000+00:00"
+    }
+  },
+  "localProfilePath": "~/Library/Application Support/ouro/Signing/apple-app-store-743GT2AJ24/OuroMD-MacAppStore-743GT2AJ24.provisionprofile",
+  "blocker": null
+}

@@ -1,0 +1,118 @@
+{
+  "data" : [
+    {
+      "attributes" : {
+        "isCurrent" : false,
+        "needsToVerifyLegalRole" : false,
+        "roles" : [
+          "CUSTOMER_SUPPORT",
+          "APP_MANAGER"
+        ],
+        "teamId" : "69a6de8a-36f3-47e3-e053-5b8c7c11a4d1",
+        "teamType" : "CONTENT_PROVIDER"
+      },
+      "id" : "69a495f9-de72-5733-e053-5b8c7c1155b0",
+      "links" : {
+        "self" : "https://appstoreconnect.apple.com/olympus/v1/actors/69a495f9-de72-5733-e053-5b8c7c1155b0"
+      },
+      "relationships" : {
+        "provider" : {
+          "data" : {
+            "id" : "69a6de8a-36f3-47e3-e053-5b8c7c11a4d1",
+            "type" : "providers"
+          }
+        }
+      },
+      "type" : "actors"
+    },
+    {
+      "attributes" : {
+        "isCurrent" : true,
+        "needsToVerifyLegalRole" : false,
+        "roles" : [
+          "LEGAL",
+          "CIPS",
+          "ADMIN"
+        ],
+        "teamId" : "b25f0f77-25c0-44b8-9d21-2e95083f09ae",
+        "teamType" : "CONTENT_PROVIDER"
+      },
+      "id" : "9a91cfc7-fa39-4ff8-aaf0-5c8d1ff1f8a7",
+      "links" : {
+        "self" : "https://appstoreconnect.apple.com/olympus/v1/actors/9a91cfc7-fa39-4ff8-aaf0-5c8d1ff1f8a7"
+      },
+      "relationships" : {
+        "provider" : {
+          "data" : {
+            "id" : "b25f0f77-25c0-44b8-9d21-2e95083f09ae",
+            "type" : "providers"
+          }
+        }
+      },
+      "type" : "actors"
+    }
+  ],
+  "included" : [
+    {
+      "attributes" : {
+        "agreements" : [
+
+        ],
+        "contentType" : [
+          "PURPLESOFTWARE"
+        ],
+        "developerProgram" : "INDIVIDUAL",
+        "developerTeamId" : "ZR774UBSWC",
+        "entityType" : "INDIVIDUAL",
+        "internalId" : 118116405,
+        "isInternal" : false,
+        "isSignupComplete" : false,
+        "name" : "Arye Mendelow",
+        "shortName" : "ZR774UBSWC",
+        "type" : [
+          "PURPLESOFTWARE"
+        ]
+      },
+      "id" : "69a6de8a-36f3-47e3-e053-5b8c7c11a4d1",
+      "links" : {
+        "self" : "https://appstoreconnect.apple.com/olympus/v1/providers/69a6de8a-36f3-47e3-e053-5b8c7c11a4d1"
+      },
+      "type" : "providers"
+    },
+    {
+      "attributes" : {
+        "agreements" : [
+
+        ],
+        "contentType" : [
+          "PURPLESOFTWARE"
+        ],
+        "developerProgram" : "INDIVIDUAL",
+        "developerTeamId" : "743GT2AJ24",
+        "entityType" : "INDIVIDUAL",
+        "internalId" : 126438239,
+        "isInternal" : false,
+        "isSignupComplete" : false,
+        "name" : "Ari Mendelow",
+        "shortName" : "743GT2AJ24",
+        "type" : [
+          "PURPLESOFTWARE"
+        ]
+      },
+      "id" : "b25f0f77-25c0-44b8-9d21-2e95083f09ae",
+      "links" : {
+        "self" : "https://appstoreconnect.apple.com/olympus/v1/providers/b25f0f77-25c0-44b8-9d21-2e95083f09ae"
+      },
+      "type" : "providers"
+    }
+  ],
+  "links" : {
+    "self" : "https://appstoreconnect.apple.com/olympus/v1/actors?include=provider"
+  },
+  "meta" : {
+    "paging" : {
+      "limit" : 50,
+      "total" : 2
+    }
+  }
+}

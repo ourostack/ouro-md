@@ -1,0 +1,13 @@
+{
+  "status": "blocked",
+  "packageBuilt": true,
+  "packagePath": "dist/app-store/Ouro-MD-0.9.77-app-store.pkg",
+  "exitCode": 1,
+  "validator": "xcrun altool --validate-app",
+  "log": "app-store-package-validation.log",
+  "errorSummary": [
+    "ERROR: [altool.9C6C4CDC0] Cannot determine the Apple ID from Bundle ID 'bot.ouro.md' and platform 'MAC_OS'. (19)",
+    "ERROR: [altool.10371B120] ExitFailure (31)"
+  ],
+  "blocker": "first app record must be created in App Store Connect UI for bot.ouro.md"
+}

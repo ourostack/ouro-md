@@ -1,0 +1,11 @@
+{
+  "status": "blocked",
+  "reviewPlan": "app-store-review-plan-live.json",
+  "appRecordRequired": true,
+  "buildRequired": true,
+  "blockers": [
+    "first app record must be created in App Store Connect UI for bot.ouro.md",
+    "missing screenshot/app-preview assets or remote proof",
+    "no processed build exists"
+  ]
+}
