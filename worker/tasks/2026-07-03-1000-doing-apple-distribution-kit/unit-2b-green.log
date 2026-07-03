@@ -1,0 +1,19 @@
+
+> apple-distribution-kit@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.6 /Users/arimendelow/Projects/apple-distribution-kit
+
+ ✓ test/manifest-plan.test.ts (6 tests) 5ms
+ ✓ test/scaffold.test.ts (21 tests) 13ms
+
+ Test Files  2 passed (2)
+      Tests  27 passed (27)
+   Start at  12:32:52
+   Duration  297ms (transform 60ms, setup 0ms, collect 89ms, tests 19ms, environment 0ms, prepare 85ms)
+
+
+> apple-distribution-kit@0.1.0 build
+> tsc -p tsconfig.json
+
