@@ -4,12 +4,12 @@ public enum OuroMDRelease {
     public static let appName = "Ouro MD"
     public static let bundleIdentifier = "bot.ouro.md"
     public static let repository = "ourostack/ouro-md"
-    public static let version = "0.9.78"
+    public static let version = "0.9.79"
     public static let userAgent = "OuroMD/\(version)"
     public static let releaseDate = "2026-07-03"
     public static let releaseHighlights = [
-        "App Store packaging now delegates signing, product packaging, validation, and upload steps through the shared Apple distribution kit.",
-        "CI verifies the shared distribution-kit boundary so the Mac App Store lane cannot silently fall back to bespoke packaging.",
-        "Release evidence records the active App Store provisioning profile, local signing identities, and the first-app-record blocker without storing secrets.",
+        "Mac App Store packaging now passes Apple validation with the required 1024px app icon representation.",
+        "App Store signing carries the canonical application and team identifiers from the active provisioning profile.",
+        "CI checks the App Store icon, entitlement, telemetry, and encryption contracts before packaging.",
     ]
 }
