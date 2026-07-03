@@ -79,17 +79,17 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 **Output**: Coverage config, `.github/workflows/ci.yml`, coverage report, and `unit-1c-coverage.log`.
 **Acceptance**: Coverage is 100% for scaffold code, `npm test`, `npm run build`, and CI workflow syntax checks pass.
 
-### ⬜ Unit 2a: Manifest/Redaction/Plan Core — Tests
+### ✅ Unit 2a: Manifest/Redaction/Plan Core — Tests
 **What**: Write failing tests for canonical app manifest `distribution/apple-distribution.json`, schema validation, manifest examples, redaction helpers, machine-readable plan shape, `requiresHuman` entries, and no-secret log serialization.
 **Output**: Schema/fixture tests, snapshot fixtures, and red-run log `unit-2a-red.log`.
 **Acceptance**: Tests fail on missing schema/plan/redaction behavior with clear assertions.
 
-### ⬜ Unit 2b: Manifest/Redaction/Plan Core — Implementation
+### ✅ Unit 2b: Manifest/Redaction/Plan Core — Implementation
 **What**: Implement manifest schema, loader, validator, examples, redaction helper, plan model, `requiresHuman` model, and stable JSON serialization.
 **Output**: `src/manifest/`, `src/plan/`, example manifests, and green-run log `unit-2b-green.log`.
 **Acceptance**: Unit 2a tests PASS; invalid manifests produce precise JSON-pointer-like diagnostics; logs redact tokens, private keys, `.p8`, `.p12`, profile content, and app-specific passwords.
 
-### ⬜ Unit 2c: Manifest/Redaction/Plan Core — Coverage & Refactor
+### ✅ Unit 2c: Manifest/Redaction/Plan Core — Coverage & Refactor
 **What**: Cover null/empty/boundary manifest fields, redaction false positives/negatives, and all plan branch variants.
 **Output**: Coverage report and `unit-2c-coverage.log`.
 **Acceptance**: Coverage is 100% for manifest/plan/redaction code and tests/build stay green.
@@ -231,3 +231,6 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 - 2026-07-03 12:18 Unit 1a complete: added failing scaffold tests for CLI/config/manifest path behavior and recorded red-run evidence.
 - 2026-07-03 12:22 Unit 1b complete: implemented minimal CLI/config/manifest path foundation and recorded green test/build evidence.
 - 2026-07-03 12:27 Unit 1c complete: added CI and enforced 100% scaffold coverage with built CLI smoke evidence.
+- 2026-07-03 12:29 Unit 2a complete: added failing manifest/redaction/plan tests and recorded red-run evidence.
+- 2026-07-03 12:33 Unit 2b complete: implemented manifest validation, redaction, plan shape, and manifest validation CLI behavior.
+- 2026-07-03 12:37 Unit 2c complete: covered manifest/plan/redaction branches to 100% and kept tests/build green.
