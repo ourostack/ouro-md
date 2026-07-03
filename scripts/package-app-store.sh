@@ -72,7 +72,7 @@ require_identity_env() {
 require_app_store_identities() {
   APP_IDENTITY="${OURO_APP_STORE_APP_IDENTITY:-}"
   INSTALLER_IDENTITY="${OURO_APP_STORE_INSTALLER_IDENTITY:-}"
-  require_identity_env OURO_APP_STORE_APP_IDENTITY 'Apple Distribution: Ari Mendelow (743GT2AJ24)'
+  require_identity_env OURO_APP_STORE_APP_IDENTITY '3rd Party Mac Developer Application: Ari Mendelow (743GT2AJ24)'
   require_identity_env OURO_APP_STORE_INSTALLER_IDENTITY '3rd Party Mac Developer Installer: Ari Mendelow (743GT2AJ24)'
   security find-identity -v -p codesigning | grep -Fq "$APP_IDENTITY" \
     || fail "app signing identity was not found in this keychain: $APP_IDENTITY"
@@ -96,6 +96,10 @@ build_auth_args() {
   if [[ -n "${APP_STORE_CONNECT_PROVIDER_PUBLIC_ID:-}" ]]; then
     auth_args+=(--provider-public-id "$APP_STORE_CONNECT_PROVIDER_PUBLIC_ID")
   fi
+}
+
+run_adk_xcode() {
+  ./scripts/apple-distribution-kit.sh xcode run --mode apply "$@"
 }
 
 print_readiness() {
@@ -133,10 +137,11 @@ if [[ -n "${OURO_APP_STORE_PROVISIONING_PROFILE:-}" ]]; then
   cp "$OURO_APP_STORE_PROVISIONING_PROFILE" "$APP/Contents/embedded.provisionprofile"
 fi
 
-codesign --force --deep --options runtime --timestamp \
-  --entitlements "$ENTITLEMENTS" \
-  --sign "$APP_IDENTITY" \
-  "$APP"
+run_adk_xcode \
+  --kind codesign \
+  --identity "$APP_IDENTITY" \
+  --path "$APP" \
+  --entitlements "$ENTITLEMENTS"
 codesign --verify --deep --strict --verbose=2 "$APP"
 
 version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist")"
@@ -154,17 +159,22 @@ fi
 mkdir -p "$OUT_DIR"
 pkg="$OUT_DIR/Ouro-MD-${version}-app-store.pkg"
 rm -f "$pkg"
-productbuild --component "$APP" /Applications --sign "$INSTALLER_IDENTITY" "$pkg"
+run_adk_xcode \
+  --kind productbuild \
+  --identity "$INSTALLER_IDENTITY" \
+  --component "$APP" \
+  --install-location /Applications \
+  --output "$pkg"
 
 build_auth_args
 
 if [[ "$validate" == "1" || "$upload" == "1" ]]; then
   [[ "${#auth_args[@]}" -gt 0 ]] || fail "App Store validation/upload requires App Store Connect auth env"
-  xcrun altool --validate-app "$pkg" "${auth_args[@]}" --output-format json
+  run_adk_xcode --kind altool-validate --package-path "$pkg" "${auth_args[@]}"
 fi
 
 if [[ "$upload" == "1" ]]; then
-  xcrun altool --upload-package "$pkg" "${auth_args[@]}" --output-format json --wait
+  run_adk_xcode --kind altool-upload --package-path "$pkg" "${auth_args[@]}"
 fi
 
 echo "app store package ready: $pkg"

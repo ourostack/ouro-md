@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "app": {
+    "name": "Ouro MD",
+    "bundleId": "bot.ouro.md",
+    "sku": "bot-ouro-md-macos",
+    "primaryLocale": "en-US"
+  },
+  "team": {
+    "teamId": "743GT2AJ24"
+  },
+  "channels": [
+    {
+      "id": "mac-app-store",
+      "platform": "macos",
+      "distribution": "app-store",
+      "bundleId": "bot.ouro.md",
+      "buildCommand": "OURO_MD_DISTRIBUTION_CHANNEL=app-store OURO_MD_TELEMETRY_DISABLED=1 ./make-app.sh",
+      "packageCommand": "scripts/package-app-store.sh",
+      "store": {
+        "version": "0.9.78",
+        "copyright": "Copyright \u00a9 2026 Ari Mendelow",
+        "category": "DEVELOPER_TOOLS",
+        "screenshots": [],
+        "privacy": {
+          "policyUrl": "https://ouro.bot/privacy/",
+          "collectsData": false
+        },
+        "exportCompliance": {
+          "usesEncryption": true,
+          "exempt": true
+        }
+      }
+    },
+    {
+      "id": "direct-download",
+      "platform": "macos",
+      "distribution": "developer-id",
+      "bundleId": "bot.ouro.md",
+      "buildCommand": "./make-app.sh",
+      "packageCommand": "scripts/package-release.sh"
+    }
+  ]
+}

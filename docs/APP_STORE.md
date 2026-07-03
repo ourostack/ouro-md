@@ -7,6 +7,12 @@ Ouro MD has two macOS distribution lanes:
 
 The App Store build is intentionally not the same artifact as the direct-download build. The store owns updates, privacy answers, review metadata, and distribution.
 
+The canonical app-local desired state lives in `distribution/apple-distribution.json`.
+Use `./scripts/check-apple-distribution-kit.sh` for no-secret CI/readiness checks;
+it delegates manifest validation, dry-run planning, and review-prep blocker
+artifacts to the shared `ourostack/apple-distribution-kit` CLI through the thin
+`scripts/apple-distribution-kit.sh` wrapper.
+
 ## App Store Connect setup
 
 Create or confirm the app record before uploading:
@@ -97,6 +103,7 @@ export OURO_APP_STORE_PROVISIONING_PROFILE="/path/to/profile.provisionprofile"
 Check local readiness:
 
 ```sh
+./scripts/check-apple-distribution-kit.sh
 ./scripts/package-app-store.sh --readiness
 ```
 
