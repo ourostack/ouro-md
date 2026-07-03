@@ -1,6 +1,6 @@
 # Planning: Apple Distribution Kit Program
 
-**Status**: NEEDS_REVIEW
+**Status**: approved
 **Created**: 2026-07-03 10:00
 
 ## Goal
@@ -108,3 +108,4 @@ Canonical state split:
 ## Progress Log
 - 2026-07-03 10:00 Created after source/API inspection and two fresh sub-agent ideation reviewers.
 - 2026-07-03 10:00 Addressed planning reviewer findings: narrowed iOS/TestFlight v1 to schema/dry-run, added Developer ID notarization/stapling proof, and made secret-backed Apple gates produce named pass/blocker artifacts.
+- 2026-07-03 10:00 Planning approved after Round 2 cold reviewer convergence.
