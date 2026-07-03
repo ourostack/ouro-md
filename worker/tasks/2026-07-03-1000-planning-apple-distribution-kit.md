@@ -56,8 +56,8 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 - Edge cases: null, empty, boundary values
 
 ## Open Questions
-- [ ] Confirm durable home/name for the executable kit. Recommendation: create a new neutral repo/package named `apple-distribution-kit` under the existing GitHub org for now, with package/CLI names that contain no Ouro branding. The skills repo should reference it but not be the implementation.
-- [ ] Confirm whether the kit is allowed to delete Apple resources in apply mode after a plan is printed, or whether destructive Apple deletes should always require a manual flag and reviewer gate.
+- [x] Durable home/name for the executable kit: create a new neutral public repo/package named `apple-distribution-kit` under the existing GitHub org for now, with package/CLI names that contain no Ouro branding. The skills repo references it but is not the implementation.
+- [x] Destructive Apple deletes are not allowed by default. Apply mode may print destructive plans, but executing Apple deletes requires an explicit manual flag and reviewer-gated evidence.
 
 ## Decisions Made
 - The honest primitive is an Apple distribution reconciler/runner, not a “fully programmatic Apple setup” tool. Apple API-key creation, first app record creation, membership/payment, agreements, 2FA/CAPTCHA, and managed capabilities stay explicit `requiresHuman` steps.
@@ -68,6 +68,7 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 - v1 supports iOS/TestFlight/App Store in schema and dry-run planner only. macOS Developer ID and Mac App Store are the apply-mode lanes for this program.
 - Provider/team ambiguity must be resolved programmatically with `altool --list-providers`, App Store Connect API reads, and manifest/provider hints; ambiguity is a failure, not a guess.
 - Secrets are never source state. The kit may materialize temporary files/keychains in CI and local runs, but must redact logs and clean up temp material.
+- App Store Connect API access is available locally through a locked neutral credentials directory at `~/Library/Application Support/AppleDistributionKit/app-store-connect/`. The key was validated against the App Store Connect REST API with a custom ES256 JWT; `altool --generate-jwt` produced a token that Apple's REST API rejected, so the kit must own REST JWT generation itself.
 
 ## Context / References
 - Apple App Store Connect API overview and OpenAPI specification: `https://developer.apple.com/documentation/appstoreconnectapi`
@@ -109,3 +110,4 @@ Canonical state split:
 - 2026-07-03 10:00 Created after source/API inspection and two fresh sub-agent ideation reviewers.
 - 2026-07-03 10:00 Addressed planning reviewer findings: narrowed iOS/TestFlight v1 to schema/dry-run, added Developer ID notarization/stapling proof, and made secret-backed Apple gates produce named pass/blocker artifacts.
 - 2026-07-03 10:00 Planning approved after Round 2 cold reviewer convergence.
+- 2026-07-03 11:47 Resolved repo/destructive-delete questions and recorded validated App Store Connect API credential boundary.
