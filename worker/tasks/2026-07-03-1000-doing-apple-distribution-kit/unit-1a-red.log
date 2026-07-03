@@ -1,0 +1,31 @@
+
+> apple-distribution-kit@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.6 /Users/arimendelow/Projects/apple-distribution-kit
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/scaffold.test.ts [ test/scaffold.test.ts ]
+Error: Cannot find module '../src/index.js' imported from '/Users/arimendelow/Projects/apple-distribution-kit/test/scaffold.test.ts'
+ ❯ test/scaffold.test.ts:5:1
+      3| import { join } from "node:path";
+      4| import { afterEach, describe, expect, it } from "vitest";
+      5| import { createCli, discoverConfigPath, loadConfig, resolveManifestPat…
+       | ^
+      6| 
+      7| const tempDirs: string[] = [];
+
+Caused by: Error: Failed to load url ../src/index.js (resolved id: ../src/index.js) in /Users/arimendelow/Projects/apple-distribution-kit/test/scaffold.test.ts. Does the file exist?
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/config.js:22739:33
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  12:18:44
+   Duration  300ms (transform 24ms, setup 0ms, collect 0ms, tests 0ms, environment 0ms, prepare 44ms)
+
