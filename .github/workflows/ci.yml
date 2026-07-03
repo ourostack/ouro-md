@@ -48,6 +48,18 @@ jobs:
         run: ./scripts/release-policy.sh scan .
       - name: Verify shared shell dependency freshness
         run: ./scripts/check-shell-dependency.sh
+      - name: Checkout Apple distribution kit
+        uses: actions/checkout@v5
+        with:
+          repository: ourostack/apple-distribution-kit
+          path: .ci/apple-distribution-kit
+      - name: Build Apple distribution kit
+        working-directory: .ci/apple-distribution-kit
+        run: |
+          npm ci
+          npm run build
+      - name: Verify Apple distribution kit contract
+        run: ./scripts/check-apple-distribution-kit.sh
       - name: Verify App Store packaging contract
         run: |
           plutil -lint config/app-store-entitlements.plist

@@ -19,6 +19,13 @@ review_artifact="$artifact_dir/app-store-review-prep.json"
 [[ -x "$wrapper" ]] || fail "missing thin wrapper: $wrapper"
 [[ -f "$manifest" ]] || fail "missing canonical manifest: $manifest"
 
+source_version="$(./scripts/verify-release-version.sh --print)"
+manifest_version="$(
+  node -e "const m = JSON.parse(require('fs').readFileSync('$manifest', 'utf8')); const c = m.channels.find((channel) => channel.id === 'mac-app-store'); console.log(c?.store?.version ?? '');"
+)"
+[[ "$manifest_version" == "$source_version" ]] \
+  || fail "manifest mac-app-store version $manifest_version does not match OuroMDRelease.version $source_version"
+
 if ! grep -Eq 'apple-distribution-kit|apple-distribution-kit/dist/cli\.js' "$wrapper"; then
   fail "$wrapper must delegate to the shared apple-distribution-kit"
 fi
@@ -33,7 +40,8 @@ if [[ -n "$secret_files" ]]; then
   fail "Apple signing credentials/profiles must not be committed or staged in this repo"
 fi
 
-if git grep -n -- '-----BEGIN PRIVATE KEY-----' -- . ':!docs' ':!README.md' >/tmp/ouro-md-apple-secret-scan.txt; then
+private_key_pattern='-----BEGIN ''PRIVATE KEY-----'
+if git grep -n -- "$private_key_pattern" -- . ':!docs' ':!README.md' >/tmp/ouro-md-apple-secret-scan.txt; then
   cat /tmp/ouro-md-apple-secret-scan.txt >&2
   fail "private key material must not be committed"
 fi
