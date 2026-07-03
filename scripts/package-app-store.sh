@@ -135,6 +135,7 @@ env "${make_app_env[@]}" ./make-app.sh
 if [[ -n "${OURO_APP_STORE_PROVISIONING_PROFILE:-}" ]]; then
   [[ -f "$OURO_APP_STORE_PROVISIONING_PROFILE" ]] || fail "provisioning profile not found"
   cp "$OURO_APP_STORE_PROVISIONING_PROFILE" "$APP/Contents/embedded.provisionprofile"
+  chmod 644 "$APP/Contents/embedded.provisionprofile"
 fi
 
 run_adk_xcode \
