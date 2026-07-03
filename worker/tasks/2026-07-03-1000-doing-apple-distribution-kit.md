@@ -60,103 +60,159 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 **CRITICAL: Every unit header MUST start with status emoji (⬜ for new units).**
 
 ### ⬜ Unit 0: Setup/Research
-**What**: Create or verify the public neutral `ourostack/apple-distribution-kit` repository, create a local worktree/clone on a worker branch, preserve the validated App Store Connect API key in the locked local credentials directory, and save non-secret setup evidence under the artifacts directory.
-**Output**: Repository URL/local path, credential smoke evidence without secrets, and a current repo map for Ouro MD, Workbench, Spoonjoy, app shell, and skills.
-**Acceptance**: `gh repo view ourostack/apple-distribution-kit` succeeds or the repo is created; the App Store Connect REST smoke returns HTTP 200 through the local key; no `.p8`, `.p12`, `.cer`, provisioning profile, app-specific password, or generated token appears in git status or artifacts.
+**What**: Create or verify public repo `ourostack/apple-distribution-kit` with default branch `main`, MIT license, secret-scanning-friendly `.gitignore`, Node/TypeScript runtime, CLI command `apple-distribution-kit`, package name `apple-distribution-kit`, and local checkout `/Users/arimendelow/Projects/apple-distribution-kit` on branch `worker/foundation`. Treat `/Users/arimendelow/Projects/ouro-md-apple-release-kit-program` as the coordinator/doc worktree only. Verify candidate local credentials at `~/Library/Application Support/AppleDistributionKit/app-store-connect/config.json`.
+**Output**: `setup-repo.json`, `asc-smoke.json`, `repo-map.json`, and `secret-scan-preflight.txt` in the artifacts directory; new repo initialized and pushed if missing.
+**Acceptance**: `gh repo view ourostack/apple-distribution-kit --json nameWithOwner,visibility,defaultBranchRef,url` reports public/main; `curl https://api.appstoreconnect.apple.com/v1/apps?limit=1` through a custom ES256 JWT returns HTTP 200 in `asc-smoke.json`; `xcrun altool --generate-jwt` rejection for REST usage is recorded without token output; `find ~/Downloads -name 'AuthKey_*.p8'` is empty; `git status --short` in touched repos shows no secret files.
 
-### ⬜ Unit 1a: Shared Kit Foundation — Tests
-**What**: Write failing tests for manifest loading/validation, redaction, plan shape, `requiresHuman` shape, command-result serialization, and CLI exit behavior in `apple-distribution-kit`.
-**Acceptance**: Tests exist and FAIL (red), with failures about missing foundation behavior rather than broken test setup.
+### ⬜ Unit 1a: Shared Kit Scaffold — Tests
+**What**: Write failing tests for CLI help/version, config discovery, manifest path resolution, JSON output mode, failure exit codes, and package exports.
+**Output**: Test files under `/Users/arimendelow/Projects/apple-distribution-kit/test/` and red-run log `unit-1a-red.log`.
+**Acceptance**: Tests fail because implementation/exported modules are missing, not because the test runner is misconfigured.
 
-### ⬜ Unit 1b: Shared Kit Foundation — Implementation
-**What**: Implement the package scaffold, executable CLI, manifest schema, redaction helpers, dry-run planner primitives, machine-readable plan output, and no-secret logging.
-**Acceptance**: Unit 1a tests PASS (green), CLI help works, manifest validation errors are precise, and no warnings are emitted.
+### ⬜ Unit 1b: Shared Kit Scaffold — Implementation
+**What**: Implement TypeScript package scaffold, CLI entry point, config discovery, manifest path resolution, JSON/text output switch, and package exports.
+**Output**: `src/cli.ts`, `src/config.ts`, package metadata, TypeScript config, and green-run log `unit-1b-green.log`.
+**Acceptance**: Unit 1a tests PASS, `npm run build` passes, `node dist/cli.js --help` exits 0, and no warnings appear.
 
-### ⬜ Unit 1c: Shared Kit Foundation — Coverage & Refactor
-**What**: Add coverage enforcement, CI, README quickstart, examples, and refactor foundation code without changing behavior.
-**Acceptance**: Coverage is 100% for new foundation code, CI runs no-secret tests, and local build/test/coverage pass.
+### ⬜ Unit 1c: Shared Kit Scaffold — Coverage & Refactor
+**What**: Add coverage enforcement and CI for no-secret package tests; refactor scaffold code only if behavior remains green.
+**Output**: Coverage config, `.github/workflows/ci.yml`, coverage report, and `unit-1c-coverage.log`.
+**Acceptance**: Coverage is 100% for scaffold code, `npm test`, `npm run build`, and CI workflow syntax checks pass.
 
-### ⬜ Unit 2a: App Store Connect Auth/Client — Tests
-**What**: Write failing tests for ES256 JWT generation, REST request construction, auth config discovery, redaction of credentials, provider/team ambiguity, app lookup, and retry/error classification.
-**Acceptance**: Tests exist and FAIL (red), including assertions on outgoing REST URL, headers, body, and redacted logs.
+### ⬜ Unit 2a: Manifest/Redaction/Plan Core — Tests
+**What**: Write failing tests for canonical app manifest `distribution/apple-distribution.json`, schema validation, manifest examples, redaction helpers, machine-readable plan shape, `requiresHuman` entries, and no-secret log serialization.
+**Output**: Schema/fixture tests, snapshot fixtures, and red-run log `unit-2a-red.log`.
+**Acceptance**: Tests fail on missing schema/plan/redaction behavior with clear assertions.
 
-### ⬜ Unit 2b: App Store Connect Auth/Client — Implementation
-**What**: Implement the App Store Connect JWT signer, REST client, local config loader, provider/team/app lookup commands, and live smoke command that reads the locked credential directory.
-**Acceptance**: Unit 2a tests PASS (green); `apple-distribution-kit asc smoke` succeeds locally with HTTP 200 while printing no token/private-key material.
+### ⬜ Unit 2b: Manifest/Redaction/Plan Core — Implementation
+**What**: Implement manifest schema, loader, validator, examples, redaction helper, plan model, `requiresHuman` model, and stable JSON serialization.
+**Output**: `src/manifest/`, `src/plan/`, example manifests, and green-run log `unit-2b-green.log`.
+**Acceptance**: Unit 2a tests PASS; invalid manifests produce precise JSON-pointer-like diagnostics; logs redact tokens, private keys, `.p8`, `.p12`, profile content, and app-specific passwords.
 
-### ⬜ Unit 2c: App Store Connect Auth/Client — Coverage & Refactor
-**What**: Enforce branch/error-path coverage for auth/client code and write artifact evidence for the live smoke.
-**Acceptance**: Coverage is 100% on auth/client code, live smoke artifact records status and endpoint only, and tests/build stay green.
+### ⬜ Unit 2c: Manifest/Redaction/Plan Core — Coverage & Refactor
+**What**: Cover null/empty/boundary manifest fields, redaction false positives/negatives, and all plan branch variants.
+**Output**: Coverage report and `unit-2c-coverage.log`.
+**Acceptance**: Coverage is 100% for manifest/plan/redaction code and tests/build stay green.
 
-### ⬜ Unit 3a: Apple State Reconciler — Tests
-**What**: Write failing tests for bundle ID, certificate, profile, destructive-plan, and `requiresHuman` reconciliation decisions for macOS App Store, Developer ID, and iOS dry-run lanes.
-**Acceptance**: Tests exist and FAIL (red), including unsupported first-app-record creation and destructive-delete manual-flag behavior.
+### ⬜ Unit 3a: App Store Connect Auth/Client — Tests
+**What**: Write failing tests for ES256 JWT generation using P-1363 signatures, REST request construction, auth config discovery, token redaction, provider/team lookup, app lookup, retry behavior, and error classification.
+**Output**: Auth/client tests with captured outbound request assertions and red-run log `unit-3a-red.log`.
+**Acceptance**: Tests fail on missing auth/client behavior; outbound URL, headers, body, and redaction assertions are present.
 
-### ⬜ Unit 3b: Apple State Reconciler — Implementation
+### ⬜ Unit 3b: App Store Connect Auth/Client — Implementation
+**What**: Implement the JWT signer, REST client, local config loader, provider/team/app lookup commands, retry/error classification, and `asc smoke` command using `GET /v1/apps?limit=1`.
+**Output**: `src/asc/`, CLI commands, and green-run log `unit-3b-green.log`.
+**Acceptance**: Unit 3a tests PASS; local `apple-distribution-kit asc smoke --json` succeeds with HTTP 200 and prints no token/private-key material.
+
+### ⬜ Unit 3c: App Store Connect Auth/Client — Coverage & Refactor
+**What**: Cover expired/missing key, malformed config, 401/403/404/409/429/5xx responses, and provider ambiguity.
+**Output**: Coverage report, live smoke artifact `asc-live-smoke.json`, and `unit-3c-coverage.log`.
+**Acceptance**: Coverage is 100% for auth/client code; live artifact contains endpoint/status/count only, not JWT or private key content.
+
+### ⬜ Unit 4a: Apple State Reconciler — Tests
+**What**: Write failing tests for bundle ID, certificate, provisioning profile, app-record discovery, first-app-record `requiresHuman`, destructive delete planning, manual delete flag behavior, macOS App Store lane, Developer ID lane, and iOS dry-run lane.
+**Output**: Reconciler tests, remote Apple response fixtures, snapshot plans, and red-run log `unit-4a-red.log`.
+**Acceptance**: Tests fail on missing reconciliation decisions and include unsupported `/v1/apps` creation behavior.
+
+### ⬜ Unit 4b: Apple State Reconciler — Implementation
 **What**: Implement desired-vs-remote reconcilers for bundle IDs, certificates, provisioning profiles, app record discovery, and safe/destructive plan classification.
-**Acceptance**: Unit 3a tests PASS (green); apply mode refuses destructive deletes unless the explicit flag is present; missing first app record produces a canonical `requiresHuman` action.
+**Output**: `src/reconcile/`, fixture plan outputs, and green-run log `unit-4b-green.log`.
+**Acceptance**: Unit 4a tests PASS; destructive Apple deletes are refused unless `--allow-destructive-apple-delete` is present; missing first app record produces canonical `requiresHuman`.
 
-### ⬜ Unit 3c: Apple State Reconciler — Coverage & Refactor
-**What**: Add fixtures for remote Apple responses, edge cases, and generated blocker artifacts; refactor reconciler boundaries for app neutrality.
-**Acceptance**: Coverage is 100% on reconciler code, fixture plans are stable snapshots, and tests/build stay green.
+### ⬜ Unit 4c: Apple State Reconciler — Coverage & Refactor
+**What**: Cover empty remote state, duplicate remote resources, conflicting teams/providers, unsupported certificate/profile types, and stable blocker artifacts.
+**Output**: Coverage report and `unit-4c-coverage.log`.
+**Acceptance**: Coverage is 100% for reconciler code and snapshot plans stay stable.
 
-### ⬜ Unit 4a: Local Xcode Runner — Tests
-**What**: Write failing tests for command generation and result parsing for `codesign`, `productbuild`, `notarytool`, `stapler`, `spctl`, `xcrun altool --validate-app`, and `xcrun altool --upload-package`.
-**Acceptance**: Tests exist and FAIL (red), asserting exact argv and redacted logs for all generated commands.
+### ⬜ Unit 5a: Local Xcode Runner — Tests
+**What**: Write failing tests for exact argv generation and result parsing for `codesign`, `productbuild`, `xcrun notarytool`, `xcrun stapler`, `spctl --assess --type execute`, `xcrun altool --validate-app`, and `xcrun altool --upload-package`.
+**Output**: Runner tests with argv/log redaction assertions and red-run log `unit-5a-red.log`.
+**Acceptance**: Tests fail on missing runner behavior; every generated command is asserted without invoking live upload/notarization.
 
-### ⬜ Unit 4b: Local Xcode Runner — Implementation
-**What**: Implement the command runner, dry-run/apply separation, package validation/upload wrappers, notarization/stapling proof model, and app-store/developer-id channel invariants.
-**Acceptance**: Unit 4a tests PASS (green); no live upload/notarization occurs without explicit apply intent; dry-run emits exact commands.
+### ⬜ Unit 5b: Local Xcode Runner — Implementation
+**What**: Implement command builder, dry-run/apply separation, missing-tool detection, result parser, App Store package validation/upload wrappers, Developer ID sign/notarize/staple/spctl proof model, and channel invariant checks.
+**Output**: `src/xcode/`, generated command fixtures, and green-run log `unit-5b-green.log`.
+**Acceptance**: Unit 5a tests PASS; dry-run emits exact commands; apply refuses live upload/notarization unless explicit apply intent and required credentials are present.
 
-### ⬜ Unit 4c: Local Xcode Runner — Coverage & Refactor
-**What**: Cover success/failure parsing, missing-tool detection, and redaction edge cases; refactor runner for reusable app hooks.
-**Acceptance**: Coverage is 100% on runner code and tests/build stay green.
+### ⬜ Unit 5c: Local Xcode Runner — Coverage & Refactor
+**What**: Cover success/failure parsing, timeout/interruption, missing `xcrun`, missing identities, notarization failure states, stapler failure, and redaction edge cases.
+**Output**: Coverage report and `unit-5c-coverage.log`.
+**Acceptance**: Coverage is 100% for runner code and tests/build stay green.
 
-### ⬜ Unit 5a: Store Metadata/Review Automation — Tests
-**What**: Write failing tests for version creation/update payloads, localization metadata, screenshots/assets manifest validation, build processing lookup, build association, review submission/item creation, and status polling.
-**Acceptance**: Tests exist and FAIL (red), with outgoing REST requests captured and asserted.
+### ⬜ Unit 6a: Store Metadata/Review Automation — Tests
+**What**: Write failing tests for app store version create/update payloads, localization metadata, screenshots/assets manifest validation, build processing lookup, build association, review submission/item creation, review status polling, privacy/export-compliance blockers, and screenshot-missing blockers.
+**Output**: Metadata/review tests with captured outgoing REST request assertions and red-run log `unit-6a-red.log`.
+**Acceptance**: Tests fail on missing metadata/review behavior with outbound request assertions present.
 
-### ⬜ Unit 5b: Store Metadata/Review Automation — Implementation
+### ⬜ Unit 6b: Store Metadata/Review Automation — Implementation
 **What**: Implement metadata/version/build/review planner and apply commands for the post-app-record path.
-**Acceptance**: Unit 5a tests PASS (green); missing screenshots/assets/privacy/export-compliance values produce canonical blockers instead of partial submissions.
+**Output**: `src/store/`, example metadata artifacts, and green-run log `unit-6b-green.log`.
+**Acceptance**: Unit 6a tests PASS; missing screenshots/assets/privacy/export-compliance values produce canonical blockers instead of partial submissions.
 
-### ⬜ Unit 5c: Store Metadata/Review Automation — Coverage & Refactor
-**What**: Cover failure states, optional metadata, and polling timeouts; refactor output artifacts for app teams.
-**Acceptance**: Coverage is 100% on metadata/review code and tests/build stay green.
+### ⬜ Unit 6c: Store Metadata/Review Automation — Coverage & Refactor
+**What**: Cover optional metadata, polling timeout, build not processed, build version mismatch, review rejection status, and update-vs-create branches.
+**Output**: Coverage report and `unit-6c-coverage.log`.
+**Acceptance**: Coverage is 100% for metadata/review code and tests/build stay green.
 
-### ⬜ Unit 6a: Ouro MD Consumer — Tests
-**What**: Add failing Ouro MD tests/CI checks proving its manifest validates, scripts delegate to the shared kit, shell-boundary checks still pass, and no secret material is committed.
-**Acceptance**: Tests/checks exist and FAIL (red) because the manifest/wrappers are not implemented yet.
+### ⬜ Unit 7a: Ouro MD Consumer — Tests
+**What**: Add failing Ouro MD checks proving `distribution/apple-distribution.json` validates through the shared kit, wrapper scripts delegate to the shared kit, shell-boundary checks still pass, and no secret material is committed.
+**Output**: Ouro MD tests/check scripts and red-run log `unit-7a-red.log`.
+**Acceptance**: Tests/checks fail because the manifest/wrappers are not implemented yet.
 
-### ⬜ Unit 6b: Ouro MD Consumer — Implementation
-**What**: Add Ouro MD release manifest, thin wrapper scripts, generated app-store docs, CI no-secret gates, and App Store readiness artifacts wired to the shared kit.
-**Acceptance**: Unit 6a tests PASS (green); Ouro MD dry-run readiness produces pass/blocker artifacts; existing package scripts either delegate or remain as narrow app-local build hooks.
+### ⬜ Unit 7b: Ouro MD Consumer — Implementation
+**What**: Add Ouro MD manifest at `/Users/arimendelow/Projects/ouro-md/distribution/apple-distribution.json`, thin wrapper scripts, generated app-store docs, no-secret CI gates, and App Store readiness artifact wiring to the shared kit.
+**Output**: Ouro MD branch `worker/apple-distribution-kit-adoption`, manifest/wrappers/docs/CI changes, and green-run log `unit-7b-green.log`.
+**Acceptance**: Unit 7a tests PASS; dry-run readiness writes named pass/blocker artifacts; existing package scripts either delegate to the kit or remain narrow app-local build hooks.
 
-### ⬜ Unit 6c: Ouro MD Consumer — Coverage & Refactor
-**What**: Refactor Ouro MD release docs/scripts for clarity, ensure CI contracts are complete, and run current app test/build/smoke commands that apply to release readiness.
-**Acceptance**: Ouro MD checks pass with no warnings and no shell-boundary regressions.
+### ⬜ Unit 7c: Ouro MD Consumer — Coverage & Refactor
+**What**: Refactor Ouro MD release docs/scripts for clarity, run current app checks, and verify shell-boundary and release policy still pass.
+**Output**: Ouro MD coverage/check logs and `unit-7c-coverage.log`.
+**Acceptance**: Ouro MD tests/checks/builds selected for release readiness pass with no warnings and no shell-boundary regressions.
 
-### ⬜ Unit 7a: Workbench/Spoonjoy/Skills Adoption — Tests
-**What**: Add failing checks or fixture tests proving Workbench and Spoonjoy manifests validate and `sign-apple-apps` points agents at the executable kit.
-**Acceptance**: Tests/checks exist and FAIL (red) until fixtures/docs are added.
+### ⬜ Unit 8a: Workbench/Spoonjoy/Skills Adoption — Tests
+**What**: Add failing checks proving Workbench manifest, Spoonjoy manifest, and `sign-apple-apps` skill references validate against the shared kit.
+**Output**: Workbench/Spoonjoy/skills check additions and red-run log `unit-8a-red.log`.
+**Acceptance**: Tests/checks fail until actual manifests/docs are present.
 
-### ⬜ Unit 7b: Workbench/Spoonjoy/Skills Adoption — Implementation
-**What**: Add Workbench and Spoonjoy adoption fixtures or PR-ready manifests, update the signing skill, and document canonical app identities: `bot.ouro.md`, `bot.ouro.workbench`, and `app.spoonjoy`.
-**Acceptance**: Unit 7a tests PASS (green); adoption is clearly app-neutral and does not overfit Ouro MD.
+### ⬜ Unit 8b: Workbench/Spoonjoy/Skills Adoption — Implementation
+**What**: Add Workbench manifest at `/Users/arimendelow/Projects/ouro-workbench/distribution/apple-distribution.json`, Spoonjoy manifest at `/Users/arimendelow/Projects/spoonjoy/distribution/apple-distribution.json`, update `ouroboros-skills/skills/sign-apple-apps/SKILL.md`, and document canonical app identities: `bot.ouro.md`, `bot.ouro.workbench`, and `app.spoonjoy`.
+**Output**: Branches `worker/apple-distribution-kit-adoption` in Workbench, Spoonjoy, and skills; manifests/docs; and green-run log `unit-8b-green.log`.
+**Acceptance**: Unit 8a tests PASS; Workbench and Spoonjoy dry-run/schema checks prove app neutrality and do not attempt submission.
 
-### ⬜ Unit 7c: Workbench/Spoonjoy/Skills Adoption — Coverage & Refactor
+### ⬜ Unit 8c: Workbench/Spoonjoy/Skills Adoption — Coverage & Refactor
 **What**: Run cross-repo dry-run validation and refine docs/templates so future apps can follow the kit without reading this task.
+**Output**: `cross-repo-dry-run.json`, per-repo check logs, and `unit-8c-coverage.log`.
 **Acceptance**: Cross-repo validation artifacts exist and all involved docs/checks pass.
 
-### ⬜ Unit 8: Live Ouro MD Apple Path
-**What**: Using the shared kit, run the live Ouro MD App Store path as far as Apple state allows: auth smoke, provider resolution, app-record discovery, certificate/profile reconciliation, package validation, upload or explicit upload blocker, processed-build lookup, build association, and review-submission preparation.
-**Output**: Named pass/blocker artifacts for every live gate, with secrets redacted.
-**Acceptance**: Every gate is either passed with evidence or blocked only by a true Apple/human requirement; no brittle browser driving remains in the canonical path.
+### ⬜ Unit 9: Live Developer ID Direct-Download Proof
+**What**: Use the shared kit against Ouro MD's direct-download lane to run or classify each Developer ID gate: identity discovery, signing, notarization submit/wait, stapling, `stapler validate`, `spctl --assess --type execute`, and release manifest proof.
+**Output**: `developer-id-auth.json`, `developer-id-identity.json`, `developer-id-signing.json`, `developer-id-notarization.json`, `developer-id-stapler.json`, `developer-id-spctl.json`, and `developer-id-release-proof.json`.
+**Acceptance**: Each artifact is `passed` with command/status evidence, or `blocked` only for one of these named hard blockers: missing Developer ID Application identity, missing notarization credential, Apple notary service unavailable, or no release package built. Ordinary implementation gaps are not allowed blockers.
 
-### ⬜ Unit 9: Review, Merge, Publish/Install, Cleanup
-**What**: Run cold sub-agent reviews, address BLOCKER/MAJOR findings, merge/push/PR each repo according to its policy, verify CI/deploy/install surfaces, refresh any local skill/runtime consumers, update Desk state, and remove stale worktrees/branches from this run.
-**Output**: Merged repos or PRs where branch protection requires external checks, verified CI/output evidence, refreshed local skill reference, and clean worktrees.
-**Acceptance**: No ready work remains in the continuation scan except true hard exceptions or out-of-scope future submissions.
+### ⬜ Unit 10: Live Ouro MD Mac App Store Path
+**What**: Use the shared kit against Ouro MD's Mac App Store lane to run or classify each live gate: App Store Connect auth, provider resolution, app-record discovery for `bot.ouro.md`, certificate presence/import, profile creation/download, package validation, upload, processed-build discovery, build association, and review-submission preparation.
+**Output**: `app-store-auth.json`, `app-store-provider.json`, `app-store-app-record.json`, `app-store-certificates.json`, `app-store-profile.json`, `app-store-package-validation.json`, `app-store-upload.json`, `app-store-processed-build.json`, `app-store-build-association.json`, and `app-store-review-prep.json`.
+**Acceptance**: Each artifact is `passed` with endpoint/command/status evidence, or `blocked` only for one of these named hard blockers: first app record must be created in App Store Connect UI, Apple legal/agreement gate, 2FA/CAPTCHA/passkey prompt, managed capability approval, missing local signing identity/profile that cannot be created via API, package build unavailable, or Apple service outage. Ordinary implementation gaps are not allowed blockers.
+
+### ⬜ Unit 11a: Cold Review and Fixes
+**What**: Run fresh sub-agent reviews for the shared kit and every consumer repo diff, then address all BLOCKER/MAJOR findings.
+**Output**: `review-shared-kit.md`, `review-ouro-md.md`, `review-workbench.md`, `review-spoonjoy.md`, `review-skills.md`, fix commits, and rerun logs.
+**Acceptance**: Reviewers converge or any residual issue is classified as a true hard exception with evidence.
+
+### ⬜ Unit 11b: Merge/PR Terminal State
+**What**: Push and merge ready branches where permissions/branch protection allow. If branch protection or external checks prevent merge, leave a PR with green local evidence and explicit blocker artifact. Do not direct-push to protected app repo main branches; use PR/merge flow for existing repos. New repo may merge its bootstrap PR into main after review/CI.
+**Output**: PR/merge URLs, CI status artifacts, and `merge-state.json`.
+**Acceptance**: Each touched repo is either merged to main/default with CI evidence, or has a ready PR blocked only by external branch protection/checks.
+
+### ⬜ Unit 11c: Publish/Install/Runtime Refresh
+**What**: Verify the shared kit can be installed/used from app repos, refresh local skill/docs references, and prove the consuming commands work from a clean shell.
+**Output**: `install-smoke.json`, local command logs, refreshed skill evidence, and `runtime-refresh.json`.
+**Acceptance**: `apple-distribution-kit --help`, manifest validation, and dry-run commands work from the app repos without relying on unpublished local hacks.
+
+### ⬜ Unit 11d: Desk/Backlog/Cleanup
+**What**: Update Desk task state, record residual Apple/human blockers, add backlog items for App Store first-record/manual gates and future Workbench/Spoonjoy submissions, clean stale worktrees/branches from this run, and run the autopilot continuation scan.
+**Output**: Desk commit, cleanup log, `continuation-scan.md`, and clean git status summaries.
+**Acceptance**: No ready work remains except true hard exceptions or explicitly out-of-scope future submissions; no stale secret files, temp downloads, abandoned worktrees, or dirty task branches from this run remain.
 
 ## Execution
 - **TDD strictly enforced**: tests → red → implement → green → refactor
@@ -164,8 +220,9 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 - Push after each unit complete
 - Run full test suite before marking unit done
 - **All artifacts**: Save outputs, logs, data to `./2026-07-03-1000-doing-apple-distribution-kit/`
-- **Fixes/blockers**: Spawn sub-agent immediately — don't ask, just do it
+- **Fixes/blockers**: Spawn sub-agent for non-trivial fix/review work; direct mode remains the main orchestrator. A blocker becomes terminal only if it matches a named human-only Apple/capability gate or destructive shared-state exception.
 - **Decisions made**: Update docs immediately, commit right away
 
 ## Progress Log
 - 2026-07-03 11:50 Created from planning doc
+- 2026-07-03 11:58 Reworked after reviewer findings: added explicit outputs to every unit, fixed repo/worktree ownership, split finalization, added live Developer ID proof, and enumerated allowed Apple blockers/artifacts.
