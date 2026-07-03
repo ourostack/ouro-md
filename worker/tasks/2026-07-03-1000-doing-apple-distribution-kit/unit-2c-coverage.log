@@ -1,0 +1,48 @@
+
+> apple-distribution-kit@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.6 /Users/arimendelow/Projects/apple-distribution-kit
+
+ ✓ test/manifest-plan.test.ts (28 tests) 8ms
+ ✓ test/scaffold.test.ts (23 tests) 14ms
+
+ Test Files  2 passed (2)
+      Tests  51 passed (51)
+   Start at  12:36:49
+   Duration  294ms (transform 57ms, setup 0ms, collect 107ms, tests 22ms, environment 0ms, prepare 96ms)
+
+
+> apple-distribution-kit@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> apple-distribution-kit@0.1.0 coverage
+> vitest run --coverage
+
+
+ RUN  v3.2.6 /Users/arimendelow/Projects/apple-distribution-kit
+      Coverage enabled with v8
+
+ ✓ test/manifest-plan.test.ts (28 tests) 8ms
+ ✓ test/scaffold.test.ts (23 tests) 13ms
+
+ Test Files  2 passed (2)
+      Tests  51 passed (51)
+   Start at  12:36:51
+   Duration  338ms (transform 66ms, setup 0ms, collect 108ms, tests 22ms, environment 0ms, prepare 110ms)
+
+ % Coverage report from v8
+------------------|---------|----------|---------|---------|-------------------
+File              | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+------------------|---------|----------|---------|---------|-------------------
+All files         |     100 |      100 |     100 |     100 |                   
+ cli-core.ts      |     100 |      100 |     100 |     100 |                   
+ config.ts        |     100 |      100 |     100 |     100 |                   
+ index.ts         |     100 |      100 |     100 |     100 |                   
+ manifest-path.ts |     100 |      100 |     100 |     100 |                   
+ manifest.ts      |     100 |      100 |     100 |     100 |                   
+ plan.ts          |     100 |      100 |     100 |     100 |                   
+ redaction.ts     |     100 |      100 |     100 |     100 |                   
+------------------|---------|----------|---------|---------|-------------------

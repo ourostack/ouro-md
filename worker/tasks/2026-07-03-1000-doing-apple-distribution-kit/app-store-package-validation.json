@@ -1,0 +1,17 @@
+{
+  "status": "blocked",
+  "packageBuilt": true,
+  "packagePath": "dist/app-store/Ouro-MD-0.9.77-app-store.pkg",
+  "exitCode": 1,
+  "validator": "apple-distribution-kit xcode run --kind altool-validate",
+  "log": "app-store-package-validation.log",
+  "detail": "app-store-package-validation-detail.json",
+  "blocker": "first-app-record-required",
+  "message": "App Store package validation reached Apple Transporter and is blocked until the first App Store Connect app record exists for bot.ouro.md.",
+  "sharedKitDelegation": {
+    "codesign": true,
+    "productbuild": true,
+    "altoolValidate": true
+  },
+  "appleValidationDetail": "Cannot determine the Apple ID from Bundle ID bot.ouro.md and platform MAC_OS."
+}

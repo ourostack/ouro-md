@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "authMode": "apple-id-app-specific-password",
+  "currentProvider": {
+    "developerTeamId": "743GT2AJ24",
+    "shortName": "743GT2AJ24",
+    "developerProgram": "INDIVIDUAL"
+  },
+  "providerCount": 2,
+  "actorCount": 2,
+  "recommendedAltoolProviderPublicId": "743GT2AJ24",
+  "rawPayloadRedacted": true,
+  "blocker": null
+}

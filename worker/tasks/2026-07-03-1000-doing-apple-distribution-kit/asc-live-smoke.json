@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "result": {
+    "data": [],
+    "links": {
+      "self": "https://[REDACTED_JWT].com/v1/apps?limit=1"
+    },
+    "meta": {
+      "paging": {
+        "total": 0,
+        "limit": 1
+      }
+    }
+  }
+}

@@ -1,0 +1,117 @@
+
+> apple-distribution-kit@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.6 /Users/arimendelow/Projects/apple-distribution-kit
+
+ ❯ test/asc-client.test.ts (7 tests | 7 failed) 8ms
+   × App Store Connect JWT > signs ES256 JWTs with P-1363 signatures 4ms
+     → (0 , signAppStoreConnectJwt) is not a function
+   × App Store Connect JWT > loads auth config and private key from disk 2ms
+     → (0 , loadAscAuth) is not a function
+   × App Store Connect client > captures outgoing request shape for GET calls 0ms
+     → (0 , createAppStoreConnectClient) is not a function
+   × App Store Connect client > classifies retryable and non-retryable Apple errors 0ms
+     → (0 , createAppStoreConnectClient) is not a function
+   × App Store Connect client > classifies malformed successful responses 0ms
+     → (0 , createAppStoreConnectClient) is not a function
+   × provider resolution > uses manifest providerPublicId when present 0ms
+     → (0 , resolveProviderPublicId) is not a function
+   × provider resolution > requires a human/configuration blocker when providerPublicId is missing 0ms
+     → (0 , resolveProviderPublicId) is not a function
+ ✓ test/manifest-plan.test.ts (28 tests) 9ms
+ ✓ test/scaffold.test.ts (23 tests) 15ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/asc-client.test.ts > App Store Connect JWT > signs ES256 JWTs with P-1363 signatures
+TypeError: (0 , signAppStoreConnectJwt) is not a function
+ ❯ test/asc-client.test.ts:34:19
+     32|   it("signs ES256 JWTs with P-1363 signatures", () => {
+     33|     const { privateKey, publicKey } = generateKeyPairSync("ec", { name…
+     34|     const token = signAppStoreConnectJwt({
+       |                   ^
+     35|       issuerId: "issuer-id",
+     36|       keyId: "KEY123",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  test/asc-client.test.ts > App Store Connect JWT > loads auth config and private key from disk
+TypeError: (0 , loadAscAuth) is not a function
+ ❯ test/asc-client.test.ts:68:18
+     66|     await writeFile(configPath, JSON.stringify({ issuerId: "issuer", k…
+     67| 
+     68|     await expect(loadAscAuth(configPath)).resolves.toEqual({
+       |                  ^
+     69|       issuerId: "issuer",
+     70|       keyId: "KEY",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  test/asc-client.test.ts > App Store Connect client > captures outgoing request shape for GET calls
+TypeError: (0 , createAppStoreConnectClient) is not a function
+ ❯ test/asc-client.test.ts:79:20
+     77|   it("captures outgoing request shape for GET calls", async () => {
+     78|     const calls: Array<{ url: string; init: RequestInit }> = [];
+     79|     const client = createAppStoreConnectClient({
+       |                    ^
+     80|       auth: {
+     81|         issuerId: "issuer",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  test/asc-client.test.ts > App Store Connect client > classifies retryable and non-retryable Apple errors
+TypeError: (0 , createAppStoreConnectClient) is not a function
+ ❯ test/asc-client.test.ts:103:20
+    101| 
+    102|   it("classifies retryable and non-retryable Apple errors", async () =…
+    103|     const client = createAppStoreConnectClient({
+       |                    ^
+    104|       auth: {
+    105|         issuerId: "issuer",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  test/asc-client.test.ts > App Store Connect client > classifies malformed successful responses
+TypeError: (0 , createAppStoreConnectClient) is not a function
+ ❯ test/asc-client.test.ts:125:20
+    123| 
+    124|   it("classifies malformed successful responses", async () => {
+    125|     const client = createAppStoreConnectClient({
+       |                    ^
+    126|       auth: {
+    127|         issuerId: "issuer",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  test/asc-client.test.ts > provider resolution > uses manifest providerPublicId when present
+TypeError: (0 , resolveProviderPublicId) is not a function
+ ❯ test/asc-client.test.ts:141:12
+    139| describe("provider resolution", () => {
+    140|   it("uses manifest providerPublicId when present", () => {
+    141|     expect(resolveProviderPublicId({ team: { teamId: "TEAM", providerP…
+       |            ^
+    142|       ok: true,
+    143|       providerPublicId: "123456789"
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+ FAIL  test/asc-client.test.ts > provider resolution > requires a human/configuration blocker when providerPublicId is missing
+TypeError: (0 , resolveProviderPublicId) is not a function
+ ❯ test/asc-client.test.ts:148:12
+    146| 
+    147|   it("requires a human/configuration blocker when providerPublicId is …
+    148|     expect(resolveProviderPublicId({ team: { teamId: "TEAM" } })).toEq…
+       |            ^
+    149|       ok: false,
+    150|       requiresHuman: {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯
+
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  7 failed | 51 passed (58)
+   Start at  12:39:39
+   Duration  386ms (transform 99ms, setup 0ms, collect 184ms, tests 32ms, environment 1ms, prepare 178ms)
+

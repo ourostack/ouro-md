@@ -1,0 +1,50 @@
+
+> apple-distribution-kit@0.1.0 test
+> vitest run --run test/scaffold.test.ts
+
+
+ RUN  v3.2.6 /Users/arimendelow/Projects/apple-distribution-kit
+
+ ❯ test/scaffold.test.ts (30 tests | 6 failed) 24ms
+   × CLI scaffold > prints help without touching Apple credentials 6ms
+     → expected 'apple-distribution-kit\n\nUsage:\n  a…' to contain 'plan'
+   ✓ CLI scaffold > prints help for empty arguments 0ms
+   ✓ CLI scaffold > prints package version 0ms
+   ✓ CLI scaffold > returns structured JSON for unknown commands 0ms
+   ✓ CLI scaffold > returns text errors for unknown commands 0ms
+   ✓ CLI scaffold > returns structured errors for missing manifest validation input 0ms
+   ✓ CLI scaffold > validates explicit manifest paths as JSON 2ms
+   ✓ CLI scaffold > validates default manifest paths as text 1ms
+   × CLI scaffold > prints a dry-run distribution plan as JSON 2ms
+     → expected 64 to be +0 // Object.is equality
+   × CLI scaffold > prints an apply distribution plan as text 1ms
+     → expected 64 to be +0 // Object.is equality
+   × CLI scaffold > rejects unknown distribution plan modes 2ms
+     → expected { ok: false, error: { …(2) } } to deeply equal { ok: false, error: { …(2) } }
+   × CLI scaffold > prints store review-prep blockers and writes an artifact 1ms
+     → expected 64 to be +0 // Object.is equality
+   × CLI scaffold > returns text errors for missing store review channel 1ms
+     → expected 'Unknown command: store\n' to be 'store review-plan requires --channel …' // Object.is equality
+   ✓ CLI scaffold > returns text errors for asc smoke with a missing explicit config 0ms
+   ✓ CLI scaffold > prints JSON for successful asc smoke through injected dependencies 0ms
+   ✓ CLI scaffold > prints text for successful asc smoke through default config discovery 0ms
+   ✓ config discovery > uses an explicit config path before environment or defaults 0ms
+   ✓ config discovery > uses APPLE_DISTRIBUTION_KIT_CONFIG from the environment 0ms
+   ✓ config discovery > falls back to the standard Application Support path 0ms
+   ✓ config discovery > uses the current home directory when no home override is provided 0ms
+   ✓ config discovery > loads and validates config without returning private key contents 1ms
+   ✓ config discovery > rejects non-object config 1ms
+   ✓ config discovery > rejects malformed config 0 1ms
+   ✓ config discovery > rejects malformed config 1 1ms
+   ✓ config discovery > rejects malformed config 2 1ms
+   ✓ config discovery > rejects malformed config 3 1ms
+   ✓ config discovery > rejects malformed config 4 1ms
+   ✓ config discovery > rejects malformed config 5 1ms
+   ✓ manifest path resolution > returns an explicit manifest path unchanged 0ms
+   ✓ manifest path resolution > defaults to distribution/apple-distribution.json inside the current repo 0ms
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 24 passed (30)
+   Start at  13:18:06
+   Duration  335ms (transform 67ms, setup 0ms, collect 74ms, tests 24ms, environment 0ms, prepare 50ms)
+

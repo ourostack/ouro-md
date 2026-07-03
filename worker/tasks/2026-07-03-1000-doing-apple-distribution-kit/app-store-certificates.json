@@ -1,0 +1,51 @@
+{
+  "status": "passed",
+  "endpoint": "/v1/certificates?filter[certificateType]=MAC_APP_DISTRIBUTION,MAC_INSTALLER_DISTRIBUTION&limit=200",
+  "httpStatus": 200,
+  "created": [
+    {
+      "certificateType": "MAC_APP_DISTRIBUTION",
+      "id": "8ND74L5TSU",
+      "httpStatus": 201
+    },
+    {
+      "certificateType": "MAC_INSTALLER_DISTRIBUTION",
+      "id": "73UYGMQ686",
+      "httpStatus": 201
+    }
+  ],
+  "errors": [],
+  "macAppDistributionCount": 1,
+  "macInstallerDistributionCount": 1,
+  "macAppDistribution": [
+    {
+      "id": "8ND74L5TSU",
+      "type": "certificates",
+      "attributes": {
+        "certificateType": "MAC_APP_DISTRIBUTION",
+        "displayName": "Ari Mendelow",
+        "expirationDate": "2027-07-03T20:51:49.000+00:00",
+        "name": "Mac App Distribution: Ari Mendelow",
+        "serialNumber": "7757D5991928C5C4D180DBCB4761AEE5"
+      }
+    }
+  ],
+  "macInstallerDistribution": [
+    {
+      "id": "73UYGMQ686",
+      "type": "certificates",
+      "attributes": {
+        "certificateType": "MAC_INSTALLER_DISTRIBUTION",
+        "displayName": "Ari Mendelow",
+        "expirationDate": "2027-07-03T20:51:49.000+00:00",
+        "name": "Mac Installer Distribution: Ari Mendelow",
+        "serialNumber": "53495749AC37956ACB22A15281A1EDC7"
+      }
+    }
+  ],
+  "localCertificatePaths": [
+    "~/Library/Application Support/ouro/Signing/apple-app-store-743GT2AJ24/AppleDistribution-743GT2AJ24.cer",
+    "~/Library/Application Support/ouro/Signing/apple-app-store-743GT2AJ24/MacInstallerDistribution-743GT2AJ24.cer"
+  ],
+  "blocker": null
+}

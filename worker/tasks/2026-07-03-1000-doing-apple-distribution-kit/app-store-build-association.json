@@ -1,0 +1,5 @@
+{
+  "status": "blocked",
+  "attempted": false,
+  "blocker": "no processed build exists to associate with the App Store version"
+}

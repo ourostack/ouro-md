@@ -1,0 +1,54 @@
+
+> apple-distribution-kit@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.6 /Users/arimendelow/Projects/apple-distribution-kit
+
+ ✓ test/scaffold.test.ts (21 tests) 10ms
+
+ Test Files  1 passed (1)
+      Tests  21 passed (21)
+   Start at  12:26:43
+   Duration  347ms (transform 37ms, setup 0ms, collect 38ms, tests 10ms, environment 0ms, prepare 44ms)
+
+
+> apple-distribution-kit@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> apple-distribution-kit@0.1.0 coverage
+> vitest run --coverage
+
+
+ RUN  v3.2.6 /Users/arimendelow/Projects/apple-distribution-kit
+      Coverage enabled with v8
+
+ ✓ test/scaffold.test.ts (21 tests) 11ms
+
+ Test Files  1 passed (1)
+      Tests  21 passed (21)
+   Start at  12:26:45
+   Duration  339ms (transform 31ms, setup 0ms, collect 35ms, tests 11ms, environment 0ms, prepare 47ms)
+
+ % Coverage report from v8
+------------------|---------|----------|---------|---------|-------------------
+File              | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+------------------|---------|----------|---------|---------|-------------------
+All files         |     100 |      100 |     100 |     100 |                   
+ cli-core.ts      |     100 |      100 |     100 |     100 |                   
+ config.ts        |     100 |      100 |     100 |     100 |                   
+ index.ts         |     100 |      100 |     100 |     100 |                   
+ manifest-path.ts |     100 |      100 |     100 |     100 |                   
+------------------|---------|----------|---------|---------|-------------------
+apple-distribution-kit
+
+Usage:
+  apple-distribution-kit --help
+  apple-distribution-kit --version
+  apple-distribution-kit manifest validate [--manifest <path>] [--json]
+  apple-distribution-kit asc smoke [--config <path>] [--json]
+
+Commands:
+  manifest validate   Validate distribution/apple-distribution.json
+  asc smoke           Verify App Store Connect API credentials without printing secrets

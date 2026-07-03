@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "bundleId": "bot.ouro.md",
+  "created": true,
+  "createHttpStatus": 201,
+  "createErrors": null,
+  "lookupHttpStatus": 200,
+  "count": 1,
+  "resource": {
+    "id": "ALBZ38V6JH",
+    "type": "bundleIds",
+    "attributes": {
+      "name": "Ouro MD",
+      "identifier": "bot.ouro.md",
+      "platform": "UNIVERSAL",
+      "seedId": "743GT2AJ24"
+    }
+  },
+  "blocker": null
+}

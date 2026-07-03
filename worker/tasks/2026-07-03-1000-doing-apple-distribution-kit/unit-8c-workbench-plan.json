@@ -1,0 +1,21 @@
+{
+  "ok": true,
+  "mode": "dry-run",
+  "app": {
+    "name": "Ouro Workbench",
+    "bundleId": "bot.ouro.workbench"
+  },
+  "actions": [
+    {
+      "type": "validate-channel",
+      "channelId": "mac-app-store",
+      "distribution": "app-store"
+    },
+    {
+      "type": "validate-channel",
+      "channelId": "direct-download",
+      "distribution": "developer-id"
+    }
+  ],
+  "requiresHuman": []
+}

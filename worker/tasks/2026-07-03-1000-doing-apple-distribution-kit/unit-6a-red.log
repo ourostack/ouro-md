@@ -1,0 +1,78 @@
+
+> apple-distribution-kit@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.6 /Users/arimendelow/Projects/apple-distribution-kit
+
+ ✓ test/reconcile.test.ts (4 tests) 2ms
+ ✓ test/xcode-runner.test.ts (15 tests) 4ms
+ ❯ test/store.test.ts (4 tests | 4 failed) 4ms
+   × store request builder > builds App Store version, localization, build association, and review submission requests 3ms
+     → (0 , buildStoreRequests) is not a function
+   × store submission planner > blocks review prep when screenshot assets are missing 0ms
+     → (0 , planStoreSubmission) is not a function
+   × store submission planner > blocks review prep when privacy or export compliance is missing 0ms
+     → (0 , planStoreSubmission) is not a function
+   × store submission planner > plans review submission when required store metadata is present 0ms
+     → (0 , planStoreSubmission) is not a function
+ ✓ test/manifest-plan.test.ts (28 tests) 10ms
+ ✓ test/scaffold.test.ts (25 tests) 21ms
+ ✓ test/asc-client.test.ts (17 tests) 21ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/store.test.ts > store request builder > builds App Store version, localization, build association, and review submission requests
+TypeError: (0 , buildStoreRequests) is not a function
+ ❯ test/store.test.ts:34:7
+     32|   it("builds App Store version, localization, build association, and r…
+     33|     expect(
+     34|       buildStoreRequests({
+       |       ^
+     35|         appId: "app-123",
+     36|         versionId: "version-123",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  test/store.test.ts > store submission planner > blocks review prep when screenshot assets are missing
+TypeError: (0 , planStoreSubmission) is not a function
+ ❯ test/store.test.ts:80:12
+     78| describe("store submission planner", () => {
+     79|   it("blocks review prep when screenshot assets are missing", () => {
+     80|     expect(planStoreSubmission({ manifest: manifestWithStore({ screens…
+       |            ^
+     81|       code: "screenshots-assets-required",
+     82|       message: "Screenshots/app previews must exist locally or be prov…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  test/store.test.ts > store submission planner > blocks review prep when privacy or export compliance is missing
+TypeError: (0 , planStoreSubmission) is not a function
+ ❯ test/store.test.ts:89:7
+     87|   it("blocks review prep when privacy or export compliance is missing"…
+     88|     expect(
+     89|       planStoreSubmission({
+       |       ^
+     90|         manifest: manifestWithStore({ privacy: undefined, exportCompli…
+     91|         channelId: "mac-app-store"
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  test/store.test.ts > store submission planner > plans review submission when required store metadata is present
+TypeError: (0 , planStoreSubmission) is not a function
+ ❯ test/store.test.ts:108:12
+    106| 
+    107|   it("plans review submission when required store metadata is present"…
+    108|     expect(planStoreSubmission({ manifest: manifestWithStore(), channe…
+       |            ^
+    109|       ok: true,
+    110|       actions: [
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed | 5 passed (6)
+      Tests  4 failed | 89 passed (93)
+   Start at  13:06:06
+   Duration  345ms (transform 149ms, setup 0ms, collect 437ms, tests 62ms, environment 1ms, prepare 302ms)
+

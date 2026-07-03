@@ -1,0 +1,121 @@
+
+> apple-distribution-kit@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.6 /Users/arimendelow/Projects/apple-distribution-kit
+
+ ✓ test/reconcile.test.ts (4 tests) 2ms
+ ❯ test/xcode-runner.test.ts (13 tests | 13 failed) 5ms
+   × Xcode command generation > builds codesign argv 2ms
+     → (0 , buildXcodeCommand) is not a function
+   × Xcode command generation > builds productbuild argv 0ms
+     → (0 , buildXcodeCommand) is not a function
+   × Xcode command generation > builds notary-submit argv 0ms
+     → (0 , buildXcodeCommand) is not a function
+   × Xcode command generation > builds stapler argv 0ms
+     → (0 , buildXcodeCommand) is not a function
+   × Xcode command generation > builds stapler-validate argv 0ms
+     → (0 , buildXcodeCommand) is not a function
+   × Xcode command generation > builds spctl argv 0ms
+     → (0 , buildXcodeCommand) is not a function
+   × Xcode command generation > builds altool-validate argv 0ms
+     → (0 , buildXcodeCommand) is not a function
+   × Xcode command generation > builds altool-upload argv 0ms
+     → (0 , buildXcodeCommand) is not a function
+   × Xcode command generation > requires explicit apply intent for live commands 0ms
+     → (0 , buildXcodeCommand) is not a function
+   × Xcode command generation > runs apply commands through an injected executor 0ms
+     → (0 , buildXcodeCommand) is not a function
+   × Xcode result parsing > classifies accepted notarization 0ms
+     → (0 , parseXcodeResult) is not a function
+   × Xcode result parsing > classifies rejected notarization 0ms
+     → (0 , parseXcodeResult) is not a function
+   × Xcode result parsing > throws typed errors for missing tools 0ms
+     → (0 , buildXcodeCommand) is not a function
+ ✓ test/manifest-plan.test.ts (28 tests) 10ms
+ ✓ test/asc-client.test.ts (17 tests) 24ms
+ ✓ test/scaffold.test.ts (25 tests) 24ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/xcode-runner.test.ts > Xcode command generation > builds codesign argv
+ FAIL  test/xcode-runner.test.ts > Xcode command generation > builds productbuild argv
+ FAIL  test/xcode-runner.test.ts > Xcode command generation > builds notary-submit argv
+ FAIL  test/xcode-runner.test.ts > Xcode command generation > builds stapler argv
+ FAIL  test/xcode-runner.test.ts > Xcode command generation > builds stapler-validate argv
+ FAIL  test/xcode-runner.test.ts > Xcode command generation > builds spctl argv
+ FAIL  test/xcode-runner.test.ts > Xcode command generation > builds altool-validate argv
+ FAIL  test/xcode-runner.test.ts > Xcode command generation > builds altool-upload argv
+TypeError: (0 , buildXcodeCommand) is not a function
+ ❯ test/xcode-runner.test.ts:28:12
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/13]⎯
+
+ FAIL  test/xcode-runner.test.ts > Xcode command generation > requires explicit apply intent for live commands
+TypeError: (0 , buildXcodeCommand) is not a function
+ ❯ test/xcode-runner.test.ts:32:45
+     30| 
+     31|   it("requires explicit apply intent for live commands", async () => {
+     32|     await expect(runXcodeCommand({ command: buildXcodeCommand({ kind: …
+       |                                             ^
+     33|       ok: true,
+     34|       mode: "dry-run",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/13]⎯
+
+ FAIL  test/xcode-runner.test.ts > Xcode command generation > runs apply commands through an injected executor
+TypeError: (0 , buildXcodeCommand) is not a function
+ ❯ test/xcode-runner.test.ts:42:18
+     40|     await expect(
+     41|       runXcodeCommand({
+     42|         command: buildXcodeCommand({ kind: "stapler-validate", path: "…
+       |                  ^
+     43|         mode: "apply",
+     44|         execute: async (argv) => ({ exitCode: 0, stdout: `ran ${argv.j…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/13]⎯
+
+ FAIL  test/xcode-runner.test.ts > Xcode result parsing > classifies accepted notarization
+TypeError: (0 , parseXcodeResult) is not a function
+ ❯ test/xcode-runner.test.ts:59:12
+     57| describe("Xcode result parsing", () => {
+     58|   it("classifies accepted notarization", () => {
+     59|     expect(parseXcodeResult({ kind: "notary-submit", exitCode: 0, stdo…
+       |            ^
+     60|       ok: true,
+     61|       status: "accepted"
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/13]⎯
+
+ FAIL  test/xcode-runner.test.ts > Xcode result parsing > classifies rejected notarization
+TypeError: (0 , parseXcodeResult) is not a function
+ ❯ test/xcode-runner.test.ts:66:12
+     64| 
+     65|   it("classifies rejected notarization", () => {
+     66|     expect(parseXcodeResult({ kind: "notary-submit", exitCode: 1, stdo…
+       |            ^
+     67|       ok: false,
+     68|       status: "invalid",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/13]⎯
+
+ FAIL  test/xcode-runner.test.ts > Xcode result parsing > throws typed errors for missing tools
+TypeError: (0 , buildXcodeCommand) is not a function
+ ❯ test/xcode-runner.test.ts:76:18
+     74|     await expect(
+     75|       runXcodeCommand({
+     76|         command: buildXcodeCommand({ kind: "spctl", path: "Ouro MD.app…
+       |                  ^
+     77|         mode: "apply",
+     78|         execute: async () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/13]⎯
+
+
+ Test Files  1 failed | 4 passed (5)
+      Tests  13 failed | 74 passed (87)
+   Start at  12:59:19
+   Duration  376ms (transform 212ms, setup 0ms, collect 415ms, tests 65ms, environment 1ms, prepare 309ms)
+

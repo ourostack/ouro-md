@@ -1,0 +1,60 @@
+
+> apple-distribution-kit@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.6 /Users/arimendelow/Projects/apple-distribution-kit
+
+ ✓ test/reconcile.test.ts (4 tests) 2ms
+ ✓ test/store.test.ts (6 tests) 3ms
+ ✓ test/xcode-runner.test.ts (15 tests) 4ms
+ ✓ test/manifest-plan.test.ts (28 tests) 11ms
+ ✓ test/asc-client.test.ts (17 tests) 30ms
+ ✓ test/scaffold.test.ts (25 tests) 32ms
+
+ Test Files  6 passed (6)
+      Tests  95 passed (95)
+   Start at  13:10:53
+   Duration  467ms (transform 281ms, setup 0ms, collect 612ms, tests 82ms, environment 1ms, prepare 409ms)
+
+
+> apple-distribution-kit@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> apple-distribution-kit@0.1.0 coverage
+> vitest run --coverage
+
+
+ RUN  v3.2.6 /Users/arimendelow/Projects/apple-distribution-kit
+      Coverage enabled with v8
+
+ ✓ test/reconcile.test.ts (4 tests) 2ms
+ ✓ test/xcode-runner.test.ts (15 tests) 4ms
+ ✓ test/store.test.ts (6 tests) 3ms
+ ✓ test/manifest-plan.test.ts (28 tests) 13ms
+ ✓ test/asc-client.test.ts (17 tests) 23ms
+ ✓ test/scaffold.test.ts (25 tests) 25ms
+
+ Test Files  6 passed (6)
+      Tests  95 passed (95)
+   Start at  13:10:56
+   Duration  412ms (transform 168ms, setup 0ms, collect 467ms, tests 71ms, environment 2ms, prepare 417ms)
+
+ % Coverage report from v8
+------------------|---------|----------|---------|---------|-------------------
+File              | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+------------------|---------|----------|---------|---------|-------------------
+All files         |     100 |      100 |     100 |     100 |                   
+ asc.ts           |     100 |      100 |     100 |     100 |                   
+ cli-core.ts      |     100 |      100 |     100 |     100 |                   
+ config.ts        |     100 |      100 |     100 |     100 |                   
+ index.ts         |     100 |      100 |     100 |     100 |                   
+ manifest-path.ts |     100 |      100 |     100 |     100 |                   
+ manifest.ts      |     100 |      100 |     100 |     100 |                   
+ plan.ts          |     100 |      100 |     100 |     100 |                   
+ reconcile.ts     |     100 |      100 |     100 |     100 |                   
+ redaction.ts     |     100 |      100 |     100 |     100 |                   
+ store.ts         |     100 |      100 |     100 |     100 |                   
+ xcode-runner.ts  |     100 |      100 |     100 |     100 |                   
+------------------|---------|----------|---------|---------|-------------------

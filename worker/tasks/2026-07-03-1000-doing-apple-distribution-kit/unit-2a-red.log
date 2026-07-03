@@ -1,0 +1,102 @@
+
+> apple-distribution-kit@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.6 /Users/arimendelow/Projects/apple-distribution-kit
+
+ ❯ test/manifest-plan.test.ts (6 tests | 6 failed) 7ms
+   × manifest validation > accepts the canonical manifest shape 3ms
+     → (0 , validateManifestObject) is not a function
+   × manifest validation > reports JSON-pointer-like validation errors 0ms
+     → (0 , validateManifestObject) is not a function
+   × manifest validation > loads manifests from disk 2ms
+     → (0 , loadManifest) is not a function
+   × redaction > redacts Apple secret material in nested logs 0ms
+     → (0 , redactSecrets) is not a function
+   × plan shape > creates stable dry-run plans 0ms
+     → (0 , createPlan) is not a function
+   × plan shape > standardizes requiresHuman entries 0ms
+     → (0 , createRequiresHuman) is not a function
+ ✓ test/scaffold.test.ts (21 tests) 13ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/manifest-plan.test.ts > manifest validation > accepts the canonical manifest shape
+TypeError: (0 , validateManifestObject) is not a function
+ ❯ test/manifest-plan.test.ts:75:12
+     73| describe("manifest validation", () => {
+     74|   it("accepts the canonical manifest shape", () => {
+     75|     expect(validateManifestObject(validManifest())).toEqual({
+       |            ^
+     76|       ok: true,
+     77|       manifest: validManifest()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  test/manifest-plan.test.ts > manifest validation > reports JSON-pointer-like validation errors
+TypeError: (0 , validateManifestObject) is not a function
+ ❯ test/manifest-plan.test.ts:85:12
+     83|     manifest.channels[0]!.bundleId = "";
+     84| 
+     85|     expect(validateManifestObject(manifest)).toEqual({
+       |            ^
+     86|       ok: false,
+     87|       errors: [
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  test/manifest-plan.test.ts > manifest validation > loads manifests from disk
+TypeError: (0 , loadManifest) is not a function
+ ❯ test/manifest-plan.test.ts:101:18
+     99|     await writeFile(manifestPath, JSON.stringify(validManifest()));
+    100| 
+    101|     await expect(loadManifest(manifestPath)).resolves.toEqual(validMan…
+       |                  ^
+    102|   });
+    103| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  test/manifest-plan.test.ts > redaction > redacts Apple secret material in nested logs
+TypeError: (0 , redactSecrets) is not a function
+ ❯ test/manifest-plan.test.ts:108:7
+    106|   it("redacts Apple secret material in nested logs", () => {
+    107|     expect(
+    108|       redactSecrets({
+       |       ^
+    109|         token: "[REDACTED_JWT_FIXTURE]",
+    110|         privateKey: "[REDACTED_PRIVATE_KEY_FIXTURE]
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  test/manifest-plan.test.ts > plan shape > creates stable dry-run plans
+TypeError: (0 , createPlan) is not a function
+ ❯ test/manifest-plan.test.ts:127:12
+    125| describe("plan shape", () => {
+    126|   it("creates stable dry-run plans", () => {
+    127|     expect(createPlan({ manifest: validManifest(), mode: "dry-run" }))…
+       |            ^
+    128|       ok: true,
+    129|       mode: "dry-run",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  test/manifest-plan.test.ts > plan shape > standardizes requiresHuman entries
+TypeError: (0 , createRequiresHuman) is not a function
+ ❯ test/manifest-plan.test.ts:152:7
+    150|   it("standardizes requiresHuman entries", () => {
+    151|     expect(
+    152|       createRequiresHuman({
+       |       ^
+    153|         code: "first-app-record-required",
+    154|         message: "Create the first app record in App Store Connect.",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  6 failed | 21 passed (27)
+   Start at  12:29:23
+   Duration  375ms (transform 74ms, setup 0ms, collect 99ms, tests 20ms, environment 0ms, prepare 119ms)
+

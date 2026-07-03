@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "authMode": "app-store-connect-api-key",
+  "keyId": "8566429KZF",
+  "issuerId": "b25f0f77-25c0-44b8-9d21-2e95083f09ae",
+  "probes": [
+    {
+      "endpoint": "/v1/apps?filter[bundleId]=bot.ouro.md&limit=10",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "endpoint": "/v1/bundleIds?filter[identifier]=bot.ouro.md&limit=10",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "endpoint": "/v1/certificates?filter[certificateType]=MAC_APP_DISTRIBUTION,MAC_INSTALLER_DISTRIBUTION&limit=200",
+      "status": 200,
+      "ok": true
+    }
+  ]
+}

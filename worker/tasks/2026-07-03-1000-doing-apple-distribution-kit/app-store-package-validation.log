@@ -1,0 +1,15 @@
+==> Building (release)…
+[0/1] Planning build
+Building for production...
+[0/2] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.34s)
+==> Assembling OuroMD.app…
+==> Telemetry: disabled by OURO_MD_TELEMETRY_DISABLED/VITE_POSTHOG_DISABLED
+==> Ad-hoc signing…
+==> Done: /Users/arimendelow/Projects/ouro-md-apple-distribution-kit-adoption/OuroMD.app
+    Launch with:  open OuroMD.app
+Command passed: codesign
+OuroMD.app: valid on disk
+OuroMD.app: satisfies its Designated Requirement
+Command passed: productbuild
+Command failed: altool-validate exited 1

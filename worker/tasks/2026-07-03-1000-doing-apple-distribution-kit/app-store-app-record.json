@@ -1,0 +1,19 @@
+{
+  "status": "blocked",
+  "bundleId": "bot.ouro.md",
+  "created": false,
+  "createHttpStatus": 403,
+  "createErrors": [
+    {
+      "id": "cdcfde4b-0f46-4bac-966d-fd65479f3fc3",
+      "status": "403",
+      "code": "FORBIDDEN_ERROR",
+      "title": "The given operation is not allowed",
+      "detail": "The resource 'apps' does not allow 'CREATE'. Allowed operations are: GET_COLLECTION, GET_INSTANCE, UPDATE"
+    }
+  ],
+  "lookupHttpStatus": 200,
+  "count": 0,
+  "app": null,
+  "blocker": "first app record must be created in App Store Connect UI for bot.ouro.md"
+}

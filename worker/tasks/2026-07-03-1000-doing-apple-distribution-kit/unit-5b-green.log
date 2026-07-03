@@ -1,0 +1,22 @@
+
+> apple-distribution-kit@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.6 /Users/arimendelow/Projects/apple-distribution-kit
+
+ ✓ test/reconcile.test.ts (4 tests) 3ms
+ ✓ test/xcode-runner.test.ts (13 tests) 4ms
+ ✓ test/manifest-plan.test.ts (28 tests) 11ms
+ ✓ test/asc-client.test.ts (17 tests) 26ms
+ ✓ test/scaffold.test.ts (25 tests) 29ms
+
+ Test Files  5 passed (5)
+      Tests  87 passed (87)
+   Start at  13:01:32
+   Duration  386ms (transform 150ms, setup 0ms, collect 386ms, tests 73ms, environment 1ms, prepare 301ms)
+
+
+> apple-distribution-kit@0.1.0 build
+> tsc -p tsconfig.json
+

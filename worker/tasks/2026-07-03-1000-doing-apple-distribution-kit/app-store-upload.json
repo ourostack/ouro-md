@@ -1,0 +1,6 @@
+{
+  "status": "blocked",
+  "attempted": false,
+  "packagePath": "dist/app-store/Ouro-MD-0.9.77-app-store.pkg",
+  "blocker": "package validation did not pass because the App Store app record is missing"
+}

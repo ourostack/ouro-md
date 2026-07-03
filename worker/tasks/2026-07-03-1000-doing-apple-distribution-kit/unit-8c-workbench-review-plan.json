@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "actions": [],
+  "blockers": [
+    {
+      "code": "screenshots-assets-required",
+      "message": "Screenshots/app previews must exist locally or be proven present remotely before review submission.",
+      "evidence": {
+        "channelId": "mac-app-store"
+      }
+    }
+  ]
+}

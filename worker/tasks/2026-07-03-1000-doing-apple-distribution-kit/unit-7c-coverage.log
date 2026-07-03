@@ -1,0 +1,43 @@
+Typed shell boundary scan ok: /Users/arimendelow/Projects/ouro-md-apple-distribution-kit-adoption
+Shell boundary scan ok: /Users/arimendelow/Projects/ouro-md-apple-distribution-kit-adoption
+apple distribution kit contract ok
+config/app-store-entitlements.plist: OK
+Usage:
+  scripts/package-app-store.sh [--readiness] [--validate] [--upload]
+
+Required env:
+  OURO_APP_STORE_APP_IDENTITY        app signing identity
+  OURO_APP_STORE_INSTALLER_IDENTITY  pkg signing identity
+
+Optional env:
+  OURO_APP_STORE_PROVISIONING_PROFILE  path to a Mac App Store provisioning profile
+  APP_STORE_CONNECT_API_KEY_PATH        path to AuthKey_<key-id>.p8
+  OURO_MD_APP_STORE_ENABLE_TELEMETRY=1  opt in to embedded telemetry for App Store builds
+
+Validation/upload auth, choose one:
+  APP_STORE_CONNECT_API_KEY_ID + APP_STORE_CONNECT_API_ISSUER_ID
+  APPLE_ID + APPLE_APP_SPECIFIC_PASSWORD
+
+If the account has multiple providers, set APP_STORE_CONNECT_PROVIDER_PUBLIC_ID.
+app-store build contract ok
+signing identity: not configured (allowed for unsigned/ad-hoc checks)
+notarization credentials: not configured (allowed until release signing is required)
+signing readiness ok
+signing readiness selftest ok
+Usage:
+  scripts/sign-notarize-app.sh --app PATH [--app-name NAME]
+  scripts/sign-notarize-app.sh --selftest
+
+Required for real signing:
+  OURO_CODESIGN_IDENTITY or DEVELOPER_ID_APPLICATION
+
+Required for notarization, choose one:
+  OURO_NOTARY_PROFILE
+  APP_STORE_CONNECT_API_KEY_ID + APP_STORE_CONNECT_API_ISSUER_ID + APP_STORE_CONNECT_API_KEY_PATH
+  APPLE_ID + APPLE_TEAM_ID + APPLE_APP_SPECIFIC_PASSWORD
+sign-notarize selftest ok
+ci signing assets: not required
+release version ok: 0.9.77
+release policy scan ok
+Typed shell boundary scan ok: /Users/arimendelow/Projects/ouro-md-apple-distribution-kit-adoption
+Shell boundary scan ok: /Users/arimendelow/Projects/ouro-md-apple-distribution-kit-adoption
