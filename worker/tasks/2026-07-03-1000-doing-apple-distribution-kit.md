@@ -139,17 +139,17 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 **Output**: Coverage report and `unit-5c-coverage.log`.
 **Acceptance**: Coverage is 100% for runner code and tests/build stay green.
 
-### ⬜ Unit 6a: Store Metadata/Review Automation — Tests
+### ✅ Unit 6a: Store Metadata/Review Automation — Tests
 **What**: Write failing tests for app store version create/update payloads, localization metadata, screenshots/app-preview manifest validation, local/remote asset proof blockers, build processing lookup, build association, review submission/item creation, review status polling, privacy/export-compliance blockers, and screenshot/app-preview missing blockers.
 **Output**: Metadata/review tests with captured outgoing REST request assertions and red-run log `unit-6a-red.log`.
 **Acceptance**: Tests fail on missing metadata/review behavior with outbound request assertions present.
 
-### ⬜ Unit 6b: Store Metadata/Review Automation — Implementation
+### ✅ Unit 6b: Store Metadata/Review Automation — Implementation
 **What**: Implement metadata/version/build/review planner and apply commands for the post-app-record path. v1 validates screenshot/app-preview requirements and emits blockers; it does not upload or reconcile screenshot/app-preview binaries.
 **Output**: `src/store/`, example metadata artifacts, and green-run log `unit-6b-green.log`.
 **Acceptance**: Unit 6a tests PASS; missing screenshots/app previews/privacy/export-compliance values produce canonical blockers instead of partial submissions; no code path claims screenshot/app-preview upload support.
 
-### ⬜ Unit 6c: Store Metadata/Review Automation — Coverage & Refactor
+### ✅ Unit 6c: Store Metadata/Review Automation — Coverage & Refactor
 **What**: Cover optional metadata, polling timeout, build not processed, build version mismatch, review rejection status, and update-vs-create branches.
 **Output**: Coverage report and `unit-6c-coverage.log`.
 **Acceptance**: Coverage is 100% for metadata/review code and tests/build stay green.
@@ -243,3 +243,6 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 - 2026-07-03 12:59 Unit 5a complete: added failing Xcode command runner tests for exact argv, dry-run/apply behavior, and result parsing.
 - 2026-07-03 13:02 Unit 5b complete: implemented Xcode command builder, dry-run/apply runner, and result parser.
 - 2026-07-03 13:04 Unit 5c complete: covered Xcode runner branches to 100% and kept tests/build green.
+- 2026-07-03 13:06 Unit 6a complete: added failing store metadata/review planner tests with REST payload assertions and blocker expectations.
+- 2026-07-03 13:08 Unit 6b complete: implemented App Store version/build/review request builders and review-prep blockers.
+- 2026-07-03 13:11 Unit 6c complete: covered store planner branches to 100% and kept tests/build green.
