@@ -1,0 +1,51 @@
+
+> apple-distribution-kit@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.6 /Users/arimendelow/Projects/apple-distribution-kit
+
+ ✓ test/manifest-plan.test.ts (28 tests) 9ms
+ ✓ test/scaffold.test.ts (25 tests) 20ms
+ ✓ test/asc-client.test.ts (17 tests) 21ms
+
+ Test Files  3 passed (3)
+      Tests  70 passed (70)
+   Start at  12:50:39
+   Duration  372ms (transform 107ms, setup 0ms, collect 222ms, tests 49ms, environment 0ms, prepare 178ms)
+
+
+> apple-distribution-kit@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> apple-distribution-kit@0.1.0 coverage
+> vitest run --coverage
+
+
+ RUN  v3.2.6 /Users/arimendelow/Projects/apple-distribution-kit
+      Coverage enabled with v8
+
+ ✓ test/manifest-plan.test.ts (28 tests) 10ms
+ ✓ test/scaffold.test.ts (25 tests) 17ms
+ ✓ test/asc-client.test.ts (17 tests) 20ms
+
+ Test Files  3 passed (3)
+      Tests  70 passed (70)
+   Start at  12:50:41
+   Duration  385ms (transform 95ms, setup 0ms, collect 193ms, tests 47ms, environment 1ms, prepare 179ms)
+
+ % Coverage report from v8
+------------------|---------|----------|---------|---------|-------------------
+File              | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+------------------|---------|----------|---------|---------|-------------------
+All files         |     100 |      100 |     100 |     100 |                   
+ asc.ts           |     100 |      100 |     100 |     100 |                   
+ cli-core.ts      |     100 |      100 |     100 |     100 |                   
+ config.ts        |     100 |      100 |     100 |     100 |                   
+ index.ts         |     100 |      100 |     100 |     100 |                   
+ manifest-path.ts |     100 |      100 |     100 |     100 |                   
+ manifest.ts      |     100 |      100 |     100 |     100 |                   
+ plan.ts          |     100 |      100 |     100 |     100 |                   
+ redaction.ts     |     100 |      100 |     100 |     100 |                   
+------------------|---------|----------|---------|---------|-------------------

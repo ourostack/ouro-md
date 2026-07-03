@@ -94,17 +94,17 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 **Output**: Coverage report and `unit-2c-coverage.log`.
 **Acceptance**: Coverage is 100% for manifest/plan/redaction code and tests/build stay green.
 
-### ⬜ Unit 3a: App Store Connect Auth/Client — Tests
+### ✅ Unit 3a: App Store Connect Auth/Client — Tests
 **What**: Write failing tests for ES256 JWT generation using P-1363 signatures, REST request construction, auth config discovery, token redaction, provider/team lookup from App Store Connect API/manifest hints, app lookup, retry behavior, and error classification.
 **Output**: Auth/client tests with captured outbound request assertions and red-run log `unit-3a-red.log`.
 **Acceptance**: Tests fail on missing auth/client behavior; outbound URL, headers, body, and redaction assertions are present.
 
-### ⬜ Unit 3b: App Store Connect Auth/Client — Implementation
+### ✅ Unit 3b: App Store Connect Auth/Client — Implementation
 **What**: Implement the JWT signer, REST client, local config loader, provider/team/app lookup commands from App Store Connect API/manifest hints, retry/error classification, and `asc smoke` command using `GET /v1/apps?limit=1`.
 **Output**: `src/asc/`, CLI commands, and green-run log `unit-3b-green.log`.
 **Acceptance**: Unit 3a tests PASS; local `apple-distribution-kit asc smoke --json` succeeds with HTTP 200 and prints no token/private-key material.
 
-### ⬜ Unit 3c: App Store Connect Auth/Client — Coverage & Refactor
+### ✅ Unit 3c: App Store Connect Auth/Client — Coverage & Refactor
 **What**: Cover expired/missing key, malformed config, 401/403/404/409/429/5xx responses, provider ambiguity, and missing `providerPublicId` when a Transporter/altool upload command requires one.
 **Output**: Coverage report, live smoke artifact `asc-live-smoke.json`, and `unit-3c-coverage.log`.
 **Acceptance**: Coverage is 100% for auth/client code; live artifact contains endpoint/status/count only, not JWT or private key content.
@@ -234,3 +234,6 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 - 2026-07-03 12:29 Unit 2a complete: added failing manifest/redaction/plan tests and recorded red-run evidence.
 - 2026-07-03 12:33 Unit 2b complete: implemented manifest validation, redaction, plan shape, and manifest validation CLI behavior.
 - 2026-07-03 12:37 Unit 2c complete: covered manifest/plan/redaction branches to 100% and kept tests/build green.
+- 2026-07-03 12:40 Unit 3a complete: added failing App Store Connect JWT/client/provider tests and recorded red-run evidence.
+- 2026-07-03 12:43 Unit 3b complete: implemented ES256 JWT signing, ASC REST client, providerPublicId resolution, and CLI smoke path.
+- 2026-07-03 12:51 Unit 3c complete: covered ASC auth/client branches to 100%, ran live redacted `asc smoke`, and recorded `asc-live-smoke.json`.
