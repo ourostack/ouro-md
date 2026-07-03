@@ -1,0 +1,26 @@
+{
+  "ok": false,
+  "mode": "apply",
+  "command": [
+    "xcrun",
+    "altool",
+    "--validate-app",
+    "-f",
+    "dist/app-store/Ouro-MD-0.9.77-app-store.pkg",
+    "--type",
+    "macos",
+    "--api-key",
+    "8566429KZF",
+    "--api-issuer",
+    "b25f0f77-25c0-44b8-9d21-2e95083f09ae",
+    "--p8-file-path",
+    "[REDACTED_SECRET]",
+    "--provider-public-id",
+    "743GT2AJ24",
+    "--output-format",
+    "json"
+  ],
+  "exitCode": 1,
+  "stdout": "",
+  "stderr": "Running altool at path '/Applications/Xcode.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources/altool'...\n\n2026-07-03 14:50:30.791 ERROR: [altool.950C4CDC0] Cannot determine the Apple ID from Bundle ID 'bot.ouro.md' and platform 'MAC_OS'. (19)\n2026-07-03 14:50:30.792 ERROR: [altool.100EEF120] ExitFailure (31)\n"
+}

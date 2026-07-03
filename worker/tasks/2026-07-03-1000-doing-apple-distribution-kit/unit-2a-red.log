@@ -65,8 +65,8 @@ TypeError: (0 , redactSecrets) is not a function
     107|     expect(
     108|       redactSecrets({
        |       ^
-    109|         token: "eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiIxMjMifQ.signature",
-    110|         privateKey: "-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVAT…
+    109|         token: "[REDACTED_JWT_FIXTURE]",
+    110|         privateKey: "[REDACTED_PRIVATE_KEY_FIXTURE]
 
 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
 

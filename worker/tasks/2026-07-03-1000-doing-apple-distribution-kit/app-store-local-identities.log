@@ -1,3 +1,8 @@
-  1) 0263522C3230160630A47FB66664C86CDC5AC48C "3rd Party Mac Developer Application: Ari Mendelow (743GT2AJ24)"
-  2) 003931BC61C88E0A92EA7EF380362C09FEFDBFF5 "3rd Party Mac Developer Installer: Ari Mendelow (743GT2AJ24)"
-     2 valid identities found
+App Store signing identities in login.keychain:
+  1) 93F153BEBAC5C191103C5DAF815ECB1FE9CB897A "Developer ID Application: Ari Mendelow (743GT2AJ24)"
+  2) 0263522C3230160630A47FB66664C86CDC5AC48C "3rd Party Mac Developer Application: Ari Mendelow (743GT2AJ24)"
+  3) 003931BC61C88E0A92EA7EF380362C09FEFDBFF5 "3rd Party Mac Developer Installer: Ari Mendelow (743GT2AJ24)"
+
+Code signing identities:
+  1) 93F153BEBAC5C191103C5DAF815ECB1FE9CB897A "Developer ID Application: Ari Mendelow (743GT2AJ24)"
+  2) 0263522C3230160630A47FB66664C86CDC5AC48C "3rd Party Mac Developer Application: Ari Mendelow (743GT2AJ24)"

@@ -6,19 +6,54 @@
   "created": true,
   "createHttpStatus": 201,
   "createErrors": null,
-  "lookupHttpStatus": 400,
-  "count": 0,
+  "lookupHttpStatus": 200,
+  "count": 1,
   "profile": {
     "id": "N984ZC9M2H",
     "type": "profiles",
     "attributes": {
       "name": "Ouro MD Mac App Store",
       "profileType": "MAC_APP_STORE",
+      "profileState": "ACTIVE",
       "platform": "MAC_OS",
       "uuid": "179e78fd-9e10-4b22-854c-154f2068344f",
+      "createdDate": "2026-07-03T21:02:32.000+00:00",
       "expirationDate": "2027-07-03T20:51:49.000+00:00"
+    },
+    "relationships": {
+      "bundleId": "ALBZ38V6JH",
+      "certificates": [
+        "8ND74L5TSU"
+      ]
     }
   },
   "localProfilePath": "~/Library/Application Support/ouro/Signing/apple-app-store-743GT2AJ24/OuroMD-MacAppStore-743GT2AJ24.provisionprofile",
-  "blocker": null
+  "blocker": null,
+  "readHttpStatus": 200,
+  "included": {
+    "bundleId": {
+      "id": "ALBZ38V6JH",
+      "type": "bundleIds",
+      "attributes": {
+        "name": "Ouro MD",
+        "identifier": "bot.ouro.md",
+        "platform": "UNIVERSAL",
+        "seedId": "743GT2AJ24"
+      }
+    },
+    "certificates": [
+      {
+        "id": "8ND74L5TSU",
+        "type": "certificates",
+        "attributes": {
+          "certificateType": "MAC_APP_DISTRIBUTION",
+          "displayName": "Ari Mendelow",
+          "expirationDate": "2027-07-03T20:51:49.000+00:00",
+          "name": "Mac App Distribution: Ari Mendelow",
+          "platform": "MAC_OS",
+          "serialNumber": "7757D5991928C5C4D180DBCB4761AEE5"
+        }
+      }
+    ]
+  }
 }

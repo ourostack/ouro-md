@@ -2,9 +2,9 @@
   "endpoint": "GET /v1/apps?limit=1",
   "status": 200,
   "dataCount": 0,
-  "credentialPath": "~/Library/Application Support/AppleDistributionKit/app-store-connect/config.json",
   "jwtGenerator": "custom-node-es256-p1363",
   "tokenRedacted": true,
   "privateKeyRedacted": true,
-  "checkedAt": "2026-07-03T19:05:43.433Z"
+  "checkedAt": "2026-07-03T19:05:43.433Z",
+  "credentialSource": "local-config-redacted"
 }

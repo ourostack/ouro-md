@@ -2,49 +2,13 @@
   "status": "passed",
   "authMode": "apple-id-app-specific-password",
   "currentProvider": {
-    "id": "b25f0f77-25c0-44b8-9d21-2e95083f09ae",
     "developerTeamId": "743GT2AJ24",
     "shortName": "743GT2AJ24",
-    "name": "Ari Mendelow",
     "developerProgram": "INDIVIDUAL"
   },
-  "providers": [
-    {
-      "id": "69a6de8a-36f3-47e3-e053-5b8c7c11a4d1",
-      "developerTeamId": "ZR774UBSWC",
-      "shortName": "ZR774UBSWC",
-      "name": "Arye Mendelow",
-      "developerProgram": "INDIVIDUAL"
-    },
-    {
-      "id": "b25f0f77-25c0-44b8-9d21-2e95083f09ae",
-      "developerTeamId": "743GT2AJ24",
-      "shortName": "743GT2AJ24",
-      "name": "Ari Mendelow",
-      "developerProgram": "INDIVIDUAL"
-    }
-  ],
-  "actors": [
-    {
-      "id": "69a495f9-de72-5733-e053-5b8c7c1155b0",
-      "isCurrent": false,
-      "roles": [
-        "CUSTOMER_SUPPORT",
-        "APP_MANAGER"
-      ],
-      "providerId": "69a6de8a-36f3-47e3-e053-5b8c7c11a4d1"
-    },
-    {
-      "id": "9a91cfc7-fa39-4ff8-aaf0-5c8d1ff1f8a7",
-      "isCurrent": true,
-      "roles": [
-        "LEGAL",
-        "CIPS",
-        "ADMIN"
-      ],
-      "providerId": "b25f0f77-25c0-44b8-9d21-2e95083f09ae"
-    }
-  ],
+  "providerCount": 2,
+  "actorCount": 2,
   "recommendedAltoolProviderPublicId": "743GT2AJ24",
+  "providerMetadataRedacted": true,
   "blocker": null
 }
