@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "mode": "dry-run",
+  "app": {
+    "name": "spoonjoy",
+    "bundleId": "app.spoonjoy"
+  },
+  "actions": [
+    {
+      "type": "validate-channel",
+      "channelId": "ios-testflight",
+      "distribution": "testflight"
+    }
+  ],
+  "requiresHuman": []
+}

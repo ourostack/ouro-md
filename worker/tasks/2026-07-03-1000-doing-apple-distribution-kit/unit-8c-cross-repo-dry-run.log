@@ -1,0 +1,11 @@
+unit-8c-ouro-md-plan.json: ok=true mode=dry-run app=Ouro MD bundle=bot.ouro.md
+  - validate-channel mac-app-store: app-store
+  - validate-channel direct-download: developer-id
+  requiresHuman: none
+unit-8c-workbench-plan.json: ok=true mode=dry-run app=Ouro Workbench bundle=bot.ouro.workbench
+  - validate-channel mac-app-store: app-store
+  - validate-channel direct-download: developer-id
+  requiresHuman: none
+unit-8c-spoonjoy-plan.json: ok=true mode=dry-run app=spoonjoy bundle=app.spoonjoy
+  - validate-channel ios-testflight: testflight
+  requiresHuman: none

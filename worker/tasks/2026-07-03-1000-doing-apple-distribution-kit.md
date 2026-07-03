@@ -30,8 +30,8 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 - [x] Ouro MD consumes the shared kit for App Store readiness/validation/upload/review-prep, with existing local scripts either delegated to the kit or reduced to thin app-local wrappers.
 - [x] CI has no-secret gates for manifest validation, API payload generation, redaction, command generation, and selftests; secret-backed workflows import Mac App Store certs/profile/API key only when configured. When secrets or Apple state are absent, the kit produces canonical blocker artifacts instead of ambiguous failures.
 - [ ] Live Apple gates have named pass/blocker artifacts for App Store API auth, provider resolution, app-record discovery, certificate presence/import, profile creation/download, package validation, upload id, processed-build discovery, build association, and review-submission readiness.
-- [ ] Workbench and Spoonjoy have manifest/adoption PRs or generated adoption fixtures proving the kit is app-neutral and not overfit to Ouro MD; Spoonjoy coverage is dry-run/schema/manifest only unless the lane is explicitly promoted.
-- [ ] The `sign-apple-apps` skill and relevant app docs tell future agents to use the shared kit and explain the human/account boundary plainly.
+- [x] Workbench and Spoonjoy have manifest/adoption PRs or generated adoption fixtures proving the kit is app-neutral and not overfit to Ouro MD; Spoonjoy coverage is dry-run/schema/manifest only unless the lane is explicitly promoted.
+- [x] The `sign-apple-apps` skill and relevant app docs tell future agents to use the shared kit and explain the human/account boundary plainly.
 - [x] 100% test coverage on all new code
 - [x] All tests pass
 - [x] No warnings
@@ -169,19 +169,19 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 **Output**: Ouro MD coverage/check logs and `unit-7c-coverage.log`.
 **Acceptance**: Ouro MD tests/checks/builds selected for release readiness pass with no warnings and no shell-boundary regressions.
 
-### ⬜ Unit 8a: Workbench/Spoonjoy/Skills Adoption — Tests
+### ✅ Unit 8a: Workbench/Spoonjoy/Skills Adoption — Tests
 **What**: Add failing checks proving Workbench manifest, Spoonjoy manifest, and `sign-apple-apps` skill references validate against the shared kit.
-**Output**: Workbench/Spoonjoy/skills check additions and red-run log `unit-8a-red.log`.
+**Output**: Workbench/Spoonjoy/skills check additions and red-run logs `unit-8a-workbench-red.log`, `unit-8a-spoonjoy-red.log`, and `unit-8a-skills-red.log`.
 **Acceptance**: Tests/checks fail until actual manifests/docs are present.
 
-### ⬜ Unit 8b: Workbench/Spoonjoy/Skills Adoption — Implementation
+### ✅ Unit 8b: Workbench/Spoonjoy/Skills Adoption — Implementation
 **What**: Add Workbench manifest at `/Users/arimendelow/Projects/ouro-workbench/distribution/apple-distribution.json`, Spoonjoy manifest at `/Users/arimendelow/Projects/spoonjoy/distribution/apple-distribution.json`, update `ouroboros-skills/skills/sign-apple-apps/SKILL.md`, and document canonical app identities: `bot.ouro.md`, `bot.ouro.workbench`, and `app.spoonjoy`.
-**Output**: Branches `worker/apple-distribution-kit-adoption` in Workbench, Spoonjoy, and skills; manifests/docs; and green-run log `unit-8b-green.log`.
+**Output**: Branches `worker/apple-distribution-kit-adoption` in Workbench, Spoonjoy, and skills; manifests/docs; and green-run logs `unit-8b-workbench-green.log`, `unit-8b-spoonjoy-green.log`, `unit-8b-skills-green.log`, and `unit-8b-ouro-md-green.log`.
 **Acceptance**: Unit 8a tests PASS; Workbench and Spoonjoy dry-run/schema checks prove app neutrality and do not attempt submission.
 
-### ⬜ Unit 8c: Workbench/Spoonjoy/Skills Adoption — Coverage & Refactor
+### ✅ Unit 8c: Workbench/Spoonjoy/Skills Adoption — Coverage & Refactor
 **What**: Run cross-repo dry-run validation and refine docs/templates so future apps can follow the kit without reading this task.
-**Output**: `cross-repo-dry-run.json`, per-repo check logs, and `unit-8c-coverage.log`.
+**Output**: `unit-8c-cross-repo-dry-run.log`, `unit-8c-ouro-md-plan.json`, `unit-8c-workbench-plan.json`, `unit-8c-spoonjoy-plan.json`, and macOS review-plan artifacts for Ouro MD and Workbench.
 **Acceptance**: Cross-repo validation artifacts exist and all involved docs/checks pass.
 
 ### ⬜ Unit 9: Live Developer ID Direct-Download Proof
@@ -251,3 +251,6 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 - 2026-07-03 13:21 Unit 7a complete: added the failing Ouro MD distribution-kit contract check; red failed on the missing thin wrapper as intended.
 - 2026-07-03 13:24 Unit 7b complete: added the canonical `distribution/apple-distribution.json`, thin shared-kit wrapper, CI no-secret gate, and App Store docs updates for Ouro MD.
 - 2026-07-03 13:26 Unit 7c complete: release-readiness checks passed, App Store build contract passed, `swift-test-budget` passed 245 tests, and `check-coverage` kept pure support targets at 100% line/region coverage.
+- 2026-07-03 14:05 Unit 8a complete: added failing Workbench, Spoonjoy, and skills shared-kit adoption checks; red failed only on missing wrappers or missing kit guidance.
+- 2026-07-03 14:15 Unit 8b complete: added Workbench and Spoonjoy manifests/wrappers/CI/docs and updated `sign-apple-apps`; Workbench, Spoonjoy, Ouro MD, and skills checks all passed.
+- 2026-07-03 14:17 Unit 8c complete: saved cross-repo dry-run plan JSON for Ouro MD, Workbench, and Spoonjoy plus macOS review-plan artifacts for Ouro MD and Workbench.
