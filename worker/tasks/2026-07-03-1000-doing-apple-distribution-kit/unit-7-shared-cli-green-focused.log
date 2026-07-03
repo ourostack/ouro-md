@@ -1,0 +1,14 @@
+
+> apple-distribution-kit@0.1.0 test
+> vitest run --run test/scaffold.test.ts
+
+
+ RUN  v3.2.6 /Users/arimendelow/Projects/apple-distribution-kit
+
+ ✓ test/scaffold.test.ts (30 tests) 17ms
+
+ Test Files  1 passed (1)
+      Tests  30 passed (30)
+   Start at  13:18:55
+   Duration  355ms (transform 66ms, setup 0ms, collect 76ms, tests 17ms, environment 0ms, prepare 49ms)
+

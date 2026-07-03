@@ -1,6 +1,6 @@
 # Doing: Apple Distribution Kit Program
 
-**Status**: drafting
+**Status**: in_progress
 **Execution Mode**: direct
 **Created**: 2026-07-03 11:50
 **Planning**: ./2026-07-03-1000-planning-apple-distribution-kit.md
@@ -19,22 +19,22 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 - `/Users/arimendelow/desk/ouro-md/app-store-connect-submission/task.md`
 
 ## Completion Criteria
-- [ ] A neutral shared kit exists with executable CLI, schema, templates, and tests; it is not only a skill or markdown playbook.
-- [ ] App manifests are canonical for desired release state, while credentials remain in Keychain/secret stores and Apple remains canonical for remote cert/profile/app/build/review state.
-- [ ] The kit has dry-run and apply modes with machine-readable plans, redacted logs, and explicit `requiresHuman` outputs for the known Apple-only human gates.
+- [x] A neutral shared kit exists with executable CLI, schema, templates, and tests; it is not only a skill or markdown playbook.
+- [x] App manifests are canonical for desired release state, while credentials remain in Keychain/secret stores and Apple remains canonical for remote cert/profile/app/build/review state.
+- [x] The kit has dry-run and apply modes with machine-readable plans, redacted logs, and explicit `requiresHuman` outputs for the known Apple-only human gates.
 - [ ] Certificate creation/import supports at least `MAC_APP_DISTRIBUTION`, `MAC_INSTALLER_DISTRIBUTION`, and Developer ID lanes where Apple API/tooling permits; unsupported portal-only steps produce exact handoffs.
 - [ ] Bundle ID/profile reconciliation supports macOS `MAC_OS` bundle IDs and `MAC_APP_STORE` provisioning profiles, with reusable extension points for iOS/TestFlight.
 - [ ] Developer ID direct-download validation has explicit proof: app signed with Developer ID Application, notarization submitted and accepted through `notarytool`, ticket stapled, `stapler validate` passes, `spctl --assess --type execute` passes, and release manifest records `signingMode: developer-id` plus `notarized: true`.
-- [ ] Binary validation/upload uses `altool`/Transporter semantics rather than falsely modeling upload as a plain App Store Connect REST call.
-- [ ] App metadata/version/build/review submission automation covers the path after an app record exists: app lookup, version creation/update, localization metadata, build processing lookup, build association, review submission/item creation, and status polling.
-- [ ] Ouro MD consumes the shared kit for App Store readiness/validation/upload/review-prep, with existing local scripts either delegated to the kit or reduced to thin app-local wrappers.
-- [ ] CI has no-secret gates for manifest validation, API payload generation, redaction, command generation, and selftests; secret-backed workflows import Mac App Store certs/profile/API key only when configured. When secrets or Apple state are absent, the kit produces canonical blocker artifacts instead of ambiguous failures.
+- [x] Binary validation/upload uses `altool`/Transporter semantics rather than falsely modeling upload as a plain App Store Connect REST call.
+- [x] App metadata/version/build/review submission automation covers the path after an app record exists: app lookup, version creation/update, localization metadata, build processing lookup, build association, review submission/item creation, and status polling.
+- [x] Ouro MD consumes the shared kit for App Store readiness/validation/upload/review-prep, with existing local scripts either delegated to the kit or reduced to thin app-local wrappers.
+- [x] CI has no-secret gates for manifest validation, API payload generation, redaction, command generation, and selftests; secret-backed workflows import Mac App Store certs/profile/API key only when configured. When secrets or Apple state are absent, the kit produces canonical blocker artifacts instead of ambiguous failures.
 - [ ] Live Apple gates have named pass/blocker artifacts for App Store API auth, provider resolution, app-record discovery, certificate presence/import, profile creation/download, package validation, upload id, processed-build discovery, build association, and review-submission readiness.
 - [ ] Workbench and Spoonjoy have manifest/adoption PRs or generated adoption fixtures proving the kit is app-neutral and not overfit to Ouro MD; Spoonjoy coverage is dry-run/schema/manifest only unless the lane is explicitly promoted.
 - [ ] The `sign-apple-apps` skill and relevant app docs tell future agents to use the shared kit and explain the human/account boundary plainly.
-- [ ] 100% test coverage on all new code
-- [ ] All tests pass
-- [ ] No warnings
+- [x] 100% test coverage on all new code
+- [x] All tests pass
+- [x] No warnings
 
 ## Code Coverage Requirements
 **MANDATORY: 100% coverage on all new code.**
@@ -154,17 +154,17 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 **Output**: Coverage report and `unit-6c-coverage.log`.
 **Acceptance**: Coverage is 100% for metadata/review code and tests/build stay green.
 
-### ⬜ Unit 7a: Ouro MD Consumer — Tests
+### ✅ Unit 7a: Ouro MD Consumer — Tests
 **What**: Add failing Ouro MD checks proving `distribution/apple-distribution.json` validates through the shared kit, wrapper scripts delegate to the shared kit, shell-boundary checks still pass, and no secret material is committed.
 **Output**: Ouro MD tests/check scripts and red-run log `unit-7a-red.log`.
 **Acceptance**: Tests/checks fail because the manifest/wrappers are not implemented yet.
 
-### ⬜ Unit 7b: Ouro MD Consumer — Implementation
+### ✅ Unit 7b: Ouro MD Consumer — Implementation
 **What**: Add Ouro MD manifest at `/Users/arimendelow/Projects/ouro-md/distribution/apple-distribution.json`, thin wrapper scripts, generated app-store docs, no-secret CI gates, and App Store readiness artifact wiring to the shared kit.
 **Output**: Ouro MD branch `worker/apple-distribution-kit-adoption`, manifest/wrappers/docs/CI changes, and green-run log `unit-7b-green.log`.
 **Acceptance**: Unit 7a tests PASS; dry-run readiness writes named pass/blocker artifacts; existing package scripts either delegate to the kit or remain narrow app-local build hooks.
 
-### ⬜ Unit 7c: Ouro MD Consumer — Coverage & Refactor
+### ✅ Unit 7c: Ouro MD Consumer — Coverage & Refactor
 **What**: Refactor Ouro MD release docs/scripts for clarity, run current app checks, and verify shell-boundary and release policy still pass.
 **Output**: Ouro MD coverage/check logs and `unit-7c-coverage.log`.
 **Acceptance**: Ouro MD tests/checks/builds selected for release readiness pass with no warnings and no shell-boundary regressions.
@@ -246,3 +246,8 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 - 2026-07-03 13:06 Unit 6a complete: added failing store metadata/review planner tests with REST payload assertions and blocker expectations.
 - 2026-07-03 13:08 Unit 6b complete: implemented App Store version/build/review request builders and review-prep blockers.
 - 2026-07-03 13:11 Unit 6c complete: covered store planner branches to 100% and kept tests/build green.
+- 2026-07-03 13:18 Unit 7 shared CLI support red: added failing kit tests for distribution plan and store review-prep CLI commands so app wrappers do not embed custom Node logic.
+- 2026-07-03 13:20 Unit 7 shared CLI support green: implemented `plan` and `store review-plan` CLI commands, artifact writing, and 100% kit coverage across 104 tests.
+- 2026-07-03 13:21 Unit 7a complete: added the failing Ouro MD distribution-kit contract check; red failed on the missing thin wrapper as intended.
+- 2026-07-03 13:24 Unit 7b complete: added the canonical `distribution/apple-distribution.json`, thin shared-kit wrapper, CI no-secret gate, and App Store docs updates for Ouro MD.
+- 2026-07-03 13:26 Unit 7c complete: release-readiness checks passed, App Store build contract passed, `swift-test-budget` passed 245 tests, and `check-coverage` kept pure support targets at 100% line/region coverage.
