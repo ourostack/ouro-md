@@ -66,9 +66,10 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 - App-local desired state must live in app repos. `docs/APP_STORE.md` in Ouro MD should not become canonical for Workbench/Spoonjoy; each app gets its own manifest and generated local docs.
 - The first dogfood app is Ouro MD. Workbench and Spoonjoy are adoption/fixture consumers in this program unless explicitly promoted to submission targets.
 - v1 supports iOS/TestFlight/App Store in schema and dry-run planner only. macOS Developer ID and Mac App Store are the apply-mode lanes for this program.
-- Provider/team ambiguity must be resolved programmatically with `altool --list-providers`, App Store Connect API reads, and manifest/provider hints; ambiguity is a failure, not a guess.
+- Provider/team ambiguity must be resolved with App Store Connect API reads and manifest/provider hints. `altool --list-providers` is not API-key compatible on the local Xcode version, so apply/upload manifests must carry `providerPublicId` when Transporter/altool requires it; if the value is absent and cannot be inferred from Apple state, the kit emits a named `requiresHuman`/configuration blocker instead of guessing.
 - Secrets are never source state. The kit may materialize temporary files/keychains in CI and local runs, but must redact logs and clean up temp material.
-- App Store Connect API access is available locally through a locked neutral credentials directory at `~/Library/Application Support/AppleDistributionKit/app-store-connect/`. The key was validated against the App Store Connect REST API with a custom ES256 JWT; `altool --generate-jwt` produced a token that Apple's REST API rejected, so the kit must own REST JWT generation itself.
+- App Store Connect API access is available locally through a locked neutral credentials directory at `~/Library/Application Support/AppleDistributionKit/app-store-connect/`. The key was validated against the App Store Connect REST API. The kit should own REST JWT generation in code for testability and portability rather than shelling through `altool`, even though the current local `altool --generate-jwt` output also validates against the REST API.
+- v1 store-asset behavior is manifest validation and blocker generation, not screenshot/app-preview binary upload/reconciliation. If required screenshots/app previews are missing locally or cannot be proven already present remotely, review-prep emits `screenshots-assets-required` rather than attempting partial submission.
 
 ## Context / References
 - Apple App Store Connect API overview and OpenAPI specification: `https://developer.apple.com/documentation/appstoreconnectapi`
@@ -111,3 +112,4 @@ Canonical state split:
 - 2026-07-03 10:00 Addressed planning reviewer findings: narrowed iOS/TestFlight v1 to schema/dry-run, added Developer ID notarization/stapling proof, and made secret-backed Apple gates produce named pass/blocker artifacts.
 - 2026-07-03 10:00 Planning approved after Round 2 cold reviewer convergence.
 - 2026-07-03 11:47 Resolved repo/destructive-delete questions and recorded validated App Store Connect API credential boundary.
+- 2026-07-03 12:03 Corrected provider-resolution and store-asset policy after doing-doc Round 2 review.

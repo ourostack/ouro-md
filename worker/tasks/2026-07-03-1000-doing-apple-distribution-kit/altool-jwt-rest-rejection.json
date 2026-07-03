@@ -1,0 +1,10 @@
+{
+  "tool": "xcrun altool --generate-jwt",
+  "tokenDetected": true,
+  "restEndpoint": "GET /v1/apps?limit=1",
+  "restStatus": "200",
+  "errorCode": "",
+  "tokenRedacted": true,
+  "privateKeyRedacted": true,
+  "checkedAt": "2026-07-03T19:06:40Z"
+}

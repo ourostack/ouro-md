@@ -95,17 +95,17 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 **Acceptance**: Coverage is 100% for manifest/plan/redaction code and tests/build stay green.
 
 ### ⬜ Unit 3a: App Store Connect Auth/Client — Tests
-**What**: Write failing tests for ES256 JWT generation using P-1363 signatures, REST request construction, auth config discovery, token redaction, provider/team lookup, app lookup, retry behavior, and error classification.
+**What**: Write failing tests for ES256 JWT generation using P-1363 signatures, REST request construction, auth config discovery, token redaction, provider/team lookup from App Store Connect API/manifest hints, app lookup, retry behavior, and error classification.
 **Output**: Auth/client tests with captured outbound request assertions and red-run log `unit-3a-red.log`.
 **Acceptance**: Tests fail on missing auth/client behavior; outbound URL, headers, body, and redaction assertions are present.
 
 ### ⬜ Unit 3b: App Store Connect Auth/Client — Implementation
-**What**: Implement the JWT signer, REST client, local config loader, provider/team/app lookup commands, retry/error classification, and `asc smoke` command using `GET /v1/apps?limit=1`.
+**What**: Implement the JWT signer, REST client, local config loader, provider/team/app lookup commands from App Store Connect API/manifest hints, retry/error classification, and `asc smoke` command using `GET /v1/apps?limit=1`.
 **Output**: `src/asc/`, CLI commands, and green-run log `unit-3b-green.log`.
 **Acceptance**: Unit 3a tests PASS; local `apple-distribution-kit asc smoke --json` succeeds with HTTP 200 and prints no token/private-key material.
 
 ### ⬜ Unit 3c: App Store Connect Auth/Client — Coverage & Refactor
-**What**: Cover expired/missing key, malformed config, 401/403/404/409/429/5xx responses, and provider ambiguity.
+**What**: Cover expired/missing key, malformed config, 401/403/404/409/429/5xx responses, provider ambiguity, and missing `providerPublicId` when a Transporter/altool upload command requires one.
 **Output**: Coverage report, live smoke artifact `asc-live-smoke.json`, and `unit-3c-coverage.log`.
 **Acceptance**: Coverage is 100% for auth/client code; live artifact contains endpoint/status/count only, not JWT or private key content.
 
@@ -140,14 +140,14 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 **Acceptance**: Coverage is 100% for runner code and tests/build stay green.
 
 ### ⬜ Unit 6a: Store Metadata/Review Automation — Tests
-**What**: Write failing tests for app store version create/update payloads, localization metadata, screenshots/assets manifest validation, build processing lookup, build association, review submission/item creation, review status polling, privacy/export-compliance blockers, and screenshot-missing blockers.
+**What**: Write failing tests for app store version create/update payloads, localization metadata, screenshots/app-preview manifest validation, local/remote asset proof blockers, build processing lookup, build association, review submission/item creation, review status polling, privacy/export-compliance blockers, and screenshot/app-preview missing blockers.
 **Output**: Metadata/review tests with captured outgoing REST request assertions and red-run log `unit-6a-red.log`.
 **Acceptance**: Tests fail on missing metadata/review behavior with outbound request assertions present.
 
 ### ⬜ Unit 6b: Store Metadata/Review Automation — Implementation
-**What**: Implement metadata/version/build/review planner and apply commands for the post-app-record path.
+**What**: Implement metadata/version/build/review planner and apply commands for the post-app-record path. v1 validates screenshot/app-preview requirements and emits blockers; it does not upload or reconcile screenshot/app-preview binaries.
 **Output**: `src/store/`, example metadata artifacts, and green-run log `unit-6b-green.log`.
-**Acceptance**: Unit 6a tests PASS; missing screenshots/assets/privacy/export-compliance values produce canonical blockers instead of partial submissions.
+**Acceptance**: Unit 6a tests PASS; missing screenshots/app previews/privacy/export-compliance values produce canonical blockers instead of partial submissions; no code path claims screenshot/app-preview upload support.
 
 ### ⬜ Unit 6c: Store Metadata/Review Automation — Coverage & Refactor
 **What**: Cover optional metadata, polling timeout, build not processed, build version mismatch, review rejection status, and update-vs-create branches.
@@ -190,9 +190,9 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 **Acceptance**: Each artifact is `passed` with command/status evidence, or `blocked` only for one of these named hard blockers: missing Developer ID Application identity, missing notarization credential, Apple notary service unavailable, or no release package built. Ordinary implementation gaps are not allowed blockers.
 
 ### ⬜ Unit 10: Live Ouro MD Mac App Store Path
-**What**: Use the shared kit against Ouro MD's Mac App Store lane to run or classify each live gate: App Store Connect auth, provider resolution, app-record discovery for `bot.ouro.md`, certificate presence/import, profile creation/download, package validation, upload, processed-build discovery, build association, and review-submission preparation.
-**Output**: `app-store-auth.json`, `app-store-provider.json`, `app-store-app-record.json`, `app-store-certificates.json`, `app-store-profile.json`, `app-store-package-validation.json`, `app-store-upload.json`, `app-store-processed-build.json`, `app-store-build-association.json`, and `app-store-review-prep.json`.
-**Acceptance**: Each artifact is `passed` with endpoint/command/status evidence, or `blocked` only for one of these named hard blockers: first app record must be created in App Store Connect UI, Apple legal/agreement gate, 2FA/CAPTCHA/passkey prompt, managed capability approval, missing local signing identity/profile that cannot be created via API, package build unavailable, or Apple service outage. Ordinary implementation gaps are not allowed blockers.
+**What**: Use the shared kit against Ouro MD's Mac App Store lane to run or classify each live gate: App Store Connect auth, provider resolution/apply upload provider hint, app-record discovery for `bot.ouro.md`, certificate presence/import, profile creation/download, package validation, upload, processed-build discovery, build association, store-asset proof, and review-submission preparation.
+**Output**: `app-store-auth.json`, `app-store-provider.json`, `app-store-app-record.json`, `app-store-certificates.json`, `app-store-profile.json`, `app-store-package-validation.json`, `app-store-upload.json`, `app-store-processed-build.json`, `app-store-build-association.json`, `app-store-assets.json`, and `app-store-review-prep.json`.
+**Acceptance**: Each artifact is `passed` with endpoint/command/status evidence, or `blocked` only for one of these named hard blockers: first app record must be created in App Store Connect UI, Apple legal/agreement gate, 2FA/CAPTCHA/passkey prompt, managed capability approval, missing `providerPublicId` required by Transporter/altool and not inferable from App Store Connect API, missing local signing identity/profile that cannot be created via API, package build unavailable, missing screenshot/app-preview assets or remote proof, or Apple service outage. Ordinary implementation gaps are not allowed blockers.
 
 ### ⬜ Unit 11a: Cold Review and Fixes
 **What**: Run fresh sub-agent reviews for the shared kit and every consumer repo diff, then address all BLOCKER/MAJOR findings.
@@ -226,3 +226,4 @@ Create a reusable, app-neutral Apple distribution system that can drive signing,
 ## Progress Log
 - 2026-07-03 11:50 Created from planning doc
 - 2026-07-03 11:58 Reworked after reviewer findings: added explicit outputs to every unit, fixed repo/worktree ownership, split finalization, added live Developer ID proof, and enumerated allowed Apple blockers/artifacts.
+- 2026-07-03 12:03 Encoded providerPublicId and screenshot/app-preview v1 policy after Round 2 adversarial review.
