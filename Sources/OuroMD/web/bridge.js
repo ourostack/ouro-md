@@ -443,6 +443,30 @@
   function attachCopyEnrichment() {
     if (document.__ouroCopy) { return; }
     document.__ouroCopy = true;
+
+    // [DIAG TEMP] copy-selection investigation. Window-capture fires before the
+    // ouro/vditor copy handlers, so we snapshot the selection at copy-start,
+    // then again after, and watch for DOM mutation / <wbr> insertion (re-render).
+    function selSnap(tag) {
+      var s = window.getSelection();
+      var ed = document.getElementById("editor");
+      post("copydiag", { msg: tag + " rangeCount=" + s.rangeCount + " collapsed=" + s.isCollapsed +
+        " selLen=" + ((s.toString() || "").length) +
+        " wbr=" + (ed && ed.querySelector("wbr") ? 1 : 0) +
+        " anchor=" + (s.anchorNode ? (s.anchorNode.nodeType === 3 ? "text:" + (s.anchorNode.nodeValue || "").slice(0, 12) : s.anchorNode.nodeName) : "null") });
+    }
+    window.addEventListener("copy", function () {
+      selSnap("copy-start");
+      var ed = document.getElementById("editor");
+      var mo = new MutationObserver(function (muts) {
+        post("copydiag", { msg: "MUTATION count=" + muts.length + " first=" + (muts[0] ? muts[0].type : "?") });
+      });
+      if (ed) { mo.observe(ed, { childList: true, subtree: true, characterData: true }); }
+      setTimeout(function () { selSnap("copy+0ms"); }, 0);
+      setTimeout(function () { selSnap("copy+60ms"); }, 60);
+      setTimeout(function () { selSnap("copy+250ms"); mo.disconnect(); post("copydiag", { msg: "---" }); }, 250);
+    }, true);
+
     document.addEventListener("copy", function (e) {
       var mode = pendingCopyMode;
       pendingCopyMode = null;
@@ -454,6 +478,7 @@
         var editorEl = document.getElementById("editor");
         var hasSelection = sel && sel.rangeCount > 0 && !sel.isCollapsed &&
           sel.toString() !== "" && editorEl && editorEl.contains(sel.anchorNode);
+        post("copydiag", { msg: "ouro-handler ran mode=" + (mode || "default") + " hasSelection=" + !!hasSelection });
         var md, plain;
         if (hasSelection) {
           var temp = document.createElement("div");

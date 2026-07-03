@@ -2,6 +2,22 @@ import AppKit
 import SwiftUI
 import WebKit
 
+/// TEMP diagnostic sink for the copy-selection investigation — appends to
+/// /tmp/ouro-copylog.txt so one real Cmd+C reveals what happens to the selection.
+enum OuroCopyDiag {
+    static let path = "/tmp/ouro-copylog.txt"
+    static func log(_ s: String) {
+        let line = "[\(Date().timeIntervalSince1970)] \(s)\n"
+        guard let data = line.data(using: .utf8) else { return }
+        let url = URL(fileURLWithPath: path)
+        if let fh = try? FileHandle(forWritingTo: url) {
+            fh.seekToEndOfFile(); fh.write(data); try? fh.close()
+        } else {
+            try? data.write(to: url)
+        }
+    }
+}
+
 /// Hosts the Vditor editor in a WKWebView and bridges it to `AppModel`.
 struct EditorWebView: NSViewRepresentable {
     let model: AppModel
@@ -134,6 +150,8 @@ struct EditorWebView: NSViewRepresentable {
                 }
             case "activeHeading":
                 if let index = body["index"] as? Int { model.setActiveHeading(index) }
+            case "copydiag":
+                if let msg = body["msg"] as? String { OuroCopyDiag.log(msg) }
             case "openURL":
                 // ⌘-click on a link in the editable area: the bridge resolved the
                 // anchor's href and asks us to open it. Same scheme allow-list as
