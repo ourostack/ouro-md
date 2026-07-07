@@ -703,6 +703,7 @@
   }
 
   function postRender() {
+    try { restoreTableCellSpaces(true); } catch (e) { /* never block a render */ }
     rewriteRelativeImages();
     styleAlerts();
     updateAlertEditing();
@@ -1069,6 +1070,56 @@
     if (node && node.nodeType === 1) { node.classList.add("ouro-active"); }
   }
 
+  // Vditor/lute's editor-DOM builder drops the single space before an inline-
+  // format run (**bold**, `code`, [text](url)) INSIDE A TABLE CELL — a silent,
+  // repeatable round-trip corruption (`see the **bold**` -> `see the**bold**`).
+  // lute's own Md2HTML keeps the space; only the Vditor-DOM path drops it, and
+  // only in table cells (prose is unaffected). lute is GopherJS-compiled and not
+  // patchable, so we restore the space at the DOM level right before
+  // serialization. Working on the DOM (not the Markdown string) keeps it
+  // precise: we only touch a text-node -> inline-format-element boundary, so a
+  // closing `**`, an array index like `arr[0]` (plain text, not an inline node),
+  // or `2*3` are never affected.
+  function isInlineFormatEl(el) {
+    if (!el || el.nodeType !== 1) { return false; }
+    var dt = el.getAttribute && el.getAttribute("data-type");   // IR-mode spans
+    if (dt && /^(strong|em|s|del|mark|code|a|u|sub|sup|inline-)/.test(dt)) { return true; }
+    var tag = el.nodeName;                                       // WYSIWYG / preview
+    return tag === "STRONG" || tag === "EM" || tag === "CODE" || tag === "A" ||
+           tag === "DEL" || tag === "S" || tag === "MARK" || tag === "U" ||
+           tag === "SUB" || tag === "SUP" || tag === "B" || tag === "I";
+  }
+  function restoreTableCellSpaces(skipFocusedCell) {
+    var editorEl = document.getElementById("editor");
+    if (!editorEl) { return; }
+    // While a cell is being actively edited, leave it alone so a mid-word caret
+    // is never nudged; getValue() (and the next render after the caret leaves)
+    // still repairs it. Only matters for the render-time pass.
+    var focusedCell = null;
+    if (skipFocusedCell) {
+      var sel = window.getSelection();
+      var anchor = sel && sel.anchorNode;
+      var el = anchor && (anchor.nodeType === 1 ? anchor : anchor.parentElement);
+      focusedCell = (el && el.closest) ? el.closest("td, th") : null;
+    }
+    var cells = editorEl.querySelectorAll("table td, table th");
+    for (var i = 0; i < cells.length; i++) {
+      if (cells[i] === focusedCell) { continue; }
+      var child = cells[i].firstChild;
+      while (child) {
+        var next = child.nextSibling;
+        // A text node butting directly against an inline-format element is where
+        // the boundary space was dropped. Restore it unless the text already
+        // ends in whitespace or an opening delimiter (where no space belonged).
+        if (child.nodeType === 3 && isInlineFormatEl(next)) {
+          var t = child.nodeValue || "";
+          if (t && !/[\s([{<"'\u201c\u2018\u00ab]$/.test(t)) { child.nodeValue = t + " "; }
+        }
+        child = next;
+      }
+    }
+  }
+
   window.ouro = {
     setValue: function (md) {
       state.value = (md == null) ? "" : md;
@@ -1101,6 +1152,9 @@
       requestAnimationFrame(function () { restore(); requestAnimationFrame(restore); });
     },
     getValue: function () {
+      // Repair lute's dropped table-cell boundary spaces before serializing, so
+      // a save never writes `word**bold**` for the author's `word **bold**`.
+      try { restoreTableCellSpaces(); } catch (e) { /* never block a save */ }
       try { return vditor ? vditor.getValue() : state.value; } catch (e) { return state.value; }
     },
     getHTML: function () {
