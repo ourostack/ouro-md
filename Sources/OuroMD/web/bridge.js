@@ -331,6 +331,55 @@
     }
     document.addEventListener("mousedown", maybeOpenEditorLink, true);
     document.addEventListener("click", maybeOpenEditorLink, true);
+
+    // Collapsible <details> in the editor. Vditor renders a GitHub-style
+    // <details> whose body is Markdown — and Markdown needs blank lines, which
+    // end an HTML block — so the opening <details><summary>, the body, and the
+    // closing </details> become SEPARATE sibling blocks. The rendered <details>
+    // (in .vditor-ir__preview) therefore holds only the summary, and the native
+    // disclosure toggle collapses nothing. Intercept a click on the summary and
+    // hide/show the sibling blocks spanning to the matching </details>.
+    function htmlBlockRaw(block) {
+      var code = block.querySelector('code[data-type="html-block"]');
+      return code ? (code.textContent || "") : (block.textContent || "");
+    }
+    function toggleDetailsFrom(openBlock) {
+      var willCollapse = openBlock.getAttribute("data-ouro-collapsed") !== "1";
+      // Walk following sibling blocks, balancing nested <details>, to the block
+      // that closes this one.
+      var depth = 1;
+      var body = [];
+      var closeBlock = null;
+      var node = openBlock.nextElementSibling;
+      while (node) {
+        var raw = (node.getAttribute && node.getAttribute("data-type") === "html-block") ? htmlBlockRaw(node) : "";
+        var opens = (raw.match(/<details[\s>]/gi) || []).length;
+        var closes = (raw.match(/<\/details\s*>/gi) || []).length;
+        if (closes > 0 && depth - closes <= 0) { closeBlock = node; break; }
+        depth += opens - closes;
+        body.push(node);
+        node = node.nextElementSibling;
+      }
+      body.forEach(function (b) { b.style.display = willCollapse ? "none" : ""; });
+      if (closeBlock) { closeBlock.style.display = willCollapse ? "none" : ""; }
+      openBlock.setAttribute("data-ouro-collapsed", willCollapse ? "1" : "0");
+      // Flip the disclosure marker ▶/▼ on the preview <details>.
+      var det = openBlock.querySelector(".vditor-ir__preview details, .vditor-wysiwyg__preview details");
+      if (det) { if (willCollapse) { det.removeAttribute("open"); } else { det.setAttribute("open", ""); } }
+    }
+    function onDetailsSummaryClick(e) {
+      if (!e.target || !e.target.closest) { return; }
+      if (!e.target.closest(".vditor-ir__preview summary, .vditor-wysiwyg__preview summary")) { return; }
+      var openBlock = e.target.closest('[data-type="html-block"]');
+      if (!openBlock || !openBlock.closest("#editor")) { return; }
+      // Only the mousedown does the work (contenteditable may not deliver the
+      // follow-up click); the click handler just swallows the gesture.
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (e.type === "mousedown") { toggleDetailsFrom(openBlock); }
+    }
+    document.addEventListener("mousedown", onDetailsSummaryClick, true);
+    document.addEventListener("click", onDetailsSummaryClick, true);
   }
 
   function create() {
@@ -444,6 +493,30 @@
   function attachCopyEnrichment() {
     if (document.__ouroCopy) { return; }
     document.__ouroCopy = true;
+
+    // [DIAG TEMP] copy-selection investigation. Window-capture fires before the
+    // ouro/vditor copy handlers, so we snapshot the selection at copy-start,
+    // then again after, and watch for DOM mutation / <wbr> insertion.
+    function selSnap(tag) {
+      var s = window.getSelection();
+      var ed = document.getElementById("editor");
+      post("copydiag", { msg: tag + " rangeCount=" + s.rangeCount + " collapsed=" + s.isCollapsed +
+        " selLen=" + ((s.toString() || "").length) +
+        " wbr=" + (ed && ed.querySelector("wbr") ? 1 : 0) +
+        " anchor=" + (s.anchorNode ? (s.anchorNode.nodeType === 3 ? "text:" + (s.anchorNode.nodeValue || "").slice(0, 12) : s.anchorNode.nodeName) : "null") });
+    }
+    window.addEventListener("copy", function () {
+      selSnap("copy-start");
+      var ed = document.getElementById("editor");
+      var mo = new MutationObserver(function (muts) {
+        post("copydiag", { msg: "MUTATION count=" + muts.length + " first=" + (muts[0] ? muts[0].type : "?") });
+      });
+      if (ed) { mo.observe(ed, { childList: true, subtree: true, characterData: true }); }
+      setTimeout(function () { selSnap("copy+0ms"); }, 0);
+      setTimeout(function () { selSnap("copy+60ms"); }, 60);
+      setTimeout(function () { selSnap("copy+250ms"); mo.disconnect(); post("copydiag", { msg: "---" }); }, 250);
+    }, true);
+
     document.addEventListener("copy", function (e) {
       var mode = pendingCopyMode;
       pendingCopyMode = null;
@@ -455,6 +528,7 @@
         var editorEl = document.getElementById("editor");
         var hasSelection = sel && sel.rangeCount > 0 && !sel.isCollapsed &&
           sel.toString() !== "" && editorEl && editorEl.contains(sel.anchorNode);
+        post("copydiag", { msg: "ouro-handler ran mode=" + (mode || "default") + " hasSelection=" + !!hasSelection });
         var md, plain;
         if (hasSelection) {
           var temp = document.createElement("div");
