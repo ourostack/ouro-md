@@ -3,10 +3,12 @@
 # Bump the app version atomically.
 #
 # OuroMDRelease.swift is the single source of truth (make-app.sh derives its
-# VERSION from it); the only other place a human writes the version is the README
-# status line. This rewrites both — plus the release date — in one shot, so a
-# bump can never be applied only partway. releaseHighlights is per-release prose,
-# so it's left for you to edit by hand afterward.
+# VERSION from it); the version is also written into the README status line and
+# the Apple distribution manifest (distribution/apple-distribution.json, whose
+# mac-app-store channel version CI requires to match the source). This rewrites
+# all three — plus the release date — in one shot, so a bump can never be applied
+# only partway. releaseHighlights is per-release prose, so it's left for you to
+# edit by hand afterward.
 #
 #   scripts/bump-version.sh 0.9.39
 #
@@ -54,6 +56,7 @@ fi
 
 swift_file="Sources/OuroMDCore/OuroMDRelease.swift"
 readme="README.md"
+manifest="distribution/apple-distribution.json"
 today="$(date +%Y-%m-%d)"
 
 # Refuse to go backwards (or sideways): a stale source version silently
@@ -69,6 +72,23 @@ fi
 sed -i '' -E "s/(static let version = \")[0-9]+\.[0-9]+\.[0-9]+(\")/\1${new}\2/" "$swift_file"
 sed -i '' -E "s/(static let releaseDate = \")[0-9]{4}-[0-9]{2}-[0-9]{2}(\")/\1${today}\2/" "$swift_file"
 sed -i '' -E "s/(> \*\*Status:\*\* v)[0-9]+\.[0-9]+\.[0-9]+/\1${new}/" "$readme"
+
+# The Apple distribution manifest carries the app version on its mac-app-store
+# channel (store.version), and CI's distribution-kit contract fails a bump that
+# leaves it stale. It's the only quoted semver ("x.y.z") in the file
+# (schemaVersion is a bare integer), so a targeted sed can't hit anything else.
+if [[ -f "$manifest" ]]; then
+  sed -i '' -E "s/(\"version\"[[:space:]]*:[[:space:]]*\")[0-9]+\.[0-9]+\.[0-9]+(\")/\1${new}\2/" "$manifest"
+  manifest_version="$(sed -nE 's/.*"version"[[:space:]]*:[[:space:]]*"([0-9]+\.[0-9]+\.[0-9]+)".*/\1/p' "$manifest" | head -1)"
+  if [[ "$manifest_version" != "$new" ]]; then
+    echo "error: failed to bump $manifest to $new (found '${manifest_version:-<none>}')." >&2
+    echo "       The manifest structure may have changed; update bump-version.sh." >&2
+    exit 1
+  fi
+else
+  echo "error: $manifest is missing; a bump would leave the distribution contract stale." >&2
+  exit 1
+fi
 
 # Fail loudly if anything didn't take (e.g. a format change broke a pattern).
 ./scripts/verify-release-version.sh >/dev/null
