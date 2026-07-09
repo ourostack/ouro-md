@@ -7,8 +7,8 @@
 - Worktree: `/Users/arimendelow/Projects/ouro-md-file-truth`
 - Planning doc: `codex-file-truth/tasks/2026-07-09-1409-planning-document-truth-surface.md`
 - Doing doc: `codex-file-truth/tasks/2026-07-09-1409-doing-document-truth-surface.md`
-- Gate state: Unit 4a sidebar-free document truth UI red tests confirmed.
-- Next action: execute Unit 4b sidebar-free document truth UI implementation.
+- Gate state: Unit 4b sidebar-free document truth UI implementation complete.
+- Next action: execute Unit 4c UI coverage/refactor pass.
 
 ## Terminal Evidence
 

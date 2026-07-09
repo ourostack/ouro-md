@@ -20,7 +20,7 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 
 ## Completion Criteria
 - [x] Native document title clicks no longer open the file picker and do not block AppKit document path/proxy behavior.
-- [ ] Current document file truth is visible without opening the sidebar.
+- [x] Current document file truth is visible without opening the sidebar.
 - [x] File/git state labels are mechanical and correct for clean tracked, modified tracked, mixed staged/unstaged changes, untracked/not-in-git, and inaccessible/non-file cases covered by focused classification tests.
 - [x] Git unavailable, sandbox/inaccessible metadata, and non-repo files show honest fallback state without blocking normal editing.
 - [x] Commands exist for Reveal in Finder, Copy Path, Copy Relative Path, and Copy Git Diff Command, with disabled or fallback behavior when no current file/repo exists.
@@ -111,9 +111,9 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 **What**: Add failing SwiftUI/accessibility tests for a compact document truth control visible without the sidebar/status bar dependency, with labels and menu actions exposed.
 **Acceptance**: UI-facing tests fail before implementation. Evidence: `2026-07-09-1409-doing-document-truth-surface/unit-4a-red.txt`.
 
-### ⬜ Unit 4b: Sidebar-Free Document Truth UI - Implementation
+### ✅ Unit 4b: Sidebar-Free Document Truth UI - Implementation
 **What**: Add a compact document truth control to the editor/status/title-adjacent surface using existing styling patterns, with a small action menu and honest labels.
-**Acceptance**: Unit 4a tests pass, the control is visible without opening the sidebar, and it does not overlap editor content.
+**Acceptance**: Unit 4a tests pass, the control is visible without opening the sidebar, and it does not overlap editor content. Evidence: `swift run ouro-md --uisurfacetest`, `swift run ouro-md --accessibilityaudit`, and `swift build` passed.
 
 ### ⬜ Unit 4c: Sidebar-Free Document Truth UI - Coverage & Refactor
 **What**: Refine layout, accessibility strings, and status-bar interaction while keeping the control lightweight.
@@ -162,3 +162,4 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - 2026-07-09 14:49 -0700 Unit 3b green test confirmed: focused command suite passed 15 tests and `swift build` completed cleanly.
 - 2026-07-09 14:54 -0700 Unit 3c regression/coverage pass complete: command/menu suite passed 37 tests, `scripts/check-coverage.sh` passed 314 tests with pure support files at 100%, and failed dirty Save As no longer advances the saved-content baseline before a write succeeds.
 - 2026-07-09 14:55 -0700 Unit 4a red UI checks confirmed: `--uisurfacetest` and `--accessibilityaudit` fail only because the sidebar-free document truth control is missing.
+- 2026-07-09 14:57 -0700 Unit 4b green UI implementation confirmed: document truth control renders with status bar hidden, accessibility audit sees it, and `swift build` passed.
