@@ -1,0 +1,31 @@
+[0/1] Planning build
+Building for debugging...
+[0/6] Write sources
+[1/6] Write swift-version--58304C5D6DBC2206.txt
+[3/6] Emitting module OuroMDTests
+[4/6] Compiling OuroMDTests OuroMDAppStoreScreenshotTests.swift
+[4/6] Write Objects.LinkFileList
+[5/6] Linking ouro-mdPackageTests
+Build complete! (2.66s)
+Test Suite 'Selected tests' started at 2026-07-09 00:14:08.463.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-09 00:14:08.464.
+Test Suite 'OuroMDAppStoreScreenshotTests' started at 2026-07-09 00:14:08.464.
+Test Case '-[OuroMDTests.OuroMDAppStoreScreenshotTests testAppStoreManifestDeclaresFourLocalReviewScreenshots]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreScreenshotTests.swift:7: error: -[OuroMDTests.OuroMDAppStoreScreenshotTests testAppStoreManifestDeclaresFourLocalReviewScreenshots] : XCTAssertEqual failed: ("1") is not equal to ("0") - error: mac-app-store screenshots must include at least 4 local PNG assets
+error: screenshot 1 for scene folder-workspace must be a local PNG, not remote proof
+error: missing screenshot 2 for scene command-palette
+error: missing screenshot 3 for scene search-outline
+error: missing screenshot 4 for scene themed-export-readability
+
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreScreenshotTests.swift:8: error: -[OuroMDTests.OuroMDAppStoreScreenshotTests testAppStoreManifestDeclaresFourLocalReviewScreenshots] : XCTAssertTrue failed
+Test Case '-[OuroMDTests.OuroMDAppStoreScreenshotTests testAppStoreManifestDeclaresFourLocalReviewScreenshots]' failed (0.364 seconds).
+Test Suite 'OuroMDAppStoreScreenshotTests' failed at 2026-07-09 00:14:08.829.
+	 Executed 1 test, with 2 failures (0 unexpected) in 0.364 (0.365) seconds
+Test Suite 'ouro-mdPackageTests.xctest' failed at 2026-07-09 00:14:08.829.
+	 Executed 1 test, with 2 failures (0 unexpected) in 0.364 (0.365) seconds
+Test Suite 'Selected tests' failed at 2026-07-09 00:14:08.829.
+	 Executed 1 test, with 2 failures (0 unexpected) in 0.364 (0.366) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

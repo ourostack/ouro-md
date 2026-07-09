@@ -135,7 +135,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Coverage logs and reviewer transcript or summary.
 **Acceptance**: 100% coverage on new executor code and reviewer converges.
 
-### ⬜ Unit 5a: Screenshot Asset Set — Tests
+### ✅ Unit 5a: Screenshot Asset Set — Tests
 **What**: Add failing checks for at least four App Store screenshot assets generated from non-private fixtures and declared in the manifest in the intended order: folder workspace, command palette, search/outline, and themed export/readability.
 **Output**: Failing asset/manifest check plus red log.
 **Acceptance**: The check fails red until assets and manifest entries exist.
@@ -267,3 +267,4 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 4d complete: added failing mutation-executor tests for explicit apply mode, blocked-plan refusal, fake transport request/upload execution, placeholder ID substitution, redacted artifacts, and retryable error classification; focused suite fails red because `scripts/app-store-apply-plan.mjs` is not implemented.
 - 2026-07-09 Unit 4e complete: implemented fixture-only `scripts/app-store-apply-plan.mjs` with apply-mode gates, blocked-plan refusal, placeholder ID substitution, fake request/upload trace writing, upload-operation redaction, and retryable error classification; focused executor tests and fake apply artifact pass without live Apple mutations.
 - 2026-07-09 Unit 4f complete: expanded executor/planner review coverage, removed generated-resource ID inputs from create-mode plans, added unresolved-placeholder executor guard, regenerated fake apply artifacts, and harsh executor reviewer gate passed after fixing captured-ID bypass findings.
+- 2026-07-09 Unit 5a complete: added failing App Store screenshot asset validator and Swift wrapper requiring four local PNG screenshots in folder-workspace, command-palette, search-outline, and themed-export-readability order; focused suite fails red because the manifest still has only one remote proof screenshot.
