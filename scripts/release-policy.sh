@@ -172,10 +172,10 @@ expected_hashes = {
     "Sources/OuroMD/CLI.swift": "dafba358707fb416c6496b157dfd7398c7d8d393675abc558da63d40ba882929",
     "Sources/OuroMD/OuroMDShellContract.swift": "4295d8c618bd42ed3ce45d5a83fdbe67c8f56beb7cafa9ded9650ba5f379ae43",
     "Sources/OuroMD/Welcome.swift": "045af3d3f391471b0775ccf38cfd4f34364c795e35919e3528f31fbd43aade34",
-    "Sources/OuroMDCore/OuroMDRelease.swift": "3b58407df3ba54b5a7bce97280cf08500adfdd5b5b5eea2ca2d892108321db13",
+    "Sources/OuroMDCore/OuroMDRelease.swift": "f343ad582511f1bccc661b8d3495393e4665ee815dba380cfb06f8bcd3f79745",
     "scripts/package-app-store.sh": "0aacf740a5342606ac44317ce6179a0c749ea5867e9201059be45707af24458a",
     "scripts/pr-preflight.sh": "384aec9149fdf51f993f61572afaaa32640e1dac8bde434865877cbb967faee0",
-    "scripts/release-policy.sh": "79ef3632ae5675ab12b90d7908f634e68b248561834f412bb0bc14d4ae967037",
+    "scripts/release-policy.sh": "440f50fd771aa83cfe75d04c24d8bf51e3e84893078d1e92229d8b3eae0df635",
     str(expected_evidence_path): "879056295b4fbe4f397ba53eae3f108c43ac957f0eb98ecf72a4a8e6caacbe5e",
 }
 expected_evidence = {

@@ -39,11 +39,21 @@ final class DocumentWindowControllerTests: XCTestCase {
         controller.syncChrome()
         XCTAssertTrue(controller.window.isDocumentEdited)
 
+        try? FileManager.default.removeItem(at: renamed)
         controller.model.teardown()
         controller.model.markDeletedOnDiskForTesting()
         controller.syncChrome()
 
+        XCTAssertTrue(controller.model.deletedOnDisk)
+        waitUntil(timeout: 1) { controller.window.subtitle == "deleted" }
         XCTAssertEqual(controller.window.subtitle, "deleted")
         XCTAssertEqual(controller.window.representedURL, renamed)
+    }
+
+    private func waitUntil(timeout: TimeInterval, condition: () -> Bool) {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition(), Date() < deadline {
+            RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
+        }
     }
 }
