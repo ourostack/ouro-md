@@ -19,7 +19,7 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - None
 
 ## Completion Criteria
-- [ ] Native document title clicks no longer open the file picker and do not block AppKit document path/proxy behavior.
+- [x] Native document title clicks no longer open the file picker and do not block AppKit document path/proxy behavior.
 - [ ] Current document file truth is visible without opening the sidebar.
 - [ ] File/git state labels are mechanical and correct for clean tracked, modified tracked, mixed staged/unstaged changes, untracked/not-in-git, and inaccessible/non-file cases covered by focused classification tests.
 - [ ] Git unavailable, sandbox/inaccessible metadata, and non-repo files show honest fallback state without blocking normal editing.
@@ -67,9 +67,9 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 **What**: Remove the custom title-click open-panel hook and any now-dead hit-testing helpers while keeping existing chrome sync and ordinary window dragging.
 **Acceptance**: Unit 1a tests pass, no new warnings. Evidence: `swift test --filter DocumentWindowControllerTests` passed at 2026-07-09 14:26 -0700.
 
-### ⬜ Unit 1c: Native Title Chrome - Coverage & Refactor
+### ✅ Unit 1c: Native Title Chrome - Coverage & Refactor
 **What**: Remove obsolete test/implementation seams and keep title chrome behavior covered by stable assertions.
-**Acceptance**: Window-controller tests pass and no obsolete title-click code remains.
+**Acceptance**: Window-controller tests pass and no obsolete title-click code remains. Evidence: `swift test --filter DocumentWindowControllerTests` passed and scoped grep found no obsolete title-click hooks at 2026-07-09 14:27 -0700.
 
 ### ⬜ Unit 2a: File/Git Truth Model - Tests
 **What**: Add failing tests in the coverage-gated `OuroMDAppSupportTests` target for read-only classification of non-file, local/non-repo, tracked clean, tracked modified, mixed staged/unstaged changes, untracked, unavailable/inaccessible, label text, command availability, relative-path helpers, and shell-safe git diff command string helpers.
@@ -151,3 +151,4 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - 2026-07-09 14:31 -0700 Doing-doc reviewer findings accepted: add lifecycle unit coverage, coverage-gated support target for pure truth logic, concrete validation gates, progress log, and scoped publish wording.
 - 2026-07-09 14:25 -0700 Unit 1a red test confirmed: `swift test --filter DocumentWindowControllerTests` failed because the window still uses custom `DocumentWindow`.
 - 2026-07-09 14:26 -0700 Unit 1b green test confirmed after removing active title-click interception: `swift test --filter DocumentWindowControllerTests` passed.
+- 2026-07-09 14:27 -0700 Unit 1c cleanup passed: removed obsolete title-click helper type, updated stale fixture wording, focused title tests green, scoped grep found no obsolete hooks.

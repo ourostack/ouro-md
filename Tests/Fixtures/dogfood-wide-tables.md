@@ -53,7 +53,7 @@ rows, and tables that should scroll locally without pushing the whole document.
 | Area | User signal | Source path | Bundle path | Release path | Probe | Owner |
 | --- | --- | --- | --- | --- | --- | --- |
 | Tables | Large document remains readable | `Sources/OuroMD/Themes.swift` | `OuroMD.app/Contents/Resources/ouro-md_OuroMD.bundle/web/index.html` | `dist/Ouro-MD-0.9.13.zip` | `--tablewraptest` | CI |
-| Title | Clicking title opens file picker | `Sources/OuroMD/DocumentWindowController.swift` | `OuroMD.app/Contents/MacOS/ouro-md` | `Ouro-MD-0.9.13.manifest.json` | `DocumentWindowControllerTests` | Swift tests |
+| Title | Native title chrome keeps document path visible | `Sources/OuroMD/DocumentWindowController.swift` | `OuroMD.app/Contents/MacOS/ouro-md` | `Ouro-MD-0.9.13.manifest.json` | `DocumentWindowControllerTests` | Swift tests |
 
 ## Narrow Prose
 
@@ -77,7 +77,7 @@ thin left ribbon beside a huge empty right column.
 
 | Checklist | Evidence | Status |
 | --- | --- | --- |
-| File picker title click | `testTitleClickRoutesToOpenPanelInsteadOfRename` | required |
+| Native title chrome | `testWindowUsesNativeDocumentChromeInsteadOfCustomTitleClickRouting` | required |
 | Dogfood table layout | `Tests/Fixtures/dogfood-wide-tables.md` plus generated built-in fixture | required |
 | Published release freshness | `release-policy.sh freshness` and `release-policy.sh verify-published` | required |
 

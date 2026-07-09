@@ -8,7 +8,7 @@ final class DocumentWindowControllerTests: XCTestCase {
         let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
         defer { controller.window.close() }
 
-        XCTAssertFalse(controller.window is DocumentWindow)
+        XCTAssertTrue(type(of: controller.window) == NSWindow.self)
         XCTAssertTrue(controller.window.isMovableByWindowBackground)
         XCTAssertNil(controller.window.representedURL)
         XCTAssertFalse(controller.window.isDocumentEdited)
