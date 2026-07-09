@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-09T10:08:47.782Z",
+  "targetAppStoreVersion": {
+    "id": "7309944f-cbe8-4518-960c-444e6116ab46",
+    "versionString": "0.9.80",
+    "appStoreState": "PREPARE_FOR_SUBMISSION",
+    "appVersionState": "PREPARE_FOR_SUBMISSION",
+    "platform": "MAC_OS"
+  },
+  "associatedBuild": {
+    "id": "827fa5b9-6994-41eb-bc75-ab3ca469a96f",
+    "version": "0.9.80",
+    "processingState": "VALID",
+    "expired": false
+  },
+  "reviewSubmission": {
+    "id": "e87d8ecd-9682-4d79-9e60-14c23befd11e",
+    "state": "READY_FOR_REVIEW"
+  },
+  "reviewSubmissionItems": []
+}

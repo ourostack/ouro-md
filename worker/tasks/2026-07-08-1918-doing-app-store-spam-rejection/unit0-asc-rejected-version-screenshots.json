@@ -1,0 +1,39 @@
+{
+  "ok": true,
+  "result": {
+    "data": [
+      {
+        "type": "appScreenshots",
+        "id": "80a8620a-643a-46bd-9e39-ab19f26ba424",
+        "attributes": {
+          "fileSize": 127639,
+          "fileName": "ouro-md-app-store-screenshot-2880x1800.png",
+          "sourceFileChecksum": "813db59889b8a5f92eea6c2980a96712",
+          "assetType": "SortedDesktopScreenShot",
+          "assetDeliveryState": {
+            "errors": [],
+            "warnings": null,
+            "state": "COMPLETE"
+          },
+          "imageAssetSummary": {
+            "width": 2880,
+            "height": 1800
+          },
+          "uploadOperationsSummary": "none"
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appScreenshots/80a8620a-643a-46bd-9e39-ab19f26ba424"
+        }
+      }
+    ],
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appScreenshotSets/f37ecb51-c96e-451d-9b29-20d86d7f118e/appScreenshots?limit=50"
+    },
+    "meta": {
+      "paging": {
+        "total": 1,
+        "limit": 50
+      }
+    }
+  }
+}

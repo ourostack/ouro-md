@@ -1,0 +1,77 @@
+Running altool at path '/Applications/Xcode.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources/altool'...
+
+2026-07-09 01:28:22.128 ERROR: [ContentDelivery.Uploader.A20804DC0]
+=======================================
+VERIFY FAILED with 2 errors, 1 warning
+=======================================
+2026-07-09 01:28:22.259 ERROR: [altool.103233120] ExitFailure (31)
+{
+  "os-version" : "Version 26.2 (Build 25C56)",
+  "product-errors" : [
+    {
+      "code" : 90287,
+      "message" : "Invalid Code Signing Entitlements. The entitlements in your app bundle signature do not match the ones that are contained in the provisioning profile. The bundle contains a key that is not included in the provisioning profile: 'com.apple.developer.team-identifier' in 'bot.ouro.md.pkg/Payload/OuroMD.app/Contents/MacOS/ouro-md'.",
+      "underlying-errors" : [
+        {
+          "code" : -19241,
+          "message" : "A server error occurred.",
+          "underlying-errors" : [
+
+          ],
+          "user-info" : {
+            "NSLocalizedDescription" : "A server error occurred.",
+            "code" : "90287",
+            "description" : "Invalid Code Signing Entitlements. The entitlements in your app bundle signature do not match the ones that are contained in the provisioning profile. The bundle contains a key that is not included in the provisioning profile: 'com.apple.developer.team-identifier' in 'bot.ouro.md.pkg/Payload/OuroMD.app/Contents/MacOS/ouro-md'."
+          }
+        }
+      ],
+      "user-info" : {
+        "NSLocalizedDescription" : "Invalid Code Signing Entitlements. The entitlements in your app bundle signature do not match the ones that are contained in the provisioning profile. The bundle contains a key that is not included in the provisioning profile: 'com.apple.developer.team-identifier' in 'bot.ouro.md.pkg/Payload/OuroMD.app/Contents/MacOS/ouro-md'.",
+        "NSLocalizedFailureReason" : "The server’s response was: ‘{\n    code = 90287;\n    description = \"Invalid Code Signing Entitlements. The entitlements in your app bundle signature do not match the ones that are contained in the provisioning profile. The bundle contains a key that is not included in the provisioning profile: 'com.apple.developer.team-identifier' in 'bot.ouro.md.pkg/Payload/OuroMD.app/Contents/MacOS/ouro-md'.\";\n}’.",
+        "NSUnderlyingError" : "Error Domain=IrisAPI Code=-19241 \"A server error occurred.\" UserInfo={code=90287, NSLocalizedDescription=A server error occurred., description=Invalid Code Signing Entitlements. The entitlements in your app bundle signature do not match the ones that are contained in the provisioning profile. The bundle contains a key that is not included in the provisioning profile: 'com.apple.developer.team-identifier' in 'bot.ouro.md.pkg/Payload/OuroMD.app/Contents/MacOS/ouro-md'.}",
+        "iris-code" : "90287"
+      }
+    },
+    {
+      "code" : 90287,
+      "message" : "Invalid Code Signing Entitlements. The entitlements in your app bundle signature do not match the ones that are contained in the provisioning profile. The bundle contains a key that is not included in the provisioning profile: 'com.apple.application-identifier' in 'bot.ouro.md.pkg/Payload/OuroMD.app/Contents/MacOS/ouro-md'.",
+      "underlying-errors" : [
+        {
+          "code" : -19241,
+          "message" : "A server error occurred.",
+          "underlying-errors" : [
+
+          ],
+          "user-info" : {
+            "NSLocalizedDescription" : "A server error occurred.",
+            "code" : "90287",
+            "description" : "Invalid Code Signing Entitlements. The entitlements in your app bundle signature do not match the ones that are contained in the provisioning profile. The bundle contains a key that is not included in the provisioning profile: 'com.apple.application-identifier' in 'bot.ouro.md.pkg/Payload/OuroMD.app/Contents/MacOS/ouro-md'."
+          }
+        }
+      ],
+      "user-info" : {
+        "NSLocalizedDescription" : "Invalid Code Signing Entitlements. The entitlements in your app bundle signature do not match the ones that are contained in the provisioning profile. The bundle contains a key that is not included in the provisioning profile: 'com.apple.application-identifier' in 'bot.ouro.md.pkg/Payload/OuroMD.app/Contents/MacOS/ouro-md'.",
+        "NSLocalizedFailureReason" : "The server’s response was: ‘{\n    code = 90287;\n    description = \"Invalid Code Signing Entitlements. The entitlements in your app bundle signature do not match the ones that are contained in the provisioning profile. The bundle contains a key that is not included in the provisioning profile: 'com.apple.application-identifier' in 'bot.ouro.md.pkg/Payload/OuroMD.app/Contents/MacOS/ouro-md'.\";\n}’.",
+        "NSUnderlyingError" : "Error Domain=IrisAPI Code=-19241 \"A server error occurred.\" UserInfo={code=90287, NSLocalizedDescription=A server error occurred., description=Invalid Code Signing Entitlements. The entitlements in your app bundle signature do not match the ones that are contained in the provisioning profile. The bundle contains a key that is not included in the provisioning profile: 'com.apple.application-identifier' in 'bot.ouro.md.pkg/Payload/OuroMD.app/Contents/MacOS/ouro-md'.}",
+        "iris-code" : "90287"
+      }
+    }
+  ],
+  "tool-path" : "/Applications/Xcode.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources",
+  "tool-version" : "26.40.1 (174001)",
+  "warnings" : [
+    {
+      "code" : 90889,
+      "message" : "\"Cannot be used with TestFlight because the bundle at “OuroMD.app” is missing a provisioning profile. Main bundles are expected to have provisioning profiles in order to be eligible for TestFlight.\"",
+      "underlying-errors" : [
+
+      ],
+      "user-info" : {
+        "NSLocalizedDescription" : "\"Cannot be used with TestFlight because the bundle at “OuroMD.app” is missing a provisioning profile. Main bundles are expected to have provisioning profiles in order to be eligible for TestFlight.\"",
+        "server_warning" : "{\n    code = 90889;\n    description = \"\\\"Cannot be used with TestFlight because the bundle at \\U201cOuroMD.app\\U201d is missing a provisioning profile. Main bundles are expected to have provisioning profiles in order to be eligible for TestFlight.\\\"\";\n}"
+      }
+    }
+  ]
+}
+
+__ALTOOL_STATUS:1

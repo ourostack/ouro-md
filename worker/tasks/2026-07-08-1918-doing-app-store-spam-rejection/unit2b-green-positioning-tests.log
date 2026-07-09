@@ -1,0 +1,52 @@
+[0/1] Planning build
+Building for debugging...
+[0/7] Write sources
+[3/7] Write swift-version--58304C5D6DBC2206.txt
+[5/9] Compiling OuroMDCore OuroMDRelease.swift
+[6/9] Emitting module OuroMDCore
+[7/22] Compiling OuroMD OuroMDUpdateCoordinator.swift
+[8/22] Compiling OuroMD ReleaseUpdate.swift
+[9/23] Compiling OuroMD UISurfaceTest.swift
+[10/23] Compiling OuroMD OuroMDShellContract.swift
+[11/23] Compiling OuroMD Welcome.swift
+[12/25] Compiling OuroMD OuroMDUpdateInstaller.swift
+[13/25] Compiling OuroMD AppInfoView.swift
+[14/25] Compiling OuroMD CLI.swift
+[15/25] Compiling OuroMD OuroMDTelemetry.swift
+[16/25] Compiling OuroMD LiveUpdateTest.swift
+[17/25] Emitting module OuroMD
+[18/26] Compiling OuroMD AccessibilityAuditTest.swift
+[19/26] Compiling OuroMD AppDelegate.swift
+[20/26] Compiling OuroMD main.swift
+[21/26] Compiling OuroMD FirstLaunchTest.swift
+[22/26] Compiling OuroMD AppModel.swift
+[22/26] Write Objects.LinkFileList
+[23/26] Linking ouro-md
+[24/26] Applying ouro-md
+[26/31] Compiling OuroMDTests OuroMDShellContractTests.swift
+[27/31] Compiling OuroMDTests ReleaseUpdateTests.swift
+[28/31] Compiling OuroMDTests OuroMDPositioningTests.swift
+[29/31] Compiling OuroMDTests OuroMDUpdateCoordinatorTests.swift
+[30/31] Emitting module OuroMDTests
+[30/32] Write Objects.LinkFileList
+[31/32] Linking ouro-mdPackageTests
+Build complete! (6.63s)
+Test Suite 'Selected tests' started at 2026-07-08 22:22:50.511.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-08 22:22:50.512.
+Test Suite 'OuroMDPositioningTests' started at 2026-07-08 22:22:50.512.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsCarryReviewFacingDifferentiators]' started.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsCarryReviewFacingDifferentiators]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDPositioningTests testShellAboutSubtitleUsesLocalWorkspacePositioning]' started.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testShellAboutSubtitleUsesLocalWorkspacePositioning]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow]' started.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow]' passed (0.000 seconds).
+Test Suite 'OuroMDPositioningTests' passed at 2026-07-08 22:22:50.516.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.004 (0.005) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-07-08 22:22:50.516.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.004 (0.005) seconds
+Test Suite 'Selected tests' passed at 2026-07-08 22:22:50.516.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.004 (0.006) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

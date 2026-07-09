@@ -1,0 +1,15 @@
+preferences fitting size: 560.0x413.0 ✓
+about fitting size: 520.0x520.0 ✓
+search sidebar fitting size: 208.0x95.0 ✓
+editor palette/status fitting size: 400.0x320.0 ✓
+command reference fitting size: 560.0x620.0 ✓
+status/palette semantic state: ✓
+command discoverability semantic state: ✓
+available update controls fitting size: 560.0x130.0 ✓
+update progress fitting size: installing 400.0x131.0 failed 400.0x105.0 ✓
+installing update review state: ✓
+direct shell install suppressed; review prompt available: ✓
+invalid regex visible state: ✓
+search result row state: ✓
+menu topology: ✓
+accessibility labels: ✓

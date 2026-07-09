@@ -21,7 +21,28 @@
         "version": "0.9.80",
         "copyright": "Copyright \u00a9 2026 Ari Mendelow",
         "category": "DEVELOPER_TOOLS",
-        "screenshots": [],
+        "subtitle": "Local Markdown Workspace",
+        "promotionalText": "Local Markdown workspace for Mac files: folder search, outline, command palette, themes, PDF/HTML export, no account.",
+        "description": "Ouro MD is a local Markdown workspace for people who keep real files, not a hosted notes account.\n\nOpen Markdown documents and folders directly from Finder, then move through your workspace with a native file tree, document outline, folder search, and a command palette built for fast keyboard-driven editing. Ouro MD keeps writing local and portable while still giving you polished rendered reading, themes, wide-table handling, and export to PDF or self-contained HTML.\n\nNo sign-in is required. Your Markdown files stay on your Mac unless you choose to share or export them.",
+        "keywords": "markdown,local files,folder search,outline,command palette,pdf,html export,gfm,mac",
+        "supportUrl": "https://ouro.bot/support/",
+        "marketingUrl": "https://ouro.bot/apps/ouro-md/",
+        "reviewNotes": "Review path: No account or sample login is required. Create or open a Markdown file, then use Shift-Command-O to open a folder. Use the File Tree, Outline, and Search sidebars; open the Command Palette with Shift-Command-P; switch themes; export PDF or HTML from the File menu. The App Store build has direct-download updates and telemetry disabled.",
+        "screenshotRequirements": {
+          "minimumCount": 4,
+          "requiredScenes": [
+            "folder-workspace",
+            "command-palette",
+            "search-outline",
+            "themed-export-readability"
+          ]
+        },
+        "screenshots": [
+          "store-assets/app-store/01-folder-workspace.png",
+          "store-assets/app-store/02-command-palette.png",
+          "store-assets/app-store/03-search-outline.png",
+          "store-assets/app-store/04-themed-export-readability.png"
+        ],
         "privacy": {
           "policyUrl": "https://ouro.bot/privacy/",
           "collectsData": false

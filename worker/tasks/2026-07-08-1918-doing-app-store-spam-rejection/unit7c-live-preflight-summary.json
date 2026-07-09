@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-09T09:25:39.693Z",
+  "appId": "6787262892",
+  "bundleId": "bot.ouro.md",
+  "teamId": "743GT2AJ24",
+  "targetVersion": "0.9.80",
+  "targetAppStoreVersionExists": true,
+  "targetAppStoreVersionIds": [
+    "7309944f-cbe8-4518-960c-444e6116ab46"
+  ],
+  "targetAppStoreVersion": {
+    "id": "7309944f-cbe8-4518-960c-444e6116ab46",
+    "versionString": "0.9.80",
+    "appStoreState": "REJECTED",
+    "appVersionState": "REJECTED",
+    "platform": "MAC_OS"
+  },
+  "appInfo": {
+    "id": "9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8",
+    "state": "REJECTED",
+    "primaryCategoryId": "DEVELOPER_TOOLS"
+  },
+  "appInfoLocalizations": [
+    {
+      "id": "b5bae77f-a94f-4b39-8ebd-841a6306b1c6",
+      "locale": "en-US",
+      "name": "Ouro MD",
+      "subtitle": "The Markdown App",
+      "privacyPolicyUrl": "https://ouro.bot/privacy/"
+    }
+  ],
+  "appStoreVersionLocalizations": [
+    {
+      "id": "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
+      "locale": "en-US",
+      "promotionalText": "A quiet, native Markdown editor for macOS documents that should stay yours.",
+      "descriptionPrefix": "Ouro MD is a calm Markdown editor for macOS. It keeps the document front and center with clean t",
+      "keywords": "markdown,editor,notes,writing,plain text,documents,preview,tables,mac",
+      "supportUrl": "https://ouro.bot/support/",
+      "marketingUrl": "https://ouro.bot/",
+      "whatsNewPrefix": null
+    }
+  ],
+  "appStoreVersionLocalizationId": "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
+  "appStoreReviewDetailId": "3bc7284e-27d5-4dd3-a049-b9e859289bd1",
+  "appScreenshotSetId": "f37ecb51-c96e-451d-9b29-20d86d7f118e",
+  "screenshots": [
+    {
+      "id": "80a8620a-643a-46bd-9e39-ab19f26ba424",
+      "fileName": "ouro-md-app-store-screenshot-2880x1800.png",
+      "assetDeliveryState": "COMPLETE"
+    }
+  ],
+  "screenshotIds": [
+    "80a8620a-643a-46bd-9e39-ab19f26ba424"
+  ],
+  "currentAssociatedBuild": {
+    "id": "2f55e88f-a05b-4065-a4b5-4e55180d8835",
+    "version": "0.9.79",
+    "processingState": "VALID",
+    "expired": false
+  },
+  "uploadedBuild": {
+    "id": "827fa5b9-6994-41eb-bc75-ab3ca469a96f",
+    "version": "0.9.80",
+    "processingState": "VALID",
+    "expired": false,
+    "uploadedDate": "2026-07-09T01:35:53-07:00"
+  },
+  "existingRejectionThread": {
+    "reviewSubmissionId": "b37f847e-0ecb-4e7a-bb00-14e3038b0f4c",
+    "state": "UNRESOLVED_ISSUES",
+    "items": [
+      {
+        "id": "YjM3Zjg0N2UtMGVjYi00ZTdhLWJiMDAtMTRlMzAzOGIwZjRjfDZ8ODg3ODEyNjgx",
+        "state": "REJECTED",
+        "appStoreVersionId": "7309944f-cbe8-4518-960c-444e6116ab46"
+      }
+    ],
+    "strategy": "new-submission-review-notes",
+    "apiReplySurface": "not-planned; App Store Connect public API request plan has no review-thread reply endpoint"
+  }
+}

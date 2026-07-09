@@ -1,0 +1,291 @@
+{
+  "schemaVersion": 1,
+  "mode": "apply",
+  "transport": "live",
+  "stage": "screenshots",
+  "events": [
+    {
+      "kind": "request",
+      "requestId": "fetch-desktop-screenshot-set",
+      "method": "GET",
+      "path": "/v1/appStoreVersionLocalizations/5dca4b0b-3e0d-4913-acbd-b172f6c1bacb/appScreenshotSets",
+      "query": {
+        "limit": "200"
+      },
+      "response": {
+        "dataCount": 1,
+        "ids": [
+          "f37ecb51-c96e-451d-9b29-20d86d7f118e"
+        ],
+        "types": [
+          "appScreenshotSets"
+        ]
+      }
+    },
+    {
+      "kind": "skip",
+      "requestId": "create-desktop-screenshot-set",
+      "reason": "resolved-id-already-present"
+    },
+    {
+      "kind": "request",
+      "requestId": "reserve-screenshot-01-folder-workspace",
+      "method": "POST",
+      "path": "/v1/appScreenshots",
+      "body": {
+        "data": {
+          "type": "appScreenshots",
+          "attributes": {
+            "fileSize": 244440,
+            "fileName": "01-folder-workspace.png"
+          },
+          "relationships": {
+            "appScreenshotSet": {
+              "data": {
+                "type": "appScreenshotSets",
+                "id": "f37ecb51-c96e-451d-9b29-20d86d7f118e"
+              }
+            }
+          }
+        }
+      },
+      "response": {
+        "id": "ff2cbccb-ec2f-4847-835d-5547c964a979",
+        "type": "appScreenshots",
+        "attributes": {}
+      }
+    },
+    {
+      "kind": "upload",
+      "requestId": "upload-screenshot-01-folder-workspace",
+      "method": "PUT",
+      "url": "[REDACTED_UPLOAD_URL]",
+      "status": 200,
+      "filePath": "store-assets/app-store/01-folder-workspace.png",
+      "fileSize": 244440,
+      "sourceFileChecksum": "403d078e80bc58ef95ca91dd270b2297"
+    },
+    {
+      "kind": "upload-step",
+      "requestId": "upload-screenshot-01-folder-workspace",
+      "dependsOn": "reserve-screenshot-01-folder-workspace",
+      "uploadOperationsSource": "response.data.attributes.uploadOperations"
+    },
+    {
+      "kind": "request",
+      "requestId": "commit-screenshot-01-folder-workspace",
+      "method": "PATCH",
+      "path": "/v1/appScreenshots/ff2cbccb-ec2f-4847-835d-5547c964a979",
+      "body": {
+        "data": {
+          "type": "appScreenshots",
+          "id": "ff2cbccb-ec2f-4847-835d-5547c964a979",
+          "attributes": {
+            "sourceFileChecksum": "403d078e80bc58ef95ca91dd270b2297",
+            "uploaded": true
+          }
+        }
+      },
+      "response": {
+        "id": "ff2cbccb-ec2f-4847-835d-5547c964a979",
+        "type": "appScreenshots",
+        "attributes": {}
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "reserve-screenshot-02-command-palette",
+      "method": "POST",
+      "path": "/v1/appScreenshots",
+      "body": {
+        "data": {
+          "type": "appScreenshots",
+          "attributes": {
+            "fileSize": 164414,
+            "fileName": "02-command-palette.png"
+          },
+          "relationships": {
+            "appScreenshotSet": {
+              "data": {
+                "type": "appScreenshotSets",
+                "id": "f37ecb51-c96e-451d-9b29-20d86d7f118e"
+              }
+            }
+          }
+        }
+      },
+      "response": {
+        "id": "b1a6690c-4303-4b0d-87e7-c6345f8a65d3",
+        "type": "appScreenshots",
+        "attributes": {}
+      }
+    },
+    {
+      "kind": "upload",
+      "requestId": "upload-screenshot-02-command-palette",
+      "method": "PUT",
+      "url": "[REDACTED_UPLOAD_URL]",
+      "status": 200,
+      "filePath": "store-assets/app-store/02-command-palette.png",
+      "fileSize": 164414,
+      "sourceFileChecksum": "7b85eedee6a59d634b3cbe7fa0f2e66c"
+    },
+    {
+      "kind": "upload-step",
+      "requestId": "upload-screenshot-02-command-palette",
+      "dependsOn": "reserve-screenshot-02-command-palette",
+      "uploadOperationsSource": "response.data.attributes.uploadOperations"
+    },
+    {
+      "kind": "request",
+      "requestId": "commit-screenshot-02-command-palette",
+      "method": "PATCH",
+      "path": "/v1/appScreenshots/b1a6690c-4303-4b0d-87e7-c6345f8a65d3",
+      "body": {
+        "data": {
+          "type": "appScreenshots",
+          "id": "b1a6690c-4303-4b0d-87e7-c6345f8a65d3",
+          "attributes": {
+            "sourceFileChecksum": "7b85eedee6a59d634b3cbe7fa0f2e66c",
+            "uploaded": true
+          }
+        }
+      },
+      "response": {
+        "id": "b1a6690c-4303-4b0d-87e7-c6345f8a65d3",
+        "type": "appScreenshots",
+        "attributes": {}
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "reserve-screenshot-03-search-outline",
+      "method": "POST",
+      "path": "/v1/appScreenshots",
+      "body": {
+        "data": {
+          "type": "appScreenshots",
+          "attributes": {
+            "fileSize": 236123,
+            "fileName": "03-search-outline.png"
+          },
+          "relationships": {
+            "appScreenshotSet": {
+              "data": {
+                "type": "appScreenshotSets",
+                "id": "f37ecb51-c96e-451d-9b29-20d86d7f118e"
+              }
+            }
+          }
+        }
+      },
+      "response": {
+        "id": "e844bca6-e0c6-44cd-86ba-25719cb2c5f9",
+        "type": "appScreenshots",
+        "attributes": {}
+      }
+    },
+    {
+      "kind": "upload",
+      "requestId": "upload-screenshot-03-search-outline",
+      "method": "PUT",
+      "url": "[REDACTED_UPLOAD_URL]",
+      "status": 200,
+      "filePath": "store-assets/app-store/03-search-outline.png",
+      "fileSize": 236123,
+      "sourceFileChecksum": "047747e665f5519c5879f6ca07db8965"
+    },
+    {
+      "kind": "upload-step",
+      "requestId": "upload-screenshot-03-search-outline",
+      "dependsOn": "reserve-screenshot-03-search-outline",
+      "uploadOperationsSource": "response.data.attributes.uploadOperations"
+    },
+    {
+      "kind": "request",
+      "requestId": "commit-screenshot-03-search-outline",
+      "method": "PATCH",
+      "path": "/v1/appScreenshots/e844bca6-e0c6-44cd-86ba-25719cb2c5f9",
+      "body": {
+        "data": {
+          "type": "appScreenshots",
+          "id": "e844bca6-e0c6-44cd-86ba-25719cb2c5f9",
+          "attributes": {
+            "sourceFileChecksum": "047747e665f5519c5879f6ca07db8965",
+            "uploaded": true
+          }
+        }
+      },
+      "response": {
+        "id": "e844bca6-e0c6-44cd-86ba-25719cb2c5f9",
+        "type": "appScreenshots",
+        "attributes": {}
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "reserve-screenshot-04-themed-export-readability",
+      "method": "POST",
+      "path": "/v1/appScreenshots",
+      "body": {
+        "data": {
+          "type": "appScreenshots",
+          "attributes": {
+            "fileSize": 182875,
+            "fileName": "04-themed-export-readability.png"
+          },
+          "relationships": {
+            "appScreenshotSet": {
+              "data": {
+                "type": "appScreenshotSets",
+                "id": "f37ecb51-c96e-451d-9b29-20d86d7f118e"
+              }
+            }
+          }
+        }
+      },
+      "response": {
+        "id": "d6cb623a-1435-4488-a793-59a6d9efe327",
+        "type": "appScreenshots",
+        "attributes": {}
+      }
+    },
+    {
+      "kind": "upload",
+      "requestId": "upload-screenshot-04-themed-export-readability",
+      "method": "PUT",
+      "url": "[REDACTED_UPLOAD_URL]",
+      "status": 200,
+      "filePath": "store-assets/app-store/04-themed-export-readability.png",
+      "fileSize": 182875,
+      "sourceFileChecksum": "3e3146c46bf2551e07fdd3dc236eba6b"
+    },
+    {
+      "kind": "upload-step",
+      "requestId": "upload-screenshot-04-themed-export-readability",
+      "dependsOn": "reserve-screenshot-04-themed-export-readability",
+      "uploadOperationsSource": "response.data.attributes.uploadOperations"
+    },
+    {
+      "kind": "request",
+      "requestId": "commit-screenshot-04-themed-export-readability",
+      "method": "PATCH",
+      "path": "/v1/appScreenshots/d6cb623a-1435-4488-a793-59a6d9efe327",
+      "body": {
+        "data": {
+          "type": "appScreenshots",
+          "id": "d6cb623a-1435-4488-a793-59a6d9efe327",
+          "attributes": {
+            "sourceFileChecksum": "3e3146c46bf2551e07fdd3dc236eba6b",
+            "uploaded": true
+          }
+        }
+      },
+      "response": {
+        "id": "d6cb623a-1435-4488-a793-59a6d9efe327",
+        "type": "appScreenshots",
+        "attributes": {}
+      }
+    }
+  ]
+}

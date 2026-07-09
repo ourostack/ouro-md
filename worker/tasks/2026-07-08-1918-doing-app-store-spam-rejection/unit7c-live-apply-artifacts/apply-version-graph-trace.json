@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "mode": "apply",
+  "transport": "live",
+  "stage": "version-graph",
+  "events": [
+    {
+      "kind": "request",
+      "requestId": "fetch-target-app-store-version",
+      "method": "GET",
+      "path": "/v1/apps/6787262892/appStoreVersions",
+      "query": {
+        "filter[platform]": "MAC_OS",
+        "filter[versionString]": "0.9.80",
+        "limit": "1"
+      },
+      "response": {
+        "dataCount": 1,
+        "ids": [
+          "7309944f-cbe8-4518-960c-444e6116ab46"
+        ],
+        "types": [
+          "appStoreVersions"
+        ]
+      }
+    },
+    {
+      "kind": "skip",
+      "requestId": "create-target-app-store-version",
+      "reason": "resolved-id-already-present"
+    },
+    {
+      "kind": "request",
+      "requestId": "fetch-version-localizations",
+      "method": "GET",
+      "path": "/v1/appStoreVersions/7309944f-cbe8-4518-960c-444e6116ab46/appStoreVersionLocalizations",
+      "query": {
+        "limit": "200"
+      },
+      "response": {
+        "dataCount": 1,
+        "ids": [
+          "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb"
+        ],
+        "types": [
+          "appStoreVersionLocalizations"
+        ]
+      }
+    },
+    {
+      "kind": "skip",
+      "requestId": "create-version-localization",
+      "reason": "resolved-id-already-present"
+    },
+    {
+      "kind": "request",
+      "requestId": "fetch-app-review-detail",
+      "method": "GET",
+      "path": "/v1/appStoreVersions/7309944f-cbe8-4518-960c-444e6116ab46/appStoreReviewDetail",
+      "response": {
+        "id": "3bc7284e-27d5-4dd3-a049-b9e859289bd1",
+        "type": "appStoreReviewDetails",
+        "attributes": {}
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "fetch-desktop-screenshot-set",
+      "method": "GET",
+      "path": "/v1/appStoreVersionLocalizations/5dca4b0b-3e0d-4913-acbd-b172f6c1bacb/appScreenshotSets",
+      "query": {
+        "limit": "200"
+      },
+      "response": {
+        "dataCount": 1,
+        "ids": [
+          "f37ecb51-c96e-451d-9b29-20d86d7f118e"
+        ],
+        "types": [
+          "appScreenshotSets"
+        ]
+      }
+    },
+    {
+      "kind": "skip",
+      "requestId": "create-desktop-screenshot-set",
+      "reason": "resolved-id-already-present"
+    },
+    {
+      "kind": "request",
+      "requestId": "create-review-submission",
+      "method": "POST",
+      "path": "/v1/reviewSubmissions",
+      "body": {
+        "data": {
+          "type": "reviewSubmissions",
+          "attributes": {
+            "platform": "MAC_OS"
+          },
+          "relationships": {
+            "app": {
+              "data": {
+                "type": "apps",
+                "id": "6787262892"
+              }
+            }
+          }
+        }
+      },
+      "response": {
+        "id": "e87d8ecd-9682-4d79-9e60-14c23befd11e",
+        "type": "reviewSubmissions",
+        "attributes": {
+          "state": "READY_FOR_REVIEW"
+        }
+      }
+    }
+  ]
+}

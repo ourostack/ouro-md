@@ -1,0 +1,33 @@
+{
+  "ok": true,
+  "result": {
+    "data": {
+      "type": "appStoreReviewDetails",
+      "id": "3bc7284e-27d5-4dd3-a049-b9e859289bd1",
+      "attributes": {
+        "contactFirstName": "[REDACTED_PRIVATE_CONTACT]",
+        "contactLastName": "[REDACTED_PRIVATE_CONTACT]",
+        "contactPhone": "[REDACTED_PRIVATE_CONTACT]",
+        "contactEmail": "[REDACTED_PRIVATE_CONTACT]",
+        "demoAccountName": null,
+        "demoAccountPassword": "[REDACTED_PRIVATE_CONTACT]",
+        "demoAccountRequired": false,
+        "notes": "Ouro MD is a local Markdown editor for macOS. No sign-in, demo account, subscription, or server-side test account is required to review the app."
+      },
+      "relationships": {
+        "appStoreReviewAttachments": {
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/appStoreReviewDetails/3bc7284e-27d5-4dd3-a049-b9e859289bd1/relationships/appStoreReviewAttachments",
+            "related": "https://api.appstoreconnect.apple.com/v1/appStoreReviewDetails/3bc7284e-27d5-4dd3-a049-b9e859289bd1/appStoreReviewAttachments"
+          }
+        }
+      },
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/appStoreReviewDetails/3bc7284e-27d5-4dd3-a049-b9e859289bd1"
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/7309944f-cbe8-4518-960c-444e6116ab46/appStoreReviewDetail"
+    }
+  }
+}

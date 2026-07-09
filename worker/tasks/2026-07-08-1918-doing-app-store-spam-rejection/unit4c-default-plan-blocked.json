@@ -1,0 +1,291 @@
+{
+  "schemaVersion": 1,
+  "mode": "dry-run",
+  "generatedAt": "2026-07-09T06:48:53.712Z",
+  "appId": "6787262892",
+  "bundleId": "bot.ouro.md",
+  "teamId": "743GT2AJ24",
+  "platform": "MAC_OS",
+  "targetVersion": "0.9.80",
+  "locale": "en-US",
+  "staleRejectedVersionIds": [
+    "7309944f-cbe8-4518-960c-444e6116ab46",
+    "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
+    "3bc7284e-27d5-4dd3-a049-b9e859289bd1",
+    "f37ecb51-c96e-451d-9b29-20d86d7f118e",
+    "80a8620a-643a-46bd-9e39-ab19f26ba424"
+  ],
+  "screenshots": [],
+  "blockers": [
+    {
+      "code": "local-screenshots-required-for-submit",
+      "message": "Final submit planning requires at least 4 local screenshots.",
+      "evidence": {
+        "screenshotCount": 0,
+        "minimumCount": 4
+      }
+    },
+    {
+      "code": "required-screenshot-scenes-missing",
+      "message": "Final submit planning requires local screenshots for every required scene.",
+      "evidence": {
+        "missingScenes": [
+          "folder-workspace",
+          "command-palette",
+          "search-outline",
+          "themed-export-readability"
+        ]
+      }
+    }
+  ],
+  "existingRejectionThread": {
+    "reviewSubmissionId": "b37f847e-0ecb-4e7a-bb00-14e3038b0f4c",
+    "strategy": "new-submission-review-notes",
+    "reason": "No supported App Store Connect API reply endpoint was planned for the rejected review thread."
+  },
+  "requests": [
+    {
+      "id": "fetch-target-app-store-version",
+      "method": "GET",
+      "path": "/v1/apps/6787262892/appStoreVersions",
+      "query": {
+        "filter[platform]": "MAC_OS",
+        "filter[versionString]": "0.9.80",
+        "limit": "1"
+      }
+    },
+    {
+      "id": "create-target-app-store-version",
+      "method": "POST",
+      "path": "/v1/appStoreVersions",
+      "body": {
+        "data": {
+          "type": "appStoreVersions",
+          "attributes": {
+            "platform": "MAC_OS",
+            "versionString": "0.9.80",
+            "copyright": "Copyright © 2026 Ari Mendelow"
+          },
+          "relationships": {
+            "app": {
+              "data": {
+                "type": "apps",
+                "id": "6787262892"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "fetch-version-localizations",
+      "method": "GET",
+      "path": "/v1/appStoreVersions/${targetAppStoreVersionId}/appStoreVersionLocalizations",
+      "query": {
+        "limit": "200"
+      }
+    },
+    {
+      "id": "create-version-localization",
+      "method": "POST",
+      "path": "/v1/appStoreVersionLocalizations",
+      "body": {
+        "data": {
+          "type": "appStoreVersionLocalizations",
+          "attributes": {
+            "description": "Ouro MD is a local Markdown workspace for people who keep real files, not a hosted notes account.\n\nOpen Markdown documents and folders directly from Finder, then move through your workspace with a native file tree, document outline, folder search, and a command palette built for fast keyboard-driven editing. Ouro MD keeps writing local and portable while still giving you polished rendered reading, themes, wide-table handling, and export to PDF or self-contained HTML.\n\nNo sign-in is required. Your Markdown files stay on your Mac unless you choose to share or export them.",
+            "keywords": "markdown,local files,folder search,outline,command palette,pdf,html export,gfm,mac",
+            "locale": "en-US",
+            "marketingUrl": "https://ouro.bot/apps/ouro-md/",
+            "promotionalText": "Local Markdown workspace for Mac files: folder search, outline, command palette, themes, PDF/HTML export, no account.",
+            "supportUrl": "https://ouro.bot/support/",
+            "whatsNew": "Open folders as a local Markdown workspace for Mac files, with File Tree, Search, and Outline surfaces available from first launch.\nUse the Command Palette to move quickly through editor, view, theme, PDF, and HTML export commands. No account is required."
+          },
+          "relationships": {
+            "appStoreVersion": {
+              "data": {
+                "type": "appStoreVersions",
+                "id": "${targetAppStoreVersionId}"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "update-version-localization",
+      "method": "PATCH",
+      "path": "/v1/appStoreVersionLocalizations/${appStoreVersionLocalizationId}",
+      "body": {
+        "data": {
+          "type": "appStoreVersionLocalizations",
+          "id": "${appStoreVersionLocalizationId}",
+          "attributes": {
+            "description": "Ouro MD is a local Markdown workspace for people who keep real files, not a hosted notes account.\n\nOpen Markdown documents and folders directly from Finder, then move through your workspace with a native file tree, document outline, folder search, and a command palette built for fast keyboard-driven editing. Ouro MD keeps writing local and portable while still giving you polished rendered reading, themes, wide-table handling, and export to PDF or self-contained HTML.\n\nNo sign-in is required. Your Markdown files stay on your Mac unless you choose to share or export them.",
+            "keywords": "markdown,local files,folder search,outline,command palette,pdf,html export,gfm,mac",
+            "marketingUrl": "https://ouro.bot/apps/ouro-md/",
+            "promotionalText": "Local Markdown workspace for Mac files: folder search, outline, command palette, themes, PDF/HTML export, no account.",
+            "supportUrl": "https://ouro.bot/support/",
+            "whatsNew": "Open folders as a local Markdown workspace for Mac files, with File Tree, Search, and Outline surfaces available from first launch.\nUse the Command Palette to move quickly through editor, view, theme, PDF, and HTML export commands. No account is required."
+          }
+        }
+      }
+    },
+    {
+      "id": "fetch-app-infos",
+      "method": "GET",
+      "path": "/v1/apps/6787262892/appInfos",
+      "query": {
+        "include": "appInfoLocalizations,primaryCategory",
+        "limit": "200"
+      }
+    },
+    {
+      "id": "fetch-app-info-localizations",
+      "method": "GET",
+      "path": "/v1/appInfos/${appInfoId}/appInfoLocalizations",
+      "query": {
+        "limit": "200"
+      }
+    },
+    {
+      "id": "create-app-info-localization",
+      "method": "POST",
+      "path": "/v1/appInfoLocalizations",
+      "body": {
+        "data": {
+          "type": "appInfoLocalizations",
+          "attributes": {
+            "locale": "en-US",
+            "name": "Ouro MD",
+            "subtitle": "Local Markdown Workspace",
+            "privacyPolicyUrl": "https://ouro.bot/privacy/"
+          },
+          "relationships": {
+            "appInfo": {
+              "data": {
+                "type": "appInfos",
+                "id": "${appInfoId}"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "update-app-info-localization",
+      "method": "PATCH",
+      "path": "/v1/appInfoLocalizations/${appInfoLocalizationId}",
+      "body": {
+        "data": {
+          "type": "appInfoLocalizations",
+          "id": "${appInfoLocalizationId}",
+          "attributes": {
+            "name": "Ouro MD",
+            "subtitle": "Local Markdown Workspace",
+            "privacyPolicyUrl": "https://ouro.bot/privacy/"
+          }
+        }
+      }
+    },
+    {
+      "id": "update-app-category",
+      "method": "PATCH",
+      "path": "/v1/appInfos/${appInfoId}",
+      "body": {
+        "data": {
+          "type": "appInfos",
+          "id": "${appInfoId}",
+          "relationships": {
+            "primaryCategory": {
+              "data": {
+                "type": "appCategories",
+                "id": "DEVELOPER_TOOLS"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "fetch-app-review-detail",
+      "method": "GET",
+      "path": "/v1/appStoreVersions/${targetAppStoreVersionId}/appStoreReviewDetail"
+    },
+    {
+      "id": "update-app-review-detail",
+      "method": "PATCH",
+      "path": "/v1/appStoreReviewDetails/${appStoreReviewDetailId}",
+      "body": {
+        "data": {
+          "type": "appStoreReviewDetails",
+          "id": "${appStoreReviewDetailId}",
+          "attributes": {
+            "notes": "Review path: No account or sample login is required. Create or open a Markdown file, then use Shift-Command-O to open a folder. Use the File Tree, Outline, and Search sidebars; open the Command Palette with Shift-Command-P; switch themes; export PDF or HTML from the File menu. The App Store build has direct-download updates and telemetry disabled."
+          }
+        }
+      }
+    },
+    {
+      "id": "fetch-desktop-screenshot-set",
+      "method": "GET",
+      "path": "/v1/appStoreVersionLocalizations/${appStoreVersionLocalizationId}/appScreenshotSets",
+      "query": {
+        "limit": "200"
+      }
+    },
+    {
+      "id": "create-desktop-screenshot-set",
+      "method": "POST",
+      "path": "/v1/appScreenshotSets",
+      "body": {
+        "data": {
+          "type": "appScreenshotSets",
+          "attributes": {
+            "screenshotDisplayType": "APP_DESKTOP"
+          },
+          "relationships": {
+            "appStoreVersionLocalization": {
+              "data": {
+                "type": "appStoreVersionLocalizations",
+                "id": "${appStoreVersionLocalizationId}"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "associate-processed-build",
+      "method": "PATCH",
+      "path": "/v1/appStoreVersions/${targetAppStoreVersionId}/relationships/build",
+      "body": {
+        "data": {
+          "type": "builds",
+          "id": "${processedBuildId}"
+        }
+      }
+    },
+    {
+      "id": "create-review-submission",
+      "method": "POST",
+      "path": "/v1/reviewSubmissions",
+      "body": {
+        "data": {
+          "type": "reviewSubmissions",
+          "attributes": {
+            "platform": "MAC_OS"
+          },
+          "relationships": {
+            "app": {
+              "data": {
+                "type": "apps",
+                "id": "6787262892"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

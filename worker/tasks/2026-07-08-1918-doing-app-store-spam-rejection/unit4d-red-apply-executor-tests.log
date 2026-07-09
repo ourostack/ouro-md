@@ -1,0 +1,53 @@
+Building for debugging...
+[0/6] Write sources
+[1/6] Write swift-version--58304C5D6DBC2206.txt
+[3/6] Compiling OuroMDTests OuroMDAppStoreApplyPlanTests.swift
+[4/6] Emitting module OuroMDTests
+[4/6] Write Objects.LinkFileList
+[5/6] Linking ouro-mdPackageTests
+Build complete! (2.59s)
+Test Suite 'Selected tests' started at 2026-07-08 23:54:37.956.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-08 23:54:37.958.
+Test Suite 'OuroMDAppStoreApplyPlanTests' started at 2026-07-08 23:54:37.958.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorClassifiesRetryableFixtureErrors]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreApplyPlanTests.swift:107: error: -[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorClassifiesRetryableFixtureErrors] : failed: caught error: "Error Domain=NSCocoaErrorDomain Code=3840 "Unable to parse empty data." UserInfo={NSDebugDescription=Unable to parse empty data.}"
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorClassifiesRetryableFixtureErrors]' failed (0.747 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorExecutesFakeTransportAndWritesRedactedArtifacts]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreApplyPlanTests.swift:54: error: -[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorExecutesFakeTransportAndWritesRedactedArtifacts] : XCTAssertEqual failed: ("1") is not equal to ("0") - node:internal/modules/cjs/loader:1386
+  throw err;
+  ^
+
+Error: Cannot find module '/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/scripts/app-store-apply-plan.mjs'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+    at Module._load (node:internal/modules/cjs/loader:1192:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v22.22.0
+
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreApplyPlanTests.swift:55: error: -[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorExecutesFakeTransportAndWritesRedactedArtifacts] : failed: caught error: "Error Domain=NSCocoaErrorDomain Code=3840 "Unable to parse empty data." UserInfo={NSDebugDescription=Unable to parse empty data.}"
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorExecutesFakeTransportAndWritesRedactedArtifacts]' failed (0.210 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRejectsBlockedDryRunPlans]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreApplyPlanTests.swift:35: error: -[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRejectsBlockedDryRunPlans] : XCTAssertTrue failed
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreApplyPlanTests.swift:36: error: -[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRejectsBlockedDryRunPlans] : XCTAssertTrue failed
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRejectsBlockedDryRunPlans]' failed (0.211 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRequiresExplicitApplyMode]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreApplyPlanTests.swift:17: error: -[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRequiresExplicitApplyMode] : XCTAssertTrue failed
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRequiresExplicitApplyMode]' failed (0.212 seconds).
+Test Suite 'OuroMDAppStoreApplyPlanTests' failed at 2026-07-08 23:54:39.338.
+	 Executed 4 tests, with 6 failures (2 unexpected) in 1.379 (1.379) seconds
+Test Suite 'ouro-mdPackageTests.xctest' failed at 2026-07-08 23:54:39.338.
+	 Executed 4 tests, with 6 failures (2 unexpected) in 1.379 (1.379) seconds
+Test Suite 'Selected tests' failed at 2026-07-08 23:54:39.338.
+	 Executed 4 tests, with 6 failures (2 unexpected) in 1.379 (1.382) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

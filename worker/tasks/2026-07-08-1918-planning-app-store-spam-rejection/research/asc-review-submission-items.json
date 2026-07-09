@@ -1,0 +1,26 @@
+{
+  "ok": true,
+  "result": {
+    "data": [
+      {
+        "type": "reviewSubmissionItems",
+        "id": "YjM3Zjg0N2UtMGVjYi00ZTdhLWJiMDAtMTRlMzAzOGIwZjRjfDZ8ODg3ODEyNjgx",
+        "attributes": {
+          "state": "REJECTED"
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissionItems/YjM3Zjg0N2UtMGVjYi00ZTdhLWJiMDAtMTRlMzAzOGIwZjRjfDZ8ODg3ODEyNjgx"
+        }
+      }
+    ],
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/b37f847e-0ecb-4e7a-bb00-14e3038b0f4c/items"
+    },
+    "meta": {
+      "paging": {
+        "total": 1,
+        "limit": 50
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "result": {
+    "data": [],
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/apps/6787262892/appStoreVersions?filter%5BversionString%5D=0.9.80&filter%5Bplatform%5D=MAC_OS&limit=1"
+    },
+    "meta": {
+      "paging": {
+        "total": 0,
+        "limit": 1
+      }
+    }
+  }
+}

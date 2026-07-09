@@ -1,0 +1,70 @@
+{
+  "ok": true,
+  "mode": "dry-run",
+  "app": {
+    "name": "Ouro MD",
+    "bundleId": "bot.ouro.md"
+  },
+  "actions": [
+    {
+      "type": "validate-channel",
+      "channelId": "mac-app-store",
+      "distribution": "app-store"
+    },
+    {
+      "type": "build-channel",
+      "channelId": "mac-app-store",
+      "distribution": "app-store",
+      "command": "OURO_MD_DISTRIBUTION_CHANNEL=app-store OURO_MD_TELEMETRY_DISABLED=1 ./make-app.sh"
+    },
+    {
+      "type": "package-channel",
+      "channelId": "mac-app-store",
+      "distribution": "app-store",
+      "command": "scripts/package-app-store.sh"
+    },
+    {
+      "type": "validate-app-store-package",
+      "channelId": "mac-app-store",
+      "distribution": "app-store"
+    },
+    {
+      "type": "upload-app-store-package",
+      "channelId": "mac-app-store",
+      "distribution": "app-store"
+    },
+    {
+      "type": "prepare-app-review",
+      "channelId": "mac-app-store",
+      "distribution": "app-store"
+    },
+    {
+      "type": "validate-channel",
+      "channelId": "direct-download",
+      "distribution": "developer-id"
+    },
+    {
+      "type": "build-channel",
+      "channelId": "direct-download",
+      "distribution": "developer-id",
+      "command": "./make-app.sh"
+    },
+    {
+      "type": "package-channel",
+      "channelId": "direct-download",
+      "distribution": "developer-id",
+      "command": "scripts/package-release.sh"
+    },
+    {
+      "type": "sign-notarize-direct-download",
+      "channelId": "direct-download",
+      "distribution": "developer-id"
+    },
+    {
+      "type": "publish-direct-download",
+      "channelId": "direct-download",
+      "distribution": "developer-id"
+    }
+  ],
+  "requiresHuman": []
+}

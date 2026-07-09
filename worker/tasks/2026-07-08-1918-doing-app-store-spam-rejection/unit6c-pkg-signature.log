@@ -1,0 +1,20 @@
+Package "Ouro-MD-0.9.80-app-store.pkg":
+   Status: signed by a developer certificate issued by Apple (Development)
+   Certificate Chain:
+    1. 3rd Party Mac Developer Installer: Ari Mendelow (743GT2AJ24)
+       Expires: 2027-07-03 20:51:49 +0000
+       SHA256 Fingerprint:
+           44 8F 64 25 7E EF E9 AF 06 22 74 E2 19 9A 58 9E EE 39 67 EF 7E D8
+           C7 CF 6E D4 AF A3 D5 04 C6 DD
+       ------------------------------------------------------------------------
+    2. Apple Worldwide Developer Relations Certification Authority
+       Expires: 2030-02-20 00:00:00 +0000
+       SHA256 Fingerprint:
+           DC F2 18 78 C7 7F 41 98 E4 B4 61 4F 03 D6 96 D8 9C 66 C6 60 08 D4
+           24 4E 1B 99 16 1A AC 91 60 1F
+       ------------------------------------------------------------------------
+    3. Apple Root CA
+       Expires: 2035-02-09 21:40:36 +0000
+       SHA256 Fingerprint:
+           B0 B1 73 0E CB C7 FF 45 05 14 2C 49 F1 29 5E 6E DA 6B CA ED 7E 2C
+           68 C5 BE 91 B5 A1 10 01 F0 24

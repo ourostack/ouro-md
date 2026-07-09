@@ -1,0 +1,522 @@
+{
+  "schemaVersion": 1,
+  "mode": "apply",
+  "transport": "fixture",
+  "events": [
+    {
+      "kind": "request",
+      "requestId": "fetch-target-app-store-version",
+      "method": "GET",
+      "path": "/v1/apps/6787262892/appStoreVersions",
+      "query": {
+        "filter[platform]": "MAC_OS",
+        "filter[versionString]": "0.9.80",
+        "limit": "1"
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "create-target-app-store-version",
+      "method": "POST",
+      "path": "/v1/appStoreVersions",
+      "body": {
+        "data": {
+          "type": "appStoreVersions",
+          "attributes": {
+            "platform": "MAC_OS",
+            "versionString": "0.9.80",
+            "copyright": "Copyright © 2026 Ari Mendelow"
+          },
+          "relationships": {
+            "app": {
+              "data": {
+                "type": "apps",
+                "id": "6787262892"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "fetch-version-localizations",
+      "method": "GET",
+      "path": "/v1/appStoreVersions/target-version-0-9-80/appStoreVersionLocalizations",
+      "query": {
+        "limit": "200"
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "create-version-localization",
+      "method": "POST",
+      "path": "/v1/appStoreVersionLocalizations",
+      "body": {
+        "data": {
+          "type": "appStoreVersionLocalizations",
+          "attributes": {
+            "description": "Ouro MD is a local Markdown workspace for people who keep real files, not a hosted notes account.\n\nOpen Markdown documents and folders directly from Finder, then move through your workspace with a native file tree, document outline, folder search, and a command palette built for fast keyboard-driven editing. Ouro MD keeps writing local and portable while still giving you polished rendered reading, themes, wide-table handling, and export to PDF or self-contained HTML.\n\nNo sign-in is required. Your Markdown files stay on your Mac unless you choose to share or export them.",
+            "keywords": "markdown,local files,folder search,outline,command palette,pdf,html export,gfm,mac",
+            "locale": "en-US",
+            "marketingUrl": "https://ouro.bot/apps/ouro-md/",
+            "promotionalText": "Local Markdown workspace for Mac files: folder search, outline, command palette, themes, PDF/HTML export, no account.",
+            "supportUrl": "https://ouro.bot/support/",
+            "whatsNew": "Open folders as a local Markdown workspace for Mac files, with File Tree, Search, and Outline surfaces available from first launch.\nUse the Command Palette to move quickly through editor, view, theme, PDF, and HTML export commands. No account is required."
+          },
+          "relationships": {
+            "appStoreVersion": {
+              "data": {
+                "type": "appStoreVersions",
+                "id": "target-version-0-9-80"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "update-version-localization",
+      "method": "PATCH",
+      "path": "/v1/appStoreVersionLocalizations/version-localization-en-us",
+      "body": {
+        "data": {
+          "type": "appStoreVersionLocalizations",
+          "id": "version-localization-en-us",
+          "attributes": {
+            "description": "Ouro MD is a local Markdown workspace for people who keep real files, not a hosted notes account.\n\nOpen Markdown documents and folders directly from Finder, then move through your workspace with a native file tree, document outline, folder search, and a command palette built for fast keyboard-driven editing. Ouro MD keeps writing local and portable while still giving you polished rendered reading, themes, wide-table handling, and export to PDF or self-contained HTML.\n\nNo sign-in is required. Your Markdown files stay on your Mac unless you choose to share or export them.",
+            "keywords": "markdown,local files,folder search,outline,command palette,pdf,html export,gfm,mac",
+            "marketingUrl": "https://ouro.bot/apps/ouro-md/",
+            "promotionalText": "Local Markdown workspace for Mac files: folder search, outline, command palette, themes, PDF/HTML export, no account.",
+            "supportUrl": "https://ouro.bot/support/",
+            "whatsNew": "Open folders as a local Markdown workspace for Mac files, with File Tree, Search, and Outline surfaces available from first launch.\nUse the Command Palette to move quickly through editor, view, theme, PDF, and HTML export commands. No account is required."
+          }
+        }
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "fetch-app-infos",
+      "method": "GET",
+      "path": "/v1/apps/6787262892/appInfos",
+      "query": {
+        "include": "appInfoLocalizations,primaryCategory",
+        "limit": "200"
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "fetch-app-info-localizations",
+      "method": "GET",
+      "path": "/v1/appInfos/app-info-current/appInfoLocalizations",
+      "query": {
+        "limit": "200"
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "create-app-info-localization",
+      "method": "POST",
+      "path": "/v1/appInfoLocalizations",
+      "body": {
+        "data": {
+          "type": "appInfoLocalizations",
+          "attributes": {
+            "locale": "en-US",
+            "name": "Ouro MD",
+            "subtitle": "Local Markdown Workspace",
+            "privacyPolicyUrl": "https://ouro.bot/privacy/"
+          },
+          "relationships": {
+            "appInfo": {
+              "data": {
+                "type": "appInfos",
+                "id": "app-info-current"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "update-app-info-localization",
+      "method": "PATCH",
+      "path": "/v1/appInfoLocalizations/app-info-localization-en-us",
+      "body": {
+        "data": {
+          "type": "appInfoLocalizations",
+          "id": "app-info-localization-en-us",
+          "attributes": {
+            "name": "Ouro MD",
+            "subtitle": "Local Markdown Workspace",
+            "privacyPolicyUrl": "https://ouro.bot/privacy/"
+          }
+        }
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "update-app-category",
+      "method": "PATCH",
+      "path": "/v1/appInfos/app-info-current",
+      "body": {
+        "data": {
+          "type": "appInfos",
+          "id": "app-info-current",
+          "relationships": {
+            "primaryCategory": {
+              "data": {
+                "type": "appCategories",
+                "id": "DEVELOPER_TOOLS"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "fetch-app-review-detail",
+      "method": "GET",
+      "path": "/v1/appStoreVersions/target-version-0-9-80/appStoreReviewDetail"
+    },
+    {
+      "kind": "request",
+      "requestId": "update-app-review-detail",
+      "method": "PATCH",
+      "path": "/v1/appStoreReviewDetails/review-detail-current",
+      "body": {
+        "data": {
+          "type": "appStoreReviewDetails",
+          "id": "review-detail-current",
+          "attributes": {
+            "notes": "Review path: No account or sample login is required. Create or open a Markdown file, then use Shift-Command-O to open a folder. Use the File Tree, Outline, and Search sidebars; open the Command Palette with Shift-Command-P; switch themes; export PDF or HTML from the File menu. The App Store build has direct-download updates and telemetry disabled."
+          }
+        }
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "fetch-desktop-screenshot-set",
+      "method": "GET",
+      "path": "/v1/appStoreVersionLocalizations/version-localization-en-us/appScreenshotSets",
+      "query": {
+        "limit": "200"
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "create-desktop-screenshot-set",
+      "method": "POST",
+      "path": "/v1/appScreenshotSets",
+      "body": {
+        "data": {
+          "type": "appScreenshotSets",
+          "attributes": {
+            "screenshotDisplayType": "APP_DESKTOP"
+          },
+          "relationships": {
+            "appStoreVersionLocalization": {
+              "data": {
+                "type": "appStoreVersionLocalizations",
+                "id": "version-localization-en-us"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "reserve-screenshot-01-folder-workspace",
+      "method": "POST",
+      "path": "/v1/appScreenshots",
+      "body": {
+        "data": {
+          "type": "appScreenshots",
+          "attributes": {
+            "fileSize": 45,
+            "fileName": "folder-workspace.png"
+          },
+          "relationships": {
+            "appScreenshotSet": {
+              "data": {
+                "type": "appScreenshotSets",
+                "id": "desktop-screenshot-set"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "kind": "upload",
+      "requestId": "upload-screenshot-01-folder-workspace",
+      "method": "PUT",
+      "url": "https://upload.example.invalid/folder-workspace",
+      "filePath": "/tmp/ouro-unit4e.FQn0aM/folder-workspace.png",
+      "fileSize": 45,
+      "sourceFileChecksum": "af4eaf7624f99b88ba227da8cca53f2c"
+    },
+    {
+      "kind": "upload-step",
+      "requestId": "upload-screenshot-01-folder-workspace",
+      "dependsOn": "reserve-screenshot-01-folder-workspace",
+      "uploadOperationsSource": "response.data.attributes.uploadOperations"
+    },
+    {
+      "kind": "request",
+      "requestId": "commit-screenshot-01-folder-workspace",
+      "method": "PATCH",
+      "path": "/v1/appScreenshots/screenshot-folder",
+      "body": {
+        "data": {
+          "type": "appScreenshots",
+          "id": "screenshot-folder",
+          "attributes": {
+            "sourceFileChecksum": "af4eaf7624f99b88ba227da8cca53f2c",
+            "uploaded": true
+          }
+        }
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "reserve-screenshot-02-command-palette",
+      "method": "POST",
+      "path": "/v1/appScreenshots",
+      "body": {
+        "data": {
+          "type": "appScreenshots",
+          "attributes": {
+            "fileSize": 44,
+            "fileName": "command-palette.png"
+          },
+          "relationships": {
+            "appScreenshotSet": {
+              "data": {
+                "type": "appScreenshotSets",
+                "id": "desktop-screenshot-set"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "kind": "upload",
+      "requestId": "upload-screenshot-02-command-palette",
+      "method": "PUT",
+      "url": "https://upload.example.invalid/command-palette",
+      "filePath": "/tmp/ouro-unit4e.FQn0aM/command-palette.png",
+      "fileSize": 44,
+      "sourceFileChecksum": "fdb43636248f9a76b5e314b297634335"
+    },
+    {
+      "kind": "upload-step",
+      "requestId": "upload-screenshot-02-command-palette",
+      "dependsOn": "reserve-screenshot-02-command-palette",
+      "uploadOperationsSource": "response.data.attributes.uploadOperations"
+    },
+    {
+      "kind": "request",
+      "requestId": "commit-screenshot-02-command-palette",
+      "method": "PATCH",
+      "path": "/v1/appScreenshots/screenshot-command",
+      "body": {
+        "data": {
+          "type": "appScreenshots",
+          "id": "screenshot-command",
+          "attributes": {
+            "sourceFileChecksum": "fdb43636248f9a76b5e314b297634335",
+            "uploaded": true
+          }
+        }
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "reserve-screenshot-03-search-outline",
+      "method": "POST",
+      "path": "/v1/appScreenshots",
+      "body": {
+        "data": {
+          "type": "appScreenshots",
+          "attributes": {
+            "fileSize": 43,
+            "fileName": "search-outline.png"
+          },
+          "relationships": {
+            "appScreenshotSet": {
+              "data": {
+                "type": "appScreenshotSets",
+                "id": "desktop-screenshot-set"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "kind": "upload",
+      "requestId": "upload-screenshot-03-search-outline",
+      "method": "PUT",
+      "url": "https://upload.example.invalid/search-outline",
+      "filePath": "/tmp/ouro-unit4e.FQn0aM/search-outline.png",
+      "fileSize": 43,
+      "sourceFileChecksum": "8cb8bc80f883b54197accde2703f5bd6"
+    },
+    {
+      "kind": "upload-step",
+      "requestId": "upload-screenshot-03-search-outline",
+      "dependsOn": "reserve-screenshot-03-search-outline",
+      "uploadOperationsSource": "response.data.attributes.uploadOperations"
+    },
+    {
+      "kind": "request",
+      "requestId": "commit-screenshot-03-search-outline",
+      "method": "PATCH",
+      "path": "/v1/appScreenshots/screenshot-search",
+      "body": {
+        "data": {
+          "type": "appScreenshots",
+          "id": "screenshot-search",
+          "attributes": {
+            "sourceFileChecksum": "8cb8bc80f883b54197accde2703f5bd6",
+            "uploaded": true
+          }
+        }
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "reserve-screenshot-04-themed-export-readability",
+      "method": "POST",
+      "path": "/v1/appScreenshots",
+      "body": {
+        "data": {
+          "type": "appScreenshots",
+          "attributes": {
+            "fileSize": 54,
+            "fileName": "themed-export-readability.png"
+          },
+          "relationships": {
+            "appScreenshotSet": {
+              "data": {
+                "type": "appScreenshotSets",
+                "id": "desktop-screenshot-set"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "kind": "upload",
+      "requestId": "upload-screenshot-04-themed-export-readability",
+      "method": "PUT",
+      "url": "https://upload.example.invalid/themed-export-readability",
+      "filePath": "/tmp/ouro-unit4e.FQn0aM/themed-export-readability.png",
+      "fileSize": 54,
+      "sourceFileChecksum": "1ea1f2427e148290f8fa26a0555ac5d5"
+    },
+    {
+      "kind": "upload-step",
+      "requestId": "upload-screenshot-04-themed-export-readability",
+      "dependsOn": "reserve-screenshot-04-themed-export-readability",
+      "uploadOperationsSource": "response.data.attributes.uploadOperations"
+    },
+    {
+      "kind": "request",
+      "requestId": "commit-screenshot-04-themed-export-readability",
+      "method": "PATCH",
+      "path": "/v1/appScreenshots/screenshot-themed",
+      "body": {
+        "data": {
+          "type": "appScreenshots",
+          "id": "screenshot-themed",
+          "attributes": {
+            "sourceFileChecksum": "1ea1f2427e148290f8fa26a0555ac5d5",
+            "uploaded": true
+          }
+        }
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "associate-processed-build",
+      "method": "PATCH",
+      "path": "/v1/appStoreVersions/target-version-0-9-80/relationships/build",
+      "body": {
+        "data": {
+          "type": "builds",
+          "id": "build-processed-0-9-80"
+        }
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "create-review-submission",
+      "method": "POST",
+      "path": "/v1/reviewSubmissions",
+      "body": {
+        "data": {
+          "type": "reviewSubmissions",
+          "attributes": {
+            "platform": "MAC_OS"
+          },
+          "relationships": {
+            "app": {
+              "data": {
+                "type": "apps",
+                "id": "6787262892"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "create-review-submission-item",
+      "method": "POST",
+      "path": "/v1/reviewSubmissionItems",
+      "body": {
+        "data": {
+          "type": "reviewSubmissionItems",
+          "relationships": {
+            "reviewSubmission": {
+              "data": {
+                "type": "reviewSubmissions",
+                "id": "review-submission-new"
+              }
+            },
+            "appStoreVersion": {
+              "data": {
+                "type": "appStoreVersions",
+                "id": "target-version-0-9-80"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "kind": "request",
+      "requestId": "submit-review-submission",
+      "method": "PATCH",
+      "path": "/v1/reviewSubmissions/review-submission-new",
+      "body": {
+        "data": {
+          "type": "reviewSubmissions",
+          "id": "review-submission-new",
+          "attributes": {
+            "submitted": true
+          }
+        }
+      }
+    }
+  ]
+}

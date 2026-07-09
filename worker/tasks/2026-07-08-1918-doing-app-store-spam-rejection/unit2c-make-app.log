@@ -1,0 +1,15 @@
+==> Building (release)…
+[0/1] Planning build
+Building for production...
+[0/3] Write sources
+[1/3] Write swift-version--58304C5D6DBC2206.txt
+[3/4] Compiling OuroMDCore HTMLDocument.swift
+[4/5] Compiling OuroMD AccessibilityAuditTest.swift
+[4/6] Write Objects.LinkFileList
+[5/6] Linking ouro-md
+Build complete! (19.45s)
+==> Assembling OuroMD.app…
+==> Telemetry: disabled (set OURO_MD_POSTHOG_KEY or VITE_POSTHOG_KEY to configure)
+==> Ad-hoc signing…
+==> Done: /Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/OuroMD.app
+    Launch with:  open OuroMD.app

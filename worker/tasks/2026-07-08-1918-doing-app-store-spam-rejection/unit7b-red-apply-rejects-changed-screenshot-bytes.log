@@ -1,0 +1,20 @@
+Another instance of SwiftPM (PID: 51985) is already running using '/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/.build', waiting until that process has finished execution...Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.20s)
+Test Suite 'Selected tests' started at 2026-07-09 02:05:17.558.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-09 02:05:17.559.
+Test Suite 'OuroMDAppStoreApplyPlanTests' started at 2026-07-09 02:05:17.559.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRejectsScreenshotBytesChangedAfterDryRun]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreApplyPlanTests.swift:161: error: -[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRejectsScreenshotBytesChangedAfterDryRun] : XCTAssertNotEqual failed: ("0") is equal to ("0")
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreApplyPlanTests.swift:162: error: -[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRejectsScreenshotBytesChangedAfterDryRun] : XCTAssertTrue failed
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRejectsScreenshotBytesChangedAfterDryRun]' failed (0.323 seconds).
+Test Suite 'OuroMDAppStoreApplyPlanTests' failed at 2026-07-09 02:05:17.883.
+	 Executed 1 test, with 2 failures (0 unexpected) in 0.323 (0.323) seconds
+Test Suite 'ouro-mdPackageTests.xctest' failed at 2026-07-09 02:05:17.883.
+	 Executed 1 test, with 2 failures (0 unexpected) in 0.323 (0.324) seconds
+Test Suite 'Selected tests' failed at 2026-07-09 02:05:17.883.
+	 Executed 1 test, with 2 failures (0 unexpected) in 0.323 (0.324) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

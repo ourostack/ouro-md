@@ -1,0 +1,28 @@
+{
+  "status": 409,
+  "ok": false,
+  "request": {
+    "method": "PATCH",
+    "path": "/v1/reviewSubmissions/e87d8ecd-9682-4d79-9e60-14c23befd11e",
+    "body": {
+      "data": {
+        "type": "reviewSubmissions",
+        "id": "e87d8ecd-9682-4d79-9e60-14c23befd11e",
+        "attributes": {
+          "canceled": true
+        }
+      }
+    }
+  },
+  "response": {
+    "errors": [
+      {
+        "id": "922cafa9-c157-4de7-9289-3f6af03396b0",
+        "status": "409",
+        "code": "STATE_ERROR.ENTITY_STATE_INVALID",
+        "title": "Resource state is invalid.",
+        "detail": "Resource is not in cancellable state"
+      }
+    ]
+  }
+}

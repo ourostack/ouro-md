@@ -1,0 +1,29 @@
+Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/5] Compiling OuroMDTests OuroMDAppStorePackageReadinessTests.swift
+[4/5] Emitting module OuroMDTests
+[4/6] Write Objects.LinkFileList
+[5/6] Linking ouro-mdPackageTests
+Build complete! (3.34s)
+Test Suite 'Selected tests' started at 2026-07-09 01:18:16.168.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-09 01:18:16.171.
+Test Suite 'OuroMDAppStorePackageReadinessTests' started at 2026-07-09 01:18:16.171.
+Test Case '-[OuroMDTests.OuroMDAppStorePackageReadinessTests testArtifactFlagRequiresReadinessMode]' started.
+Test Case '-[OuroMDTests.OuroMDAppStorePackageReadinessTests testArtifactFlagRequiresReadinessMode]' passed (0.077 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStorePackageReadinessTests testPackageReadinessWritesStructuredNonSecretArtifact]' started.
+Test Case '-[OuroMDTests.OuroMDAppStorePackageReadinessTests testPackageReadinessWritesStructuredNonSecretArtifact]' passed (0.784 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStorePackageReadinessTests testReadinessDoesNotEchoSecretShapedArtifactPath]' started.
+Test Case '-[OuroMDTests.OuroMDAppStorePackageReadinessTests testReadinessDoesNotEchoSecretShapedArtifactPath]' passed (0.369 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStorePackageReadinessTests testReadinessSecretScanRedactsCredentialShapedFilenames]' started.
+Test Case '-[OuroMDTests.OuroMDAppStorePackageReadinessTests testReadinessSecretScanRedactsCredentialShapedFilenames]' passed (0.499 seconds).
+Test Suite 'OuroMDAppStorePackageReadinessTests' passed at 2026-07-09 01:18:17.900.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 1.729 (1.729) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-07-09 01:18:17.900.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 1.729 (1.730) seconds
+Test Suite 'Selected tests' passed at 2026-07-09 01:18:17.900.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 1.729 (1.732) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

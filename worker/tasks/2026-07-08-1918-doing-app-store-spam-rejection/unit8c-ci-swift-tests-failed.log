@@ -1,0 +1,247 @@
+﻿2026-07-09T10:51:57.9237790Z Current runner version: '2.335.1'
+2026-07-09T10:51:57.9254330Z ##[group]Runner Image Provisioner
+2026-07-09T10:51:57.9254950Z Hosted Compute Agent
+2026-07-09T10:51:57.9255350Z Version: 20260624.560
+2026-07-09T10:51:57.9255750Z Commit: 925d229a51159bc391ae97e54a2dd1fe20af789d
+2026-07-09T10:51:57.9256340Z Build Date: 2026-06-24T18:26:47Z
+2026-07-09T10:51:57.9256780Z Worker ID: {f8c20275-a4eb-4941-97ca-21f0111c79cb}
+2026-07-09T10:51:57.9257300Z Azure Region: westus
+2026-07-09T10:51:57.9258050Z ##[endgroup]
+2026-07-09T10:51:57.9258990Z ##[group]Operating System
+2026-07-09T10:51:57.9259450Z macOS
+2026-07-09T10:51:57.9259780Z 14.8.7
+2026-07-09T10:51:57.9260110Z 23J520
+2026-07-09T10:51:57.9260440Z ##[endgroup]
+2026-07-09T10:51:57.9260890Z ##[group]Runner Image
+2026-07-09T10:51:57.9261270Z Image: macos-14-arm64
+2026-07-09T10:51:57.9261750Z Version: 20260629.0180.1
+2026-07-09T10:51:57.9262750Z Included Software: https://github.com/actions/runner-images/blob/macos-14-arm64/20260629.0180/images/macos/macos-14-arm64-Readme.md
+2026-07-09T10:51:57.9263860Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-14-arm64%2F20260629.0180
+2026-07-09T10:51:57.9264580Z ##[endgroup]
+2026-07-09T10:51:57.9265350Z ##[group]GITHUB_TOKEN Permissions
+2026-07-09T10:51:57.9266670Z Contents: read
+2026-07-09T10:51:57.9267200Z Metadata: read
+2026-07-09T10:51:57.9267550Z ##[endgroup]
+2026-07-09T10:51:57.9269480Z Secret source: Actions
+2026-07-09T10:51:57.9270010Z Prepare workflow directory
+2026-07-09T10:51:57.9615240Z Prepare all required actions
+2026-07-09T10:51:57.9663850Z Getting action download info
+2026-07-09T10:51:58.3806110Z Download action repository 'actions/checkout@v5' (SHA:93cb6efe18208431cddfb8368fd83d5badbf9bfd)
+2026-07-09T10:51:58.8064210Z Download action repository 'actions/upload-artifact@v6' (SHA:b7c566a772e6b6bfb58ed0dc250532a479d7789f)
+2026-07-09T10:51:59.1188350Z Complete job name: Swift tests
+2026-07-09T10:51:59.1686760Z ##[group]Run actions/checkout@v5
+2026-07-09T10:51:59.1690460Z with:
+2026-07-09T10:51:59.1690860Z   fetch-depth: 0
+2026-07-09T10:51:59.1691180Z   repository: ourostack/ouro-md
+2026-07-09T10:51:59.1694020Z   token: ***
+2026-07-09T10:51:59.1694310Z   ssh-strict: true
+2026-07-09T10:51:59.1694610Z   ssh-user: git
+2026-07-09T10:51:59.1694920Z   persist-credentials: true
+2026-07-09T10:51:59.1695260Z   clean: true
+2026-07-09T10:51:59.1695570Z   sparse-checkout-cone-mode: true
+2026-07-09T10:51:59.1695940Z   fetch-tags: false
+2026-07-09T10:51:59.1696250Z   show-progress: true
+2026-07-09T10:51:59.1696560Z   lfs: false
+2026-07-09T10:51:59.1696850Z   submodules: false
+2026-07-09T10:51:59.1697170Z   set-safe-directory: true
+2026-07-09T10:51:59.1697780Z ##[endgroup]
+2026-07-09T10:51:59.6591030Z Syncing repository: ourostack/ouro-md
+2026-07-09T10:51:59.6593000Z ##[group]Getting Git version info
+2026-07-09T10:51:59.6593550Z Working directory is '/Users/runner/work/ouro-md/ouro-md'
+2026-07-09T10:51:59.6594920Z [command]/opt/homebrew/bin/git version
+2026-07-09T10:51:59.7018270Z git version 2.54.0
+2026-07-09T10:51:59.7049800Z ##[endgroup]
+2026-07-09T10:51:59.7060950Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/acef4569-e1e6-4d68-b340-b858d274b990/.gitconfig'
+2026-07-09T10:51:59.7075120Z Temporarily overriding HOME='/Users/runner/work/_temp/acef4569-e1e6-4d68-b340-b858d274b990' before making global git config changes
+2026-07-09T10:51:59.7078150Z Adding repository directory to the temporary git global config as a safe directory
+2026-07-09T10:51:59.7082180Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/ouro-md/ouro-md
+2026-07-09T10:51:59.7227890Z Deleting the contents of '/Users/runner/work/ouro-md/ouro-md'
+2026-07-09T10:51:59.7231640Z ##[group]Initializing the repository
+2026-07-09T10:51:59.7234100Z [command]/opt/homebrew/bin/git init /Users/runner/work/ouro-md/ouro-md
+2026-07-09T10:51:59.7645000Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-07-09T10:51:59.7647910Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-07-09T10:51:59.7649430Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-07-09T10:51:59.7650050Z hint: call:
+2026-07-09T10:51:59.7650390Z hint:
+2026-07-09T10:51:59.7650860Z hint: 	git config --global init.defaultBranch <name>
+2026-07-09T10:51:59.7652370Z hint:
+2026-07-09T10:51:59.7652900Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-07-09T10:51:59.7653690Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-07-09T10:51:59.7654270Z hint:
+2026-07-09T10:51:59.7654600Z hint: 	git branch -m <name>
+2026-07-09T10:51:59.7655000Z hint:
+2026-07-09T10:51:59.7656190Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-07-09T10:51:59.7657020Z Initialized empty Git repository in /Users/runner/work/ouro-md/ouro-md/.git/
+2026-07-09T10:51:59.7658720Z [command]/opt/homebrew/bin/git remote add origin https://github.com/ourostack/ouro-md
+2026-07-09T10:51:59.8058590Z ##[endgroup]
+2026-07-09T10:51:59.8164010Z ##[group]Disabling automatic garbage collection
+2026-07-09T10:51:59.8262120Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+2026-07-09T10:51:59.8407420Z ##[endgroup]
+2026-07-09T10:51:59.8408360Z ##[group]Setting up auth
+2026-07-09T10:51:59.8409390Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-07-09T10:51:59.8411670Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-07-09T10:52:00.0342830Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-07-09T10:52:00.0610550Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-07-09T10:52:00.1377930Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-07-09T10:52:00.1428630Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-07-09T10:52:00.2264110Z [command]/opt/homebrew/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-07-09T10:52:00.2326800Z ##[endgroup]
+2026-07-09T10:52:00.2327580Z ##[group]Fetching the repository
+2026-07-09T10:52:00.2338160Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/* +331afb82bde1366a4295758aa016eafd570413f0:refs/remotes/pull/103/merge
+2026-07-09T10:52:01.4145810Z From https://github.com/ourostack/ouro-md
+2026-07-09T10:52:01.4147040Z  * [new branch]      main                                     -> origin/main
+2026-07-09T10:52:01.4148160Z  * [new branch]      worker/app-store-spam-rejection          -> origin/worker/app-store-spam-rejection
+2026-07-09T10:52:01.4149550Z  * [new branch]      worker/app-store-validation-fixes        -> origin/worker/app-store-validation-fixes
+2026-07-09T10:52:01.4150770Z  * [new branch]      worker/docs-index                        -> origin/worker/docs-index
+2026-07-09T10:52:01.4152340Z  * [new branch]      worker/ouro-md-harness-vendor-editor-extraction -> origin/worker/ouro-md-harness-vendor-editor-extraction
+2026-07-09T10:52:01.4153940Z  * [new tag]         v0.9.0                                   -> v0.9.0
+2026-07-09T10:52:01.4154940Z  * [new tag]         v0.9.1                                   -> v0.9.1
+2026-07-09T10:52:01.4155890Z  * [new tag]         v0.9.10                                  -> v0.9.10
+2026-07-09T10:52:01.4156850Z  * [new tag]         v0.9.11                                  -> v0.9.11
+2026-07-09T10:52:01.4157900Z  * [new tag]         v0.9.12                                  -> v0.9.12
+2026-07-09T10:52:01.4158910Z  * [new tag]         v0.9.13                                  -> v0.9.13
+2026-07-09T10:52:01.4160280Z  * [new tag]         v0.9.14                                  -> v0.9.14
+2026-07-09T10:52:01.4161320Z  * [new tag]         v0.9.15                                  -> v0.9.15
+2026-07-09T10:52:01.4162410Z  * [new tag]         v0.9.16                                  -> v0.9.16
+2026-07-09T10:52:01.4163510Z  * [new tag]         v0.9.17                                  -> v0.9.17
+2026-07-09T10:52:01.4164570Z  * [new tag]         v0.9.18                                  -> v0.9.18
+2026-07-09T10:52:01.4165620Z  * [new tag]         v0.9.19                                  -> v0.9.19
+2026-07-09T10:52:01.4166680Z  * [new tag]         v0.9.2                                   -> v0.9.2
+2026-07-09T10:52:01.4167760Z  * [new tag]         v0.9.20                                  -> v0.9.20
+2026-07-09T10:52:01.4168830Z  * [new tag]         v0.9.21                                  -> v0.9.21
+2026-07-09T10:52:01.4169900Z  * [new tag]         v0.9.22                                  -> v0.9.22
+2026-07-09T10:52:01.4171180Z  * [new tag]         v0.9.23                                  -> v0.9.23
+2026-07-09T10:52:01.4172600Z  * [new tag]         v0.9.24                                  -> v0.9.24
+2026-07-09T10:52:01.4173980Z  * [new tag]         v0.9.25                                  -> v0.9.25
+2026-07-09T10:52:01.4175390Z  * [new tag]         v0.9.26                                  -> v0.9.26
+2026-07-09T10:52:01.4176810Z  * [new tag]         v0.9.27                                  -> v0.9.27
+2026-07-09T10:52:01.4178240Z  * [new tag]         v0.9.28                                  -> v0.9.28
+2026-07-09T10:52:01.4179630Z  * [new tag]         v0.9.29                                  -> v0.9.29
+2026-07-09T10:52:01.4181180Z  * [new tag]         v0.9.3                                   -> v0.9.3
+2026-07-09T10:52:01.4183340Z  * [new tag]         v0.9.30                                  -> v0.9.30
+2026-07-09T10:52:01.4184910Z  * [new tag]         v0.9.31                                  -> v0.9.31
+2026-07-09T10:52:01.4186320Z  * [new tag]         v0.9.32                                  -> v0.9.32
+2026-07-09T10:52:01.4187730Z  * [new tag]         v0.9.33                                  -> v0.9.33
+2026-07-09T10:52:01.4189130Z  * [new tag]         v0.9.34                                  -> v0.9.34
+2026-07-09T10:52:01.4190530Z  * [new tag]         v0.9.35                                  -> v0.9.35
+2026-07-09T10:52:01.4191910Z  * [new tag]         v0.9.36                                  -> v0.9.36
+2026-07-09T10:52:01.4193330Z  * [new tag]         v0.9.37                                  -> v0.9.37
+2026-07-09T10:52:01.4194780Z  * [new tag]         v0.9.38                                  -> v0.9.38
+2026-07-09T10:52:01.4196230Z  * [new tag]         v0.9.39                                  -> v0.9.39
+2026-07-09T10:52:01.4197700Z  * [new tag]         v0.9.4                                   -> v0.9.4
+2026-07-09T10:52:01.4199140Z  * [new tag]         v0.9.40                                  -> v0.9.40
+2026-07-09T10:52:01.4200650Z  * [new tag]         v0.9.41                                  -> v0.9.41
+2026-07-09T10:52:01.4202120Z  * [new tag]         v0.9.42                                  -> v0.9.42
+2026-07-09T10:52:01.4203640Z  * [new tag]         v0.9.43                                  -> v0.9.43
+2026-07-09T10:52:01.4205080Z  * [new tag]         v0.9.44                                  -> v0.9.44
+2026-07-09T10:52:01.4206480Z  * [new tag]         v0.9.45                                  -> v0.9.45
+2026-07-09T10:52:01.4207890Z  * [new tag]         v0.9.46                                  -> v0.9.46
+2026-07-09T10:52:01.4209260Z  * [new tag]         v0.9.47                                  -> v0.9.47
+2026-07-09T10:52:01.4210650Z  * [new tag]         v0.9.48                                  -> v0.9.48
+2026-07-09T10:52:01.4212050Z  * [new tag]         v0.9.49                                  -> v0.9.49
+2026-07-09T10:52:01.4213420Z  * [new tag]         v0.9.5                                   -> v0.9.5
+2026-07-09T10:52:01.4215150Z  * [new tag]         v0.9.50                                  -> v0.9.50
+2026-07-09T10:52:01.4216440Z  * [new tag]         v0.9.51                                  -> v0.9.51
+2026-07-09T10:52:01.4217960Z  * [new tag]         v0.9.52                                  -> v0.9.52
+2026-07-09T10:52:01.4219250Z  * [new tag]         v0.9.53                                  -> v0.9.53
+2026-07-09T10:52:01.4220520Z  * [new tag]         v0.9.54                                  -> v0.9.54
+2026-07-09T10:52:01.4221820Z  * [new tag]         v0.9.55                                  -> v0.9.55
+2026-07-09T10:52:01.4223230Z  * [new tag]         v0.9.56                                  -> v0.9.56
+2026-07-09T10:52:01.4224530Z  * [new tag]         v0.9.57                                  -> v0.9.57
+2026-07-09T10:52:01.4225830Z  * [new tag]         v0.9.58                                  -> v0.9.58
+2026-07-09T10:52:01.4227110Z  * [new tag]         v0.9.59                                  -> v0.9.59
+2026-07-09T10:52:01.4228420Z  * [new tag]         v0.9.6                                   -> v0.9.6
+2026-07-09T10:52:01.4229710Z  * [new tag]         v0.9.60                                  -> v0.9.60
+2026-07-09T10:52:01.4230990Z  * [new tag]         v0.9.61                                  -> v0.9.61
+2026-07-09T10:52:01.4232330Z  * [new tag]         v0.9.62                                  -> v0.9.62
+2026-07-09T10:52:01.4233670Z  * [new tag]         v0.9.63                                  -> v0.9.63
+2026-07-09T10:52:01.4234930Z  * [new tag]         v0.9.64                                  -> v0.9.64
+2026-07-09T10:52:01.4236200Z  * [new tag]         v0.9.65                                  -> v0.9.65
+2026-07-09T10:52:01.4237460Z  * [new tag]         v0.9.66                                  -> v0.9.66
+2026-07-09T10:52:01.4239020Z  * [new tag]         v0.9.68                                  -> v0.9.68
+2026-07-09T10:52:01.4240310Z  * [new tag]         v0.9.69                                  -> v0.9.69
+2026-07-09T10:52:01.4241600Z  * [new tag]         v0.9.7                                   -> v0.9.7
+2026-07-09T10:52:01.4242850Z  * [new tag]         v0.9.70                                  -> v0.9.70
+2026-07-09T10:52:01.4246340Z  * [new tag]         v0.9.72                                  -> v0.9.72
+2026-07-09T10:52:01.4247690Z  * [new tag]         v0.9.73                                  -> v0.9.73
+2026-07-09T10:52:01.4248980Z  * [new tag]         v0.9.74                                  -> v0.9.74
+2026-07-09T10:52:01.4250260Z  * [new tag]         v0.9.75                                  -> v0.9.75
+2026-07-09T10:52:01.4251580Z  * [new tag]         v0.9.76                                  -> v0.9.76
+2026-07-09T10:52:01.4252870Z  * [new tag]         v0.9.77                                  -> v0.9.77
+2026-07-09T10:52:01.4254250Z  * [new tag]         v0.9.78                                  -> v0.9.78
+2026-07-09T10:52:01.4255540Z  * [new tag]         v0.9.79                                  -> v0.9.79
+2026-07-09T10:52:01.4256820Z  * [new tag]         v0.9.8                                   -> v0.9.8
+2026-07-09T10:52:01.4258040Z  * [new tag]         v0.9.80                                  -> v0.9.80
+2026-07-09T10:52:01.4259290Z  * [new tag]         v0.9.9                                   -> v0.9.9
+2026-07-09T10:52:01.4260690Z  * [new ref]         331afb82bde1366a4295758aa016eafd570413f0 -> pull/103/merge
+2026-07-09T10:52:01.4524050Z ##[endgroup]
+2026-07-09T10:52:01.4527330Z ##[group]Determining the checkout info
+2026-07-09T10:52:01.4530450Z ##[endgroup]
+2026-07-09T10:52:01.4532470Z [command]/opt/homebrew/bin/git sparse-checkout disable
+2026-07-09T10:52:01.4616440Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+2026-07-09T10:52:01.4687390Z ##[group]Checking out the ref
+2026-07-09T10:52:01.4691790Z [command]/opt/homebrew/bin/git checkout --progress --force refs/remotes/pull/103/merge
+2026-07-09T10:52:01.7479360Z HEAD is now at 331afb8 Merge eef985c957344546cf3929618440c7382c056e2a into abab7ad967673c5ce33162ba441f05ec238c6d2d
+2026-07-09T10:52:01.7524600Z ##[endgroup]
+2026-07-09T10:52:01.7595060Z [command]/opt/homebrew/bin/git log -1 --format=%H
+2026-07-09T10:52:01.7647180Z 331afb82bde1366a4295758aa016eafd570413f0
+2026-07-09T10:52:01.8019260Z ##[group]Run latest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"
+2026-07-09T10:52:01.8023400Z [36;1mlatest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"[0m
+2026-07-09T10:52:01.8027200Z [36;1m[ -n "$latest" ] || latest="$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"[0m
+2026-07-09T10:52:01.8030490Z [36;1msudo xcode-select -s "$latest/Contents/Developer"[0m
+2026-07-09T10:52:01.8032870Z [36;1mswift --version[0m
+2026-07-09T10:52:01.8128250Z shell: /bin/bash -e {0}
+2026-07-09T10:52:01.8128970Z ##[endgroup]
+2026-07-09T10:52:07.2294650Z Apple Swift version 6.0.3 (swiftlang-6.0.3.1.10 clang-1600.0.30.1)
+2026-07-09T10:52:07.2295720Z Target: arm64-apple-macosx14.0
+2026-07-09T10:52:07.2345100Z swift-driver version: 1.115.1
+2026-07-09T10:52:07.2411350Z ##[group]Run ./scripts/verify-release-version.sh
+2026-07-09T10:52:07.2411760Z [36;1m./scripts/verify-release-version.sh[0m
+2026-07-09T10:52:07.2467660Z shell: /bin/bash -e {0}
+2026-07-09T10:52:07.2467900Z ##[endgroup]
+2026-07-09T10:52:07.3340660Z release version ok: 0.9.80
+2026-07-09T10:52:07.3401370Z ##[group]Run ./scripts/release-policy.sh freshness
+2026-07-09T10:52:07.3401780Z [36;1m./scripts/release-policy.sh freshness[0m
+2026-07-09T10:52:07.3454610Z shell: /bin/bash -e {0}
+2026-07-09T10:52:07.3454960Z env:
+2026-07-09T10:52:07.3457830Z   GH_TOKEN: ***
+2026-07-09T10:52:07.3458120Z ##[endgroup]
+2026-07-09T10:52:10.1268520Z Sources/OuroMD/AppInfoView.swift
+2026-07-09T10:52:10.1269350Z Sources/OuroMD/CLI.swift
+2026-07-09T10:52:10.1270280Z Sources/OuroMD/OuroMDShellContract.swift
+2026-07-09T10:52:10.1271220Z Sources/OuroMD/Welcome.swift
+2026-07-09T10:52:10.1271880Z Sources/OuroMDCore/OuroMDRelease.swift
+2026-07-09T10:52:10.1272670Z scripts/package-app-store.sh
+2026-07-09T10:52:10.1273810Z error: app/release-affecting changes require a version greater than latest published release v0.9.80
+2026-07-09T10:52:10.1292640Z ##[error]Process completed with exit code 1.
+2026-07-09T10:52:10.1436410Z ##[group]Run actions/upload-artifact@v6
+2026-07-09T10:52:10.1436650Z with:
+2026-07-09T10:52:10.1436780Z   name: swift-test-timings
+2026-07-09T10:52:10.1437030Z   path: .build/ouro-swift-test.log
+.build/ouro-test-timings.tsv
+
+2026-07-09T10:52:10.1437310Z   if-no-files-found: warn
+2026-07-09T10:52:10.1437470Z   compression-level: 6
+2026-07-09T10:52:10.1437620Z   overwrite: false
+2026-07-09T10:52:10.1437770Z   include-hidden-files: false
+2026-07-09T10:52:10.1437940Z ##[endgroup]
+2026-07-09T10:52:10.4516700Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-07-09T10:52:10.4519430Z The least common ancestor is /Users/runner/work/ouro-md/ouro-md/.build. This will be the root directory of the artifact
+2026-07-09T10:52:10.4542540Z ##[warning]No files were found with the provided path: .build/ouro-swift-test.log
+.build/ouro-test-timings.tsv. No artifacts will be uploaded.
+2026-07-09T10:52:10.4692400Z Post job cleanup.
+2026-07-09T10:52:10.5886880Z [command]/opt/homebrew/bin/git version
+2026-07-09T10:52:10.5987640Z git version 2.54.0
+2026-07-09T10:52:10.6685960Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/e853f339-11b4-4657-b4c0-2c27ef28b75e/.gitconfig'
+2026-07-09T10:52:10.6719360Z Temporarily overriding HOME='/Users/runner/work/_temp/e853f339-11b4-4657-b4c0-2c27ef28b75e' before making global git config changes
+2026-07-09T10:52:10.6728610Z Adding repository directory to the temporary git global config as a safe directory
+2026-07-09T10:52:10.6754930Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/ouro-md/ouro-md
+2026-07-09T10:52:10.6773120Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-07-09T10:52:10.6786920Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-07-09T10:52:10.7351610Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-07-09T10:52:10.7401360Z http.https://github.com/.extraheader
+2026-07-09T10:52:10.7418030Z [command]/opt/homebrew/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-07-09T10:52:10.7565760Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-07-09T10:52:10.8584390Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-07-09T10:52:10.8653820Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-07-09T10:52:10.9826390Z Cleaning up orphan processes

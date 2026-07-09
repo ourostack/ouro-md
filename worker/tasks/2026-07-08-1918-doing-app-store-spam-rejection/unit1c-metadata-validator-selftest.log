@@ -1,0 +1,17 @@
+ok: valid draft metadata
+ok: valid final metadata
+ok: missing mac app store channel
+ok: missing subtitle
+ok: wrong category
+ok: overlong promotional text
+ok: generic description
+ok: missing promotional text value
+ok: missing description proof
+ok: missing keyword
+ok: missing review step
+ok: empty screenshots
+ok: blank screenshot proof
+ok: missing screenshot requirements
+ok: too-low screenshot requirement
+ok: missing required screenshot scene
+ok: final screenshot count too low

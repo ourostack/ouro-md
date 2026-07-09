@@ -1,0 +1,18 @@
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.27s)
+Test Suite 'Selected tests' started at 2026-07-09 02:06:38.040.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-09 02:06:38.044.
+Test Suite 'OuroMDAppStoreApplyPlanTests' started at 2026-07-09 02:06:38.044.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRejectsScreenshotBytesChangedAfterDryRun]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRejectsScreenshotBytesChangedAfterDryRun]' passed (0.306 seconds).
+Test Suite 'OuroMDAppStoreApplyPlanTests' passed at 2026-07-09 02:06:38.350.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.306 (0.306) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-07-09 02:06:38.350.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.306 (0.306) seconds
+Test Suite 'Selected tests' passed at 2026-07-09 02:06:38.350.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.306 (0.310) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

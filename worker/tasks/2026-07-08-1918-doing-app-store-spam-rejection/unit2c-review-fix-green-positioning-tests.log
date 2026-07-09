@@ -1,0 +1,27 @@
+[0/1] Planning build
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.47s)
+Test Suite 'Selected tests' started at 2026-07-08 22:43:10.052.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-08 22:43:10.053.
+Test Suite 'OuroMDPositioningTests' started at 2026-07-08 22:43:10.053.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsCarryReviewFacingDifferentiators]' started.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsCarryReviewFacingDifferentiators]' passed (0.003 seconds).
+Test Case '-[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsDoNotExposeInternalReviewRemediationLanguage]' started.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsDoNotExposeInternalReviewRemediationLanguage]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDPositioningTests testShellAboutSubtitleUsesLocalWorkspacePositioning]' started.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testShellAboutSubtitleUsesLocalWorkspacePositioning]' passed (0.008 seconds).
+Test Case '-[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow]' started.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDPositioningTests testWelcomeVisualFixtureMatchesSourceWelcomeCopy]' started.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testWelcomeVisualFixtureMatchesSourceWelcomeCopy]' passed (0.001 seconds).
+Test Suite 'OuroMDPositioningTests' passed at 2026-07-08 22:43:10.066.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.012 (0.013) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-07-08 22:43:10.066.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.012 (0.013) seconds
+Test Suite 'Selected tests' passed at 2026-07-08 22:43:10.066.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.012 (0.014) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

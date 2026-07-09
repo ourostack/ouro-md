@@ -15,6 +15,19 @@ wrapper="scripts/apple-distribution-kit.sh"
 manifest="distribution/apple-distribution.json"
 artifact_dir="${APPLE_DISTRIBUTION_ARTIFACT_DIR:-.build/apple-distribution-kit}"
 review_artifact="$artifact_dir/app-store-review-prep.json"
+final_submission=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --final-submission)
+      final_submission=1
+      shift
+      ;;
+    *)
+      fail "unknown argument: $1"
+      ;;
+  esac
+done
 
 [[ -x "$wrapper" ]] || fail "missing thin wrapper: $wrapper"
 [[ -f "$manifest" ]] || fail "missing canonical manifest: $manifest"
@@ -25,6 +38,12 @@ manifest_version="$(
 )"
 [[ "$manifest_version" == "$source_version" ]] \
   || fail "manifest mac-app-store version $manifest_version does not match OuroMDRelease.version $source_version"
+
+metadata_args=(--manifest "$manifest")
+if [[ "$final_submission" == 1 ]]; then
+  metadata_args+=(--final-screenshots)
+fi
+node scripts/check-app-store-metadata.mjs "${metadata_args[@]}"
 
 if ! grep -Eq 'apple-distribution-kit|apple-distribution-kit/dist/cli\.js' "$wrapper"; then
   fail "$wrapper must delegate to the shared apple-distribution-kit"

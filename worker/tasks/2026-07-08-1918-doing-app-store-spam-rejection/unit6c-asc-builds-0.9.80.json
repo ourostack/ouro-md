@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "result": {
+    "data": [],
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/builds?filter%5Bapp%5D=6787262892&filter%5BpreReleaseVersion.platform%5D=MAC_OS&filter%5Bversion%5D=0.9.80&sort=-uploadedDate&limit=10"
+    },
+    "meta": {
+      "paging": {
+        "total": 0,
+        "limit": 10
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+runtime accessibility smoke: ✓
+shell rendered accessibility labels: ✓
+source accessibility labels: ✓
+menu shortcut coverage: ✓
+menu shortcut conflicts: ✓
+command discoverability catalog: ✓

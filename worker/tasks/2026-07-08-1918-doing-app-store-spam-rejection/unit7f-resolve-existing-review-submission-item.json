@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "ok": true,
+  "request": {
+    "method": "PATCH",
+    "path": "/v1/reviewSubmissionItems/YjM3Zjg0N2UtMGVjYi00ZTdhLWJiMDAtMTRlMzAzOGIwZjRjfDZ8ODg3ODEyNjgx",
+    "body": {
+      "data": {
+        "type": "reviewSubmissionItems",
+        "id": "YjM3Zjg0N2UtMGVjYi00ZTdhLWJiMDAtMTRlMzAzOGIwZjRjfDZ8ODg3ODEyNjgx",
+        "attributes": {
+          "resolved": true
+        }
+      }
+    }
+  },
+  "response": {
+    "data": {
+      "type": "reviewSubmissionItems",
+      "id": "YjM3Zjg0N2UtMGVjYi00ZTdhLWJiMDAtMTRlMzAzOGIwZjRjfDZ8ODg3ODEyNjgx",
+      "attributes": {
+        "state": "READY_FOR_REVIEW"
+      },
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissionItems/YjM3Zjg0N2UtMGVjYi00ZTdhLWJiMDAtMTRlMzAzOGIwZjRjfDZ8ODg3ODEyNjgx"
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissionItems/YjM3Zjg0N2UtMGVjYi00ZTdhLWJiMDAtMTRlMzAzOGIwZjRjfDZ8ODg3ODEyNjgx"
+    }
+  }
+}

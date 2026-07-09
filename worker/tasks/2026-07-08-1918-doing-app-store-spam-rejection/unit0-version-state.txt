@@ -1,0 +1,6 @@
+== current source version ==
+0.9.80
+== manifest version ==
+0.9.80
+== manifest category ==
+DEVELOPER_TOOLS

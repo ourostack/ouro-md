@@ -1,0 +1,27 @@
+Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/5] Emitting module OuroMDTests
+[4/5] Compiling OuroMDTests OuroMDAppStoreStatusTests.swift
+[4/6] Write Objects.LinkFileList
+[5/6] Linking ouro-mdPackageTests
+Build complete! (3.33s)
+Test Suite 'Selected tests' started at 2026-07-08 22:56:48.225.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-08 22:56:48.228.
+Test Suite 'OuroMDAppStoreStatusTests' started at 2026-07-08 22:56:48.228.
+Test Case '-[OuroMDTests.OuroMDAppStoreStatusTests testStatusReaderFailsWhenRequiredLiveFieldsAreMissing]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreStatusTests testStatusReaderFailsWhenRequiredLiveFieldsAreMissing]' passed (0.148 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreStatusTests testStatusReaderSelftestNormalizesAndRedactsAppStoreConnectState]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreStatusTests testStatusReaderSelftestNormalizesAndRedactsAppStoreConnectState]' passed (0.145 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreStatusTests testStatusReaderTextSummaryIsCompactAndRedacted]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreStatusTests testStatusReaderTextSummaryIsCompactAndRedacted]' passed (0.144 seconds).
+Test Suite 'OuroMDAppStoreStatusTests' passed at 2026-07-08 22:56:48.664.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.436 (0.437) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-07-08 22:56:48.664.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.436 (0.437) seconds
+Test Suite 'Selected tests' passed at 2026-07-08 22:56:48.664.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.436 (0.439) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

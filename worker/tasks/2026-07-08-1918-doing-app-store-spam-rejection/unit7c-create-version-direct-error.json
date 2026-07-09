@@ -1,0 +1,18 @@
+{
+  "status": 409,
+  "ok": false,
+  "response": {
+    "errors": [
+      {
+        "id": "5a1b1f59-027f-4331-98ba-5cb66054ccb7",
+        "status": "409",
+        "code": "ENTITY_ERROR.RELATIONSHIP.INVALID",
+        "title": "The provided entity includes a relationship with an invalid value",
+        "detail": "You cannot create a new version of the App in the current state.",
+        "source": {
+          "pointer": "/data/relationships/app"
+        }
+      }
+    ]
+  }
+}

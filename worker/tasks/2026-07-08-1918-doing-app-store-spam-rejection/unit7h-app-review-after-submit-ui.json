@@ -1,0 +1,32 @@
+{
+  "bodyExcerpt": "Apple.com\nCopyright © 2026 Apple Inc. All rights reserved.\nTerms of Service\nPrivacy Policy",
+  "capturedAt": "2026-07-09T10:26:14.334Z",
+  "containsMessages2": false,
+  "containsSubmittedForReview": false,
+  "containsVersion080": false,
+  "containsWaitingForReview": false,
+  "controls": [
+    {
+      "id": null,
+      "role": null,
+      "tag": "A",
+      "text": "Apple.com",
+      "type": null
+    },
+    {
+      "id": null,
+      "role": null,
+      "tag": "A",
+      "text": "Terms of Service",
+      "type": null
+    },
+    {
+      "id": null,
+      "role": null,
+      "tag": "A",
+      "text": "Privacy Policy",
+      "type": null
+    }
+  ],
+  "url": "https://appstoreconnect.apple.com/login?targetUrl=%2Fapps%2F6787262892%2Fdistribution%2Freviewsubmissions%2Fdetails%2Fb37f847e-0ecb-4e7a-bb00-14e3038b0f4c&authResult=FAILED"
+}

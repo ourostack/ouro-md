@@ -1,0 +1,20 @@
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.27s)
+Test Suite 'Selected tests' started at 2026-07-08 21:57:35.079.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-08 21:57:35.080.
+Test Suite 'OuroMDDistributionTests' started at 2026-07-08 21:57:35.080.
+Test Case '-[OuroMDTests.OuroMDDistributionTests testAppStoreManifestCarriesDistinctReviewMetadata]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDDistributionTests.swift:33: error: -[OuroMDTests.OuroMDDistributionTests testAppStoreManifestCarriesDistinctReviewMetadata] : XCTAssertEqual failed: ("nil") is not equal to ("Optional("Local Markdown Workspace")")
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDDistributionTests.swift:89: error: -[OuroMDTests.OuroMDDistributionTests testAppStoreManifestCarriesDistinctReviewMetadata] : XCTUnwrap failed: expected non-nil value of type "String" - promotionalText must be a string
+Test Case '-[OuroMDTests.OuroMDDistributionTests testAppStoreManifestCarriesDistinctReviewMetadata]' failed (0.047 seconds).
+Test Suite 'OuroMDDistributionTests' failed at 2026-07-08 21:57:35.128.
+	 Executed 1 test, with 2 failures (0 unexpected) in 0.047 (0.047) seconds
+Test Suite 'ouro-mdPackageTests.xctest' failed at 2026-07-08 21:57:35.128.
+	 Executed 1 test, with 2 failures (0 unexpected) in 0.047 (0.047) seconds
+Test Suite 'Selected tests' failed at 2026-07-08 21:57:35.128.
+	 Executed 1 test, with 2 failures (0 unexpected) in 0.047 (0.049) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

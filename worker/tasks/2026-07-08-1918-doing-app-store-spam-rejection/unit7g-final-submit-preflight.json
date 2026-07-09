@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-09T10:25:07.959Z",
+  "sourceArtifacts": {
+    "liveStatus": "worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit7g-live-status-before-submit.json",
+    "appInfos": "worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit7g-app-infos-live.json",
+    "selectedBuild": "worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit7g-selected-build-live.json",
+    "reviewSubmissionItems": "worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit7g-review-submission-items-live.json",
+    "screenshotDelivery": "worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit7e-screenshot-delivery-state.json",
+    "metadataSummary": "worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit7d-post-metadata-summary.json",
+    "postedReply": "worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit7g-app-review-thread-after-reply.json"
+  },
+  "appId": "6787262892",
+  "bundleId": "bot.ouro.md",
+  "teamId": "743GT2AJ24",
+  "targetVersion": "0.9.80",
+  "targetAppStoreVersionExists": true,
+  "targetAppStoreVersionIds": [
+    "7309944f-cbe8-4518-960c-444e6116ab46"
+  ],
+  "targetAppStoreVersion": {
+    "id": "7309944f-cbe8-4518-960c-444e6116ab46",
+    "versionString": "0.9.80",
+    "state": "READY_FOR_REVIEW",
+    "appStoreState": "READY_FOR_REVIEW",
+    "platform": "MAC_OS"
+  },
+  "uploadedBuild": {
+    "id": "827fa5b9-6994-41eb-bc75-ab3ca469a96f",
+    "version": "0.9.80",
+    "processingState": "VALID",
+    "expired": false,
+    "uploadedDate": "2026-07-09T01:35:53-07:00",
+    "expirationDate": "2026-10-07T01:35:53-07:00",
+    "buildAudienceType": "APP_STORE_ELIGIBLE",
+    "usesNonExemptEncryption": false
+  },
+  "appInfo": {
+    "id": "9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8",
+    "state": "READY_FOR_REVIEW",
+    "appStoreState": "READY_FOR_REVIEW",
+    "primaryCategoryId": "DEVELOPER_TOOLS",
+    "expectedPrimaryCategoryId": "DEVELOPER_TOOLS",
+    "categoryMatches": true
+  },
+  "appInfoLocalizations": [
+    {
+      "id": "b5bae77f-a94f-4b39-8ebd-841a6306b1c6",
+      "locale": "en-US",
+      "name": "Ouro MD",
+      "subtitle": "Local Markdown Workspace",
+      "privacyPolicyUrl": "https://ouro.bot/privacy/"
+    }
+  ],
+  "appStoreVersionLocalizationId": "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
+  "appStoreReviewDetailId": "3bc7284e-27d5-4dd3-a049-b9e859289bd1",
+  "appScreenshotSetId": "f37ecb51-c96e-451d-9b29-20d86d7f118e",
+  "reviewSubmissionId": "b37f847e-0ecb-4e7a-bb00-14e3038b0f4c",
+  "reviewSubmissionState": "UNRESOLVED_ISSUES",
+  "reviewSubmissionItemId": "YjM3Zjg0N2UtMGVjYi00ZTdhLWJiMDAtMTRlMzAzOGIwZjRjfDZ8ODg3ODEyNjgx",
+  "reviewSubmissionItemState": "READY_FOR_REVIEW",
+  "reviewSubmissionItemAppStoreVersionId": "7309944f-cbe8-4518-960c-444e6116ab46",
+  "screenshots": {
+    "appScreenshotSetId": "f37ecb51-c96e-451d-9b29-20d86d7f118e",
+    "screenshotDisplayType": "APP_DESKTOP",
+    "screenshotCount": 4,
+    "allComplete": true,
+    "firstFourMatchExpectedOrder": true,
+    "screenshotIds": [
+      "ff2cbccb-ec2f-4847-835d-5547c964a979",
+      "b1a6690c-4303-4b0d-87e7-c6345f8a65d3",
+      "e844bca6-e0c6-44cd-86ba-25719cb2c5f9",
+      "d6cb623a-1435-4488-a793-59a6d9efe327"
+    ],
+    "items": [
+      {
+        "index": 1,
+        "id": "ff2cbccb-ec2f-4847-835d-5547c964a979",
+        "fileName": "01-folder-workspace.png",
+        "fileSize": 244440,
+        "sourceFileChecksum": "403d078e80bc58ef95ca91dd270b2297",
+        "assetDeliveryState": "COMPLETE"
+      },
+      {
+        "index": 2,
+        "id": "b1a6690c-4303-4b0d-87e7-c6345f8a65d3",
+        "fileName": "02-command-palette.png",
+        "fileSize": 164414,
+        "sourceFileChecksum": "7b85eedee6a59d634b3cbe7fa0f2e66c",
+        "assetDeliveryState": "COMPLETE"
+      },
+      {
+        "index": 3,
+        "id": "e844bca6-e0c6-44cd-86ba-25719cb2c5f9",
+        "fileName": "03-search-outline.png",
+        "fileSize": 236123,
+        "sourceFileChecksum": "047747e665f5519c5879f6ca07db8965",
+        "assetDeliveryState": "COMPLETE"
+      },
+      {
+        "index": 4,
+        "id": "d6cb623a-1435-4488-a793-59a6d9efe327",
+        "fileName": "04-themed-export-readability.png",
+        "fileSize": 182875,
+        "sourceFileChecksum": "3e3146c46bf2551e07fdd3dc236eba6b",
+        "assetDeliveryState": "COMPLETE"
+      }
+    ]
+  },
+  "metadata": {
+    "allRequiredMetadataMatches": true,
+    "appInfoLocalizationId": "b5bae77f-a94f-4b39-8ebd-841a6306b1c6",
+    "appStoreVersionLocalizationId": "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
+    "appStoreReviewDetailId": "3bc7284e-27d5-4dd3-a049-b9e859289bd1",
+    "categoryMatches": true,
+    "subtitleMatches": true,
+    "promotionalTextMatches": true,
+    "descriptionMatches": true,
+    "keywordsMatches": true,
+    "notesMatches": true,
+    "whatsNewStatus": "not-updated; Apple returned STATE_ERROR for whatsNew in unit7d-update-version-localization-direct.json"
+  },
+  "existingRejectionThread": {
+    "reviewSubmissionId": "b37f847e-0ecb-4e7a-bb00-14e3038b0f4c",
+    "replyHandling": {
+      "status": "ui-reply-posted",
+      "capturedAt": "2026-07-09T10:22:38.608Z",
+      "beforeArtifact": "worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit7g-app-review-thread-before-reply.json",
+      "beforeScreenshot": "worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit7g-app-review-thread-before-reply.png",
+      "beforeSendArtifact": "worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit7g-app-review-reply-before-send.json",
+      "beforeSendScreenshot": "worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit7g-app-review-reply-before-send.png",
+      "afterArtifact": "worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit7g-app-review-thread-after-reply.json",
+      "afterScreenshot": "worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit7g-app-review-thread-after-reply.png",
+      "messagesLabelMatch": "2",
+      "containsPostedReplyOpening": true,
+      "containsVersion080": true
+    }
+  },
+  "readiness": {
+    "uploadedBuildReady": true,
+    "targetVersionReady": true,
+    "reviewItemReady": true,
+    "screenshotsReady": true,
+    "metadataReady": true,
+    "appInfoReady": true,
+    "oldThreadReplyReady": true
+  },
+  "readyForFinalSubmit": true
+}

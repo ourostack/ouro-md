@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-09T10:06:31.340Z",
+  "appId": "6787262892",
+  "bundleId": "bot.ouro.md",
+  "teamId": "743GT2AJ24",
+  "targetVersion": "0.9.80",
+  "targetAppStoreVersionIds": [
+    "7309944f-cbe8-4518-960c-444e6116ab46"
+  ],
+  "targetAppStoreVersion": {
+    "id": "7309944f-cbe8-4518-960c-444e6116ab46",
+    "versionString": "0.9.80",
+    "appStoreState": "REJECTED",
+    "appVersionState": "REJECTED",
+    "platform": "MAC_OS"
+  },
+  "appInfo": {
+    "id": "9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8",
+    "primaryCategoryId": "DEVELOPER_TOOLS",
+    "expectedPrimaryCategoryId": "DEVELOPER_TOOLS",
+    "categoryMatches": true
+  },
+  "appInfoLocalizations": [
+    {
+      "id": "b5bae77f-a94f-4b39-8ebd-841a6306b1c6",
+      "locale": "en-US",
+      "name": "Ouro MD",
+      "subtitle": "Local Markdown Workspace",
+      "privacyPolicyUrl": "https://ouro.bot/privacy/"
+    }
+  ],
+  "appInfoLocalization": {
+    "id": "b5bae77f-a94f-4b39-8ebd-841a6306b1c6",
+    "locale": "en-US",
+    "name": "Ouro MD",
+    "subtitle": "Local Markdown Workspace",
+    "expectedSubtitle": "Local Markdown Workspace",
+    "subtitleMatches": true,
+    "privacyPolicyUrl": "https://ouro.bot/privacy/"
+  },
+  "appStoreVersionLocalizationId": "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
+  "appStoreVersionLocalization": {
+    "id": "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
+    "locale": "en-US",
+    "promotionalText": "Local Markdown workspace for Mac files: folder search, outline, command palette, themes, PDF/HTML export, no account.",
+    "expectedPromotionalText": "Local Markdown workspace for Mac files: folder search, outline, command palette, themes, PDF/HTML export, no account.",
+    "promotionalTextMatches": true,
+    "descriptionMatches": true,
+    "keywords": "markdown,local files,folder search,outline,command palette,pdf,html export,gfm,mac",
+    "expectedKeywords": "markdown,local files,folder search,outline,command palette,pdf,html export,gfm,mac",
+    "keywordsMatches": true,
+    "supportUrl": "https://ouro.bot/support/",
+    "marketingUrl": "https://ouro.bot/apps/ouro-md/",
+    "whatsNew": null,
+    "whatsNewStatus": "not-updated; Apple returned STATE_ERROR for whatsNew in unit7d-update-version-localization-direct.json"
+  },
+  "appStoreReviewDetailId": "3bc7284e-27d5-4dd3-a049-b9e859289bd1",
+  "appStoreReviewDetail": {
+    "id": "3bc7284e-27d5-4dd3-a049-b9e859289bd1",
+    "notes": "Review path: No account or sample login is required. Create or open a Markdown file, then use Shift-Command-O to open a folder. Use the File Tree, Outline, and Search sidebars; open the Command Palette with Shift-Command-P; switch themes; export PDF or HTML from the File menu. The App Store build has direct-download updates and telemetry disabled.",
+    "expectedNotes": "Review path: No account or sample login is required. Create or open a Markdown file, then use Shift-Command-O to open a folder. Use the File Tree, Outline, and Search sidebars; open the Command Palette with Shift-Command-P; switch themes; export PDF or HTML from the File menu. The App Store build has direct-download updates and telemetry disabled.",
+    "notesMatches": true,
+    "demoAccountRequired": false
+  },
+  "appScreenshotSetId": "f37ecb51-c96e-451d-9b29-20d86d7f118e",
+  "screenshotDisplayType": "APP_DESKTOP",
+  "screenshots": [
+    {
+      "index": 1,
+      "id": "ff2cbccb-ec2f-4847-835d-5547c964a979",
+      "fileName": "01-folder-workspace.png",
+      "fileSize": 244440,
+      "sourceFileChecksum": "403d078e80bc58ef95ca91dd270b2297",
+      "assetDeliveryState": "COMPLETE"
+    },
+    {
+      "index": 2,
+      "id": "b1a6690c-4303-4b0d-87e7-c6345f8a65d3",
+      "fileName": "02-command-palette.png",
+      "fileSize": 164414,
+      "sourceFileChecksum": "7b85eedee6a59d634b3cbe7fa0f2e66c",
+      "assetDeliveryState": "COMPLETE"
+    },
+    {
+      "index": 3,
+      "id": "e844bca6-e0c6-44cd-86ba-25719cb2c5f9",
+      "fileName": "03-search-outline.png",
+      "fileSize": 236123,
+      "sourceFileChecksum": "047747e665f5519c5879f6ca07db8965",
+      "assetDeliveryState": "COMPLETE"
+    },
+    {
+      "index": 4,
+      "id": "d6cb623a-1435-4488-a793-59a6d9efe327",
+      "fileName": "04-themed-export-readability.png",
+      "fileSize": 182875,
+      "sourceFileChecksum": "3e3146c46bf2551e07fdd3dc236eba6b",
+      "assetDeliveryState": "COMPLETE"
+    }
+  ],
+  "screenshotIds": [
+    "ff2cbccb-ec2f-4847-835d-5547c964a979",
+    "b1a6690c-4303-4b0d-87e7-c6345f8a65d3",
+    "e844bca6-e0c6-44cd-86ba-25719cb2c5f9",
+    "d6cb623a-1435-4488-a793-59a6d9efe327"
+  ],
+  "screenshotCount": 4,
+  "screenshotsAllComplete": true,
+  "screenshotsMatchExpectedOrder": true,
+  "currentAssociatedBuild": {
+    "id": "2f55e88f-a05b-4065-a4b5-4e55180d8835",
+    "version": "0.9.79",
+    "processingState": "VALID",
+    "expired": false
+  },
+  "uploadedBuild": {
+    "id": "827fa5b9-6994-41eb-bc75-ab3ca469a96f",
+    "version": "0.9.80",
+    "processingState": "VALID",
+    "expired": false,
+    "uploadedDate": "2026-07-09T01:35:53-07:00"
+  },
+  "reviewSubmissionId": "e87d8ecd-9682-4d79-9e60-14c23befd11e",
+  "reviewSubmissionState": "READY_FOR_REVIEW",
+  "reviewSubmissionItems": [],
+  "resolvedIds": {
+    "targetAppStoreVersionId": "7309944f-cbe8-4518-960c-444e6116ab46",
+    "appStoreVersionLocalizationId": "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
+    "appInfoLocalizationId": "b5bae77f-a94f-4b39-8ebd-841a6306b1c6",
+    "appStoreReviewDetailId": "3bc7284e-27d5-4dd3-a049-b9e859289bd1",
+    "appScreenshotSetId": "f37ecb51-c96e-451d-9b29-20d86d7f118e",
+    "reviewSubmissionId": "e87d8ecd-9682-4d79-9e60-14c23befd11e"
+  },
+  "readyForBuildReviewStage": true
+}

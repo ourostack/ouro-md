@@ -12,19 +12,22 @@ Use `./scripts/check-apple-distribution-kit.sh` for no-secret CI/readiness check
 it delegates manifest validation, dry-run planning, and review-prep blocker
 artifacts to the shared `ourostack/apple-distribution-kit` CLI through the thin
 `scripts/apple-distribution-kit.sh` wrapper.
+Before final App Store submission, run
+`./scripts/check-apple-distribution-kit.sh --final-submission`; that stricter
+mode requires the final screenshot count to satisfy `store.screenshotRequirements`.
 
 ## App Store Connect setup
 
 Create or confirm the app record before uploading:
 
 - Name: `Ouro MD`
-- Subtitle: `The Markdown App`
+- Subtitle: `Local Markdown Workspace`
 - Bundle ID: `bot.ouro.md`
 - SKU: `bot-ouro-md-macos`
 - Platform: macOS
 - Category: Developer Tools
 - Price: Free
-- Support URL: `https://ouro.bot/apps/ouro-md/`
+- Support URL: `https://ouro.bot/support/`
 - Marketing URL: `https://ouro.bot/apps/ouro-md/`
 - Privacy Policy URL: `https://ouro.bot/privacy/`
 
@@ -45,10 +48,11 @@ Recommended app/version metadata:
 - Content rights: Ouro MD owns or has rights to all included content
 - License agreement: Apple's standard license agreement
 - Copyright: `Copyright © 2026 Ari Mendelow`
-- Description: `A quiet Markdown editor for macOS, built for writing, reading, and keeping your document in focus.`
-- Keywords: `markdown, editor, notes, writing, documents`
-- Review notes: `Ouro MD is a local document editor. No account or sample login is required. Open or create a Markdown file, edit it, switch themes from the app menu, and export from the File menu.`
-- Screenshots: capture the real app editing and previewing Markdown, including at least one wide-table document and one clean writing view.
+- Promotional text: `Local Markdown workspace for Mac files: folder search, outline, command palette, themes, PDF/HTML export, no account.`
+- Description: starts with `Ouro MD is a local Markdown workspace for people who keep real files, not a hosted notes account.`
+- Keywords: `markdown,local files,folder search,outline,command palette,pdf,html export,gfm,mac`
+- Review notes: use the source-owned `store.reviewNotes` in `distribution/apple-distribution.json`. They should walk reviewers through Shift-Command-O folder opening, File Tree, Outline, Search, Command Palette, theme switching, PDF/HTML export, no account, App Store update behavior, and telemetry-disabled behavior.
+- Screenshots: source-owned assets or explicit remote proof URIs live in `store.screenshots`. `store.screenshotRequirements` requires at least four fresh local screenshots showing folder workspace, command palette, search/outline, and themed export/readability before final submit.
 - App previews: optional for the first submission.
 - Version release notes: use `OuroMDRelease.releaseHighlights` for the submitted version.
 
@@ -105,6 +109,66 @@ Check local readiness:
 ```sh
 ./scripts/check-apple-distribution-kit.sh
 ./scripts/package-app-store.sh --readiness
+```
+
+Read the current rejected App Store Connect state. With no ids, this command
+defaults to the last rejected `0.9.79` version/submission ids for audit
+evidence only:
+
+```sh
+node scripts/app-store-status.mjs --use-rejected-audit-defaults --json
+node scripts/app-store-status.mjs --use-rejected-audit-defaults
+```
+
+Generate a dry-run request plan before any App Store Connect mutation:
+
+```sh
+node scripts/app-store-request-plan.mjs --selftest --json
+node scripts/app-store-request-plan.mjs --json \
+  --screenshot store-assets/app-store/01-folder-workspace.png \
+  --screenshot store-assets/app-store/02-command-palette.png \
+  --screenshot store-assets/app-store/03-search-outline.png \
+  --screenshot store-assets/app-store/04-themed-export-readability.png \
+  --processed-build-id <processed-build-id> \
+  --app-info-id <app-info-id> \
+  --review-detail-id <review-detail-id>
+```
+
+The planner records blockers and omits review-submission-item/final-submit
+requests until local screenshots satisfy `store.screenshotRequirements`.
+Created resources such as the target App Store version, version localization,
+screenshot set, screenshots, review submission, and review submission item use
+captured IDs from earlier create responses; do not pass stale rejected-version
+IDs for those resources.
+
+Exercise the mutation executor against a reviewed plan with a fixture transport
+only:
+
+```sh
+node scripts/app-store-apply-plan.mjs --mode apply \
+  --plan <reviewed-plan.json> \
+  --transport-fixture <fixture-transport.json> \
+  --artifact-dir <artifact-dir> \
+  --json
+```
+
+The executor intentionally has no live App Store Connect transport until its
+review gate has passed.
+
+For a new target version, pass the reviewed App Store version and review
+submission ids from the dry-run/apply artifact. Live submission status reads
+without explicit ids fail fast to avoid accidentally reusing stale rejected ids:
+
+```sh
+node scripts/app-store-status.mjs --json \
+  --version-id <app-store-version-id> \
+  --review-submission-id <review-submission-id>
+```
+
+Check final submission readiness after screenshots are generated and declared:
+
+```sh
+./scripts/check-apple-distribution-kit.sh --final-submission
 ```
 
 Build the package:

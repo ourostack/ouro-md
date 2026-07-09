@@ -1,0 +1,66 @@
+{
+  "ok": true,
+  "result": {
+    "data": [
+      {
+        "type": "preReleaseVersions",
+        "id": "218c4e5f-7053-4263-8c0e-e2e5f8234bd8",
+        "attributes": {
+          "version": "0.9.80",
+          "platform": "MAC_OS"
+        },
+        "relationships": {
+          "builds": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/preReleaseVersions/218c4e5f-7053-4263-8c0e-e2e5f8234bd8/relationships/builds",
+              "related": "https://api.appstoreconnect.apple.com/v1/preReleaseVersions/218c4e5f-7053-4263-8c0e-e2e5f8234bd8/builds"
+            }
+          },
+          "app": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/preReleaseVersions/218c4e5f-7053-4263-8c0e-e2e5f8234bd8/relationships/app",
+              "related": "https://api.appstoreconnect.apple.com/v1/preReleaseVersions/218c4e5f-7053-4263-8c0e-e2e5f8234bd8/app"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/preReleaseVersions/218c4e5f-7053-4263-8c0e-e2e5f8234bd8"
+        }
+      },
+      {
+        "type": "preReleaseVersions",
+        "id": "9648727f-1364-4848-8562-2683ee956edc",
+        "attributes": {
+          "version": "0.9.79",
+          "platform": "MAC_OS"
+        },
+        "relationships": {
+          "builds": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/preReleaseVersions/9648727f-1364-4848-8562-2683ee956edc/relationships/builds",
+              "related": "https://api.appstoreconnect.apple.com/v1/preReleaseVersions/9648727f-1364-4848-8562-2683ee956edc/builds"
+            }
+          },
+          "app": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/preReleaseVersions/9648727f-1364-4848-8562-2683ee956edc/relationships/app",
+              "related": "https://api.appstoreconnect.apple.com/v1/preReleaseVersions/9648727f-1364-4848-8562-2683ee956edc/app"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/preReleaseVersions/9648727f-1364-4848-8562-2683ee956edc"
+        }
+      }
+    ],
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/preReleaseVersions?filter%5Bplatform%5D=MAC_OS&filter%5Bapp%5D=6787262892&sort=-version&limit=20"
+    },
+    "meta": {
+      "paging": {
+        "total": 2,
+        "limit": 20
+      }
+    }
+  }
+}

@@ -15,7 +15,7 @@ enum OuroCLI {
     }
 
     static let helpText = """
-    ouro-md — a minimalist, themable, native macOS Markdown editor.
+    ouro-md — a local Markdown workspace for Mac files.
 
     USAGE
       ouro-md [FILE]                 Open FILE (or a blank document) in the editor.

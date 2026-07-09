@@ -40,6 +40,8 @@ jobs:
         run: ./scripts/release-policy.sh selftest-shell-dependency-watch
       - name: Verify live update runner policy
         run: ./scripts/release-policy.sh selftest-live-update-runner
+      - name: Verify App Store resubmission freshness exception
+        run: ./scripts/release-policy.sh selftest-app-store-resubmission
       - name: Verify release policy path classification
         run: ./scripts/release-policy.sh selftest-paths
       - name: Verify version bump guard

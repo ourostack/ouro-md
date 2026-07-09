@@ -1,0 +1,5 @@
+?? worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit0-git-state.txt
+worker/app-store-spam-rejection
+75a2a63a012ea33c6aa5ae3057521529bfc65be5
+origin	https://github.com/ourostack/ouro-md.git (fetch)
+origin	https://github.com/ourostack/ouro-md.git (push)

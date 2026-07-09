@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-09T10:12:22.438Z",
+  "targetAppStoreVersion": {
+    "id": "7309944f-cbe8-4518-960c-444e6116ab46",
+    "versionString": "0.9.80",
+    "appStoreState": "READY_FOR_REVIEW",
+    "appVersionState": "READY_FOR_REVIEW",
+    "platform": "MAC_OS"
+  },
+  "associatedBuild": {
+    "id": "827fa5b9-6994-41eb-bc75-ab3ca469a96f",
+    "version": "0.9.80",
+    "processingState": "VALID",
+    "expired": false
+  },
+  "acceptedReviewSubmission": {
+    "id": "b37f847e-0ecb-4e7a-bb00-14e3038b0f4c",
+    "state": "UNRESOLVED_ISSUES",
+    "items": [
+      {
+        "id": "YjM3Zjg0N2UtMGVjYi00ZTdhLWJiMDAtMTRlMzAzOGIwZjRjfDZ8ODg3ODEyNjgx",
+        "state": "READY_FOR_REVIEW",
+        "appStoreVersionId": "7309944f-cbe8-4518-960c-444e6116ab46"
+      }
+    ]
+  },
+  "emptyReviewSubmissionCreatedByUnit7c": {
+    "id": "e87d8ecd-9682-4d79-9e60-14c23befd11e",
+    "state": "READY_FOR_REVIEW",
+    "items": [],
+    "cancelAttempt": "failed; Apple returned Resource is not in cancellable state"
+  },
+  "readyForFinalReplyAndSubmit": true
+}

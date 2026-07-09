@@ -1,0 +1,21 @@
+Another instance of SwiftPM (PID: 48184) is already running using '/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/.build', waiting until that process has finished execution...Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.18s)
+Test Suite 'Selected tests' started at 2026-07-09 01:54:21.817.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-09 01:54:21.818.
+Test Suite 'OuroMDAppStoreRequestPlanTests' started at 2026-07-09 01:54:21.818.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanReusesExistingAppInfoLocalizationWhenProvided]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreRequestPlanTests.swift:133: error: -[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanReusesExistingAppInfoLocalizationWhenProvided] : XCTAssertEqual failed: ("1") is not equal to ("0") - error: --app-info-localization-id is not accepted for create-mode request plans; generated resources must use captured IDs
+
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreRequestPlanTests.swift:134: error: -[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanReusesExistingAppInfoLocalizationWhenProvided] : failed: caught error: "Error Domain=NSCocoaErrorDomain Code=3840 "Unable to parse empty data." UserInfo={NSDebugDescription=Unable to parse empty data.}"
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanReusesExistingAppInfoLocalizationWhenProvided]' failed (0.175 seconds).
+Test Suite 'OuroMDAppStoreRequestPlanTests' failed at 2026-07-09 01:54:21.993.
+	 Executed 1 test, with 2 failures (1 unexpected) in 0.175 (0.175) seconds
+Test Suite 'ouro-mdPackageTests.xctest' failed at 2026-07-09 01:54:21.993.
+	 Executed 1 test, with 2 failures (1 unexpected) in 0.175 (0.175) seconds
+Test Suite 'Selected tests' failed at 2026-07-09 01:54:21.993.
+	 Executed 1 test, with 2 failures (1 unexpected) in 0.175 (0.176) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

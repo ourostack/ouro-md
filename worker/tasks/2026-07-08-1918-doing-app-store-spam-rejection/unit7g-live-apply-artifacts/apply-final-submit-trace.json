@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "mode": "apply",
+  "transport": "live",
+  "stage": "final-submit",
+  "events": [
+    {
+      "kind": "request",
+      "requestId": "submit-review-submission",
+      "method": "PATCH",
+      "path": "/v1/reviewSubmissions/b37f847e-0ecb-4e7a-bb00-14e3038b0f4c",
+      "body": {
+        "data": {
+          "type": "reviewSubmissions",
+          "id": "b37f847e-0ecb-4e7a-bb00-14e3038b0f4c",
+          "attributes": {
+            "submitted": true
+          }
+        }
+      },
+      "response": {
+        "id": "b37f847e-0ecb-4e7a-bb00-14e3038b0f4c",
+        "type": "reviewSubmissions",
+        "attributes": {
+          "state": "WAITING_FOR_REVIEW"
+        }
+      }
+    }
+  ]
+}

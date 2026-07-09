@@ -1,0 +1,51 @@
+{
+  "status": 409,
+  "ok": false,
+  "request": {
+    "method": "POST",
+    "path": "/v1/reviewSubmissionItems",
+    "body": {
+      "data": {
+        "type": "reviewSubmissionItems",
+        "relationships": {
+          "reviewSubmission": {
+            "data": {
+              "type": "reviewSubmissions",
+              "id": "e87d8ecd-9682-4d79-9e60-14c23befd11e"
+            }
+          },
+          "appStoreVersion": {
+            "data": {
+              "type": "appStoreVersions",
+              "id": "7309944f-cbe8-4518-960c-444e6116ab46"
+            }
+          }
+        }
+      }
+    }
+  },
+  "response": {
+    "errors": [
+      {
+        "id": "bc0c41e4-b49c-40a4-9f6e-69c77a89ecf0",
+        "status": "409",
+        "code": "STATE_ERROR.ENTITY_STATE_INVALID",
+        "title": "appStoreVersions with id '887812681' is not in valid state.",
+        "detail": "This resource cannot be reviewed, please check associated errors to see why.",
+        "meta": {
+          "associatedErrors": {
+            "/appStoreVersions/887812681": [
+              {
+                "id": "92c63934-c3ab-43ed-94fe-5cc65d8d5c61",
+                "status": "409",
+                "code": "STATE_ERROR.ITEM_PART_OF_ANOTHER_SUBMISSION",
+                "title": "Item is already present in another reviewSubmission",
+                "detail": "appStoreVersions with id 887812681 was already added to another reviewSubmission with id b37f847e-0ecb-4e7a-bb00-14e3038b0f4c"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+mac-app-store screenshots must include at least 4 local PNG assets
+screenshot 1 for scene folder-workspace must be a local PNG, not remote proof
+missing screenshot 2 for scene command-palette
+missing screenshot 3 for scene search-outline
+missing screenshot 4 for scene themed-export-readability
+screenshot 1 is unexpectedly small: /tmp/ouro-md-app-store-screenshot-check-gE1ZEd/01-folder-workspace.png
+screenshot 1 is too small: /tmp/ouro-md-app-store-screenshot-check-gE1ZEd/01-folder-workspace.png is 1x1; minimum is 1280x800
+screenshot 2 is unexpectedly small: /tmp/ouro-md-app-store-screenshot-check-gE1ZEd/02-command-palette.png
+screenshot 2 is too small: /tmp/ouro-md-app-store-screenshot-check-gE1ZEd/02-command-palette.png is 1x1; minimum is 1280x800
+screenshot 3 is unexpectedly small: /tmp/ouro-md-app-store-screenshot-check-gE1ZEd/03-search-outline.png
+screenshot 3 is too small: /tmp/ouro-md-app-store-screenshot-check-gE1ZEd/03-search-outline.png is 1x1; minimum is 1280x800
+screenshot 4 is unexpectedly small: /tmp/ouro-md-app-store-screenshot-check-gE1ZEd/04-themed-export-readability.png
+screenshot 4 is too small: /tmp/ouro-md-app-store-screenshot-check-gE1ZEd/04-themed-export-readability.png is 1x1; minimum is 1280x800

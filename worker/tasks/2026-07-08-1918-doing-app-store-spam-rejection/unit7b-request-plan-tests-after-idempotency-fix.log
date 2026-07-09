@@ -1,0 +1,44 @@
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.21s)
+Test Suite 'Selected tests' started at 2026-07-09 01:55:29.537.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-09 01:55:29.538.
+Test Suite 'OuroMDAppStoreRequestPlanTests' started at 2026-07-09 01:55:29.538.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanBuildsExactTargetVersionRequestGraph]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanBuildsExactTargetVersionRequestGraph]' passed (0.147 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanDoesNotSubmitWhenManifestOnlyHasRemoteScreenshotProof]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanDoesNotSubmitWhenManifestOnlyHasRemoteScreenshotProof]' passed (0.146 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanIncludesMacScreenshotReservationUploadAndCommitSteps]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanIncludesMacScreenshotReservationUploadAndCommitSteps]' passed (0.148 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanIncludesSubmitOnlyAfterRequiredLocalScreenshots]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanIncludesSubmitOnlyAfterRequiredLocalScreenshots]' passed (0.146 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanOutputAndErrorsAreRedacted]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanOutputAndErrorsAreRedacted]' passed (0.146 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRecordsExistingRejectionThreadStrategyWithoutMutatingStaleSubmission]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRecordsExistingRejectionThreadStrategyWithoutMutatingStaleSubmission]' passed (0.143 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsExplicitGeneratedResourceIds]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsExplicitGeneratedResourceIds]' passed (0.573 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsMissingReleaseHighlights]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsMissingReleaseHighlights]' passed (0.142 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsStaleRejectedIdsForTargetGraph]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsStaleRejectedIdsForTargetGraph]' passed (0.141 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsUnexpectedBundleInManifest]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsUnexpectedBundleInManifest]' passed (0.143 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsUnknownArguments]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsUnknownArguments]' passed (0.145 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanReusesExistingAppInfoLocalizationWhenProvided]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanReusesExistingAppInfoLocalizationWhenProvided]' passed (0.142 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanUsesLocalScreenshotInputsAndIgnoresRemoteProofUris]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanUsesLocalScreenshotInputsAndIgnoresRemoteProofUris]' passed (0.145 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanWritesTextArtifactWhenRequested]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanWritesTextArtifactWhenRequested]' passed (0.143 seconds).
+Test Suite 'OuroMDAppStoreRequestPlanTests' passed at 2026-07-09 01:55:31.990.
+	 Executed 14 tests, with 0 failures (0 unexpected) in 2.451 (2.452) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-07-09 01:55:31.990.
+	 Executed 14 tests, with 0 failures (0 unexpected) in 2.451 (2.452) seconds
+Test Suite 'Selected tests' passed at 2026-07-09 01:55:31.990.
+	 Executed 14 tests, with 0 failures (0 unexpected) in 2.451 (2.453) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

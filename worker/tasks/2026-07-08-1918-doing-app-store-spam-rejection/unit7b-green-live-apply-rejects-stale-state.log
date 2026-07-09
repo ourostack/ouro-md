@@ -1,0 +1,18 @@
+Another instance of SwiftPM (PID: 83269) is already running using '/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/.build', waiting until that process has finished execution...Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.17s)
+Test Suite 'Selected tests' started at 2026-07-09 02:10:25.285.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-09 02:10:25.286.
+Test Suite 'OuroMDAppStoreApplyPlanTests' started at 2026-07-09 02:10:25.286.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRejectsStalePersistedStateBeforeNetwork]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRejectsStalePersistedStateBeforeNetwork]' passed (0.290 seconds).
+Test Suite 'OuroMDAppStoreApplyPlanTests' passed at 2026-07-09 02:10:25.576.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.290 (0.290) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-07-09 02:10:25.576.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.290 (0.290) seconds
+Test Suite 'Selected tests' passed at 2026-07-09 02:10:25.576.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.290 (0.291) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

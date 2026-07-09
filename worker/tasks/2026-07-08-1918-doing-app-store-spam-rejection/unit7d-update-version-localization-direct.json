@@ -1,0 +1,33 @@
+{
+  "status": 409,
+  "ok": false,
+  "request": {
+    "method": "PATCH",
+    "path": "/v1/appStoreVersionLocalizations/5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
+    "body": {
+      "data": {
+        "type": "appStoreVersionLocalizations",
+        "id": "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
+        "attributes": {
+          "description": "Ouro MD is a local Markdown workspace for people who keep real files, not a hosted notes account.\n\nOpen Markdown documents and folders directly from Finder, then move through your workspace with a native file tree, document outline, folder search, and a command palette built for fast keyboard-driven editing. Ouro MD keeps writing local and portable while still giving you polished rendered reading, themes, wide-table handling, and export to PDF or self-contained HTML.\n\nNo sign-in is required. Your Markdown files stay on your Mac unless you choose to share or export them.",
+          "keywords": "markdown,local files,folder search,outline,command palette,pdf,html export,gfm,mac",
+          "marketingUrl": "https://ouro.bot/apps/ouro-md/",
+          "promotionalText": "Local Markdown workspace for Mac files: folder search, outline, command palette, themes, PDF/HTML export, no account.",
+          "supportUrl": "https://ouro.bot/support/",
+          "whatsNew": "Open folders as a local Markdown workspace for Mac files, with File Tree, Search, and Outline surfaces available from first launch.\nUse the Command Palette to move quickly through editor, view, theme, PDF, and HTML export commands. No account is required."
+        }
+      }
+    }
+  },
+  "response": {
+    "errors": [
+      {
+        "id": "06a1977a-6de4-4074-97fa-40b8953358b0",
+        "status": "409",
+        "code": "STATE_ERROR",
+        "title": "The request cannot be fulfilled because of the state of another resource.",
+        "detail": "Attribute 'whatsNew' cannot be edited at this time"
+      }
+    ]
+  }
+}
