@@ -135,7 +135,7 @@ final class OuroMDAppStoreRequestPlanTests: XCTestCase {
             "themed-export-readability"
         ])
         XCTAssertTrue(screenshots.allSatisfy { ($0["fileSize"] as? Int ?? 0) > 0 })
-        XCTAssertTrue(screenshots.allSatisfy { ($0["sourceFileChecksum"] as? String)?.hasPrefix("sha256:") == true })
+        XCTAssertTrue(screenshots.allSatisfy { isMD5Checksum($0["sourceFileChecksum"] as? String) })
 
         let requests = try XCTUnwrap(plan["requests"] as? [[String: Any]])
         let createSet = try request(in: requests, id: "create-desktop-screenshot-set")
@@ -163,7 +163,7 @@ final class OuroMDAppStoreRequestPlanTests: XCTestCase {
             XCTAssertEqual(upload["method"] as? String, "UPLOAD_OPERATIONS")
             XCTAssertEqual(upload["dependsOn"] as? String, "reserve-screenshot-\(ordinal)-\(scene)")
             XCTAssertEqual(upload["uploadOperationsSource"] as? String, "response.data.attributes.uploadOperations")
-            XCTAssertTrue((upload["sourceFileChecksum"] as? String)?.hasPrefix("sha256:") == true)
+            XCTAssertTrue(isMD5Checksum(upload["sourceFileChecksum"] as? String))
             XCTAssertFalse((upload["body"] as? [String: Any])?.keys.contains("assetToken") == true)
 
             let commit = try request(in: requests, id: "commit-screenshot-\(ordinal)-\(scene)")
@@ -173,7 +173,7 @@ final class OuroMDAppStoreRequestPlanTests: XCTestCase {
             XCTAssertEqual(commitData["type"] as? String, "appScreenshots")
             let commitAttributes = try XCTUnwrap(commitData["attributes"] as? [String: Any])
             XCTAssertEqual(commitAttributes["uploaded"] as? Bool, true)
-            XCTAssertTrue((commitAttributes["sourceFileChecksum"] as? String)?.hasPrefix("sha256:") == true)
+            XCTAssertTrue(isMD5Checksum(commitAttributes["sourceFileChecksum"] as? String))
         }
     }
 
@@ -219,6 +219,145 @@ final class OuroMDAppStoreRequestPlanTests: XCTestCase {
         }
     }
 
+    func testDryRunPlanWritesTextArtifactWhenRequested() throws {
+        let root = try makeTempDirectory()
+        let artifact = root.appendingPathComponent("plan.txt")
+        let result = try runRequestPlanner(arguments: [
+            "--selftest",
+            "--artifact",
+            artifact.path
+        ])
+
+        XCTAssertEqual(result.status, 0, result.stderr)
+        let artifactBody = try String(contentsOf: artifact, encoding: .utf8)
+        XCTAssertEqual(artifactBody, result.stdout)
+        XCTAssertTrue(result.stdout.contains("Dry-run App Store request plan for 6787262892 0.9.80 (MAC_OS)"))
+        XCTAssertTrue(result.stdout.contains("Requests 30; screenshots 4"))
+        XCTAssertFalse(result.stdout.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("{"))
+    }
+
+    func testDryRunPlanUsesLocalScreenshotInputsAndIgnoresRemoteProofUris() throws {
+        let root = try makeTempDirectory()
+        let screenshot = root.appendingPathComponent("01-local-workspace.png")
+        try Data("local screenshot bytes".utf8).write(to: screenshot)
+
+        let result = try runRequestPlanner(arguments: [
+            "--json",
+            "--screenshot",
+            screenshot.path,
+            "--screenshot",
+            "asc://screenshots/existing-remote-proof"
+        ])
+
+        XCTAssertEqual(result.status, 0, result.stderr)
+        let plan = try parseJSONObject(result.stdout)
+        let screenshots = try XCTUnwrap(plan["screenshots"] as? [[String: Any]])
+        XCTAssertEqual(screenshots.count, 1)
+        XCTAssertEqual(screenshots.first?["scene"] as? String, "local-workspace")
+        XCTAssertEqual(screenshots.first?["fileName"] as? String, "01-local-workspace.png")
+        XCTAssertEqual(screenshots.first?["fileSize"] as? Int, "local screenshot bytes".utf8.count)
+        XCTAssertTrue(isMD5Checksum(screenshots.first?["sourceFileChecksum"] as? String))
+    }
+
+    func testDryRunPlanDoesNotSubmitWhenManifestOnlyHasRemoteScreenshotProof() throws {
+        let result = try runRequestPlanner(arguments: ["--json"])
+
+        XCTAssertEqual(result.status, 0, result.stderr)
+        let plan = try parseJSONObject(result.stdout)
+        let screenshots = try XCTUnwrap(plan["screenshots"] as? [[String: Any]])
+        XCTAssertEqual(screenshots.count, 0)
+
+        let blockers = try XCTUnwrap(plan["blockers"] as? [[String: Any]])
+        XCTAssertTrue(blockers.contains { $0["code"] as? String == "local-screenshots-required-for-submit" })
+        XCTAssertTrue(blockers.contains { $0["code"] as? String == "required-screenshot-scenes-missing" })
+
+        let requests = try XCTUnwrap(plan["requests"] as? [[String: Any]])
+        XCTAssertTrue(requests.contains { $0["id"] as? String == "create-review-submission" })
+        XCTAssertFalse(requests.contains { $0["id"] as? String == "create-review-submission-item" })
+        XCTAssertFalse(requests.contains { $0["id"] as? String == "submit-review-submission" })
+    }
+
+    func testDryRunPlanIncludesSubmitOnlyAfterRequiredLocalScreenshots() throws {
+        let root = try makeTempDirectory()
+        let screenshotArgs = try [
+            "folder-workspace",
+            "command-palette",
+            "search-outline",
+            "themed-export-readability"
+        ].flatMap { scene -> [String] in
+            let screenshot = root.appendingPathComponent("\(scene).png")
+            try Data("screenshot-\(scene)".utf8).write(to: screenshot)
+            return ["--screenshot", screenshot.path]
+        }
+
+        let result = try runRequestPlanner(arguments: ["--json"] + screenshotArgs)
+
+        XCTAssertEqual(result.status, 0, result.stderr)
+        let plan = try parseJSONObject(result.stdout)
+        let blockers = try XCTUnwrap(plan["blockers"] as? [[String: Any]])
+        XCTAssertTrue(blockers.isEmpty)
+        let screenshots = try XCTUnwrap(plan["screenshots"] as? [[String: Any]])
+        XCTAssertEqual(screenshots.map { $0["scene"] as? String }, [
+            "folder-workspace",
+            "command-palette",
+            "search-outline",
+            "themed-export-readability"
+        ])
+
+        let requests = try XCTUnwrap(plan["requests"] as? [[String: Any]])
+        XCTAssertTrue(requests.contains { $0["id"] as? String == "create-review-submission-item" })
+        XCTAssertTrue(requests.contains { $0["id"] as? String == "submit-review-submission" })
+    }
+
+    func testDryRunPlanRejectsUnknownArguments() throws {
+        let result = try runRequestPlanner(arguments: ["--bogus"])
+
+        XCTAssertNotEqual(result.status, 0)
+        XCTAssertTrue(result.stderr.contains("unknown argument: --bogus"))
+        XCTAssertFalse(result.stderr.contains("Bearer "))
+    }
+
+    func testDryRunPlanRejectsUnexpectedBundleInManifest() throws {
+        let root = try makeTempDirectory()
+        let manifest = root.appendingPathComponent("manifest.json")
+        try writeText(
+            """
+            {
+              "schemaVersion": 1,
+              "app": { "name": "Ouro MD", "bundleId": "example.wrong", "primaryLocale": "en-US" },
+              "team": { "teamId": "743GT2AJ24" },
+              "channels": [
+                {
+                  "id": "mac-app-store",
+                  "platform": "macos",
+                  "distribution": "app-store",
+                  "bundleId": "example.wrong",
+                  "store": { "version": "0.9.80" }
+                }
+              ]
+            }
+            """,
+            to: manifest
+        )
+
+        let result = try runRequestPlanner(arguments: ["--manifest", manifest.path, "--json"])
+
+        XCTAssertNotEqual(result.status, 0)
+        XCTAssertTrue(result.stderr.contains("unexpected bundle id in manifest: example.wrong"))
+    }
+
+    func testDryRunPlanRejectsMissingReleaseHighlights() throws {
+        let root = try makeTempDirectory()
+        let release = root.appendingPathComponent("Release.swift")
+        try writeText("public enum EmptyRelease {}\n", to: release)
+
+        let result = try runRequestPlanner(arguments: ["--release-source", release.path, "--json"])
+
+        XCTAssertNotEqual(result.status, 0)
+        XCTAssertTrue(result.stderr.contains("missing release highlights"))
+        XCTAssertFalse(result.stderr.contains("PRIVATE KEY"))
+    }
+
     private func runRequestPlanner(arguments: [String]) throws -> ProcessResult {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
@@ -262,6 +401,22 @@ final class OuroMDAppStoreRequestPlanTests: XCTestCase {
             relationshipData["type"] == type
         else { return nil }
         return relationshipData["id"]
+    }
+
+    private func isMD5Checksum(_ value: String?) -> Bool {
+        guard let value else { return false }
+        return value.range(of: "^[0-9a-f]{32}$", options: .regularExpression) != nil
+    }
+
+    private func makeTempDirectory() throws -> URL {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-md-request-plan-tests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        return url
+    }
+
+    private func writeText(_ text: String, to url: URL) throws {
+        try text.write(to: url, atomically: true, encoding: .utf8)
     }
 
     private struct ProcessResult {

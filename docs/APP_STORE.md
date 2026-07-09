@@ -125,6 +125,10 @@ Generate a dry-run request plan before any App Store Connect mutation:
 ```sh
 node scripts/app-store-request-plan.mjs --selftest --json
 node scripts/app-store-request-plan.mjs --json \
+  --screenshot store-assets/app-store/01-folder-workspace.png \
+  --screenshot store-assets/app-store/02-command-palette.png \
+  --screenshot store-assets/app-store/03-search-outline.png \
+  --screenshot store-assets/app-store/04-themed-export-readability.png \
   --processed-build-id <processed-build-id> \
   --target-version-id <target-app-store-version-id> \
   --version-localization-id <version-localization-id> \
@@ -134,6 +138,9 @@ node scripts/app-store-request-plan.mjs --json \
   --screenshot-set-id <desktop-screenshot-set-id> \
   --review-submission-id <review-submission-id>
 ```
+
+The planner records blockers and omits review-submission-item/final-submit
+requests until local screenshots satisfy `store.screenshotRequirements`.
 
 For a new target version, pass the reviewed App Store version and review
 submission ids from the dry-run/apply artifact. Live submission status reads

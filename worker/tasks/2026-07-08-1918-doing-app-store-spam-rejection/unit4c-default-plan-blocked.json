@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "mode": "dry-run",
-  "generatedAt": "2026-07-09T06:48:53.713Z",
+  "generatedAt": "2026-07-09T06:48:53.712Z",
   "appId": "6787262892",
   "bundleId": "bot.ouro.md",
   "teamId": "743GT2AJ24",
@@ -15,37 +15,29 @@
     "f37ecb51-c96e-451d-9b29-20d86d7f118e",
     "80a8620a-643a-46bd-9e39-ab19f26ba424"
   ],
-  "screenshots": [
+  "screenshots": [],
+  "blockers": [
     {
-      "scene": "folder-workspace",
-      "path": "store-assets/app-store/01-folder-workspace.png",
-      "fileName": "01-folder-workspace.png",
-      "fileSize": 53,
-      "sourceFileChecksum": "5b52071c0c556c67e5ed92e84cebae08"
+      "code": "local-screenshots-required-for-submit",
+      "message": "Final submit planning requires at least 4 local screenshots.",
+      "evidence": {
+        "screenshotCount": 0,
+        "minimumCount": 4
+      }
     },
     {
-      "scene": "command-palette",
-      "path": "store-assets/app-store/02-command-palette.png",
-      "fileName": "02-command-palette.png",
-      "fileSize": 52,
-      "sourceFileChecksum": "f3d0b39069ed36cc73a38076c1fa9bcf"
-    },
-    {
-      "scene": "search-outline",
-      "path": "store-assets/app-store/03-search-outline.png",
-      "fileName": "03-search-outline.png",
-      "fileSize": 51,
-      "sourceFileChecksum": "0363b620ea96f398111312600f28c476"
-    },
-    {
-      "scene": "themed-export-readability",
-      "path": "store-assets/app-store/04-themed-export-readability.png",
-      "fileName": "04-themed-export-readability.png",
-      "fileSize": 62,
-      "sourceFileChecksum": "12c608fb9f548e62dcfd8516cc494d1f"
+      "code": "required-screenshot-scenes-missing",
+      "message": "Final submit planning requires local screenshots for every required scene.",
+      "evidence": {
+        "missingScenes": [
+          "folder-workspace",
+          "command-palette",
+          "search-outline",
+          "themed-export-readability"
+        ]
+      }
     }
   ],
-  "blockers": [],
   "existingRejectionThread": {
     "reviewSubmissionId": "b37f847e-0ecb-4e7a-bb00-14e3038b0f4c",
     "strategy": "new-submission-review-notes",
@@ -264,190 +256,6 @@
       }
     },
     {
-      "id": "reserve-screenshot-01-folder-workspace",
-      "method": "POST",
-      "path": "/v1/appScreenshots",
-      "body": {
-        "data": {
-          "type": "appScreenshots",
-          "attributes": {
-            "fileSize": 53,
-            "fileName": "01-folder-workspace.png"
-          },
-          "relationships": {
-            "appScreenshotSet": {
-              "data": {
-                "type": "appScreenshotSets",
-                "id": "${appScreenshotSetId}"
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "id": "upload-screenshot-01-folder-workspace",
-      "method": "UPLOAD_OPERATIONS",
-      "dependsOn": "reserve-screenshot-01-folder-workspace",
-      "uploadOperationsSource": "response.data.attributes.uploadOperations",
-      "filePath": "store-assets/app-store/01-folder-workspace.png",
-      "fileSize": 53,
-      "sourceFileChecksum": "5b52071c0c556c67e5ed92e84cebae08"
-    },
-    {
-      "id": "commit-screenshot-01-folder-workspace",
-      "method": "PATCH",
-      "path": "/v1/appScreenshots/${appScreenshotId:01-folder-workspace}",
-      "body": {
-        "data": {
-          "type": "appScreenshots",
-          "id": "${appScreenshotId:01-folder-workspace}",
-          "attributes": {
-            "sourceFileChecksum": "5b52071c0c556c67e5ed92e84cebae08",
-            "uploaded": true
-          }
-        }
-      }
-    },
-    {
-      "id": "reserve-screenshot-02-command-palette",
-      "method": "POST",
-      "path": "/v1/appScreenshots",
-      "body": {
-        "data": {
-          "type": "appScreenshots",
-          "attributes": {
-            "fileSize": 52,
-            "fileName": "02-command-palette.png"
-          },
-          "relationships": {
-            "appScreenshotSet": {
-              "data": {
-                "type": "appScreenshotSets",
-                "id": "${appScreenshotSetId}"
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "id": "upload-screenshot-02-command-palette",
-      "method": "UPLOAD_OPERATIONS",
-      "dependsOn": "reserve-screenshot-02-command-palette",
-      "uploadOperationsSource": "response.data.attributes.uploadOperations",
-      "filePath": "store-assets/app-store/02-command-palette.png",
-      "fileSize": 52,
-      "sourceFileChecksum": "f3d0b39069ed36cc73a38076c1fa9bcf"
-    },
-    {
-      "id": "commit-screenshot-02-command-palette",
-      "method": "PATCH",
-      "path": "/v1/appScreenshots/${appScreenshotId:02-command-palette}",
-      "body": {
-        "data": {
-          "type": "appScreenshots",
-          "id": "${appScreenshotId:02-command-palette}",
-          "attributes": {
-            "sourceFileChecksum": "f3d0b39069ed36cc73a38076c1fa9bcf",
-            "uploaded": true
-          }
-        }
-      }
-    },
-    {
-      "id": "reserve-screenshot-03-search-outline",
-      "method": "POST",
-      "path": "/v1/appScreenshots",
-      "body": {
-        "data": {
-          "type": "appScreenshots",
-          "attributes": {
-            "fileSize": 51,
-            "fileName": "03-search-outline.png"
-          },
-          "relationships": {
-            "appScreenshotSet": {
-              "data": {
-                "type": "appScreenshotSets",
-                "id": "${appScreenshotSetId}"
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "id": "upload-screenshot-03-search-outline",
-      "method": "UPLOAD_OPERATIONS",
-      "dependsOn": "reserve-screenshot-03-search-outline",
-      "uploadOperationsSource": "response.data.attributes.uploadOperations",
-      "filePath": "store-assets/app-store/03-search-outline.png",
-      "fileSize": 51,
-      "sourceFileChecksum": "0363b620ea96f398111312600f28c476"
-    },
-    {
-      "id": "commit-screenshot-03-search-outline",
-      "method": "PATCH",
-      "path": "/v1/appScreenshots/${appScreenshotId:03-search-outline}",
-      "body": {
-        "data": {
-          "type": "appScreenshots",
-          "id": "${appScreenshotId:03-search-outline}",
-          "attributes": {
-            "sourceFileChecksum": "0363b620ea96f398111312600f28c476",
-            "uploaded": true
-          }
-        }
-      }
-    },
-    {
-      "id": "reserve-screenshot-04-themed-export-readability",
-      "method": "POST",
-      "path": "/v1/appScreenshots",
-      "body": {
-        "data": {
-          "type": "appScreenshots",
-          "attributes": {
-            "fileSize": 62,
-            "fileName": "04-themed-export-readability.png"
-          },
-          "relationships": {
-            "appScreenshotSet": {
-              "data": {
-                "type": "appScreenshotSets",
-                "id": "${appScreenshotSetId}"
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "id": "upload-screenshot-04-themed-export-readability",
-      "method": "UPLOAD_OPERATIONS",
-      "dependsOn": "reserve-screenshot-04-themed-export-readability",
-      "uploadOperationsSource": "response.data.attributes.uploadOperations",
-      "filePath": "store-assets/app-store/04-themed-export-readability.png",
-      "fileSize": 62,
-      "sourceFileChecksum": "12c608fb9f548e62dcfd8516cc494d1f"
-    },
-    {
-      "id": "commit-screenshot-04-themed-export-readability",
-      "method": "PATCH",
-      "path": "/v1/appScreenshots/${appScreenshotId:04-themed-export-readability}",
-      "body": {
-        "data": {
-          "type": "appScreenshots",
-          "id": "${appScreenshotId:04-themed-export-readability}",
-          "attributes": {
-            "sourceFileChecksum": "12c608fb9f548e62dcfd8516cc494d1f",
-            "uploaded": true
-          }
-        }
-      }
-    },
-    {
       "id": "associate-processed-build",
       "method": "PATCH",
       "path": "/v1/appStoreVersions/${targetAppStoreVersionId}/relationships/build",
@@ -475,44 +283,6 @@
                 "id": "6787262892"
               }
             }
-          }
-        }
-      }
-    },
-    {
-      "id": "create-review-submission-item",
-      "method": "POST",
-      "path": "/v1/reviewSubmissionItems",
-      "body": {
-        "data": {
-          "type": "reviewSubmissionItems",
-          "relationships": {
-            "reviewSubmission": {
-              "data": {
-                "type": "reviewSubmissions",
-                "id": "${reviewSubmissionId}"
-              }
-            },
-            "appStoreVersion": {
-              "data": {
-                "type": "appStoreVersions",
-                "id": "${targetAppStoreVersionId}"
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "id": "submit-review-submission",
-      "method": "PATCH",
-      "path": "/v1/reviewSubmissions/${reviewSubmissionId}",
-      "body": {
-        "data": {
-          "type": "reviewSubmissions",
-          "id": "${reviewSubmissionId}",
-          "attributes": {
-            "submitted": true
           }
         }
       }

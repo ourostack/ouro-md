@@ -115,7 +115,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Request planner implementation, dry-run JSON artifact, green tests, and either a wrapper-suffices note or shared-kit patch evidence.
 **Acceptance**: Unit 4a tests pass green, dry-run artifacts show exact requests without secrets, and guards reject stale rejected-version IDs `7309944f-cbe8-4518-960c-444e6116ab46`, `5dca4b0b-3e0d-4913-acbd-b172f6c1bacb`, `3bc7284e-27d5-4dd3-a049-b9e859289bd1`, `f37ecb51-c96e-451d-9b29-20d86d7f118e`, and `80a8620a-643a-46bd-9e39-ab19f26ba424` for new-version localization/review-detail/screenshot/build/submission operations unless an artifact proves Apple reused the object under the target version. Any shared-kit patch has its own green `npm test`/equivalent log.
 
-### ⬜ Unit 4c: App Store Connect Request Planner — Coverage And API Review
+### ✅ Unit 4c: App Store Connect Request Planner — Coverage And API Review
 **What**: Run full coverage for new automation code and a harsh API/adaptor reviewer gate focused on outgoing request shapes, idempotency, redaction, Apple upload-operation handling, and exact-state preflight.
 **Output**: Coverage logs, API reviewer transcript or summary, and final dry-run request artifact.
 **Acceptance**: 100% coverage on new code, no secret-bearing artifacts, and reviewer converges.
@@ -263,3 +263,4 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 3c complete: expanded status-reader tests to cover redaction, stale-id guards, explicit rejected-audit mode, review-item version relationships, `APP_DESKTOP` screenshot proof, and `COMPLETE` screenshot delivery state; live rejected-audit artifacts and harsh reviewer re-review passed.
 - 2026-07-09 Unit 4a complete: added failing request-planner tests for exact App Store Connect dry-run request shapes, screenshot reservation/upload/commit choreography, review-submission final submit, stale rejected-ID guards, and redaction; focused suite fails red because `scripts/app-store-request-plan.mjs` is not implemented.
 - 2026-07-09 Unit 4b complete: implemented `scripts/app-store-request-plan.mjs` dry-run planning with exact JSON:API request shapes, screenshot upload-operation placeholders, final submit patch, release-note extraction, stale rejected-ID guards, redaction, docs, wrapper-suffices note, green focused tests, and dry-run/stale-id artifacts.
+- 2026-07-09 Unit 4c complete: expanded request-planner coverage, corrected screenshot checksum planning to Apple-required MD5, added local screenshot readiness blockers that withhold final submit until required scenes exist, regenerated dry-run/default-blocked artifacts, and harsh API reviewer gate passed after the P1 submit-gating fix.

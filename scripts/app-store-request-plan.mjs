@@ -100,6 +100,7 @@ function buildPlan(options) {
   const screenshots = options.selftest
     ? selftestScreenshots()
     : screenshotInputs(options.screenshots.length > 0 ? options.screenshots : store.screenshots ?? []);
+  const screenshotReadiness = validateScreenshotReadiness(screenshots, store.screenshotRequirements);
 
   const context = {
     appId: options.appId,
@@ -125,6 +126,7 @@ function buildPlan(options) {
     locale,
     staleRejectedVersionIds: DEFAULTS.staleRejectedIds,
     screenshots,
+    blockers: screenshotReadiness.blockers,
     existingRejectionThread: {
       reviewSubmissionId: DEFAULTS.rejectedReviewSubmissionId,
       strategy: "new-submission-review-notes",
@@ -135,7 +137,7 @@ function buildPlan(options) {
       ...appInfoRequests(context),
       ...reviewDetailRequests(context),
       ...screenshotRequests(context, screenshots),
-      ...submissionRequests(context)
+      ...submissionRequests(context, screenshotReadiness.ready)
     ]
   });
 }
@@ -361,9 +363,9 @@ function screenshotRequests(context, screenshots) {
   return requests;
 }
 
-function submissionRequests(context) {
+function submissionRequests(context, includeSubmit) {
   const { appId, platform, ids } = context;
-  return [
+  const requests = [
     {
       id: "associate-processed-build",
       method: "PATCH",
@@ -381,7 +383,11 @@ function submissionRequests(context) {
           relationships: { app: relationship("apps", appId) }
         }
       }
-    },
+    }
+  ];
+  if (!includeSubmit) return requests;
+  return [
+    ...requests,
     {
       id: "create-review-submission-item",
       method: "POST",
@@ -409,6 +415,32 @@ function submissionRequests(context) {
       }
     }
   ];
+}
+
+function validateScreenshotReadiness(screenshots, requirements) {
+  const minimumCount = Number.isInteger(requirements?.minimumCount) ? requirements.minimumCount : 4;
+  const requiredScenes = Array.isArray(requirements?.requiredScenes) ? requirements.requiredScenes : [];
+  const scenes = screenshots.map((screenshot) => screenshot.scene);
+  const blockers = [];
+
+  if (screenshots.length < minimumCount) {
+    blockers.push({
+      code: "local-screenshots-required-for-submit",
+      message: `Final submit planning requires at least ${minimumCount} local screenshots.`,
+      evidence: { screenshotCount: screenshots.length, minimumCount }
+    });
+  }
+
+  const missingScenes = requiredScenes.filter((scene) => !scenes.includes(scene));
+  if (missingScenes.length > 0) {
+    blockers.push({
+      code: "required-screenshot-scenes-missing",
+      message: "Final submit planning requires local screenshots for every required scene.",
+      evidence: { missingScenes }
+    });
+  }
+
+  return { ready: blockers.length === 0, blockers };
 }
 
 function screenshotInputs(paths) {
@@ -440,7 +472,7 @@ function screenshotSummary(path, scene, bytes) {
     path,
     fileName: basename(path),
     fileSize: bytes.length,
-    sourceFileChecksum: `sha256:${createHash("sha256").update(bytes).digest("hex")}`
+    sourceFileChecksum: createHash("md5").update(bytes).digest("hex")
   };
 }
 
