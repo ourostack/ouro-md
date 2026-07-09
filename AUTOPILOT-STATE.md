@@ -7,8 +7,8 @@
 - Worktree: `/Users/arimendelow/Projects/ouro-md-file-truth`
 - Planning doc: `codex-file-truth/tasks/2026-07-09-1409-planning-document-truth-surface.md`
 - Doing doc: `codex-file-truth/tasks/2026-07-09-1409-doing-document-truth-surface.md`
-- Gate state: doing doc drafted; reviewer gate next.
-- Next action: run doing-doc reviewer gate, mark ready, then execute with TDD.
+- Gate state: doing-doc reviewer gate findings addressed; ready for execution.
+- Next action: execute Unit 1a native title chrome red tests.
 
 ## Terminal Evidence
 

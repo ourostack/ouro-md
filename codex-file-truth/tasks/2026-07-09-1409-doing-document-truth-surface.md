@@ -1,6 +1,6 @@
 # Doing: Document Truth Surface
 
-**Status**: drafting
+**Status**: READY_FOR_EXECUTION
 **Execution Mode**: direct
 **Created**: 2026-07-09 14:22 -0700
 **Planning**: ./2026-07-09-1409-planning-document-truth-surface.md
@@ -56,8 +56,8 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 
 ### ✅ Unit 0: Setup/Research
 **What**: Confirm the source-owned title interception, command routing, status surface, and test targets before code edits.
-**Output**: Notes in the artifact folder and no code changes.
-**Acceptance**: Relevant files and validation commands are known; no hidden branch/worktree drift.
+**Output**: `2026-07-09-1409-doing-document-truth-surface/source-fit-notes.md`.
+**Acceptance**: Relevant files and validation commands are known; no hidden branch/worktree drift. Evidence committed in `4749571`.
 
 ### ⬜ Unit 1a: Native Title Chrome - Tests
 **What**: Replace tests that expect title-click-to-open-panel with failing tests that require no custom file-picker interception while preserving `representedURL`, edited, subtitle/deleted, and drag-friendly native chrome state.
@@ -72,16 +72,28 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 **Acceptance**: Window-controller tests pass and no obsolete title-click code remains.
 
 ### ⬜ Unit 2a: File/Git Truth Model - Tests
-**What**: Add failing tests for read-only classification of non-file, local/non-repo, tracked clean, tracked modified, mixed staged/unstaged changes, untracked, unavailable/inaccessible, label text, and command string helpers.
+**What**: Add failing tests in the coverage-gated `OuroMDAppSupportTests` target for read-only classification of non-file, local/non-repo, tracked clean, tracked modified, mixed staged/unstaged changes, untracked, unavailable/inaccessible, label text, command availability, relative-path helpers, and shell-safe git diff command string helpers.
 **Acceptance**: New model tests fail before implementation and cover all branches.
 
 ### ⬜ Unit 2b: File/Git Truth Model - Implementation
-**What**: Add the smallest source-fit file truth model/provider with injected read-only git runner, honest fallback states, relative-path support, and no git mutation.
+**What**: Add the smallest source-fit pure file truth model/provider to `Sources/OuroMDAppSupport` with injected read-only git runner, honest fallback states, relative-path support, and no git mutation.
 **Acceptance**: Unit 2a tests pass, no warnings, and failures degrade to unavailable/not-in-git instead of interrupting editing.
 
 ### ⬜ Unit 2c: File/Git Truth Model - Coverage & Refactor
-**What**: Run focused coverage-oriented tests, trim unused abstractions, and verify every new branch/error path is exercised.
-**Acceptance**: 100% coverage on new file truth code by test inspection and suite output remains green.
+**What**: Run focused app-support tests and the repo coverage gate, trim unused abstractions, and verify every new branch/error path is exercised.
+**Acceptance**: 100% coverage on new file truth support code under the existing `scripts/check-coverage.sh` gate, with focused tests still green.
+
+### ⬜ Unit 2d: AppModel Truth Lifecycle - Tests
+**What**: Add failing tests for `AppModel` refresh behavior on welcome/new, open/loadInitialFile, dirty edits, save/save-as/autosave-success path, rename, deleted/restored, external reload, and conflict resolution where testable without UI prompts.
+**Acceptance**: AppModel lifecycle tests fail against current code or fail to compile because no published truth state exists.
+
+### ⬜ Unit 2e: AppModel Truth Lifecycle - Implementation
+**What**: Publish the latest document truth snapshot from `AppModel`, refresh it at every file lifecycle point, and overlay unsaved/deleted state without faking git certainty.
+**Acceptance**: Unit 2d tests pass and saved human edits can surface as modified/visible in git diff after write without any git mutation.
+
+### ⬜ Unit 2f: AppModel Truth Lifecycle - Coverage & Refactor
+**What**: Tighten lifecycle refresh helpers and test seams so state transitions are explicit and non-flaky.
+**Acceptance**: AppModel lifecycle tests pass, all new AppModel branches are exercised, and the truth state cannot remain stale after open/save/rename/delete/reload paths.
 
 ### ⬜ Unit 3a: File Truth Commands - Tests
 **What**: Add failing tests for command palette items, menu validation where source-fit, copy path, copy relative path, copy git diff command, and reveal-in-Finder routing with no-current-file fallbacks.
@@ -112,9 +124,19 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 **Acceptance**: Screenshots/live evidence captured in artifacts, absurdity ledger closed, automated visual metrics still pass.
 
 ### ⬜ Unit 5: Full Native Validation, Review, Publish
-**What**: Run full test/preflight/build/package/install validation, spawn harsh final reviewer gates, address findings, push/publish the branch or PR, and leave the app ready for user testing.
+**What**: Run full test/preflight/build/package/install validation, spawn harsh final reviewer gates, address findings, push/publish the branch or PR, and leave the app ready for user testing. Publish means branch/PR and local ready-to-test app unless release validation proves the repo's current terminal path requires a packaged release; it does not mean surprise App Store resubmission.
 **Output**: Terminal evidence in this doing doc/artifacts, commits pushed, and a ready-to-test installed or launchable app.
 **Acceptance**: All completion criteria checked, final reviewer gate converged, and no human-only blocker remains.
+
+**Gate Matrix**:
+- `swift test`
+- `scripts/check-shell-boundary.sh`
+- `scripts/check-coverage.sh`
+- `scripts/pr-preflight.sh`
+- `swift build -c release`
+- package/install smoke from the repo-supported release path, captured in artifacts
+- launch or scenario smoke of the built/installed app with the document truth surface visible
+- final harsh reviewer gate on diff and validation evidence
 
 ## Execution
 - **TDD strictly enforced**: tests -> red -> implement -> green -> refactor
@@ -122,3 +144,8 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - Push after each unit complete when a remote is configured
 - Run full test suite before marking unit done
 - For UI/rendering/layout units, run `visual-qa-dogfood` before declaring the unit or task complete
+
+## Progress Log
+- 2026-07-09 14:22 -0700 Doing doc drafted in `164d3a6`.
+- 2026-07-09 14:27 -0700 Unit 0 source-fit notes captured in `4749571`.
+- 2026-07-09 14:31 -0700 Doing-doc reviewer findings accepted: add lifecycle unit coverage, coverage-gated support target for pure truth logic, concrete validation gates, progress log, and scoped publish wording.
