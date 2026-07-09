@@ -11,7 +11,6 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
     private var sidebarItem: NSSplitViewItem?
     private var renamePopover: NSPopover?
     private var renameField: NSTextField?
-    var openDocumentFromTitleClickHandler: (() -> Void)?
     var renamePresentationHandler: (() -> Void)?
 
     /// `onBecomeKey` lets the app re-point menu state at the active window.
@@ -33,7 +32,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         split.addSplitViewItem(NSSplitViewItem(viewController: editorVC))
         self.sidebarItem = sidebar
 
-        let window = DocumentWindow(contentViewController: split)
+        let window = NSWindow(contentViewController: split)
         window.setContentSize(NSSize(width: 1080, height: 800))
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
         window.titlebarAppearsTransparent = true
@@ -45,10 +44,6 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         super.init()
 
         window.delegate = self
-        // Click the title (or its proxy icon) to open a document, while the
-        // window subclass still distinguishes clicks from title-bar drags.
-        window.onTitleClicked = { [weak self] in self?.openDocumentFromTitleClick() }
-        window.titleHitView = { [weak self] in self?.nativeTitleField() }
         model.onChromeUpdate = { [weak self] in
             Task { @MainActor in self?.syncChrome() }
         }
@@ -91,15 +86,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         MenuBuilder.refreshDynamicState(model: model)
     }
 
-    // MARK: - Title click / rename
-
-    func openDocumentFromTitleClick() {
-        if let handler = openDocumentFromTitleClickHandler {
-            handler()
-            return
-        }
-        model.openPanel()
-    }
+    // MARK: - Rename
 
     /// Presents an inline rename popover anchored on the title. Untitled
     /// documents have no file yet, so we route to Save As — that panel is the
@@ -177,8 +164,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         if renameField != nil { cancelRename() }
     }
 
-    /// Finds the AppKit-drawn title text field so the popover (and the window's
-    /// click hit-test) can anchor exactly on the title.
+    /// Finds the AppKit-drawn title text field so the popover can anchor on the title.
     private func nativeTitleField() -> NSTextField? {
         guard !window.title.isEmpty,
               let titlebar = window.standardWindowButton(.closeButton)?.superview else { return nil }

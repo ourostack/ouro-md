@@ -7,8 +7,8 @@
 - Worktree: `/Users/arimendelow/Projects/ouro-md-file-truth`
 - Planning doc: `codex-file-truth/tasks/2026-07-09-1409-planning-document-truth-surface.md`
 - Doing doc: `codex-file-truth/tasks/2026-07-09-1409-doing-document-truth-surface.md`
-- Gate state: Unit 1a red tests confirmed.
-- Next action: execute Unit 1b native title chrome implementation.
+- Gate state: Unit 1b native title implementation green.
+- Next action: execute Unit 1c cleanup by removing obsolete title-click helpers.
 
 ## Terminal Evidence
 
