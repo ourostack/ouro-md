@@ -7,8 +7,8 @@
 - Worktree: `/Users/arimendelow/Projects/ouro-md-file-truth`
 - Planning doc: `codex-file-truth/tasks/2026-07-09-1409-planning-document-truth-surface.md`
 - Doing doc: `codex-file-truth/tasks/2026-07-09-1409-doing-document-truth-surface.md`
-- Gate state: Unit 3b file truth command implementation complete.
-- Next action: execute Unit 3c command coverage and regression refactor pass.
+- Gate state: Unit 3c command coverage and regression pass complete.
+- Next action: execute Unit 4a sidebar-free document truth UI red tests.
 
 ## Terminal Evidence
 

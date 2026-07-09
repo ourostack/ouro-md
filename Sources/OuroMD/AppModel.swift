@@ -580,8 +580,8 @@ final class AppModel: ObservableObject {
         completion: @escaping (Bool) -> Void
     ) {
         do {
-            lastLoadedContent = markdown
             try markdown.write(to: target, atomically: true, encoding: .utf8)
+            lastLoadedContent = markdown
             markSaveSucceeded(telemetrySource: telemetrySource, result: "written")
             completion(true)
         } catch {

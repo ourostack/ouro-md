@@ -103,9 +103,9 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 **What**: Wire command palette/menu actions to model commands using testable pasteboard and reveal hooks.
 **Acceptance**: Unit 3a tests pass, command availability is honest for untitled/non-git documents, and commands do not write git state. Evidence: focused command suite passed 15 tests and `swift build` passed.
 
-### ⬜ Unit 3c: File Truth Commands - Coverage & Refactor
+### ✅ Unit 3c: File Truth Commands - Coverage & Refactor
 **What**: Tighten command APIs and tests so copy/reveal behavior is deterministic and platform seams are isolated.
-**Acceptance**: Command tests pass and no untested command branches remain.
+**Acceptance**: Command tests pass and no untested command branches remain. Evidence: broader command/menu suite passed 37 tests; `scripts/check-coverage.sh` passed 314 tests and pure support coverage stayed 100%; `swift build` passed. Also fixed a dirty Save As failure baseline bug surfaced by the coverage slow-test budget.
 
 ### ⬜ Unit 4a: Sidebar-Free Document Truth UI - Tests
 **What**: Add failing SwiftUI/accessibility tests for a compact document truth control visible without the sidebar/status bar dependency, with labels and menu actions exposed.
@@ -160,3 +160,4 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - 2026-07-09 14:41 -0700 Unit 2f lifecycle regression suite passed: `DocumentTruthTests|AppModelDocumentTruthTests|AppModelReloadTests|AppModelDeletionTests` ran 41 tests with no failures.
 - 2026-07-09 14:44 -0700 Unit 3a red test confirmed: command tests failed because document truth commands/selectors are not wired yet.
 - 2026-07-09 14:49 -0700 Unit 3b green test confirmed: focused command suite passed 15 tests and `swift build` completed cleanly.
+- 2026-07-09 14:54 -0700 Unit 3c regression/coverage pass complete: command/menu suite passed 37 tests, `scripts/check-coverage.sh` passed 314 tests with pure support files at 100%, and failed dirty Save As no longer advances the saved-content baseline before a write succeeds.
