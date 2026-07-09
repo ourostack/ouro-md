@@ -29,18 +29,18 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - Committing private keys, Apple cookies, auth tokens, screenshots downloaded with secret asset tokens, or unreduced App Store Connect payloads.
 
 ## Completion Criteria
-- [ ] App Review evidence is captured in docs or artifacts with no secrets and with concrete dates, app IDs, submission IDs, and version IDs.
-- [ ] Source-owned App Store metadata/review-note guidance no longer describes Ouro MD generically as only "The Markdown App" or a quiet Markdown editor.
-- [ ] Source-owned metadata recommends or encodes subtitle `Local Markdown Workspace`, a specific promotional text, specific keywords, and a review note that lists concrete reviewer steps.
-- [ ] A local screenshot set exists with at least four review-facing screenshots and the first screenshots show differentiated app surfaces, not only a single rendered document.
-- [ ] `scripts/check-apple-distribution-kit.sh` no longer reports screenshot proof as missing, or an explicit live-status path documents why remote proof is checked separately from CI.
-- [ ] A redacted programmatic App Store review-status command can read app `6787262892`, version `7309944f-cbe8-4518-960c-444e6116ab46`, submission `b37f847e-0ecb-4e7a-bb00-14e3038b0f4c`, rejected item state, and remote screenshot count from the local config.
-- [ ] A new build/version carries visible in-app copy changes that align with the App Store positioning and can be cited in review notes.
-- [ ] Any final App Review reply/review-note text passes a harsh voice/posture reviewer gate and exact-state preflight before posting or submission.
-- [ ] 100% test coverage on all new code
-- [ ] All tests pass
-- [ ] No unresolved/actionable warnings in final green logs; any benign Apple/Xcode/altool warning is recorded with reviewer-approved rationale.
-- [ ] If UI/rendering/layout changed: `visual-qa-dogfood` evidence captured, absurdity ledger closed, and automated visual metrics still pass
+- [x] App Review evidence is captured in docs or artifacts with no secrets and with concrete dates, app IDs, submission IDs, and version IDs.
+- [x] Source-owned App Store metadata/review-note guidance no longer describes Ouro MD generically as only "The Markdown App" or a quiet Markdown editor.
+- [x] Source-owned metadata recommends or encodes subtitle `Local Markdown Workspace`, a specific promotional text, specific keywords, and a review note that lists concrete reviewer steps.
+- [x] A local screenshot set exists with at least four review-facing screenshots and the first screenshots show differentiated app surfaces, not only a single rendered document.
+- [x] `scripts/check-apple-distribution-kit.sh` no longer reports screenshot proof as missing, or an explicit live-status path documents why remote proof is checked separately from CI.
+- [x] A redacted programmatic App Store review-status command can read app `6787262892`, version `7309944f-cbe8-4518-960c-444e6116ab46`, submission `b37f847e-0ecb-4e7a-bb00-14e3038b0f4c`, rejected item state, and remote screenshot count from the local config.
+- [x] A new build/version carries visible in-app copy changes that align with the App Store positioning and can be cited in review notes.
+- [x] Any final App Review reply/review-note text passes a harsh voice/posture reviewer gate and exact-state preflight before posting or submission.
+- [x] 100% test coverage on all new code
+- [x] All tests pass
+- [x] No unresolved/actionable warnings in final green logs; any benign Apple/Xcode/altool warning is recorded with reviewer-approved rationale.
+- [x] If UI/rendering/layout changed: `visual-qa-dogfood` evidence captured, absurdity ledger closed, and automated visual metrics still pass
 
 ## Code Coverage Requirements
 **MANDATORY: 100% coverage on all new code.**
@@ -94,14 +94,21 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 ## Notes
 Chrome login now works for the App Review UI, but the durable path should use the existing API key for state reads. The public App Store Connect API returns submission and item states, app/version/localization/review detail metadata, and screenshot assets; it does not appear to expose the full human App Review message body in the same response set used here.
 
-Current live metadata evidence:
-- Subtitle is `The Markdown App`.
-- Description is calm/local Markdown editor positioning, but not very specific to the real command/folder/search/headless/channel features.
-- Review notes only say no sign-in or server-side account is required.
-- One complete remote desktop screenshot exists, but the local manifest has an empty `screenshots` array.
-- Public Mac App Store search confirms the category is crowded with simple/focused Markdown editors, live-preview editors, readers, Quick Look helpers, and PDF/export tools. Generic "Markdown editor" language is therefore a weak differentiator.
-- Binary/source risk to address in wording and longer-term hygiene: Ouro MD bundles Vditor's 529-file distribution with an `unknown-pre-existing-vendored-dist` upstream version. Do not refresh this as part of the emergency fix unless necessary, but review notes should explain the native macOS product workflow rather than letting reviewers infer a repackaged web editor.
-- Suggested reviewer-facing flow: create/open Markdown file, open folder with Shift-Command-O, use File Tree, Outline, folder Search, Command Palette, theme switching, PDF/HTML export, and confirm no sign-in/account/server content plus App Store update behavior.
+Original live metadata evidence:
+- Subtitle was `The Markdown App`.
+- Description was calm/local Markdown editor positioning, but not very specific to the real command/folder/search/channel features.
+- Review notes only said no sign-in or server-side account was required.
+- One complete remote desktop screenshot existed, but the local manifest had an empty `screenshots` array.
+
+Final submitted state:
+- Version `0.9.80` is submitted and `WAITING_FOR_REVIEW`.
+- Subtitle is `Local Markdown Workspace`.
+- Category is `DEVELOPER_TOOLS`.
+- Review notes list the no-account reviewer path through file creation/opening, folder open, File Tree, Outline, Search, Command Palette, themes, and PDF/HTML export.
+- The old App Review thread has a posted reply captured as `Messages (2)`.
+- Four `APP_DESKTOP` screenshots are uploaded, in the intended order, and `COMPLETE`.
+- Selected build `827fa5b9-6994-41eb-bc75-ab3ca469a96f` is version `0.9.80` and `VALID`.
+- Public Mac App Store search confirmed the category is crowded with simple/focused Markdown editors, live-preview editors, readers, Quick Look helpers, and PDF/export tools. Generic "Markdown editor" language was therefore a weak differentiator.
 
 ## Progress Log
 - 2026-07-08 19:18 Created from App Store rejection and API-status investigation.
@@ -109,3 +116,4 @@ Current live metadata evidence:
 - 2026-07-09 Recorded operator approval of positioning, fresh build/version path, Ouro MD wrapper-first automation, and no-human-gates execution.
 - 2026-07-09 Addressed planning reviewer blocker by removing stale human approval gates from posting/upload/submission scope.
 - 2026-07-09 Planning reviewer Round 2 converged; marked approved for doing-doc conversion.
+- 2026-07-09 Execution submitted version `0.9.80` to App Review; App Store Connect reports review submission `b37f847e-0ecb-4e7a-bb00-14e3038b0f4c` and app store version `7309944f-cbe8-4518-960c-444e6116ab46` as `WAITING_FOR_REVIEW`.

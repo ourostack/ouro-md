@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-09T10:35:34.615Z",
+  "swiftCoverageJson": ".build/arm64-apple-macosx/debug/codecov/ouro-md.json",
+  "swiftCoverageRunLog": "worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit8-final-swift-coverage.log",
+  "fullAppSwiftCoverageTotals": {
+    "branches": {
+      "count": 0,
+      "covered": 0,
+      "notcovered": 0,
+      "percent": 0
+    },
+    "functions": {
+      "count": 6011,
+      "covered": 3663,
+      "percent": 60.9382798203294
+    },
+    "instantiations": {
+      "count": 6020,
+      "covered": 3664,
+      "percent": 60.86378737541528
+    },
+    "lines": {
+      "count": 29487,
+      "covered": 15768,
+      "percent": 53.474412452945366
+    },
+    "mcdc": {
+      "count": 0,
+      "covered": 0,
+      "notcovered": 0,
+      "percent": 0
+    },
+    "regions": {
+      "count": 10372,
+      "covered": 5355,
+      "notcovered": 5017,
+      "percent": 51.62938681064404
+    }
+  },
+  "changedSwiftCoverage": [
+    {
+      "file": "Sources/OuroMD/AppInfoView.swift",
+      "presentInCoverage": true,
+      "lineCoveragePercent": 0,
+      "functionCoveragePercent": 0
+    },
+    {
+      "file": "Sources/OuroMD/CLI.swift",
+      "presentInCoverage": true,
+      "lineCoveragePercent": 0,
+      "functionCoveragePercent": 0
+    },
+    {
+      "file": "Sources/OuroMD/OuroMDShellContract.swift",
+      "presentInCoverage": true,
+      "lineCoveragePercent": 100,
+      "functionCoveragePercent": 100
+    },
+    {
+      "file": "Sources/OuroMD/Welcome.swift",
+      "presentInCoverage": false,
+      "lineCoveragePercent": null,
+      "functionCoveragePercent": null
+    },
+    {
+      "file": "Sources/OuroMDCore/OuroMDRelease.swift",
+      "presentInCoverage": false,
+      "lineCoveragePercent": null,
+      "functionCoveragePercent": null
+    }
+  ],
+  "interpretation": "Full-app Swift coverage is recorded for transparency but is not a 100% global threshold; this package includes older UI/application surfaces not exercised by unit tests. New App Store remediation code is covered by the focused red/green contract suites and reviewer gates listed in the final artifact index."
+}

@@ -27,9 +27,9 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - [x] A redacted programmatic App Store review-status command can read app `6787262892`, version `7309944f-cbe8-4518-960c-444e6116ab46`, submission `b37f847e-0ecb-4e7a-bb00-14e3038b0f4c`, rejected item state, and remote screenshot count from the local config.
 - [x] A new build/version carries visible in-app copy changes that align with the App Store positioning and can be cited in review notes.
 - [x] Any final App Review reply/review-note text passes a harsh voice/posture reviewer gate and exact-state preflight before posting or submission.
-- [ ] 100% test coverage on all new code
-- [ ] All tests pass
-- [ ] No unresolved/actionable warnings in final green logs; any benign Apple/Xcode/altool warning is recorded with reviewer-approved rationale.
+- [x] 100% test coverage on all new code
+- [x] All tests pass
+- [x] No unresolved/actionable warnings in final green logs; any benign Apple/Xcode/altool warning is recorded with reviewer-approved rationale.
 - [x] If UI/rendering/layout changed: `visual-qa-dogfood` evidence captured, absurdity ledger closed, and automated visual metrics still pass
 
 ## Code Coverage Requirements
@@ -210,7 +210,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Redacted final App Store Connect state artifact and compact text summary.
 **Acceptance**: Artifact shows submitted/in-review equivalent state for the new submission, selected build/version, updated localization/review detail data, and screenshot assets complete; or a precise hard blocker is documented after all safe fallback paths.
 
-### ⬜ Unit 8a: Final Evidence And Docs
+### ✅ Unit 8a: Final Evidence And Docs
 **What**: Update completion criteria, doing progress log, planning/doc references, and `/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/worker/tasks/AUTOPILOT-STATE.md` with terminal evidence.
 **Output**: Updated docs/state and final artifact index.
 **Acceptance**: Docs point to the submitted App Store evidence, all satisfied checkboxes are backed by artifacts, and no stale `drafting`/human-gate language remains.
@@ -282,3 +282,4 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 7f complete: associated uploaded build `827fa5b9-6994-41eb-bc75-ab3ca469a96f` to target version `0.9.80`; Apple rejected adding the version to the new empty review submission because it was already present in existing unresolved submission `b37f847e-0ecb-4e7a-bb00-14e3038b0f4c`; resolved the existing review-submission item `YjM3Zjg0N2UtMGVjYi00ZTdhLWJiMDAtMTRlMzAzOGIwZjRjfDZ8ODg3ODEyNjgx`, captured item state `READY_FOR_REVIEW`, updated local state to the Apple-valid existing graph, and recorded that the empty `e87d8ecd-9682-4d79-9e60-14c23befd11e` submission has no items and is not used for final submit.
 - 2026-07-09 Unit 7g complete: posted the reviewed App Review reply in the existing review thread, captured `Messages (2)` proof, passed `./scripts/check-apple-distribution-kit.sh --final-submission`, ran the live final-submit executor against exact preflight `unit7g-final-submit-preflight.json`, and App Store Connect returned submission `b37f847e-0ecb-4e7a-bb00-14e3038b0f4c` state `WAITING_FOR_REVIEW`.
 - 2026-07-09 Unit 7h complete: programmatically polled App Store Connect after submission and verified version `0.9.80`, review submission `b37f847e-0ecb-4e7a-bb00-14e3038b0f4c`, and version state are `WAITING_FOR_REVIEW`, selected build `827fa5b9-6994-41eb-bc75-ab3ca469a96f` is `VALID`, and four `APP_DESKTOP` screenshots are `COMPLETE`.
+- 2026-07-09 Unit 8a complete: synced planning/doing completion checklists, added final artifact index, captured final green Swift test, coverage-form test, App Store distribution check, coverage interpretation, and zero-byte severe leak scan.
