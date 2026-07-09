@@ -1,6 +1,6 @@
 # Doing: Resolve App Store 4.3(a) Spam Rejection
 
-**Status**: READY_FOR_EXECUTION
+**Status**: in-progress
 **Execution Mode**: direct
 **Created**: 2026-07-09
 **Planning**: ./2026-07-08-1918-planning-app-store-spam-rejection.md
@@ -55,7 +55,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 
 **CRITICAL: Every unit header MUST start with status emoji (⬜ for new units).**
 
-### ⬜ Unit 0: Setup And Live State Baseline
+### 🔄 Unit 0: Setup And Live State Baseline
 **What**: Capture current repo/tooling/App Store Connect state into `/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/`, including `git status`, Xcode/Swift versions, current ASC app/version/submission/screenshot summaries via the local Apple Distribution Kit config, and a secrets scan of committed planning artifacts.
 **Output**: Redacted baseline logs and JSON summaries in the artifacts directory.
 **Acceptance**: Logs prove the worktree is on `worker/app-store-spam-rejection`, local API config works without printing secrets, the rejected submission state is still readable, and no private key/JWT/cookie/asset token appears in artifacts.
@@ -250,3 +250,4 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Addressed scrutiny findings: explicit target version, version/submission graph creation, existing rejection-thread handling, apply-mode executor tests, Apple screenshot upload choreography, stale-ID guards, category assertion, softened review-note posture, and actionable-warning acceptance.
 - 2026-07-09 Removed remaining overbroad review-note provenance wording and aligned warning acceptance across docs.
 - 2026-07-09 Addressed second scrutiny findings: added stale localization/review-detail guards, explicit `APP_DESKTOP` screenshot-set proof, app category mutation authority, and next-unused-patch fallback for build/version collisions.
+- 2026-07-09 Doing-doc reviewer chain converged; started Unit 0.
