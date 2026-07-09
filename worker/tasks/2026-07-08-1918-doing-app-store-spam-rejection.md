@@ -120,7 +120,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Coverage logs, API reviewer transcript or summary, and final dry-run request artifact.
 **Acceptance**: 100% coverage on new code, no secret-bearing artifacts, and reviewer converges.
 
-### ⬜ Unit 4d: App Store Connect Mutation Executor — Tests
+### ✅ Unit 4d: App Store Connect Mutation Executor — Tests
 **What**: Add failing adapter-pattern tests for apply-mode execution. Tests must prove explicit mode gates, response capture, redaction, idempotent fetch-or-create behavior, retryable error classification, screenshot upload-operation execution with checksum/file-size/body upload assertions, asset-token redaction, and final-submit request execution.
 **Output**: Failing executor tests plus red log.
 **Acceptance**: Tests fail red until a mutation executor captures/asserts the actual outgoing HTTP requests and upload operations rather than only canned responses.
@@ -264,3 +264,4 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 4a complete: added failing request-planner tests for exact App Store Connect dry-run request shapes, screenshot reservation/upload/commit choreography, review-submission final submit, stale rejected-ID guards, and redaction; focused suite fails red because `scripts/app-store-request-plan.mjs` is not implemented.
 - 2026-07-09 Unit 4b complete: implemented `scripts/app-store-request-plan.mjs` dry-run planning with exact JSON:API request shapes, screenshot upload-operation placeholders, final submit patch, release-note extraction, stale rejected-ID guards, redaction, docs, wrapper-suffices note, green focused tests, and dry-run/stale-id artifacts.
 - 2026-07-09 Unit 4c complete: expanded request-planner coverage, corrected screenshot checksum planning to Apple-required MD5, added local screenshot readiness blockers that withhold final submit until required scenes exist, regenerated dry-run/default-blocked artifacts, and harsh API reviewer gate passed after the P1 submit-gating fix.
+- 2026-07-09 Unit 4d complete: added failing mutation-executor tests for explicit apply mode, blocked-plan refusal, fake transport request/upload execution, placeholder ID substitution, redacted artifacts, and retryable error classification; focused suite fails red because `scripts/app-store-apply-plan.mjs` is not implemented.
