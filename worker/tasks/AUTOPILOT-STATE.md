@@ -4,8 +4,8 @@
 - Branch: `worker/app-store-spam-rejection`
 - Worktree: `/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection`
 - Planning doc: `worker/tasks/2026-07-08-1918-planning-app-store-spam-rejection.md`
-- Gate state: planning reviewer converged; planning approved. Doing-doc granularity, validation/source-fidelity, ambiguity, quality, and scrutiny passes converged. Unit 1c metadata validation reviewer converged. Unit 3c status-reader reviewer passed after fixes. Unit 4 request-planner API reviewer passed after submit-gating and MD5 checksum fixes. Unit 4 mutation executor reviewer passed after captured-ID and unresolved-placeholder fixes. Unit 5a screenshot asset red tests are captured. Unit 5b screenshot assets and local manifest checks are complete. Unit 5c screenshot visual QA reviewer converged. Autopilot/no-human-gates mandate active; human gates waived by operator; reviewer gates remain required through harsh sub-agents.
-- Next action: execute Unit 6a package readiness contract tests.
+- Gate state: planning reviewer converged; planning approved. Doing-doc granularity, validation/source-fidelity, ambiguity, quality, and scrutiny passes converged. Unit 1c metadata validation reviewer converged. Unit 3c status-reader reviewer passed after fixes. Unit 4 request-planner API reviewer passed after submit-gating and MD5 checksum fixes. Unit 4 mutation executor reviewer passed after captured-ID and unresolved-placeholder fixes. Unit 5a screenshot asset red tests are captured. Unit 5b screenshot assets and local manifest checks are complete. Unit 5c screenshot visual QA reviewer converged. Unit 6a package-readiness red test is captured. Autopilot/no-human-gates mandate active; human gates waived by operator; reviewer gates remain required through harsh sub-agents.
+- Next action: execute Unit 6b package readiness implementation.
 
 ## Terminal Evidence
 

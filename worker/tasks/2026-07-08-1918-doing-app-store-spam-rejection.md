@@ -150,7 +150,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Final screenshots, screenshot inspection notes, `screenshot-absurdity-ledger.md`, and reviewer transcript or summary.
 **Acceptance**: Ledger closed, reviewer converges, and final screenshots are ready for App Store Connect upload.
 
-### ⬜ Unit 6a: Package Readiness Contract — Tests
+### ✅ Unit 6a: Package Readiness Contract — Tests
 **What**: Add or update checks that package/readiness commands prove App Store distribution channel, telemetry disabled by default, direct updates disabled, version coherence, and no signing secret leakage.
 **Output**: Failing readiness test/check plus red log.
 **Acceptance**: Focused checks fail red for any missing new preflight evidence or stale metadata assumptions.
@@ -260,6 +260,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 2c complete: full Swift tests, app build, visual QA, first-launch, UI-surface, accessibility, exact welcome snapshot, absurdity ledger, and harsh UI/native reviewer gate passed after review fixes for user-facing release highlights and tracked fixture drift.
 - 2026-07-09 Unit 5b complete: added synthetic App Store screenshot fixtures, deterministic app-render/composition generation, four 2880x1800 local PNGs in manifest order, PNG dimension validation, request-plan remote-proof fixture isolation, and green screenshot/distribution/request-plan checks.
 - 2026-07-09 Unit 5c complete: inspected the four generated App Store screenshots, captured pixel/dimension metrics, closed the screenshot absurdity ledger, reran screenshot validation/tests, and passed a harsh visual reviewer gate.
+- 2026-07-09 Unit 6a complete: added a package-readiness contract test requiring `scripts/package-app-store.sh --readiness --artifact` to emit non-secret structured proof for app-store channel, telemetry-disabled default, direct-updates disabled, version coherence, build environment, secret scan, and blockers; focused suite fails red because the readiness artifact path is not implemented yet.
 - 2026-07-09 Unit 3a complete: added failing App Store Connect status-reader tests requiring normalized app/version/submission/screenshot fields and redaction; focused suite fails red because `scripts/app-store-status.mjs` is not implemented.
 - 2026-07-09 Unit 3b complete: implemented `scripts/app-store-status.mjs` with JSON and compact text modes over shared-kit `asc get`, added redaction/missing-field selftests, captured live redacted status for rejected version `0.9.79`, and kept Apple distribution checks green.
 - 2026-07-09 Unit 3c complete: expanded status-reader tests to cover redaction, stale-id guards, explicit rejected-audit mode, review-item version relationships, `APP_DESKTOP` screenshot proof, and `COMPLETE` screenshot delivery state; live rejected-audit artifacts and harsh reviewer re-review passed.
