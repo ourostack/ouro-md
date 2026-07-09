@@ -1,0 +1,11 @@
+Command:
+swift test --filter DocumentWindowControllerTests
+
+Result:
+Failed as expected.
+
+Key failure:
+Tests/OuroMDTests/DocumentWindowControllerTests.swift:11: XCTAssertFalse failed
+
+Interpretation:
+The new test requires native document chrome with no custom DocumentWindow title-click routing. Current implementation still constructs DocumentWindow, so the red phase is valid.

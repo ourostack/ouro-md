@@ -1,6 +1,6 @@
 # Doing: Document Truth Surface
 
-**Status**: READY_FOR_EXECUTION
+**Status**: in-progress
 **Execution Mode**: direct
 **Created**: 2026-07-09 14:22 -0700
 **Planning**: ./2026-07-09-1409-planning-document-truth-surface.md
@@ -59,9 +59,9 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 **Output**: `2026-07-09-1409-doing-document-truth-surface/source-fit-notes.md`.
 **Acceptance**: Relevant files and validation commands are known; no hidden branch/worktree drift. Evidence committed in `4749571`.
 
-### ⬜ Unit 1a: Native Title Chrome - Tests
+### ✅ Unit 1a: Native Title Chrome - Tests
 **What**: Replace tests that expect title-click-to-open-panel with failing tests that require no custom file-picker interception while preserving `representedURL`, edited, subtitle/deleted, and drag-friendly native chrome state.
-**Acceptance**: Focused window-controller tests fail against the current implementation for the old title-click behavior.
+**Acceptance**: Focused window-controller tests fail against the current implementation for the old title-click behavior. Evidence: `2026-07-09-1409-doing-document-truth-surface/unit-1a-red.txt`.
 
 ### ⬜ Unit 1b: Native Title Chrome - Implementation
 **What**: Remove the custom title-click open-panel hook and any now-dead hit-testing helpers while keeping existing chrome sync and ordinary window dragging.
@@ -149,3 +149,4 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - 2026-07-09 14:22 -0700 Doing doc drafted in `164d3a6`.
 - 2026-07-09 14:27 -0700 Unit 0 source-fit notes captured in `4749571`.
 - 2026-07-09 14:31 -0700 Doing-doc reviewer findings accepted: add lifecycle unit coverage, coverage-gated support target for pure truth logic, concrete validation gates, progress log, and scoped publish wording.
+- 2026-07-09 14:25 -0700 Unit 1a red test confirmed: `swift test --filter DocumentWindowControllerTests` failed because the window still uses custom `DocumentWindow`.
