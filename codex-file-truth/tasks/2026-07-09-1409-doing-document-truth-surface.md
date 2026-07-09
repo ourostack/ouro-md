@@ -79,9 +79,9 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 **What**: Add the smallest source-fit pure file truth model/provider to `Sources/OuroMDAppSupport` with injected read-only git runner, honest fallback states, relative-path support, and no git mutation.
 **Acceptance**: Unit 2a tests pass, no warnings, and failures degrade to unavailable/not-in-git instead of interrupting editing. Evidence: `swift test --filter DocumentTruthTests` passed at 2026-07-09 14:30 -0700.
 
-### ⬜ Unit 2c: File/Git Truth Model - Coverage & Refactor
+### ✅ Unit 2c: File/Git Truth Model - Coverage & Refactor
 **What**: Run focused app-support tests and the repo coverage gate, trim unused abstractions, and verify every new branch/error path is exercised.
-**Acceptance**: 100% coverage on new file truth support code under the existing `scripts/check-coverage.sh` gate, with focused tests still green.
+**Acceptance**: 100% coverage on new file truth support code under the existing `scripts/check-coverage.sh` gate, with focused tests still green. Evidence: `scripts/check-coverage.sh` passed with `DocumentTruth.swift` at 150/150 lines and 73/73 regions.
 
 ### ⬜ Unit 2d: AppModel Truth Lifecycle - Tests
 **What**: Add failing tests for `AppModel` refresh behavior on welcome/new, open/loadInitialFile, dirty edits, save/save-as/autosave-success path, rename, deleted/restored, external reload, and conflict resolution where testable without UI prompts.
@@ -154,3 +154,4 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - 2026-07-09 14:27 -0700 Unit 1c cleanup passed: removed obsolete title-click helper type, updated stale fixture wording, focused title tests green, scoped grep found no obsolete hooks.
 - 2026-07-09 14:29 -0700 Unit 2a red test confirmed: `swift test --filter DocumentTruthTests` failed because the file truth provider types do not exist yet.
 - 2026-07-09 14:30 -0700 Unit 2b green test confirmed: `swift test --filter DocumentTruthTests` passed for pure file/git truth support model.
+- 2026-07-09 14:34 -0700 Unit 2c coverage gate passed: `scripts/check-coverage.sh` reported `DocumentTruth.swift` 150/150 lines and 73/73 regions.

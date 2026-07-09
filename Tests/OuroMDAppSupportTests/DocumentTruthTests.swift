@@ -9,6 +9,7 @@ final class DocumentTruthTests: XCTestCase {
         XCTAssertEqual(provider.snapshot(for: nil).state, .untitled)
         XCTAssertEqual(provider.snapshot(for: nil).label, "Untitled")
         XCTAssertFalse(provider.snapshot(for: nil).canCopyPath)
+        XCTAssertNil(provider.snapshot(for: nil).gitDiffCommand)
 
         let remote = provider.snapshot(for: URL(string: "https://example.com/note.md"))
         XCTAssertEqual(remote.state, .unavailable)
@@ -50,6 +51,20 @@ final class DocumentTruthTests: XCTestCase {
         XCTAssertEqual(gitUnavailable.snapshot(for: url).label, "Git unavailable")
         XCTAssertEqual(local.snapshot(for: url).state, .notInGit)
         XCTAssertEqual(local.snapshot(for: url).label, "Local file")
+    }
+
+    func testDefaultFileExistenceProbeWorksForExistingFiles() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-truth-default-exists-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let file = dir.appendingPathComponent("note.md")
+        try "hello".write(to: file, atomically: true, encoding: .utf8)
+
+        let provider = DocumentTruthProvider(gitRunner: FakeGitRunner { _, _ in .failure })
+
+        XCTAssertEqual(provider.snapshot(for: file).state, .notInGit)
+        XCTAssertEqual(provider.snapshot(for: file).absolutePath, file.path)
     }
 
     func testTrackedCleanFileCarriesRepositoryPathsAndDiffCommand() {
@@ -111,6 +126,76 @@ final class DocumentTruthTests: XCTestCase {
 
         XCTAssertEqual(snapshot.relativePath, "docs/today's note.md")
         XCTAssertEqual(snapshot.gitDiffCommand, "git -C '/repo with spaces' diff -- 'docs/today'\\''s note.md'")
+        XCTAssertEqual(DocumentTruthSnapshot.shellEscape(""), "''")
+    }
+
+    func testRepositoryMismatchAndStatusFailureFallBackHonestly() {
+        let outsideRepo = DocumentTruthProvider(
+            gitRunner: FakeGitRunner { command, _ in
+                XCTAssertEqual(command.arguments, ["rev-parse", "--show-toplevel"])
+                return .success("/elsewhere")
+            },
+            fileExists: { _ in true }
+        )
+        let statusFailure = DocumentTruthProvider(
+            gitRunner: FakeGitRunner { command, _ in
+                switch command.arguments {
+                case ["rev-parse", "--show-toplevel"]:
+                    return .success("/repo")
+                case ["ls-files", "--error-unmatch", "--", "docs/today.md"]:
+                    return .success("docs/today.md")
+                case ["status", "--porcelain=v1", "--", "docs/today.md"]:
+                    return .failure
+                default:
+                    XCTFail("Unexpected command: \(command.arguments)")
+                    return .failure
+                }
+            },
+            fileExists: { _ in true }
+        )
+
+        XCTAssertEqual(outsideRepo.snapshot(for: fileURL).state, .notInGit)
+        XCTAssertEqual(statusFailure.snapshot(for: fileURL).state, .gitUnavailable)
+    }
+
+    func testThrownSubcommandsAndRepositoryRootFilePathAreCovered() {
+        let thrownSubcommand = DocumentTruthProvider(
+            gitRunner: FakeGitRunner { command, _ in
+                switch command.arguments {
+                case ["rev-parse", "--show-toplevel"]:
+                    return .success("/repo")
+                case ["ls-files", "--error-unmatch", "--", "docs/today.md"]:
+                    throw DocumentTruthGitError.unavailable
+                case ["status", "--porcelain=v1", "--", "docs/today.md"]:
+                    return .success("?? docs/today.md\n")
+                default:
+                    XCTFail("Unexpected command: \(command.arguments)")
+                    return .failure
+                }
+            },
+            fileExists: { _ in true }
+        )
+        let rootFile = DocumentTruthProvider(
+            gitRunner: FakeGitRunner { command, _ in
+                switch command.arguments {
+                case ["rev-parse", "--show-toplevel"]:
+                    return .success("/repo")
+                case ["ls-files", "--error-unmatch", "--", ""]:
+                    return .success("")
+                case ["status", "--porcelain=v1", "--", ""]:
+                    return .success("")
+                default:
+                    XCTFail("Unexpected command: \(command.arguments)")
+                    return .failure
+                }
+            },
+            fileExists: { _ in true }
+        )
+
+        XCTAssertEqual(thrownSubcommand.snapshot(for: fileURL).state, .untracked)
+        let rootSnapshot = rootFile.snapshot(for: URL(fileURLWithPath: "/repo"))
+        XCTAssertEqual(rootSnapshot.state, .trackedClean)
+        XCTAssertEqual(rootSnapshot.relativePath, "")
     }
 
     private var fileURL: URL {
