@@ -1,0 +1,30 @@
+{
+  "appId": "6787262892",
+  "appInfo": {
+    "id": "9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8",
+    "primaryCategoryId": "DEVELOPER_TOOLS",
+    "state": "REJECTED"
+  },
+  "appInfoLocalizations": [
+    {
+      "id": "b5bae77f-a94f-4b39-8ebd-841a6306b1c6",
+      "locale": "en-US",
+      "name": "Ouro MD",
+      "privacyPolicyUrl": "https://ouro.bot/privacy/",
+      "subtitle": "The Markdown App"
+    }
+  ],
+  "bundleId": "bot.ouro.md",
+  "schemaVersion": 1,
+  "targetAppStoreVersionExists": false,
+  "targetAppStoreVersionIds": [],
+  "targetVersion": "0.9.80",
+  "teamId": "743GT2AJ24",
+  "uploadedBuild": {
+    "expired": false,
+    "id": "827fa5b9-6994-41eb-bc75-ab3ca469a96f",
+    "processingState": "VALID",
+    "uploadedDate": "2026-07-09T01:35:53-07:00",
+    "version": "0.9.80"
+  }
+}
