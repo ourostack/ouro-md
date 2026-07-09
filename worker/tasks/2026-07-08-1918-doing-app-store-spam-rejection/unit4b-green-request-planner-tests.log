@@ -1,0 +1,27 @@
+[0/1] Planning build
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.59s)
+Test Suite 'Selected tests' started at 2026-07-08 23:34:51.389.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-08 23:34:51.392.
+Test Suite 'OuroMDAppStoreRequestPlanTests' started at 2026-07-08 23:34:51.392.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanBuildsExactTargetVersionRequestGraph]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanBuildsExactTargetVersionRequestGraph]' passed (0.150 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanIncludesMacScreenshotReservationUploadAndCommitSteps]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanIncludesMacScreenshotReservationUploadAndCommitSteps]' passed (0.144 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanOutputAndErrorsAreRedacted]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanOutputAndErrorsAreRedacted]' passed (0.142 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRecordsExistingRejectionThreadStrategyWithoutMutatingStaleSubmission]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRecordsExistingRejectionThreadStrategyWithoutMutatingStaleSubmission]' passed (0.140 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsStaleRejectedIdsForTargetGraph]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsStaleRejectedIdsForTargetGraph]' passed (0.138 seconds).
+Test Suite 'OuroMDAppStoreRequestPlanTests' passed at 2026-07-08 23:34:52.107.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.714 (0.715) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-07-08 23:34:52.107.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.714 (0.715) seconds
+Test Suite 'Selected tests' passed at 2026-07-08 23:34:52.107.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.714 (0.718) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
