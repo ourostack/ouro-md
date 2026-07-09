@@ -1,8 +1,13 @@
 {
   "schemaVersion": 1,
+  "ok": true,
+  "mode": "apply",
+  "transport": "live",
+  "stage": "screenshots",
   "appId": "6787262892",
   "targetVersion": "0.9.80",
-  "updatedAt": "2026-07-09T10:00:33.739Z",
+  "executedRequestCount": 9,
+  "executedUploadOperationCount": 4,
   "resolvedIds": {
     "targetAppStoreVersionId": "7309944f-cbe8-4518-960c-444e6116ab46",
     "appStoreVersionLocalizationId": "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
@@ -10,5 +15,7 @@
     "appStoreReviewDetailId": "3bc7284e-27d5-4dd3-a049-b9e859289bd1",
     "appScreenshotSetId": "f37ecb51-c96e-451d-9b29-20d86d7f118e",
     "reviewSubmissionId": "e87d8ecd-9682-4d79-9e60-14c23befd11e"
-  }
+  },
+  "traceArtifact": "worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit7e-live-apply-artifacts/apply-screenshots-trace.json",
+  "stateArtifact": "worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit7c-live-state.json"
 }

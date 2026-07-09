@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-09T10:01:07.055Z",
+  "appScreenshotSetId": "f37ecb51-c96e-451d-9b29-20d86d7f118e",
+  "screenshotDisplayType": "APP_DESKTOP",
+  "expected": [
+    {
+      "order": 1,
+      "fileName": "01-folder-workspace.png",
+      "fileSize": 244440,
+      "sourceFileChecksum": "403d078e80bc58ef95ca91dd270b2297"
+    },
+    {
+      "order": 2,
+      "fileName": "02-command-palette.png",
+      "fileSize": 164414,
+      "sourceFileChecksum": "7b85eedee6a59d634b3cbe7fa0f2e66c"
+    },
+    {
+      "order": 3,
+      "fileName": "03-search-outline.png",
+      "fileSize": 236123,
+      "sourceFileChecksum": "047747e665f5519c5879f6ca07db8965"
+    },
+    {
+      "order": 4,
+      "fileName": "04-themed-export-readability.png",
+      "fileSize": 182875,
+      "sourceFileChecksum": "3e3146c46bf2551e07fdd3dc236eba6b"
+    }
+  ],
+  "screenshots": [
+    {
+      "index": 1,
+      "id": "ff2cbccb-ec2f-4847-835d-5547c964a979",
+      "fileName": "01-folder-workspace.png",
+      "fileSize": 244440,
+      "sourceFileChecksum": "403d078e80bc58ef95ca91dd270b2297",
+      "assetDeliveryState": "COMPLETE",
+      "errors": []
+    },
+    {
+      "index": 2,
+      "id": "b1a6690c-4303-4b0d-87e7-c6345f8a65d3",
+      "fileName": "02-command-palette.png",
+      "fileSize": 164414,
+      "sourceFileChecksum": "7b85eedee6a59d634b3cbe7fa0f2e66c",
+      "assetDeliveryState": "COMPLETE",
+      "errors": []
+    },
+    {
+      "index": 3,
+      "id": "e844bca6-e0c6-44cd-86ba-25719cb2c5f9",
+      "fileName": "03-search-outline.png",
+      "fileSize": 236123,
+      "sourceFileChecksum": "047747e665f5519c5879f6ca07db8965",
+      "assetDeliveryState": "COMPLETE",
+      "errors": []
+    },
+    {
+      "index": 4,
+      "id": "d6cb623a-1435-4488-a793-59a6d9efe327",
+      "fileName": "04-themed-export-readability.png",
+      "fileSize": 182875,
+      "sourceFileChecksum": "3e3146c46bf2551e07fdd3dc236eba6b",
+      "assetDeliveryState": "COMPLETE",
+      "errors": []
+    }
+  ],
+  "screenshotCount": 4,
+  "allComplete": true,
+  "firstFourMatchExpectedOrder": true
+}

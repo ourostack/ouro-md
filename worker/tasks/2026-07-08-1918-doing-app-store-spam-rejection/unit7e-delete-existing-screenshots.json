@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-09T10:00:03.058Z",
+  "appScreenshotSetId": "f37ecb51-c96e-451d-9b29-20d86d7f118e",
+  "deletedScreenshotIds": [
+    "80a8620a-643a-46bd-9e39-ab19f26ba424"
+  ],
+  "events": [
+    {
+      "request": {
+        "method": "DELETE",
+        "path": "/v1/appScreenshots/80a8620a-643a-46bd-9e39-ab19f26ba424"
+      },
+      "status": 204,
+      "ok": true,
+      "response": null
+    }
+  ]
+}
