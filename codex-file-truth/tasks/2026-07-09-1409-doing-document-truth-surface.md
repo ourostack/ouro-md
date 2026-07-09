@@ -25,10 +25,10 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - [x] Git unavailable, sandbox/inaccessible metadata, and non-repo files show honest fallback state without blocking normal editing.
 - [x] Commands exist for Reveal in Finder, Copy Path, Copy Relative Path, and Copy Git Diff Command, with disabled or fallback behavior when no current file/repo exists.
 - [x] Human edits saved to disk can be surfaced as "modified / visible in git diff" without writing any git state.
-- [ ] No hidden metadata or formatting churn is introduced by the file truth work.
-- [ ] 100% test coverage on all new code
-- [ ] All tests pass
-- [ ] No warnings
+- [x] No hidden metadata or formatting churn is introduced by the file truth work.
+- [x] 100% test coverage on all new code
+- [x] All tests pass
+- [x] No warnings
 - [x] If UI/rendering/layout changed: `visual-qa-dogfood` evidence captured, absurdity ledger closed, and automated visual metrics still pass
 
 ## Code Coverage Requirements
@@ -123,7 +123,7 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 **What**: Run screenshot-backed visual QA on the touched document surface with sidebar closed and status bar hidden/visible where applicable.
 **Acceptance**: Screenshots/live evidence captured in artifacts, absurdity ledger closed, automated visual metrics still pass. Evidence: `unit-4d-visual-ledger.md`, screenshot artifacts, native UI/Web visual QA logs, and harsh visual reviewer PASS committed in `af1e544`.
 
-### ⬜ Unit 5: Full Native Validation, Review, Publish
+### 🔄 Unit 5: Full Native Validation, Review, Publish
 **What**: Run full test/preflight/build/package/install validation, spawn harsh final reviewer gates, address findings, push/publish the branch or PR, and leave the app ready for user testing. Publish means branch/PR and local ready-to-test app unless release validation proves the repo's current terminal path requires a packaged release; it does not mean surprise App Store resubmission.
 **Output**: Terminal evidence in this doing doc/artifacts, commits pushed, and a ready-to-test installed or launchable app.
 **Acceptance**: All completion criteria checked, final reviewer gate converged, and no human-only blocker remains.
@@ -165,3 +165,4 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - 2026-07-09 14:57 -0700 Unit 4b green UI implementation confirmed: document truth control renders with status bar hidden, accessibility audit sees it, and `swift build` passed.
 - 2026-07-09 15:11 -0700 Unit 4c review/refactor complete: harsh reviewer blocker on empty staged/untracked diff commands resolved with state-specific diff commands; visible copy changed to `File status`; control moved into a reserved bottom strip; coverage gate passed 315 tests with pure support targets at 100%.
 - 2026-07-09 15:24 -0700 Unit 4d visual QA complete: native status-hidden/status-visible screenshots captured, rendered Markdown dogfood screenshots inspected, automated visual QA passed, and harsh visual reviewer returned PASS.
+- 2026-07-09 16:44 -0700 Unit 5 validation in progress: `swift test`, `scripts/check-shell-boundary.sh`, `scripts/check-coverage.sh`, `scripts/pr-preflight.sh`, release build, package-release, DMG install verification, and packaged native scenarios passed. Release artifacts: `dist/Ouro-MD-0.9.81.zip`, `dist/Ouro-MD-0.9.81.dmg`, `dist/Ouro-MD-0.9.81.manifest.json`; package log captured in `unit-5-final-package-release.log`.

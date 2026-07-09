@@ -7,12 +7,14 @@
 - Worktree: `/Users/arimendelow/Projects/ouro-md-file-truth`
 - Planning doc: `codex-file-truth/tasks/2026-07-09-1409-planning-document-truth-surface.md`
 - Doing doc: `codex-file-truth/tasks/2026-07-09-1409-doing-document-truth-surface.md`
-- Gate state: Unit 4d visual QA dogfood complete; screenshot evidence and reviewer PASS committed in `af1e544`.
-- Next action: execute Unit 5 full native validation, package/install smoke, final reviewer gate, and PR publish/merge path.
+- Gate state: Unit 5 local validation/package smoke complete through `9355ce4`; package-release passed for 0.9.81 artifacts.
+- Next action: run final harsh reviewer gate, then PR publish/merge path and post-merge release/consuming-surface verification.
 
 ## Terminal Evidence
 
-- Pending: full test/preflight/release validation, package/install smoke, final reviewer gate, publish/merge.
+- Local validation passed: `swift test`, `scripts/check-shell-boundary.sh`, `scripts/check-coverage.sh`, `scripts/pr-preflight.sh`, release build, package-release, DMG install verification, and packaged native scenarios.
+- Release artifacts verified locally: `dist/Ouro-MD-0.9.81.zip`, `dist/Ouro-MD-0.9.81.dmg`, `dist/Ouro-MD-0.9.81.manifest.json` from commit `9355ce4a73d25695de555367dad99ef89a815598`.
+- Pending: final reviewer gate, PR publish/merge, and post-merge release/consuming-surface verification.
 
 ## Continuation Scan
 
