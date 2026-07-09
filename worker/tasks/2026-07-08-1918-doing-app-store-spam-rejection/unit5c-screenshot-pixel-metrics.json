@@ -1,0 +1,110 @@
+[
+  {
+    "path": "store-assets/app-store/01-folder-workspace.png",
+    "width": 2880,
+    "height": 1800,
+    "fileSize": 244440,
+    "mean": [
+      239.72,
+      242.17,
+      245.16
+    ],
+    "extrema": [
+      [
+        1,
+        255
+      ],
+      [
+        0,
+        255
+      ],
+      [
+        0,
+        255
+      ]
+    ],
+    "sampleNonWhitePixels": 30133,
+    "samplePixels": 51840
+  },
+  {
+    "path": "store-assets/app-store/02-command-palette.png",
+    "width": 2880,
+    "height": 1800,
+    "fileSize": 164414,
+    "mean": [
+      215.52,
+      218.19,
+      221.76
+    ],
+    "extrema": [
+      [
+        13,
+        255
+      ],
+      [
+        15,
+        255
+      ],
+      [
+        18,
+        255
+      ]
+    ],
+    "sampleNonWhitePixels": 39173,
+    "samplePixels": 51840
+  },
+  {
+    "path": "store-assets/app-store/03-search-outline.png",
+    "width": 2880,
+    "height": 1800,
+    "fileSize": 236123,
+    "mean": [
+      239.24,
+      241.93,
+      245.15
+    ],
+    "extrema": [
+      [
+        14,
+        255
+      ],
+      [
+        14,
+        255
+      ],
+      [
+        14,
+        255
+      ]
+    ],
+    "sampleNonWhitePixels": 33871,
+    "samplePixels": 51840
+  },
+  {
+    "path": "store-assets/app-store/04-themed-export-readability.png",
+    "width": 2880,
+    "height": 1800,
+    "fileSize": 182875,
+    "mean": [
+      38.13,
+      39.9,
+      44.42
+    ],
+    "extrema": [
+      [
+        0,
+        255
+      ],
+      [
+        0,
+        255
+      ],
+      [
+        0,
+        255
+      ]
+    ],
+    "sampleNonWhitePixels": 51840,
+    "samplePixels": 51840
+  }
+]

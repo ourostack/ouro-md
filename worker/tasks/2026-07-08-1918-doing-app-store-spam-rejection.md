@@ -30,7 +30,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - [ ] 100% test coverage on all new code
 - [ ] All tests pass
 - [ ] No unresolved/actionable warnings in final green logs; any benign Apple/Xcode/altool warning is recorded with reviewer-approved rationale.
-- [ ] If UI/rendering/layout changed: `visual-qa-dogfood` evidence captured, absurdity ledger closed, and automated visual metrics still pass
+- [x] If UI/rendering/layout changed: `visual-qa-dogfood` evidence captured, absurdity ledger closed, and automated visual metrics still pass
 
 ## Code Coverage Requirements
 **MANDATORY: 100% coverage on all new code.**
@@ -145,7 +145,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Screenshot fixtures, generation script, at least four PNG assets, manifest entries, and green asset-check log.
 **Acceptance**: At least four valid PNG assets exist locally, manifest order matches the intended review story, file sizes/dimensions are accepted by the checker, and the first asset visibly shows a differentiated workspace rather than a single rendered document only.
 
-### ⬜ Unit 5c: Screenshot Asset Set — Visual QA And Review
+### ✅ Unit 5c: Screenshot Asset Set — Visual QA And Review
 **What**: Run visual QA on generated screenshots, inspect them directly, write an absurdity ledger, and run a harsh visual reviewer gate.
 **Output**: Final screenshots, screenshot inspection notes, `screenshot-absurdity-ledger.md`, and reviewer transcript or summary.
 **Acceptance**: Ledger closed, reviewer converges, and final screenshots are ready for App Store Connect upload.
@@ -259,6 +259,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 2b complete: updated About/shell subtitle, first-launch welcome copy, release highlights, and CLI help to local-workspace positioning; focused positioning, shell, release, distribution metadata, and Apple distribution checks pass.
 - 2026-07-09 Unit 2c complete: full Swift tests, app build, visual QA, first-launch, UI-surface, accessibility, exact welcome snapshot, absurdity ledger, and harsh UI/native reviewer gate passed after review fixes for user-facing release highlights and tracked fixture drift.
 - 2026-07-09 Unit 5b complete: added synthetic App Store screenshot fixtures, deterministic app-render/composition generation, four 2880x1800 local PNGs in manifest order, PNG dimension validation, request-plan remote-proof fixture isolation, and green screenshot/distribution/request-plan checks.
+- 2026-07-09 Unit 5c complete: inspected the four generated App Store screenshots, captured pixel/dimension metrics, closed the screenshot absurdity ledger, reran screenshot validation/tests, and passed a harsh visual reviewer gate.
 - 2026-07-09 Unit 3a complete: added failing App Store Connect status-reader tests requiring normalized app/version/submission/screenshot fields and redaction; focused suite fails red because `scripts/app-store-status.mjs` is not implemented.
 - 2026-07-09 Unit 3b complete: implemented `scripts/app-store-status.mjs` with JSON and compact text modes over shared-kit `asc get`, added redaction/missing-field selftests, captured live redacted status for rejected version `0.9.79`, and kept Apple distribution checks green.
 - 2026-07-09 Unit 3c complete: expanded status-reader tests to cover redaction, stale-id guards, explicit rejected-audit mode, review-item version relationships, `APP_DESKTOP` screenshot proof, and `COMPLETE` screenshot delivery state; live rejected-audit artifacts and harsh reviewer re-review passed.
