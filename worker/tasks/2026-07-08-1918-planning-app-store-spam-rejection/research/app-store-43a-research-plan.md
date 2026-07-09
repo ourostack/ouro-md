@@ -197,7 +197,7 @@ Hello App Review,
 
 Thank you for reviewing Ouro MD. We updated the submission to make the app's distinct functionality clearer in the metadata, screenshots, and review notes.
 
-Ouro MD is not a repackaged template or duplicate bundle. It is a native macOS workspace for local Markdown files and folders. No account, sample login, subscription, or server-side content is required.
+Ouro MD's reviewable experience is a native macOS workspace for local Markdown files and folders, with native windowing, folder navigation, outline/search sidebars, command-palette operation, and export from local documents. No account, sample login, subscription, or server-side content is required.
 
 Suggested review path:
 1. Open or create a Markdown file.

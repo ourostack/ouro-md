@@ -21,7 +21,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 ## Completion Criteria
 - [ ] App Review evidence is captured in docs or artifacts with no secrets and with concrete dates, app IDs, submission IDs, and version IDs.
 - [ ] Source-owned App Store metadata/review-note guidance no longer describes Ouro MD generically as only "The Markdown App" or a quiet Markdown editor.
-- [ ] Source-owned metadata recommends or encodes subtitle `Local Markdown Workspace`, a specific promotional text, specific keywords, and a review note that lists concrete reviewer steps.
+- [ ] Source-owned metadata recommends or encodes subtitle `Local Markdown Workspace`, Developer Tools category, a specific promotional text, specific keywords, and a review note that lists concrete reviewer steps.
 - [ ] A local screenshot set exists with at least four review-facing screenshots and the first screenshots show differentiated app surfaces, not only a single rendered document.
 - [ ] `scripts/check-apple-distribution-kit.sh` no longer reports screenshot proof as missing, or an explicit live-status path documents why remote proof is checked separately from CI.
 - [ ] A redacted programmatic App Store review-status command can read app `6787262892`, version `7309944f-cbe8-4518-960c-444e6116ab46`, submission `b37f847e-0ecb-4e7a-bb00-14e3038b0f4c`, rejected item state, and remote screenshot count from the local config.
@@ -29,7 +29,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - [ ] Any final App Review reply/review-note text passes a harsh voice/posture reviewer gate and exact-state preflight before posting or submission.
 - [ ] 100% test coverage on all new code
 - [ ] All tests pass
-- [ ] No warnings
+- [ ] No unresolved/actionable warnings in final green logs; any benign Apple/Xcode/altool warning is recorded with reviewer-approved rationale.
 - [ ] If UI/rendering/layout changed: `visual-qa-dogfood` evidence captured, absurdity ledger closed, and automated visual metrics still pass
 
 ## Code Coverage Requirements
@@ -61,7 +61,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Acceptance**: Logs prove the worktree is on `worker/app-store-spam-rejection`, local API config works without printing secrets, the rejected submission state is still readable, and no private key/JWT/cookie/asset token appears in artifacts.
 
 ### ⬜ Unit 1a: Store Metadata Contract — Tests
-**What**: Add failing tests or selftests that require source-owned App Store metadata to include subtitle `Local Markdown Workspace`, promotional text, description, keywords within Apple limits, review notes with concrete reviewer steps, non-empty screenshot assets, privacy/export compliance, and no generic `The Markdown App`/quiet-editor wording.
+**What**: Add failing tests or selftests that require source-owned App Store metadata to include subtitle `Local Markdown Workspace`, Developer Tools category, promotional text, description, keywords within Apple limits, review notes with concrete reviewer steps, non-empty screenshot assets, privacy/export compliance, and no generic `The Markdown App`/quiet-editor wording.
 **Output**: Failing test/script diff plus red log saved under the artifacts directory.
 **Acceptance**: Focused tests fail red against the current manifest/docs/check script.
 
@@ -71,7 +71,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Acceptance**: Unit 1a tests pass green, `./scripts/check-apple-distribution-kit.sh` no longer reports missing screenshot proof for declared local or remote screenshot assets, and docs name the source-owned metadata as canonical.
 
 ### ⬜ Unit 1c: Store Metadata Contract — Coverage And Review
-**What**: Run coverage/validation for new contract code and a harsh sub-agent review of metadata posture, Apple guideline fit, and source-owned drift checks.
+**What**: Run coverage/validation for new contract code and a harsh sub-agent review of metadata posture, Apple guideline fit, category choice, and source-owned drift checks.
 **Output**: Coverage/validation logs plus reviewer transcript or summary in the artifacts directory.
 **Acceptance**: 100% coverage on new script/test branches, no warnings, reviewer returns `CONVERGED` or findings are fixed and re-reviewed.
 
@@ -81,7 +81,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Acceptance**: Focused tests fail red against the current generic welcome/about copy.
 
 ### ⬜ Unit 2b: App-Visible Positioning — Implementation
-**What**: Update `Sources/OuroMD/Welcome.swift`, `Sources/OuroMD/AppInfoView.swift`, `Sources/OuroMD/OuroMDShellContract.swift`, `Sources/OuroMDCore/OuroMDRelease.swift`, and tests so visible app copy aligns with the App Store metadata and review path. Bump to the next patch version with `scripts/bump-version.sh` before packaging.
+**What**: Update `Sources/OuroMD/Welcome.swift`, `Sources/OuroMD/AppInfoView.swift`, `Sources/OuroMD/OuroMDShellContract.swift`, `Sources/OuroMDCore/OuroMDRelease.swift`, and tests so visible app copy aligns with the App Store metadata and review path. Target source/manifest version is `0.9.80`; only bump to `0.9.81` with `scripts/bump-version.sh` if App Store Connect proves `0.9.80` already has an unusable non-editable/non-creatable App Store version state.
 **Output**: Updated Swift source/tests/version files plus green focused test log.
 **Acceptance**: Unit 2a tests pass green, release version and manifest version match, and app-owned copy no longer presents Ouro MD as merely a generic Markdown editor.
 
@@ -106,19 +106,34 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Acceptance**: 100% coverage on new status code, no secret-bearing artifacts, and reviewer converges.
 
 ### ⬜ Unit 4a: App Store Connect Request Planner — Tests
-**What**: Add failing adapter-pattern tests for dry-run request planning. Tests must capture and assert outgoing request method/path/query/body for app version localization, app info localization subtitle, review detail notes, screenshot reservations/uploads/commits, build association, review submission item creation, and final submit.
+**What**: Add failing adapter-pattern tests for dry-run request planning. Tests must capture and assert outgoing request method/path/query/body for app version create/fetch, version localization, app info localization subtitle, review detail notes, screenshot set discovery/creation under the new version localization and display type, screenshot reservations/uploads/commits, build association, review submission record creation, review submission item creation linking the new `appStoreVersion`, optional existing rejection-thread reply plan, and final submit.
 **Output**: Failing request-shape tests plus red log naming the first missing planner behavior.
 **Acceptance**: Tests fail red for missing request planner or incomplete outgoing-request assertions.
 
 ### ⬜ Unit 4b: App Store Connect Request Planner — Implementation
-**What**: Implement the Ouro MD request planner and dry-run artifact generator. Authorized target scope is only app `6787262892`, bundle `bot.ouro.md`, team `743GT2AJ24`, the new Ouro MD version/build, app/version localizations, app review detail notes, screenshot assets for that version localization, review submission items, and final submit. Patch `/Users/arimendelow/Projects/apple-distribution-kit` only if the wrapper cannot safely sign/request/capture required ASC calls; if patched, use branch `worker/ouro-md-app-store-submit`, run that repo's tests, commit, and push.
+**What**: Implement the Ouro MD request planner and dry-run artifact generator. Authorized target scope is only app `6787262892`, bundle `bot.ouro.md`, team `743GT2AJ24`, target App Store version `0.9.80` unless Unit 2b recorded a required `0.9.81` bump, the processed build for that version, app/version localizations, app review detail notes, screenshot assets for the new version localization, review submission record/items, optional existing rejection-thread reply, and final submit. The planner must create or fetch the target App Store version, localization, review detail, screenshot set, review submission, and review submission items before later units apply mutations. Patch `/Users/arimendelow/Projects/apple-distribution-kit` only if the wrapper cannot safely sign/request/capture required ASC calls; if patched, use branch `worker/ouro-md-app-store-submit`, run that repo's tests, commit, and push.
 **Output**: Request planner implementation, dry-run JSON artifact, green tests, and either a wrapper-suffices note or shared-kit patch evidence.
-**Acceptance**: Unit 4a tests pass green, dry-run artifacts show exact requests without secrets, and any shared-kit patch has its own green `npm test`/equivalent log.
+**Acceptance**: Unit 4a tests pass green, dry-run artifacts show exact requests without secrets, and guards reject stale rejected-version IDs `7309944f-cbe8-4518-960c-444e6116ab46`, `f37ecb51-c96e-451d-9b29-20d86d7f118e`, and `80a8620a-643a-46bd-9e39-ab19f26ba424` for new-version screenshot/build/submission operations unless an artifact proves Apple reused the object under the new version. Any shared-kit patch has its own green `npm test`/equivalent log.
 
 ### ⬜ Unit 4c: App Store Connect Request Planner — Coverage And API Review
 **What**: Run full coverage for new automation code and a harsh API/adaptor reviewer gate focused on outgoing request shapes, idempotency, redaction, Apple upload-operation handling, and exact-state preflight.
 **Output**: Coverage logs, API reviewer transcript or summary, and final dry-run request artifact.
 **Acceptance**: 100% coverage on new code, no secret-bearing artifacts, and reviewer converges.
+
+### ⬜ Unit 4d: App Store Connect Mutation Executor — Tests
+**What**: Add failing adapter-pattern tests for apply-mode execution. Tests must prove explicit mode gates, response capture, redaction, idempotent fetch-or-create behavior, retryable error classification, screenshot upload-operation execution with checksum/file-size/body upload assertions, asset-token redaction, and final-submit request execution.
+**Output**: Failing executor tests plus red log.
+**Acceptance**: Tests fail red until a mutation executor captures/asserts the actual outgoing HTTP requests and upload operations rather than only canned responses.
+
+### ⬜ Unit 4e: App Store Connect Mutation Executor — Implementation
+**What**: Implement apply-mode execution behind explicit `--mode apply` and exact-state preflight. Support JSON API requests, screenshot binary upload operations returned by Apple, response redaction, idempotent fetch-or-create for version/localization/review-detail/screenshot-set/review-submission objects, and artifact writing for every live request/response.
+**Output**: Executor implementation, green executor tests, and dry-run/apply-preflight sample artifacts from a non-mutating fake transport.
+**Acceptance**: Unit 4d tests pass green, mutation executor cannot run without reviewed dry-run/preflight artifacts, and no secret/asset token/private key is emitted in logs.
+
+### ⬜ Unit 4f: App Store Connect Mutation Executor — Coverage And Review
+**What**: Run coverage and a harsh API/executor reviewer gate focused on mode gating, idempotency, upload-operation correctness, redaction, and stale-object guards.
+**Output**: Coverage logs and reviewer transcript or summary.
+**Acceptance**: 100% coverage on new executor code and reviewer converges.
 
 ### ⬜ Unit 5a: Screenshot Asset Set — Tests
 **What**: Add failing checks for at least four App Store screenshot assets generated from non-private fixtures and declared in the manifest in the intended order: folder workspace, command palette, search/outline, and themed export/readability.
@@ -156,36 +171,41 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Acceptance**: Reviewer converges and no unresolved local packaging/upload blockers remain.
 
 ### ⬜ Unit 7a: App Store Connect Apply — Exact-State Dry Run
-**What**: Generate exact-state dry-run artifacts for metadata update, screenshot upload/update, review details, build association, review-submission item creation, App Review reply/note, and final submit.
-**Output**: Dry-run request artifact that names app id, bundle id, team id, new version id, processed build id, localization ids, screenshot set ids, review detail id, review submission id/item ids, and expected final state.
-**Acceptance**: Dry-run artifacts identify exact app/version/build/submission IDs, request bodies, screenshot count, review notes, and final submit action without secrets.
+**What**: Generate exact-state dry-run artifacts for target version create/fetch, localization/review-detail/screenshot-set discovery or creation, metadata update, screenshot upload/update, build association, review submission record and item creation, App Review thread reply if available, review notes, and final submit.
+**Output**: Dry-run request artifact that names app id, bundle id, team id, target version string, new or reused version id, processed build id, localization ids, screenshot set ids, review detail id, review submission id/item ids, existing unresolved submission `b37f847e-0ecb-4e7a-bb00-14e3038b0f4c`, planned reply/note handling, and expected final state.
+**Acceptance**: Dry-run artifacts identify exact app/version/build/submission IDs, request bodies, screenshot count, review notes, review submission graph, and final submit action without secrets; the artifact explicitly states whether the old rejection thread will receive a reply through API/UI fallback or why review notes on the new submission are the only supported surface.
 
 ### ⬜ Unit 7b: App Store Connect Apply — Voice And API Reviewer Gates
-**What**: Run harsh voice/posture and API mutation safety reviewers against the dry-run artifacts and final App Review note.
+**What**: Run harsh voice/posture and API mutation safety reviewers against the dry-run artifacts and final App Review note. The note must not overclaim "not a repackaged template"; it should make verifiable claims about Ouro MD's native macOS windowing, local folder workflow, command palette, outline/search sidebars, export, no-account behavior, and third-party renderer attribution/provenance if mentioned.
 **Output**: Reviewer transcripts or summaries and fixed dry-run artifacts if findings require changes.
 **Acceptance**: Reviewers converge. BLOCKER/MAJOR findings are fixed and re-reviewed before any live mutation.
 
-### ⬜ Unit 7c: App Store Connect Apply — Metadata And Review Detail
-**What**: Apply only metadata and review-detail updates that passed Unit 7b. Exact-state preflight must match app id `6787262892`, bundle id `bot.ouro.md`, team id `743GT2AJ24`, and the intended new version/localization/review-detail IDs before sending.
+### ⬜ Unit 7c: App Store Connect Apply — Version Graph
+**What**: Create or fetch the target App Store version graph: target version string `0.9.80` unless Unit 2b required `0.9.81`, app store version, version localization, app info localization, review detail, macOS screenshot set, and review submission record/item skeletons. Resolve the existing unresolved rejected submission by posting a reviewed reply when API/UI supports it, or record an artifact proving the only supported path is the new submission's review notes.
+**Output**: Version-graph apply logs, created/fetched object IDs, rejection-thread reply evidence or unsupported-surface artifact, and post-apply status JSON.
+**Acceptance**: Target version graph IDs are captured and are not the stale rejected-version IDs unless Apple explicitly returns the same objects for the target version; existing unresolved submission lifecycle handling is recorded before metadata/screenshot/build/final-submit units proceed.
+
+### ⬜ Unit 7d: App Store Connect Apply — Metadata And Review Detail
+**What**: Apply only metadata and review-detail updates that passed Unit 7b against the target version graph from Unit 7c. Exact-state preflight must match app id `6787262892`, bundle id `bot.ouro.md`, team id `743GT2AJ24`, target version string, and captured target localization/review-detail IDs before sending.
 **Output**: Apply logs and post-apply status JSON for app info localization, app store version localization, and app review detail notes.
-**Acceptance**: App Store Connect returns updated subtitle/description/keywords/promotional text/review notes matching the manifest; otherwise a precise hard blocker or fixable API error is recorded and handled.
+**Acceptance**: App Store Connect returns Developer Tools category if category is API-visible, updated subtitle/description/keywords/promotional text/review notes matching the manifest; otherwise a precise hard blocker or fixable API error is recorded and handled.
 
-### ⬜ Unit 7d: App Store Connect Apply — Screenshots
-**What**: Upload or replace the approved screenshot assets for the target macOS screenshot set using the verified API/UI path, then poll asset delivery state.
-**Output**: Screenshot upload logs, delivery-state JSON, and screenshot count/order summary.
-**Acceptance**: App Store Connect reports screenshot count >= 4 with complete asset delivery state, first screenshots match approved local asset names/order, and no asset token is committed.
+### ⬜ Unit 7e: App Store Connect Apply — Screenshots
+**What**: Upload or replace the approved screenshot assets for the target macOS screenshot set using Apple upload operations. Use source checksum and file size, execute binary upload operations exactly as returned, commit/complete the screenshot resource when required, poll `assetDeliveryState`, preserve intended order, and redact asset tokens.
+**Output**: Screenshot create/upload/commit logs, delivery-state JSON, checksum/file-size summaries, and screenshot count/order summary.
+**Acceptance**: App Store Connect reports screenshot count >= 4 with complete asset delivery state, first screenshots match approved local asset names/order, no stale rejected-version screenshot set/screenshot IDs are used without proof of target-version ownership, and no asset token is committed.
 
-### ⬜ Unit 7e: App Store Connect Apply — Build Association And Review Items
-**What**: Associate the processed uploaded build with the new App Store version and create/update review submission item records for that version.
-**Output**: Build association logs, review-submission-item logs, and post-apply status JSON.
-**Acceptance**: The target version has the uploaded build selected, review submission items reference that version/build, and exact-state artifacts contain no secrets.
+### ⬜ Unit 7f: App Store Connect Apply — Build Association And Review Items
+**What**: Associate the processed uploaded build with the target App Store version and create/update review submission item records linking the review submission record to the target `appStoreVersion`.
+**Output**: Build association logs, review-submission-record/item logs, and post-apply status JSON.
+**Acceptance**: The target version has the uploaded build selected, review submission items reference that target app store version/build, the review submission graph includes a create/fetch record plus item relationship, and exact-state artifacts contain no secrets.
 
-### ⬜ Unit 7f: App Store Connect Apply — Final Submit
-**What**: Submit the new App Store review submission only after Units 7a-7e pass and the final preflight artifact shows all intended state fields already match except submission state. Use Chrome UI automation only as a fallback for ASC surfaces not exposed by the available API, and capture evidence.
+### ⬜ Unit 7g: App Store Connect Apply — Final Submit
+**What**: Submit the target App Store review submission only after Units 7a-7f pass and the final preflight artifact shows all intended state fields already match except submission state. Use Chrome UI automation only as a fallback for ASC surfaces not exposed by the available API, and capture evidence.
 **Output**: Final submit log, submitted review submission id, and immediate post-submit status JSON.
 **Acceptance**: App Store Connect reports the new version/build submitted for review, or a precise hard blocker is documented after all safe fallback paths.
 
-### ⬜ Unit 7g: App Store Connect Apply — Post-Submit Verification
+### ⬜ Unit 7h: App Store Connect Apply — Post-Submit Verification
 **What**: Poll App Store Connect status programmatically after submission and capture redacted final state.
 **Output**: Redacted final App Store Connect state artifact and compact text summary.
 **Acceptance**: Artifact shows submitted/in-review equivalent state for the new submission, selected build/version, updated localization/review detail data, and screenshot assets complete; or a precise hard blocker is documented after all safe fallback paths.
@@ -219,10 +239,12 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - **All artifacts**: Save outputs, logs, data to `/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/`
 - **Fixes/blockers**: Spawn sub-agent immediately — don't ask, just do it
 - **Decisions made**: Update docs immediately, commit right away
-- **Authorized live Apple mutations**: only mutate app `6787262892`, bundle `bot.ouro.md`, team `743GT2AJ24`, the new Ouro MD app version/build, that version's localizations, review detail notes, screenshot assets, review submission items, and final review submission state.
+- **Target version**: use `0.9.80` unless App Store Connect proves it already exists in a state that cannot be reused/edited for this resubmission; in that case bump source/manifest/docs to `0.9.81` before packaging and record the evidence.
+- **Authorized live Apple mutations**: only mutate app `6787262892`, bundle `bot.ouro.md`, team `743GT2AJ24`, target version `0.9.80` or recorded fallback `0.9.81`, that version's processed build, localizations, review detail notes, screenshot assets, review submission record/items, optional existing rejection-thread reply, and final review submission state.
 - **Hard stops**: stop only for missing/expired Apple credentials, missing signing identities/certificates/provisioning profiles, Apple account/legal/capability blockers, or unrecoverable destructive shared-production actions with no safe staged path. Do not create/delete/rotate Apple keys, certificates, provisioning profiles, bundle IDs, app records, or unrelated submissions.
-- **Exact-state preflight before live apply**: app id, bundle id, team id, target version, processed build id, metadata fields, review note, screenshot asset paths/count/order, and final request plan must match the reviewed dry-run artifacts before any live apply or submit request.
+- **Exact-state preflight before live apply**: app id, bundle id, team id, target version, app store version id, processed build id, localization ids, review detail id, screenshot set id, review submission id/item ids, metadata fields, review note, screenshot asset paths/checksums/file sizes/count/order, and final request plan must match the reviewed dry-run artifacts before any live apply or submit request.
 
 ## Progress Log
 - 2026-07-09 Created from approved planning doc.
 - 2026-07-09 Addressed doing-doc reviewer findings: explicit outputs, smaller ASC mutation units, absolute artifact path, exact live-mutation boundary, and continuity path.
+- 2026-07-09 Addressed scrutiny findings: explicit target version, version/submission graph creation, existing rejection-thread handling, apply-mode executor tests, Apple screenshot upload choreography, stale-ID guards, category assertion, softened review-note posture, and actionable-warning acceptance.

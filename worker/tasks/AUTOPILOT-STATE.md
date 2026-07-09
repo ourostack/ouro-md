@@ -4,8 +4,8 @@
 - Branch: `worker/app-store-spam-rejection`
 - Worktree: `/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection`
 - Planning doc: `worker/tasks/2026-07-08-1918-planning-app-store-spam-rejection.md`
-- Gate state: planning reviewer converged; planning approved. Autopilot/no-human-gates mandate active; human gates waived by operator; reviewer gates remain required through harsh sub-agents.
-- Next action: create doing doc, run doing-doc reviewer passes, execute through App Store submission.
+- Gate state: planning reviewer converged; planning approved. Doing-doc granularity, validation/source-fidelity, ambiguity, and quality passes converged. Scrutiny reviewers are running. Autopilot/no-human-gates mandate active; human gates waived by operator; reviewer gates remain required through harsh sub-agents.
+- Next action: address scrutiny findings if any, then execute Unit 0 through App Store submission.
 
 ## Terminal Evidence
 
