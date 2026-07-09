@@ -111,6 +111,13 @@ Check local readiness:
 ./scripts/package-app-store.sh --readiness
 ```
 
+Read the current rejected App Store Connect state:
+
+```sh
+node scripts/app-store-status.mjs --json
+node scripts/app-store-status.mjs
+```
+
 Check final submission readiness after screenshots are generated and declared:
 
 ```sh

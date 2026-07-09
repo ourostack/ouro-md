@@ -95,7 +95,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Failing test/selftest diff plus red log.
 **Acceptance**: Tests fail red because the status command does not yet exist or does not assert redaction/required fields.
 
-### ⬜ Unit 3b: App Store Connect Status Reader — Implementation
+### ✅ Unit 3b: App Store Connect Status Reader — Implementation
 **What**: Implement the Ouro MD wrapper/status command using `scripts/apple-distribution-kit.sh asc get` where sufficient, producing normalized redacted JSON and a compact text summary.
 **Output**: New or updated script/test files plus green focused logs and a sample redacted status artifact.
 **Acceptance**: Unit 3a tests pass green, status artifacts include app id, bundle id, version id, review detail id, screenshot count/state, and current rejection/submission state without secrets.
@@ -259,3 +259,4 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 2b complete: updated About/shell subtitle, first-launch welcome copy, release highlights, and CLI help to local-workspace positioning; focused positioning, shell, release, distribution metadata, and Apple distribution checks pass.
 - 2026-07-09 Unit 2c complete: full Swift tests, app build, visual QA, first-launch, UI-surface, accessibility, exact welcome snapshot, absurdity ledger, and harsh UI/native reviewer gate passed after review fixes for user-facing release highlights and tracked fixture drift.
 - 2026-07-09 Unit 3a complete: added failing App Store Connect status-reader tests requiring normalized app/version/submission/screenshot fields and redaction; focused suite fails red because `scripts/app-store-status.mjs` is not implemented.
+- 2026-07-09 Unit 3b complete: implemented `scripts/app-store-status.mjs` with JSON and compact text modes over shared-kit `asc get`, added redaction/missing-field selftests, captured live redacted status for rejected version `0.9.79`, and kept Apple distribution checks green.

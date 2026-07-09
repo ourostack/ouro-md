@@ -49,14 +49,32 @@ final class OuroMDAppStoreStatusTests: XCTestCase {
         XCTAssertFalse(result.stderr.contains("Bearer "))
     }
 
-    private func runStatusReaderSelftest(extraArgs: [String] = []) throws -> ProcessResult {
+    func testStatusReaderTextSummaryIsCompactAndRedacted() throws {
+        let result = try runStatusReaderSelftest(json: false)
+
+        XCTAssertEqual(result.status, 0, result.stderr)
+        XCTAssertTrue(result.stdout.contains("App 6787262892 (bot.ouro.md) on team 743GT2AJ24"))
+        XCTAssertTrue(result.stdout.contains("Version 0.9.79 REJECTED"))
+        XCTAssertTrue(result.stdout.contains("Review submission UNRESOLVED_ISSUES; item REJECTED"))
+        XCTAssertTrue(result.stdout.contains("Screenshots 1 APP_DESKTOP"))
+        XCTAssertFalse(result.stdout.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("{"))
+        XCTAssertFalse(result.stdout.contains("PRIVATE KEY"))
+        XCTAssertFalse(result.stdout.contains("Bearer "))
+        XCTAssertFalse(result.stdout.contains("assetToken"))
+    }
+
+    private func runStatusReaderSelftest(json: Bool = true, extraArgs: [String] = []) throws -> ProcessResult {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = [
+        var arguments = [
             "node",
             "scripts/app-store-status.mjs",
             "--selftest"
-        ] + extraArgs
+        ]
+        if json {
+            arguments.append("--json")
+        }
+        process.arguments = arguments + extraArgs
         process.currentDirectoryURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 
         let stdout = Pipe()
