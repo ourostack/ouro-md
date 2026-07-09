@@ -19,6 +19,8 @@ final class HeadlessHostWindow: NSWindow {
 /// UI — so they must never grab a Dock icon, pop a window onto the user's screen,
 /// or steal keyboard focus from whatever the user is doing.
 enum HeadlessHarness {
+    private static var retainedWindows: [NSWindow] = []
+
     /// No Dock icon, no forced activation. Call once at the top of `run()`.
     static func configure() {
         NSApplication.shared.setActivationPolicy(.accessory)
@@ -36,6 +38,7 @@ enum HeadlessHarness {
         window.contentView = view
         window.setFrameOrigin(NSPoint(x: -30000, y: -30000))
         window.makeKeyAndOrderFront(nil)
+        retainedWindows.append(window)
         return window
     }
 
@@ -59,6 +62,7 @@ enum HeadlessHarness {
         window.ignoresMouseEvents = true
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        retainedWindows.append(window)
         return window
     }
 }
