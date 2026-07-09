@@ -75,7 +75,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Coverage/validation logs plus reviewer transcript or summary in the artifacts directory.
 **Acceptance**: 100% coverage on new script/test branches, no warnings, reviewer returns `CONVERGED` or findings are fixed and re-reviewed.
 
-### ⬜ Unit 2a: App-Visible Positioning — Tests
+### ✅ Unit 2a: App-Visible Positioning — Tests
 **What**: Add failing Swift tests or source-contract assertions for the About/shell subtitle, welcome copy, first-launch content, release highlights, and any App Store channel behavior needed to show `Local Markdown Workspace` and concrete folder/search/command/export/no-account value.
 **Output**: Failing Swift test diff plus red focused test log.
 **Acceptance**: Focused tests fail red against the current generic welcome/about copy.
@@ -255,3 +255,4 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 1a complete: added metadata contract test and captured expected red failure for missing App Store metadata fields.
 - 2026-07-09 Unit 1b complete: added source-owned App Store metadata, docs, and distribution preflight checks; focused metadata test and Apple distribution check pass.
 - 2026-07-09 Unit 1c complete: extracted App Store metadata validator, added selftests for draft/final screenshot gates, wired `./scripts/check-apple-distribution-kit.sh --final-submission`, captured normal-pass and strict-red proof logs, and harsh reviewer gate converged.
+- 2026-07-09 Unit 2a complete: added app-visible positioning tests for shell/About subtitle, welcome copy, and release highlights; focused suite fails red against generic current copy.

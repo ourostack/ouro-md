@@ -1,0 +1,49 @@
+[0/1] Planning build
+Building for debugging...
+[0/6] Write sources
+[1/6] Write swift-version--58304C5D6DBC2206.txt
+[3/6] Compiling OuroMDTests OuroMDPositioningTests.swift
+[4/6] Emitting module OuroMDTests
+[4/6] Write Objects.LinkFileList
+[5/6] Linking ouro-mdPackageTests
+Build complete! (2.91s)
+Test Suite 'Selected tests' started at 2026-07-08 22:20:55.373.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-08 22:20:55.374.
+Test Suite 'OuroMDPositioningTests' started at 2026-07-08 22:20:55.374.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsCarryReviewFacingDifferentiators]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:43: error: -[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsCarryReviewFacingDifferentiators] : XCTAssertTrue failed - release highlights should mention local Markdown workspace
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:43: error: -[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsCarryReviewFacingDifferentiators] : XCTAssertTrue failed - release highlights should mention folder
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:43: error: -[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsCarryReviewFacingDifferentiators] : XCTAssertTrue failed - release highlights should mention Search
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:43: error: -[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsCarryReviewFacingDifferentiators] : XCTAssertTrue failed - release highlights should mention Outline
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:43: error: -[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsCarryReviewFacingDifferentiators] : XCTAssertTrue failed - release highlights should mention Command Palette
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:43: error: -[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsCarryReviewFacingDifferentiators] : XCTAssertTrue failed - release highlights should mention PDF
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:43: error: -[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsCarryReviewFacingDifferentiators] : XCTAssertTrue failed - release highlights should mention HTML
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:43: error: -[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsCarryReviewFacingDifferentiators] : XCTAssertTrue failed - release highlights should mention No account
+Test Case '-[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsCarryReviewFacingDifferentiators]' failed (4.702 seconds).
+Test Case '-[OuroMDTests.OuroMDPositioningTests testShellAboutSubtitleUsesLocalWorkspacePositioning]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:10: error: -[OuroMDTests.OuroMDPositioningTests testShellAboutSubtitleUsesLocalWorkspacePositioning] : XCTAssertEqual failed: ("Markdown editor for fast local writing.") is not equal to ("Local Markdown workspace for Mac files.")
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:11: error: -[OuroMDTests.OuroMDPositioningTests testShellAboutSubtitleUsesLocalWorkspacePositioning] : XCTAssertFalse failed
+Test Case '-[OuroMDTests.OuroMDPositioningTests testShellAboutSubtitleUsesLocalWorkspacePositioning]' failed (0.007 seconds).
+Test Case '-[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:17: error: -[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow] : XCTAssertTrue failed
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:18: error: -[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow] : XCTAssertTrue failed
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:19: error: -[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow] : XCTAssertTrue failed
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:20: error: -[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow] : XCTAssertTrue failed
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:21: error: -[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow] : XCTAssertTrue failed
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:22: error: -[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow] : XCTAssertTrue failed
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:23: error: -[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow] : XCTAssertTrue failed
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:24: error: -[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow] : XCTAssertTrue failed
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:25: error: -[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow] : XCTAssertTrue failed
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:26: error: -[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow] : XCTAssertFalse failed
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:27: error: -[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow] : XCTAssertFalse failed
+Test Case '-[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow]' failed (0.003 seconds).
+Test Suite 'OuroMDPositioningTests' failed at 2026-07-08 22:21:00.085.
+	 Executed 3 tests, with 21 failures (0 unexpected) in 4.711 (4.712) seconds
+Test Suite 'ouro-mdPackageTests.xctest' failed at 2026-07-08 22:21:00.085.
+	 Executed 3 tests, with 21 failures (0 unexpected) in 4.711 (4.712) seconds
+Test Suite 'Selected tests' failed at 2026-07-08 22:21:00.085.
+	 Executed 3 tests, with 21 failures (0 unexpected) in 4.711 (4.713) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
