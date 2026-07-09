@@ -7,12 +7,12 @@
 - Worktree: `/Users/arimendelow/Projects/ouro-md-file-truth`
 - Planning doc: `codex-file-truth/tasks/2026-07-09-1409-planning-document-truth-surface.md`
 - Doing doc: `codex-file-truth/tasks/2026-07-09-1409-doing-document-truth-surface.md`
-- Gate state: Unit 4c UI coverage/refactor pass complete.
-- Next action: execute Unit 4d visual QA dogfood.
+- Gate state: Unit 4d visual QA dogfood complete; screenshot evidence and reviewer PASS committed in `af1e544`.
+- Next action: execute Unit 5 full native validation, package/install smoke, final reviewer gate, and PR publish/merge path.
 
 ## Terminal Evidence
 
-- Pending: implementation, tests, native build, visual QA, package/install, reviewer gate, publish/merge.
+- Pending: full test/preflight/release validation, package/install smoke, final reviewer gate, publish/merge.
 
 ## Continuation Scan
 

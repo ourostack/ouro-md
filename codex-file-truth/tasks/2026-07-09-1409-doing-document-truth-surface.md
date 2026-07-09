@@ -29,7 +29,7 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - [ ] 100% test coverage on all new code
 - [ ] All tests pass
 - [ ] No warnings
-- [ ] If UI/rendering/layout changed: `visual-qa-dogfood` evidence captured, absurdity ledger closed, and automated visual metrics still pass
+- [x] If UI/rendering/layout changed: `visual-qa-dogfood` evidence captured, absurdity ledger closed, and automated visual metrics still pass
 
 ## Code Coverage Requirements
 **MANDATORY: 100% coverage on all new code.**
@@ -119,9 +119,9 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 **What**: Refine layout, accessibility strings, and status-bar interaction while keeping the control lightweight.
 **Acceptance**: UI tests pass and source-fit review finds no dashboard/agent overreach. Evidence: harsh reviewer findings resolved; focused document truth/command/window suite passed 45 tests; `--uisurfacetest`, `--accessibilityaudit`, `swift build`, and `scripts/check-coverage.sh` passed with `DocumentTruth.swift` 169/169 lines and 82/82 regions.
 
-### ⬜ Unit 4d: Sidebar-Free Document Truth UI - Visual QA Dogfood
+### ✅ Unit 4d: Sidebar-Free Document Truth UI - Visual QA Dogfood
 **What**: Run screenshot-backed visual QA on the touched document surface with sidebar closed and status bar hidden/visible where applicable.
-**Acceptance**: Screenshots/live evidence captured in artifacts, absurdity ledger closed, automated visual metrics still pass.
+**Acceptance**: Screenshots/live evidence captured in artifacts, absurdity ledger closed, automated visual metrics still pass. Evidence: `unit-4d-visual-ledger.md`, screenshot artifacts, native UI/Web visual QA logs, and harsh visual reviewer PASS committed in `af1e544`.
 
 ### ⬜ Unit 5: Full Native Validation, Review, Publish
 **What**: Run full test/preflight/build/package/install validation, spawn harsh final reviewer gates, address findings, push/publish the branch or PR, and leave the app ready for user testing. Publish means branch/PR and local ready-to-test app unless release validation proves the repo's current terminal path requires a packaged release; it does not mean surprise App Store resubmission.
@@ -164,3 +164,4 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - 2026-07-09 14:55 -0700 Unit 4a red UI checks confirmed: `--uisurfacetest` and `--accessibilityaudit` fail only because the sidebar-free document truth control is missing.
 - 2026-07-09 14:57 -0700 Unit 4b green UI implementation confirmed: document truth control renders with status bar hidden, accessibility audit sees it, and `swift build` passed.
 - 2026-07-09 15:11 -0700 Unit 4c review/refactor complete: harsh reviewer blocker on empty staged/untracked diff commands resolved with state-specific diff commands; visible copy changed to `File status`; control moved into a reserved bottom strip; coverage gate passed 315 tests with pure support targets at 100%.
+- 2026-07-09 15:24 -0700 Unit 4d visual QA complete: native status-hidden/status-visible screenshots captured, rendered Markdown dogfood screenshots inspected, automated visual QA passed, and harsh visual reviewer returned PASS.
