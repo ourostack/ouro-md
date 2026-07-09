@@ -165,7 +165,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Package path, signed-app verification logs, altool validation/upload logs, and upload/build-processing status artifacts.
 **Acceptance**: No unresolved/actionable warnings in final green logs, package upload succeeds and the uploaded build can be discovered in App Store Connect for the final target version, or a real Apple-side credential/capability/processing blocker artifact is recorded.
 
-### ⬜ Unit 6d: Package And Upload — Release Review
+### ✅ Unit 6d: Package And Upload — Release Review
 **What**: Run a harsh build/release reviewer gate on package, validation, upload, signing, version, and artifact evidence.
 **Output**: Reviewer transcript or summary plus any fix commits/logs.
 **Acceptance**: Reviewer converges and no unresolved local packaging/upload blockers remain.
@@ -273,3 +273,4 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 5a complete: added failing App Store screenshot asset validator and Swift wrapper requiring four local PNG screenshots in folder-workspace, command-palette, search-outline, and themed-export-readability order; focused suite fails red because the manifest still has only one remote proof screenshot.
 - 2026-07-09 Unit 6b complete: implemented structured package-readiness artifacts with source-derived provenance for bundle/version/channel/category/direct-updates/encryption/telemetry/build-env claims, redacted secret-scan findings and artifact-path output, captured green focused/full/preflight logs, and passed harsh reviewer convergence after fixing false-security and stdout-leak findings.
 - 2026-07-09 Unit 6c complete: ran Xcode/Swift matrix, full Swift tests, App Store-channel build, signed package validation, discovered and embedded the existing active `MAC_APP_STORE` profile `N984ZC9M2H`, resolved Apple validation error 90287, uploaded `dist/app-store/Ouro-MD-0.9.80-app-store.pkg`, and captured uploaded build `827fa5b9-6994-41eb-bc75-ab3ca469a96f` in `VALID` processing state.
+- 2026-07-09 Unit 6d complete: harsh release reviewer found raw ASC icon asset-token evidence in the first Unit 6c commit; amended/pushed sanitized evidence as `dd126fc`, reran leakage scans, and reviewer converged on package/upload readiness for live App Store Connect apply units.
