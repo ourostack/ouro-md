@@ -1,0 +1,8 @@
+PASS
+
+Harsh visual reviewer notes:
+- Native screenshots show the control in a full-width reserved bottom strip with sidebar absent; the blank WebKit region is acknowledged, and the source layout is a VStack sibling strip rather than an overlay.
+- Hidden/visible status variants are readable at the captured size; the right-side word/char/theme status does not crowd the file status control.
+- Rendered Markdown screenshots/logs cover the editor content side: Quartz, Graphite, and wide-table fixture evidence all show loaded content with no page overflow or collapsed table metrics.
+- Ledger is closed with no remaining ready or needs-reviewer-gate entries.
+- Harness changes add debug snapshots and visible-status coverage without obvious case-specific overfitting.
