@@ -24,7 +24,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - [ ] Source-owned metadata recommends or encodes subtitle `Local Markdown Workspace`, Developer Tools category, a specific promotional text, specific keywords, and a review note that lists concrete reviewer steps.
 - [ ] A local screenshot set exists with at least four review-facing screenshots and the first screenshots show differentiated app surfaces, not only a single rendered document.
 - [ ] `scripts/check-apple-distribution-kit.sh` no longer reports screenshot proof as missing, or an explicit live-status path documents why remote proof is checked separately from CI.
-- [ ] A redacted programmatic App Store review-status command can read app `6787262892`, version `7309944f-cbe8-4518-960c-444e6116ab46`, submission `b37f847e-0ecb-4e7a-bb00-14e3038b0f4c`, rejected item state, and remote screenshot count from the local config.
+- [x] A redacted programmatic App Store review-status command can read app `6787262892`, version `7309944f-cbe8-4518-960c-444e6116ab46`, submission `b37f847e-0ecb-4e7a-bb00-14e3038b0f4c`, rejected item state, and remote screenshot count from the local config.
 - [ ] A new build/version carries visible in-app copy changes that align with the App Store positioning and can be cited in review notes.
 - [ ] Any final App Review reply/review-note text passes a harsh voice/posture reviewer gate and exact-state preflight before posting or submission.
 - [ ] 100% test coverage on all new code
@@ -100,7 +100,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: New or updated script/test files plus green focused logs and a sample redacted status artifact.
 **Acceptance**: Unit 3a tests pass green, status artifacts include app id, bundle id, version id, review detail id, screenshot count/state, and current rejection/submission state without secrets.
 
-### ⬜ Unit 3c: App Store Connect Status Reader — Coverage And Review
+### ✅ Unit 3c: App Store Connect Status Reader — Coverage And Review
 **What**: Run coverage/validation and a harsh reviewer gate focused on redaction, stale-state handling, and exact App Store Connect identifiers.
 **Output**: Coverage/validation logs and reviewer transcript or summary.
 **Acceptance**: 100% coverage on new status code, no secret-bearing artifacts, and reviewer converges.
@@ -260,3 +260,4 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 2c complete: full Swift tests, app build, visual QA, first-launch, UI-surface, accessibility, exact welcome snapshot, absurdity ledger, and harsh UI/native reviewer gate passed after review fixes for user-facing release highlights and tracked fixture drift.
 - 2026-07-09 Unit 3a complete: added failing App Store Connect status-reader tests requiring normalized app/version/submission/screenshot fields and redaction; focused suite fails red because `scripts/app-store-status.mjs` is not implemented.
 - 2026-07-09 Unit 3b complete: implemented `scripts/app-store-status.mjs` with JSON and compact text modes over shared-kit `asc get`, added redaction/missing-field selftests, captured live redacted status for rejected version `0.9.79`, and kept Apple distribution checks green.
+- 2026-07-09 Unit 3c complete: expanded status-reader tests to cover redaction, stale-id guards, explicit rejected-audit mode, review-item version relationships, `APP_DESKTOP` screenshot proof, and `COMPLETE` screenshot delivery state; live rejected-audit artifacts and harsh reviewer re-review passed.

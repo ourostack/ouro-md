@@ -111,11 +111,23 @@ Check local readiness:
 ./scripts/package-app-store.sh --readiness
 ```
 
-Read the current rejected App Store Connect state:
+Read the current rejected App Store Connect state. With no ids, this command
+defaults to the last rejected `0.9.79` version/submission ids for audit
+evidence only:
 
 ```sh
-node scripts/app-store-status.mjs --json
-node scripts/app-store-status.mjs
+node scripts/app-store-status.mjs --use-rejected-audit-defaults --json
+node scripts/app-store-status.mjs --use-rejected-audit-defaults
+```
+
+For a new target version, pass the reviewed App Store version and review
+submission ids from the dry-run/apply artifact. Live submission status reads
+without explicit ids fail fast to avoid accidentally reusing stale rejected ids:
+
+```sh
+node scripts/app-store-status.mjs --json \
+  --version-id <app-store-version-id> \
+  --review-submission-id <review-submission-id>
 ```
 
 Check final submission readiness after screenshots are generated and declared:

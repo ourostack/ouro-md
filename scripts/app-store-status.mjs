@@ -7,6 +7,7 @@ const DEFAULTS = {
   appId: "6787262892",
   bundleId: "bot.ouro.md",
   teamId: "743GT2AJ24",
+  rejectedAuditVersionString: "0.9.79",
   versionId: "7309944f-cbe8-4518-960c-444e6116ab46",
   reviewSubmissionId: "b37f847e-0ecb-4e7a-bb00-14e3038b0f4c"
 };
@@ -16,17 +17,31 @@ function parseArgs(argv) {
     appId: DEFAULTS.appId,
     bundleId: DEFAULTS.bundleId,
     teamId: DEFAULTS.teamId,
-    versionId: DEFAULTS.versionId,
-    reviewSubmissionId: DEFAULTS.reviewSubmissionId,
+    versionId: undefined,
+    reviewSubmissionId: undefined,
+    useRejectedAuditDefaults: false,
     json: false,
     selftest: false,
-    selftestMissingFields: false
+    selftestMissingFields: false,
+    selftestPrivateKeyError: false,
+    selftestFirstItemUnrelated: false,
+    selftestReviewItemMismatch: false,
+    selftestMissingScreenshotState: false,
+    selftestFailedScreenshotState: false,
+    selftestNonDesktopScreenshotSet: false
   };
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === "--selftest") options.selftest = true;
     else if (arg === "--selftest-missing-fields") options.selftestMissingFields = true;
+    else if (arg === "--selftest-private-key-error") options.selftestPrivateKeyError = true;
+    else if (arg === "--selftest-first-item-unrelated") options.selftestFirstItemUnrelated = true;
+    else if (arg === "--selftest-review-item-mismatch") options.selftestReviewItemMismatch = true;
+    else if (arg === "--selftest-missing-screenshot-state") options.selftestMissingScreenshotState = true;
+    else if (arg === "--selftest-failed-screenshot-state") options.selftestFailedScreenshotState = true;
+    else if (arg === "--selftest-non-desktop-screenshot-set") options.selftestNonDesktopScreenshotSet = true;
+    else if (arg === "--use-rejected-audit-defaults") options.useRejectedAuditDefaults = true;
     else if (arg === "--app-id") options.appId = argv[++index];
     else if (arg === "--bundle-id") options.bundleId = argv[++index];
     else if (arg === "--team-id") options.teamId = argv[++index];
@@ -40,6 +55,35 @@ function parseArgs(argv) {
     }
   }
 
+  return finalizeOptions(options);
+}
+
+function finalizeOptions(options) {
+  if (options.useRejectedAuditDefaults) {
+    if (options.versionId || options.reviewSubmissionId) {
+      throw new Error("--use-rejected-audit-defaults cannot be combined with --version-id or --review-submission-id");
+    }
+    options.versionId = DEFAULTS.versionId;
+    options.reviewSubmissionId = DEFAULTS.reviewSubmissionId;
+    options.statusPurpose = "rejected-audit";
+    options.usedRejectedAuditDefaults = true;
+    return options;
+  }
+
+  if (options.selftest) {
+    options.versionId = options.versionId ?? DEFAULTS.versionId;
+    options.reviewSubmissionId = options.reviewSubmissionId ?? DEFAULTS.reviewSubmissionId;
+    options.statusPurpose = "selftest";
+    options.usedRejectedAuditDefaults = false;
+    return options;
+  }
+
+  if (!options.versionId || !options.reviewSubmissionId) {
+    throw new Error("live status requires --version-id and --review-submission-id, or --use-rejected-audit-defaults for the rejected 0.9.79 audit snapshot");
+  }
+
+  options.statusPurpose = "submission-readiness";
+  options.usedRejectedAuditDefaults = false;
   return options;
 }
 
@@ -51,15 +95,30 @@ function normalizeStatus(responses, options) {
   const reviewDetail = singleResource(responses.reviewDetail, "app store review detail");
   const build = singleResource(responses.build, "build");
   const screenshotSets = resourceArray(responses.screenshotSets, "app screenshot sets");
-  const screenshotSet = screenshotSets.find((item) => item.attributes?.screenshotDisplayType === "APP_DESKTOP") ?? screenshotSets[0];
+  const screenshotSet = screenshotSets.find((item) => item.attributes?.screenshotDisplayType === "APP_DESKTOP");
+  if (!screenshotSet) throw new Error("missing required field: APP_DESKTOP screenshot set");
   const screenshots = resourceArray(responses.screenshots, "app screenshots");
   const reviewSubmission = singleResource(responses.reviewSubmission, "review submission");
   const reviewSubmissionItems = resourceArray(responses.reviewSubmissionItems, "review submission items");
-  const reviewSubmissionItem = reviewSubmissionItems[0];
+  const matchingReviewSubmissionItems = reviewSubmissionItems.filter((item) => (
+    item.relationships?.appStoreVersion?.data?.id === version.id
+  ));
+  if (matchingReviewSubmissionItems.length === 0) {
+    throw new Error(`no review submission item matched app store version ${version.id}`);
+  }
+  if (matchingReviewSubmissionItems.length > 1) {
+    throw new Error(`multiple review submission items matched app store version ${version.id}`);
+  }
+  const reviewSubmissionItem = matchingReviewSubmissionItems[0];
+  const reviewSubmissionItemAppStoreVersionId = reviewSubmissionItem.relationships?.appStoreVersion?.data?.id;
+  const screenshotDeliveryStates = screenshots.map((screenshot) => screenshot.attributes?.assetDeliveryState?.state ?? null);
 
   const summary = {
     schemaVersion: 1,
     capturedAt: new Date().toISOString(),
+    statusPurpose: options.statusPurpose,
+    usedRejectedAuditDefaults: options.usedRejectedAuditDefaults,
+    rejectedAuditDefaultVersionString: options.usedRejectedAuditDefaults ? DEFAULTS.rejectedAuditVersionString : null,
     appId: app.id,
     bundleId: app.attributes?.bundleId,
     teamId: options.teamId,
@@ -73,6 +132,7 @@ function normalizeStatus(responses, options) {
     reviewSubmissionId: reviewSubmission.id,
     reviewSubmissionState: reviewSubmission.attributes?.state,
     reviewSubmissionItemId: reviewSubmissionItem?.id,
+    reviewSubmissionItemAppStoreVersionId,
     reviewSubmissionItemState: reviewSubmissionItem?.attributes?.state,
     buildId: build.id,
     buildVersion: build.attributes?.version,
@@ -81,7 +141,7 @@ function normalizeStatus(responses, options) {
     screenshotDisplayType: screenshotSet?.attributes?.screenshotDisplayType,
     screenshotCount: screenshots.length,
     screenshotIds: screenshots.map((screenshot) => screenshot.id),
-    screenshotDeliveryStates: screenshots.map((screenshot) => screenshot.attributes?.assetDeliveryState?.state ?? null)
+    screenshotDeliveryStates
   };
 
   validateSummary(summary, options);
@@ -91,6 +151,7 @@ function normalizeStatus(responses, options) {
 function validateSummary(summary, options) {
   const required = {
     appId: summary.appId,
+    statusPurpose: summary.statusPurpose,
     bundleId: summary.bundleId,
     teamId: summary.teamId,
     currentAppStoreVersionId: summary.currentAppStoreVersionId,
@@ -100,6 +161,7 @@ function validateSummary(summary, options) {
     reviewDetailId: summary.reviewDetailId,
     reviewSubmissionId: summary.reviewSubmissionId,
     reviewSubmissionState: summary.reviewSubmissionState,
+    reviewSubmissionItemAppStoreVersionId: summary.reviewSubmissionItemAppStoreVersionId,
     reviewSubmissionItemState: summary.reviewSubmissionItemState,
     buildId: summary.buildId,
     buildProcessingState: summary.buildProcessingState,
@@ -115,7 +177,17 @@ function validateSummary(summary, options) {
   if (summary.appId !== options.appId) throw new Error(`unexpected app id: ${summary.appId}`);
   if (summary.bundleId !== options.bundleId) throw new Error(`unexpected bundle id: ${summary.bundleId}`);
   if (summary.teamId !== options.teamId) throw new Error(`unexpected team id: ${summary.teamId}`);
+  if (summary.screenshotDisplayType !== "APP_DESKTOP") throw new Error(`unexpected screenshot display type: ${summary.screenshotDisplayType}`);
   if (summary.screenshotCount < 1) throw new Error("missing required field: screenshotCount");
+  if (!Array.isArray(summary.screenshotDeliveryStates)
+    || summary.screenshotDeliveryStates.length !== summary.screenshotCount
+    || summary.screenshotDeliveryStates.some((state) => state === undefined || state === null || state === "")) {
+    throw new Error("missing required field: screenshotDeliveryStates");
+  }
+  const invalidScreenshotStates = summary.screenshotDeliveryStates.filter((state) => state !== "COMPLETE");
+  if (invalidScreenshotStates.length > 0) {
+    throw new Error(`unexpected screenshot delivery state: ${invalidScreenshotStates.join(",")}`);
+  }
 }
 
 function singleResource(response, label) {
@@ -149,6 +221,7 @@ function isSensitiveKey(key) {
 
 function ascGet(path, options) {
   const args = ["./scripts/apple-distribution-kit.sh", "asc", "get", "--path", path, "--json"];
+  for (const query of options.query ?? []) args.push("--query", query);
   if (options.configPath) args.push("--config", options.configPath);
   const result = spawnSync(args[0], args.slice(1), { encoding: "utf8" });
   if (result.status !== 0) {
@@ -160,7 +233,7 @@ function ascGet(path, options) {
 
 function redactText(text) {
   return text
-    .replace(/-----BEGIN [\s\S]*?PRIVATE KEY-----/g, "[REDACTED_SECRET]")
+    .replace(/-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g, "[REDACTED_SECRET]")
     .replace(/Bearer\s+[A-Za-z0-9._-]+/g, "Bearer [REDACTED_SECRET]")
     .replace(/eyJ[A-Za-z0-9._-]+/g, "[REDACTED_SECRET]")
     .replace(/AuthKey_[A-Za-z0-9]+\.p8/g, "AuthKey_[REDACTED].p8");
@@ -176,12 +249,14 @@ function fetchLiveStatus(options) {
   const reviewDetail = ascGet(`/v1/appStoreVersions/${options.versionId}/appStoreReviewDetail`, options);
   const build = ascGet(`/v1/appStoreVersions/${options.versionId}/build`, options);
   const screenshotSets = ascGet(`/v1/appStoreVersionLocalizations/${localization.id}/appScreenshotSets`, options);
-  const screenshotSet = resourceArray(screenshotSets, "app screenshot sets").find((item) => item.attributes?.screenshotDisplayType === "APP_DESKTOP")
-    ?? resourceArray(screenshotSets, "app screenshot sets")[0];
-  if (!screenshotSet?.id) throw new Error("missing required field: screenshotSetId");
+  const screenshotSet = resourceArray(screenshotSets, "app screenshot sets").find((item) => item.attributes?.screenshotDisplayType === "APP_DESKTOP");
+  if (!screenshotSet?.id) throw new Error("missing required field: APP_DESKTOP screenshot set");
   const screenshots = ascGet(`/v1/appScreenshotSets/${screenshotSet.id}/appScreenshots`, options);
   const reviewSubmission = ascGet(`/v1/reviewSubmissions/${options.reviewSubmissionId}`, options);
-  const reviewSubmissionItems = ascGet(`/v1/reviewSubmissions/${options.reviewSubmissionId}/items`, options);
+  const reviewSubmissionItems = ascGet(`/v1/reviewSubmissions/${options.reviewSubmissionId}/items`, {
+    ...options,
+    query: ["include=appStoreVersion"]
+  });
   return { app, version, localizations, reviewDetail, build, screenshotSets, screenshots, reviewSubmission, reviewSubmissionItems };
 }
 
@@ -257,7 +332,12 @@ function fixtureResponses() {
         {
           type: "reviewSubmissionItems",
           id: "YjM3Zjg0N2UtMGVjYi00ZTdhLWJiMDAtMTRlMzAzOGIwZjRjfDZ8ODg3ODEyNjgx",
-          attributes: { state: "REJECTED" }
+          attributes: { state: "REJECTED" },
+          relationships: {
+            appStoreVersion: {
+              data: { type: "appStoreVersions", id: DEFAULTS.versionId }
+            }
+          }
         }
       ]
     }
@@ -266,8 +346,37 @@ function fixtureResponses() {
 
 function runSelftest(options) {
   const responses = fixtureResponses();
+  if (options.selftestPrivateKeyError) {
+    const pem = "-----BEGIN " + "PRIVATE KEY-----\nabc123\n-----END " + "PRIVATE KEY-----";
+    throw new Error(`simulated credential failure: ${pem} Bearer token`);
+  }
   if (options.selftestMissingFields) {
     delete responses.app.data.attributes.bundleId;
+  }
+  if (options.selftestFirstItemUnrelated) {
+    responses.reviewSubmissionItems.data[0].id = "matching-item";
+    responses.reviewSubmissionItems.data.unshift({
+      type: "reviewSubmissionItems",
+      id: "unrelated-item",
+      attributes: { state: "ACCEPTED" },
+      relationships: {
+        appStoreVersion: {
+          data: { type: "appStoreVersions", id: "unrelated-version" }
+        }
+      }
+    });
+  }
+  if (options.selftestReviewItemMismatch) {
+    responses.reviewSubmissionItems.data[0].relationships.appStoreVersion.data.id = "unrelated-version";
+  }
+  if (options.selftestMissingScreenshotState) {
+    delete responses.screenshots.data[0].attributes.assetDeliveryState;
+  }
+  if (options.selftestFailedScreenshotState) {
+    responses.screenshots.data[0].attributes.assetDeliveryState.state = "FAILED";
+  }
+  if (options.selftestNonDesktopScreenshotSet) {
+    responses.screenshotSets.data[0].attributes.screenshotDisplayType = "APP_IPHONE_65";
   }
   return normalizeStatus(responses, options);
 }
@@ -282,12 +391,16 @@ function writeOutput(summary, options) {
 }
 
 function textSummary(summary) {
+  const purpose = summary.usedRejectedAuditDefaults
+    ? `Purpose ${summary.statusPurpose}; using rejected ${summary.rejectedAuditDefaultVersionString} defaults`
+    : `Purpose ${summary.statusPurpose}`;
   return [
+    purpose,
     `App ${summary.appId} (${summary.bundleId}) on team ${summary.teamId}`,
     `Version ${summary.currentVersionString} ${summary.currentVersionState} (${summary.currentAppStoreVersionId})`,
     `Build ${summary.buildVersion} ${summary.buildProcessingState} (${summary.buildId})`,
     `Review submission ${summary.reviewSubmissionState}; item ${summary.reviewSubmissionItemState} (${summary.reviewSubmissionId})`,
-    `Screenshots ${summary.screenshotCount} ${summary.screenshotDisplayType} (${summary.screenshotSetId})`
+    `Screenshots ${summary.screenshotCount} ${summary.screenshotDisplayType} ${summary.screenshotDeliveryStates.join(",")} (${summary.screenshotSetId})`
   ].join("\n") + "\n";
 }
 
