@@ -107,9 +107,9 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 **What**: Tighten command APIs and tests so copy/reveal behavior is deterministic and platform seams are isolated.
 **Acceptance**: Command tests pass and no untested command branches remain. Evidence: broader command/menu suite passed 37 tests; `scripts/check-coverage.sh` passed 314 tests and pure support coverage stayed 100%; `swift build` passed. Also fixed a dirty Save As failure baseline bug surfaced by the coverage slow-test budget.
 
-### ⬜ Unit 4a: Sidebar-Free Document Truth UI - Tests
+### ✅ Unit 4a: Sidebar-Free Document Truth UI - Tests
 **What**: Add failing SwiftUI/accessibility tests for a compact document truth control visible without the sidebar/status bar dependency, with labels and menu actions exposed.
-**Acceptance**: UI-facing tests fail before implementation.
+**Acceptance**: UI-facing tests fail before implementation. Evidence: `2026-07-09-1409-doing-document-truth-surface/unit-4a-red.txt`.
 
 ### ⬜ Unit 4b: Sidebar-Free Document Truth UI - Implementation
 **What**: Add a compact document truth control to the editor/status/title-adjacent surface using existing styling patterns, with a small action menu and honest labels.
@@ -161,3 +161,4 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - 2026-07-09 14:44 -0700 Unit 3a red test confirmed: command tests failed because document truth commands/selectors are not wired yet.
 - 2026-07-09 14:49 -0700 Unit 3b green test confirmed: focused command suite passed 15 tests and `swift build` completed cleanly.
 - 2026-07-09 14:54 -0700 Unit 3c regression/coverage pass complete: command/menu suite passed 37 tests, `scripts/check-coverage.sh` passed 314 tests with pure support files at 100%, and failed dirty Save As no longer advances the saved-content baseline before a write succeeds.
+- 2026-07-09 14:55 -0700 Unit 4a red UI checks confirmed: `--uisurfacetest` and `--accessibilityaudit` fail only because the sidebar-free document truth control is missing.

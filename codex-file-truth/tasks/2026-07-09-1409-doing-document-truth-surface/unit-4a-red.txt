@@ -1,0 +1,18 @@
+Commands:
+swift run ouro-md --uisurfacetest
+swift run ouro-md --accessibilityaudit
+
+Result:
+Failed as expected.
+
+Key UI surface failure:
+- document truth control fitting size: 400.0x320.0 ✗
+- document truth labels:
+
+Key accessibility audit failures:
+- document truth accessibility: ✗
+- missing document truth labels: Document truth
+- missing source labels: DocumentTruthControl(model: model) | .accessibilityLabel("Document truth") | .accessibilityValue(model.documentTruthDisplayLabel)
+
+Interpretation:
+EditorPane renders and existing UI surfaces pass, but there is not yet a sidebar-free DocumentTruthControl exposed to accessibility/runtime surface tests.

@@ -69,7 +69,11 @@ final class AccessibilityAuditTester {
             .union(renderedText(OuroMDUpdateInstalledNotice(version: "0.10.0", onOpenAbout: {}, onDismiss: {}), size: NSSize(width: 380, height: 140)))
 
         let runtimeRequired = ["Light", "Dark", "Outline", "Files", "Search"]
+        let documentTruthRequired = ["Document truth"]
         let missingRuntime = runtimeRequired.filter { expected in
+            !labels.contains { $0.localizedCaseInsensitiveContains(expected) }
+        }
+        let missingDocumentTruth = documentTruthRequired.filter { expected in
             !labels.contains { $0.localizedCaseInsensitiveContains(expected) }
         }
         let shellRenderedRequired = [
@@ -98,6 +102,7 @@ final class AccessibilityAuditTester {
         let menu = menuAudit()
         let discoverability = commandDiscoverabilityAudit()
         let labelsOK = missingRuntime.isEmpty
+            && missingDocumentTruth.isEmpty
             && missingShellRendered.isEmpty
             && missingShellRenderedAlternatives.isEmpty
             && source.missing.isEmpty
@@ -106,6 +111,11 @@ final class AccessibilityAuditTester {
         print("runtime accessibility smoke: \(missingRuntime.isEmpty ? "✓" : "✗")")
         if !missingRuntime.isEmpty {
             print("missing runtime labels: \(missingRuntime.joined(separator: " | "))")
+            print("observed labels: \(labels.sorted().joined(separator: " | "))")
+        }
+        print("document truth accessibility: \(missingDocumentTruth.isEmpty ? "✓" : "✗")")
+        if !missingDocumentTruth.isEmpty {
+            print("missing document truth labels: \(missingDocumentTruth.joined(separator: " | "))")
             print("observed labels: \(labels.sorted().joined(separator: " | "))")
         }
         print("shell rendered accessibility labels: \(missingShellRendered.isEmpty ? "✓" : "✗")")
@@ -294,6 +304,11 @@ final class AccessibilityAuditTester {
             "AppShellCommandReferenceView(",
             "shellWindows.close(id: \"keyboard-shortcuts\")",
             ".accessibilityLabel(\"Document status\")",
+            "DocumentTruthControl(model: model)",
+            ".accessibilityLabel(\"Document truth\")",
+            ".accessibilityValue(model.documentTruthDisplayLabel)",
+            "model.revealCurrentFileInFinder()",
+            "model.copyCurrentGitDiffCommand()",
             ".accessibilityLabel(\"Find\")",
             ".accessibilityLabel(\"Replace\")",
             ".accessibilityLabel(\"Previous match\")",
