@@ -33,7 +33,7 @@ enum OuroMDShellContract {
                 supportsReleasePage: distributionChannel.allowsDirectUpdates
             ),
             about: OuroAppShellAboutContract(
-                subtitle: "Markdown editor for fast local writing.",
+                subtitle: OuroMDRelease.positioningSubtitle,
                 repositoryURL: identity(for: distributionChannel).repositoryURL
             ),
             commandReference: OuroAppShellCommandReferenceContract(

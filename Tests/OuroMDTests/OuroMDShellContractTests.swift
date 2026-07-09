@@ -35,7 +35,7 @@ final class OuroMDShellContractTests: XCTestCase {
         XCTAssertEqual(contract.releaseUpdates?.supportsReleasePage, true)
         XCTAssertEqual(contract.identity.distributionChannel.descriptor.displayName, "Direct download")
 
-        XCTAssertEqual(contract.about?.subtitle, "Markdown editor for fast local writing.")
+        XCTAssertEqual(contract.about?.subtitle, OuroMDRelease.positioningSubtitle)
         XCTAssertEqual(contract.about?.repositoryURL?.absoluteString, "https://github.com/ourostack/ouro-md")
 
         XCTAssertEqual(contract.commandReference?.title, "Keyboard Shortcuts")

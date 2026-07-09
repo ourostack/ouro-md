@@ -50,7 +50,7 @@ struct OuroMDAboutView: View {
         AppShellAboutModel(
             appName: OuroMDRelease.appName,
             versionLine: versionLine,
-            subtitle: "Markdown editor for fast local writing.",
+            subtitle: OuroMDRelease.positioningSubtitle,
             repositoryURL: repositoryURL,
             iconSystemName: "doc.richtext",
             whatsNew: AppShellWhatsNewModel(

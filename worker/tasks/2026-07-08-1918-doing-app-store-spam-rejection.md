@@ -80,7 +80,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Failing Swift test diff plus red focused test log.
 **Acceptance**: Focused tests fail red against the current generic welcome/about copy.
 
-### ⬜ Unit 2b: App-Visible Positioning — Implementation
+### ✅ Unit 2b: App-Visible Positioning — Implementation
 **What**: Update `Sources/OuroMD/Welcome.swift`, `Sources/OuroMD/AppInfoView.swift`, `Sources/OuroMD/OuroMDShellContract.swift`, `Sources/OuroMDCore/OuroMDRelease.swift`, and tests so visible app copy aligns with the App Store metadata and review path. Target source/manifest version is `0.9.80`; bump with `scripts/bump-version.sh` to the next unused patch version if App Store Connect proves `0.9.80` has an unusable non-editable/non-creatable App Store version state, an already-uploaded/consumed processed build collision, or any other Apple-side version/build uniqueness blocker.
 **Output**: Updated Swift source/tests/version files plus green focused test log.
 **Acceptance**: Unit 2a tests pass green, release version and manifest version match, and app-owned copy no longer presents Ouro MD as merely a generic Markdown editor.
@@ -256,3 +256,4 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 1b complete: added source-owned App Store metadata, docs, and distribution preflight checks; focused metadata test and Apple distribution check pass.
 - 2026-07-09 Unit 1c complete: extracted App Store metadata validator, added selftests for draft/final screenshot gates, wired `./scripts/check-apple-distribution-kit.sh --final-submission`, captured normal-pass and strict-red proof logs, and harsh reviewer gate converged.
 - 2026-07-09 Unit 2a complete: added app-visible positioning tests for shell/About subtitle, welcome copy, and release highlights; focused suite fails red against generic current copy.
+- 2026-07-09 Unit 2b complete: updated About/shell subtitle, first-launch welcome copy, release highlights, and CLI help to local-workspace positioning; focused positioning, shell, release, distribution metadata, and Apple distribution checks pass.

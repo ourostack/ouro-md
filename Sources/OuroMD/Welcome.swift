@@ -6,16 +6,20 @@ enum Welcome {
     static let markdown = """
     # Welcome to Ouro MD
 
-    A minimalist, themable, **native macOS** Markdown editor — write on the left of
-    your mind, read on the right.
+    Ouro MD is a local Markdown workspace for Mac files. Open documents or whole
+    folders directly from Finder, keep your writing local, and move through the
+    workspace with native Mac sidebars and commands.
 
     ## The basics
 
-    - Open a file with **⌘O**, or a whole folder with **⇧⌘O** (the sidebar becomes a
-      file browser you can search).
-    - Your changes **auto-save**. Switch themes from the **Themes** menu.
-    - Run editor commands from **⇧⌘P**, or open **Help ▸ Keyboard Shortcuts** with **⌘?**.
-    - **⌘/** toggles source mode · **⌘F** find · **⌥⌘F** replace · **⌘1–6** headings.
+    - Open a file with **Command-O**, or a whole folder with
+      **Shift-Command-O**. Use **View > File Tree** to browse local files.
+    - Use **View > Search** to search the open folder, and **View > Outline** to
+      jump through headings in the current document.
+    - Open the **Command Palette** with **Shift-Command-P** for editor, export,
+      view, and theme commands.
+    - Export a self-contained **HTML** file or a **PDF** from the **File** menu.
+    - No account is required. Your Markdown files stay wherever you put them.
 
     ## Live editing
 

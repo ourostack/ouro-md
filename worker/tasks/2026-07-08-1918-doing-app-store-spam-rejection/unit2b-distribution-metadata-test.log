@@ -1,0 +1,18 @@
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.20s)
+Test Suite 'Selected tests' started at 2026-07-08 22:23:08.137.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-08 22:23:08.138.
+Test Suite 'OuroMDDistributionTests' started at 2026-07-08 22:23:08.138.
+Test Case '-[OuroMDTests.OuroMDDistributionTests testAppStoreManifestCarriesDistinctReviewMetadata]' started.
+Test Case '-[OuroMDTests.OuroMDDistributionTests testAppStoreManifestCarriesDistinctReviewMetadata]' passed (0.004 seconds).
+Test Suite 'OuroMDDistributionTests' passed at 2026-07-08 22:23:08.142.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.004 (0.004) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-07-08 22:23:08.142.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.004 (0.004) seconds
+Test Suite 'Selected tests' passed at 2026-07-08 22:23:08.142.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.004 (0.005) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

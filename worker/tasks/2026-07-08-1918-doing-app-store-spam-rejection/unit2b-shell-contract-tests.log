@@ -1,0 +1,26 @@
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.20s)
+Test Suite 'Selected tests' started at 2026-07-08 22:23:28.861.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-08 22:23:28.861.
+Test Suite 'OuroMDShellContractTests' started at 2026-07-08 22:23:28.861.
+Test Case '-[OuroMDTests.OuroMDShellContractTests testAppStoreShellContractUsesStoreOwnedUpdateSemantics]' started.
+Test Case '-[OuroMDTests.OuroMDShellContractTests testAppStoreShellContractUsesStoreOwnedUpdateSemantics]' passed (0.006 seconds).
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellCommandManifestPinsPublicSurfaceSemantics]' started.
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellCommandManifestPinsPublicSurfaceSemantics]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractDocumentsUtilityWindowsAndSettingsEntryPoint]' started.
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractDocumentsUtilityWindowsAndSettingsEntryPoint]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractIsValidAndDeclaresSharedSurfaces]' started.
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractIsValidAndDeclaresSharedSurfaces]' passed (0.003 seconds).
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractMatchesRuntimeIdentityReleaseAndShortcutSurfaces]' started.
+Test Case '-[OuroMDTests.OuroMDShellContractTests testShellContractMatchesRuntimeIdentityReleaseAndShortcutSurfaces]' passed (0.002 seconds).
+Test Suite 'OuroMDShellContractTests' passed at 2026-07-08 22:23:28.874.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.012 (0.013) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-07-08 22:23:28.874.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.012 (0.013) seconds
+Test Suite 'Selected tests' passed at 2026-07-08 22:23:28.874.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.012 (0.013) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

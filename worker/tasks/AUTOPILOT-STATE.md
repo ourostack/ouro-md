@@ -5,11 +5,11 @@
 - Worktree: `/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection`
 - Planning doc: `worker/tasks/2026-07-08-1918-planning-app-store-spam-rejection.md`
 - Gate state: planning reviewer converged; planning approved. Doing-doc granularity, validation/source-fidelity, ambiguity, quality, and scrutiny passes converged. Unit 1c metadata validation reviewer converged. Autopilot/no-human-gates mandate active; human gates waived by operator; reviewer gates remain required through harsh sub-agents.
-- Next action: execute Unit 2b app-visible positioning implementation.
+- Next action: execute Unit 2c build, coverage, and visual QA for the app-visible positioning changes.
 
 ## Terminal Evidence
 
-- Not terminal yet. Deep research is committed and pushed at `2aaf86e`; planning/doing approval is committed; Unit 0 baseline captured current App Store Connect state; Unit 1 metadata validation is complete through reviewer convergence; Unit 2a app-visible positioning tests are red. App-visible copy implementation, screenshots, packaging, upload, and App Store submission remain.
+- Not terminal yet. Deep research is committed and pushed at `2aaf86e`; planning/doing approval is committed; Unit 0 baseline captured current App Store Connect state; Unit 1 metadata validation is complete through reviewer convergence; Unit 2a app-visible positioning tests are red; Unit 2b app-visible positioning implementation is green. Visual QA, screenshots, packaging, upload, and App Store submission remain.
 
 ## Continuation Scan
 

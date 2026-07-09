@@ -1,0 +1,24 @@
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.17s)
+Test Suite 'Selected tests' started at 2026-07-08 22:23:33.049.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-08 22:23:33.050.
+Test Suite 'ReleaseUpdateTests' started at 2026-07-08 22:23:33.050.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testCheckerConstructionUsesOuroMDConfiguration]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testCheckerConstructionUsesOuroMDConfiguration]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testCustomConfigurationFlowsIntoShellConfiguration]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testCustomConfigurationFlowsIntoShellConfiguration]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultConfigurationTargetsStableOuroMDGitHubReleases]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testDefaultConfigurationTargetsStableOuroMDGitHubReleases]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.ReleaseUpdateTests testReleaseDescriptorMatchesCurrentDistribution]' started.
+Test Case '-[OuroMDTests.ReleaseUpdateTests testReleaseDescriptorMatchesCurrentDistribution]' passed (0.000 seconds).
+Test Suite 'ReleaseUpdateTests' passed at 2026-07-08 22:23:33.052.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-07-08 22:23:33.052.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'Selected tests' passed at 2026-07-08 22:23:33.052.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.001 (0.003) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
