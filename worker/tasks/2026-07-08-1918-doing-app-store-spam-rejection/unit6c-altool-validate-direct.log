@@ -1,6 +1,6 @@
 Running altool at path '/Applications/Xcode.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources/altool'...
 
-2026-07-09 01:28:22.128 ERROR: [ContentDelivery.Uploader.A20804DC0] 
+2026-07-09 01:28:22.128 ERROR: [ContentDelivery.Uploader.A20804DC0]
 =======================================
 VERIFY FAILED with 2 errors, 1 warning
 =======================================
