@@ -33,11 +33,13 @@ Captured: 2026-07-09
 - Coverage interpretation: `unit8-final-coverage-summary.json`
 - Final App Store distribution check: `unit8-final-apple-distribution-check.log`
 - Final severe leak scan: `unit8-final-leak-scan.log`
+- Final branch task/research artifact leak scan after review finding: `unit8b-task-artifact-leak-scan.log`
 
 ## Reviewer Gates
 
 - Unit 7g reply wording reviewer: Aristotle, `CONVERGED`
 - Unit 7g/7h submit evidence reviewer: Cicero, `CONVERGED`
+- Unit 8b final branch reviewer Round 1: Boyle, `FINDINGS`; blocker fixed in `unit8b-round1-review-finding.md`
 - Prior live mutation reviewer summaries:
   - `unit7c-review-summary.md`
   - `unit7d-review-summary.md`
