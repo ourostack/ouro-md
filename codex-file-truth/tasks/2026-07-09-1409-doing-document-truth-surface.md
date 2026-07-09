@@ -75,9 +75,9 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 **What**: Add failing tests in the coverage-gated `OuroMDAppSupportTests` target for read-only classification of non-file, local/non-repo, tracked clean, tracked modified, mixed staged/unstaged changes, untracked, unavailable/inaccessible, label text, command availability, relative-path helpers, and shell-safe git diff command string helpers.
 **Acceptance**: New model tests fail before implementation and cover all branches. Evidence: `2026-07-09-1409-doing-document-truth-surface/unit-2a-red.txt`.
 
-### ⬜ Unit 2b: File/Git Truth Model - Implementation
+### ✅ Unit 2b: File/Git Truth Model - Implementation
 **What**: Add the smallest source-fit pure file truth model/provider to `Sources/OuroMDAppSupport` with injected read-only git runner, honest fallback states, relative-path support, and no git mutation.
-**Acceptance**: Unit 2a tests pass, no warnings, and failures degrade to unavailable/not-in-git instead of interrupting editing.
+**Acceptance**: Unit 2a tests pass, no warnings, and failures degrade to unavailable/not-in-git instead of interrupting editing. Evidence: `swift test --filter DocumentTruthTests` passed at 2026-07-09 14:30 -0700.
 
 ### ⬜ Unit 2c: File/Git Truth Model - Coverage & Refactor
 **What**: Run focused app-support tests and the repo coverage gate, trim unused abstractions, and verify every new branch/error path is exercised.
@@ -153,3 +153,4 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - 2026-07-09 14:26 -0700 Unit 1b green test confirmed after removing active title-click interception: `swift test --filter DocumentWindowControllerTests` passed.
 - 2026-07-09 14:27 -0700 Unit 1c cleanup passed: removed obsolete title-click helper type, updated stale fixture wording, focused title tests green, scoped grep found no obsolete hooks.
 - 2026-07-09 14:29 -0700 Unit 2a red test confirmed: `swift test --filter DocumentTruthTests` failed because the file truth provider types do not exist yet.
+- 2026-07-09 14:30 -0700 Unit 2b green test confirmed: `swift test --filter DocumentTruthTests` passed for pure file/git truth support model.
