@@ -1,0 +1,52 @@
+{
+  "ok": true,
+  "result": {
+    "data": [
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
+        "attributes": {
+          "description": "Ouro MD is a calm Markdown editor for macOS. It keeps the document front and center with clean typography, native file handling, and a focused writing surface for notes, specs, plans, and working documents.\n\nOpen Markdown files directly from Finder, write in plain text, review rendered structure, and keep your documents portable. Ouro MD is built for people who live in Markdown and want the app around it to stay quiet, fast, and intentional.",
+          "locale": "en-US",
+          "keywords": "markdown,editor,notes,writing,plain text,documents,preview,tables,mac",
+          "marketingUrl": "https://ouro.bot/",
+          "promotionalText": "A quiet, native Markdown editor for macOS documents that should stay yours.",
+          "supportUrl": "https://ouro.bot/support/",
+          "whatsNew": null
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/5dca4b0b-3e0d-4913-acbd-b172f6c1bacb/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/5dca4b0b-3e0d-4913-acbd-b172f6c1bacb/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/5dca4b0b-3e0d-4913-acbd-b172f6c1bacb/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/5dca4b0b-3e0d-4913-acbd-b172f6c1bacb/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/5dca4b0b-3e0d-4913-acbd-b172f6c1bacb/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/5dca4b0b-3e0d-4913-acbd-b172f6c1bacb/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/5dca4b0b-3e0d-4913-acbd-b172f6c1bacb"
+        }
+      }
+    ],
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/7309944f-cbe8-4518-960c-444e6116ab46/appStoreVersionLocalizations?limit=10"
+    },
+    "meta": {
+      "paging": {
+        "total": 1,
+        "limit": 10
+      }
+    }
+  }
+}

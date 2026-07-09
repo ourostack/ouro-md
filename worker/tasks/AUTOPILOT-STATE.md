@@ -5,11 +5,11 @@
 - Worktree: `/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection`
 - Planning doc: `worker/tasks/2026-07-08-1918-planning-app-store-spam-rejection.md`
 - Gate state: planning reviewer converged; planning approved. Doing-doc granularity, validation/source-fidelity, ambiguity, quality, and scrutiny passes converged. Autopilot/no-human-gates mandate active; human gates waived by operator; reviewer gates remain required through harsh sub-agents.
-- Next action: execute Unit 0 baseline, then continue sequentially through App Store submission.
+- Next action: execute Unit 1a metadata contract tests, then continue sequentially through App Store submission.
 
 ## Terminal Evidence
 
-- Not terminal yet. Deep research is committed and pushed at `2aaf86e`; planning approval is committed in this task stream; implementation, validation, packaging, upload, and App Store submission remain.
+- Not terminal yet. Deep research is committed and pushed at `2aaf86e`; planning/doing approval is committed; Unit 0 baseline captured current App Store Connect state. Implementation, validation, packaging, upload, and App Store submission remain.
 
 ## Continuation Scan
 

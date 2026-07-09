@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "result": {
+    "data": [
+      {
+        "type": "reviewSubmissions",
+        "id": "b37f847e-0ecb-4e7a-bb00-14e3038b0f4c",
+        "attributes": {
+          "platform": "MAC_OS",
+          "submittedDate": "2026-07-04T03:59:57.176Z",
+          "state": "UNRESOLVED_ISSUES"
+        },
+        "relationships": {
+          "items": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/b37f847e-0ecb-4e7a-bb00-14e3038b0f4c/relationships/items",
+              "related": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/b37f847e-0ecb-4e7a-bb00-14e3038b0f4c/items"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/b37f847e-0ecb-4e7a-bb00-14e3038b0f4c"
+        }
+      }
+    ],
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/apps/6787262892/reviewSubmissions?limit=10"
+    },
+    "meta": {
+      "paging": {
+        "total": 1,
+        "limit": 10
+      }
+    }
+  }
+}

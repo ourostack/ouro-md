@@ -1,0 +1,34 @@
+{
+  "ok": true,
+  "result": {
+    "data": [
+      {
+        "type": "appScreenshotSets",
+        "id": "f37ecb51-c96e-451d-9b29-20d86d7f118e",
+        "attributes": {
+          "screenshotDisplayType": "APP_DESKTOP"
+        },
+        "relationships": {
+          "appScreenshots": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appScreenshotSets/f37ecb51-c96e-451d-9b29-20d86d7f118e/relationships/appScreenshots",
+              "related": "https://api.appstoreconnect.apple.com/v1/appScreenshotSets/f37ecb51-c96e-451d-9b29-20d86d7f118e/appScreenshots"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appScreenshotSets/f37ecb51-c96e-451d-9b29-20d86d7f118e"
+        }
+      }
+    ],
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/5dca4b0b-3e0d-4913-acbd-b172f6c1bacb/appScreenshotSets?limit=50"
+    },
+    "meta": {
+      "paging": {
+        "total": 1,
+        "limit": 50
+      }
+    }
+  }
+}

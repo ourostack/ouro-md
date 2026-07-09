@@ -1,0 +1,66 @@
+{
+  "capturedAt": "2026-07-09T04:54:13Z",
+  "sourceVersion": "0.9.80",
+  "manifestVersion": "0.9.80",
+  "manifestCategory": "DEVELOPER_TOOLS",
+  "app": {
+    "id": "6787262892",
+    "bundleId": "bot.ouro.md",
+    "name": "Ouro MD",
+    "sku": "bot-ouro-md-macos"
+  },
+  "appStoreVersions": [
+    {
+      "id": "7309944f-cbe8-4518-960c-444e6116ab46",
+      "versionString": "0.9.79",
+      "appStoreState": "REJECTED",
+      "platform": "MAC_OS"
+    }
+  ],
+  "recentBuilds": [
+    {
+      "id": "2f55e88f-a05b-4065-a4b5-4e55180d8835",
+      "version": "0.9.79",
+      "uploadedDate": "2026-07-03T15:56:07-07:00",
+      "processingState": "VALID",
+      "expired": false
+    }
+  ],
+  "reviewSubmissions": [
+    {
+      "id": "b37f847e-0ecb-4e7a-bb00-14e3038b0f4c",
+      "state": "UNRESOLVED_ISSUES",
+      "platform": "MAC_OS",
+      "submittedDate": "2026-07-04T03:59:57.176Z"
+    }
+  ],
+  "rejectedSubmissionItems": [
+    {
+      "id": "YjM3Zjg0N2UtMGVjYi00ZTdhLWJiMDAtMTRlMzAzOGIwZjRjfDZ8ODg3ODEyNjgx",
+      "state": "REJECTED"
+    }
+  ],
+  "rejectedVersion": {
+    "id": "7309944f-cbe8-4518-960c-444e6116ab46",
+    "localizationIds": [
+      "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb"
+    ],
+    "reviewDetailId": "3bc7284e-27d5-4dd3-a049-b9e859289bd1",
+    "screenshotSets": [
+      {
+        "id": "f37ecb51-c96e-451d-9b29-20d86d7f118e",
+        "screenshotDisplayType": "APP_DESKTOP"
+      }
+    ],
+    "screenshots": [
+      {
+        "id": "80a8620a-643a-46bd-9e39-ab19f26ba424",
+        "fileName": "ouro-md-app-store-screenshot-2880x1800.png",
+        "width": 2880,
+        "height": 1800,
+        "state": "COMPLETE"
+      }
+    ],
+    "screenshotCount": 1
+  }
+}
