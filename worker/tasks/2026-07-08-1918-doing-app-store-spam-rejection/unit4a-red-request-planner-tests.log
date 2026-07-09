@@ -1,0 +1,107 @@
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.28s)
+Test Suite 'Selected tests' started at 2026-07-08 23:30:30.086.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-08 23:30:30.087.
+Test Suite 'OuroMDAppStoreRequestPlanTests' started at 2026-07-08 23:30:30.087.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanBuildsExactTargetVersionRequestGraph]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreRequestPlanTests.swift:7: error: -[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanBuildsExactTargetVersionRequestGraph] : XCTAssertEqual failed: ("1") is not equal to ("0") - node:internal/modules/cjs/loader:1386
+  throw err;
+  ^
+
+Error: Cannot find module '/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/scripts/app-store-request-plan.mjs'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+    at Module._load (node:internal/modules/cjs/loader:1192:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v22.22.0
+
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreRequestPlanTests.swift:8: error: -[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanBuildsExactTargetVersionRequestGraph] : failed: caught error: "Error Domain=NSCocoaErrorDomain Code=3840 "Unable to parse empty data." UserInfo={NSDebugDescription=Unable to parse empty data.}"
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanBuildsExactTargetVersionRequestGraph]' failed (0.185 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanIncludesMacScreenshotReservationUploadAndCommitSteps]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreRequestPlanTests.swift:128: error: -[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanIncludesMacScreenshotReservationUploadAndCommitSteps] : XCTAssertEqual failed: ("1") is not equal to ("0") - node:internal/modules/cjs/loader:1386
+  throw err;
+  ^
+
+Error: Cannot find module '/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/scripts/app-store-request-plan.mjs'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+    at Module._load (node:internal/modules/cjs/loader:1192:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v22.22.0
+
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreRequestPlanTests.swift:129: error: -[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanIncludesMacScreenshotReservationUploadAndCommitSteps] : failed: caught error: "Error Domain=NSCocoaErrorDomain Code=3840 "Unable to parse empty data." UserInfo={NSDebugDescription=Unable to parse empty data.}"
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanIncludesMacScreenshotReservationUploadAndCommitSteps]' failed (0.068 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanOutputAndErrorsAreRedacted]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreRequestPlanTests.swift:207: error: -[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanOutputAndErrorsAreRedacted] : XCTAssertEqual failed: ("1") is not equal to ("0") - node:internal/modules/cjs/loader:1386
+  throw err;
+  ^
+
+Error: Cannot find module '/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/scripts/app-store-request-plan.mjs'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+    at Module._load (node:internal/modules/cjs/loader:1192:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v22.22.0
+
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanOutputAndErrorsAreRedacted]' failed (0.071 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRecordsExistingRejectionThreadStrategyWithoutMutatingStaleSubmission]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreRequestPlanTests.swift:183: error: -[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRecordsExistingRejectionThreadStrategyWithoutMutatingStaleSubmission] : XCTAssertEqual failed: ("1") is not equal to ("0") - node:internal/modules/cjs/loader:1386
+  throw err;
+  ^
+
+Error: Cannot find module '/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/scripts/app-store-request-plan.mjs'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+    at Module._load (node:internal/modules/cjs/loader:1192:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v22.22.0
+
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreRequestPlanTests.swift:184: error: -[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRecordsExistingRejectionThreadStrategyWithoutMutatingStaleSubmission] : failed: caught error: "Error Domain=NSCocoaErrorDomain Code=3840 "Unable to parse empty data." UserInfo={NSDebugDescription=Unable to parse empty data.}"
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRecordsExistingRejectionThreadStrategyWithoutMutatingStaleSubmission]' failed (0.144 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsStaleRejectedIdsForTargetGraph]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreRequestPlanTests.swift:198: error: -[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsStaleRejectedIdsForTargetGraph] : XCTAssertTrue failed
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreRequestPlanTests.swift:199: error: -[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsStaleRejectedIdsForTargetGraph] : XCTAssertTrue failed
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsStaleRejectedIdsForTargetGraph]' failed (0.067 seconds).
+Test Suite 'OuroMDAppStoreRequestPlanTests' failed at 2026-07-08 23:30:30.622.
+	 Executed 5 tests, with 9 failures (3 unexpected) in 0.535 (0.535) seconds
+Test Suite 'ouro-mdPackageTests.xctest' failed at 2026-07-08 23:30:30.622.
+	 Executed 5 tests, with 9 failures (3 unexpected) in 0.535 (0.535) seconds
+Test Suite 'Selected tests' failed at 2026-07-08 23:30:30.622.
+	 Executed 5 tests, with 9 failures (3 unexpected) in 0.535 (0.536) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

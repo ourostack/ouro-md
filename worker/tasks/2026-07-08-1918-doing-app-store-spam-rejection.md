@@ -105,7 +105,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Coverage/validation logs and reviewer transcript or summary.
 **Acceptance**: 100% coverage on new status code, no secret-bearing artifacts, and reviewer converges.
 
-### ⬜ Unit 4a: App Store Connect Request Planner — Tests
+### ✅ Unit 4a: App Store Connect Request Planner — Tests
 **What**: Add failing adapter-pattern tests for dry-run request planning. Tests must capture and assert outgoing request method/path/query/body for app version create/fetch, version localization, app info localization subtitle/category, review detail notes, screenshot set discovery/creation under the new version localization and display type `APP_DESKTOP`, screenshot reservations/uploads/commits, build association, review submission record creation, review submission item creation linking the new `appStoreVersion`, optional existing rejection-thread reply plan, and final submit.
 **Output**: Failing request-shape tests plus red log naming the first missing planner behavior.
 **Acceptance**: Tests fail red for missing request planner or incomplete outgoing-request assertions.
@@ -261,3 +261,4 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 3a complete: added failing App Store Connect status-reader tests requiring normalized app/version/submission/screenshot fields and redaction; focused suite fails red because `scripts/app-store-status.mjs` is not implemented.
 - 2026-07-09 Unit 3b complete: implemented `scripts/app-store-status.mjs` with JSON and compact text modes over shared-kit `asc get`, added redaction/missing-field selftests, captured live redacted status for rejected version `0.9.79`, and kept Apple distribution checks green.
 - 2026-07-09 Unit 3c complete: expanded status-reader tests to cover redaction, stale-id guards, explicit rejected-audit mode, review-item version relationships, `APP_DESKTOP` screenshot proof, and `COMPLETE` screenshot delivery state; live rejected-audit artifacts and harsh reviewer re-review passed.
+- 2026-07-09 Unit 4a complete: added failing request-planner tests for exact App Store Connect dry-run request shapes, screenshot reservation/upload/commit choreography, review-submission final submit, stale rejected-ID guards, and redaction; focused suite fails red because `scripts/app-store-request-plan.mjs` is not implemented.
