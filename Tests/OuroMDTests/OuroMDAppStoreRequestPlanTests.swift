@@ -201,6 +201,22 @@ final class OuroMDAppStoreRequestPlanTests: XCTestCase {
         XCTAssertFalse(result.stderr.contains("Bearer "))
     }
 
+    func testDryRunPlanRejectsExplicitGeneratedResourceIds() throws {
+        for (flag, value) in [
+            ("--target-version-id", "target-version-existing"),
+            ("--version-localization-id", "localization-existing"),
+            ("--app-info-localization-id", "app-info-localization-existing"),
+            ("--screenshot-set-id", "screenshot-set-existing"),
+            ("--review-submission-id", "b37f847e-0ecb-4e7a-bb00-14e3038b0f4c")
+        ] {
+            let result = try runRequestPlanner(arguments: ["--selftest", "--json", flag, value])
+
+            XCTAssertNotEqual(result.status, 0, "Expected \(flag) to be rejected")
+            XCTAssertTrue(result.stderr.contains("\(flag) is not accepted for create-mode request plans"))
+            XCTAssertFalse(result.stderr.contains("Bearer "))
+        }
+    }
+
     func testDryRunPlanOutputAndErrorsAreRedacted() throws {
         let result = try runRequestPlanner(arguments: ["--selftest", "--json"])
 

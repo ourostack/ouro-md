@@ -130,17 +130,16 @@ node scripts/app-store-request-plan.mjs --json \
   --screenshot store-assets/app-store/03-search-outline.png \
   --screenshot store-assets/app-store/04-themed-export-readability.png \
   --processed-build-id <processed-build-id> \
-  --target-version-id <target-app-store-version-id> \
-  --version-localization-id <version-localization-id> \
   --app-info-id <app-info-id> \
-  --app-info-localization-id <app-info-localization-id> \
-  --review-detail-id <review-detail-id> \
-  --screenshot-set-id <desktop-screenshot-set-id> \
-  --review-submission-id <review-submission-id>
+  --review-detail-id <review-detail-id>
 ```
 
 The planner records blockers and omits review-submission-item/final-submit
 requests until local screenshots satisfy `store.screenshotRequirements`.
+Created resources such as the target App Store version, version localization,
+screenshot set, screenshots, review submission, and review submission item use
+captured IDs from earlier create responses; do not pass stale rejected-version
+IDs for those resources.
 
 Exercise the mutation executor against a reviewed plan with a fixture transport
 only:

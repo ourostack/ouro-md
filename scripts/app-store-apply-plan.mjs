@@ -36,6 +36,7 @@ function applyPlan(options) {
 
   for (const request of plan.requests ?? []) {
     const resolvedRequest = resolveValue(request, context);
+    assertNoUnresolvedPlaceholders(request.id, resolvedRequest);
     const fixtureError = transport.errors?.[request.id];
     if (fixtureError) {
       const failure = redact({
@@ -171,6 +172,13 @@ function resolveValue(value, context) {
   }
   if (typeof value !== "string") return value;
   return value.replace(/\$\{([^}]+)\}/g, (match, key) => context.ids[key] ?? match);
+}
+
+function assertNoUnresolvedPlaceholders(requestId, value) {
+  const serialized = JSON.stringify(value);
+  if (serialized.includes("${")) {
+    throw new Error(`unresolved placeholder before executing ${requestId}`);
+  }
 }
 
 function isRetryableStatus(status) {

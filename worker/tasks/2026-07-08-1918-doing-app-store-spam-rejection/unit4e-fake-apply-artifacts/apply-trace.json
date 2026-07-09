@@ -109,7 +109,7 @@
       "kind": "request",
       "requestId": "fetch-app-info-localizations",
       "method": "GET",
-      "path": "/v1/appInfos/${appInfoId}/appInfoLocalizations",
+      "path": "/v1/appInfos/app-info-current/appInfoLocalizations",
       "query": {
         "limit": "200"
       }
@@ -132,7 +132,7 @@
             "appInfo": {
               "data": {
                 "type": "appInfos",
-                "id": "${appInfoId}"
+                "id": "app-info-current"
               }
             }
           }
@@ -160,11 +160,11 @@
       "kind": "request",
       "requestId": "update-app-category",
       "method": "PATCH",
-      "path": "/v1/appInfos/${appInfoId}",
+      "path": "/v1/appInfos/app-info-current",
       "body": {
         "data": {
           "type": "appInfos",
-          "id": "${appInfoId}",
+          "id": "app-info-current",
           "relationships": {
             "primaryCategory": {
               "data": {
@@ -186,11 +186,11 @@
       "kind": "request",
       "requestId": "update-app-review-detail",
       "method": "PATCH",
-      "path": "/v1/appStoreReviewDetails/${appStoreReviewDetailId}",
+      "path": "/v1/appStoreReviewDetails/review-detail-current",
       "body": {
         "data": {
           "type": "appStoreReviewDetails",
-          "id": "${appStoreReviewDetailId}",
+          "id": "review-detail-current",
           "attributes": {
             "notes": "Review path: No account or sample login is required. Create or open a Markdown file, then use Shift-Command-O to open a folder. Use the File Tree, Outline, and Search sidebars; open the Command Palette with Shift-Command-P; switch themes; export PDF or HTML from the File menu. The App Store build has direct-download updates and telemetry disabled."
           }
@@ -256,7 +256,7 @@
       "requestId": "upload-screenshot-01-folder-workspace",
       "method": "PUT",
       "url": "https://upload.example.invalid/folder-workspace",
-      "filePath": "/tmp/ouro-unit4e.L1Xuit/folder-workspace.png",
+      "filePath": "/tmp/ouro-unit4e.FQn0aM/folder-workspace.png",
       "fileSize": 45,
       "sourceFileChecksum": "af4eaf7624f99b88ba227da8cca53f2c"
     },
@@ -310,7 +310,7 @@
       "requestId": "upload-screenshot-02-command-palette",
       "method": "PUT",
       "url": "https://upload.example.invalid/command-palette",
-      "filePath": "/tmp/ouro-unit4e.L1Xuit/command-palette.png",
+      "filePath": "/tmp/ouro-unit4e.FQn0aM/command-palette.png",
       "fileSize": 44,
       "sourceFileChecksum": "fdb43636248f9a76b5e314b297634335"
     },
@@ -364,7 +364,7 @@
       "requestId": "upload-screenshot-03-search-outline",
       "method": "PUT",
       "url": "https://upload.example.invalid/search-outline",
-      "filePath": "/tmp/ouro-unit4e.L1Xuit/search-outline.png",
+      "filePath": "/tmp/ouro-unit4e.FQn0aM/search-outline.png",
       "fileSize": 43,
       "sourceFileChecksum": "8cb8bc80f883b54197accde2703f5bd6"
     },
@@ -418,7 +418,7 @@
       "requestId": "upload-screenshot-04-themed-export-readability",
       "method": "PUT",
       "url": "https://upload.example.invalid/themed-export-readability",
-      "filePath": "/tmp/ouro-unit4e.L1Xuit/themed-export-readability.png",
+      "filePath": "/tmp/ouro-unit4e.FQn0aM/themed-export-readability.png",
       "fileSize": 54,
       "sourceFileChecksum": "1ea1f2427e148290f8fa26a0555ac5d5"
     },
@@ -452,7 +452,7 @@
       "body": {
         "data": {
           "type": "builds",
-          "id": "${processedBuildId}"
+          "id": "build-processed-0-9-80"
         }
       }
     },

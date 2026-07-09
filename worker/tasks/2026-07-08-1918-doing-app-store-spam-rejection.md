@@ -130,7 +130,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Executor implementation, green executor tests, and dry-run/apply-preflight sample artifacts from a non-mutating fake transport.
 **Acceptance**: Unit 4d tests pass green, mutation executor cannot run without reviewed dry-run/preflight artifacts, and no secret/asset token/private key is emitted in logs.
 
-### ⬜ Unit 4f: App Store Connect Mutation Executor — Coverage And Review
+### ✅ Unit 4f: App Store Connect Mutation Executor — Coverage And Review
 **What**: Run coverage and a harsh API/executor reviewer gate focused on mode gating, idempotency, upload-operation correctness, redaction, and stale-object guards.
 **Output**: Coverage logs and reviewer transcript or summary.
 **Acceptance**: 100% coverage on new executor code and reviewer converges.
@@ -266,3 +266,4 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 4c complete: expanded request-planner coverage, corrected screenshot checksum planning to Apple-required MD5, added local screenshot readiness blockers that withhold final submit until required scenes exist, regenerated dry-run/default-blocked artifacts, and harsh API reviewer gate passed after the P1 submit-gating fix.
 - 2026-07-09 Unit 4d complete: added failing mutation-executor tests for explicit apply mode, blocked-plan refusal, fake transport request/upload execution, placeholder ID substitution, redacted artifacts, and retryable error classification; focused suite fails red because `scripts/app-store-apply-plan.mjs` is not implemented.
 - 2026-07-09 Unit 4e complete: implemented fixture-only `scripts/app-store-apply-plan.mjs` with apply-mode gates, blocked-plan refusal, placeholder ID substitution, fake request/upload trace writing, upload-operation redaction, and retryable error classification; focused executor tests and fake apply artifact pass without live Apple mutations.
+- 2026-07-09 Unit 4f complete: expanded executor/planner review coverage, removed generated-resource ID inputs from create-mode plans, added unresolved-placeholder executor guard, regenerated fake apply artifacts, and harsh executor reviewer gate passed after fixing captured-ID bypass findings.

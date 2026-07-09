@@ -67,16 +67,12 @@ function parseArgs(argv) {
     else if (arg === "--app-id") options.appId = argv[++index];
     else if (arg === "--bundle-id") options.bundleId = argv[++index];
     else if (arg === "--team-id") options.teamId = argv[++index];
-    else if (arg === "--target-version-id") options.targetVersionId = argv[++index];
-    else if (arg === "--version-localization-id") options.appStoreVersionLocalizationId = argv[++index];
     else if (arg === "--app-info-id") options.appInfoId = argv[++index];
-    else if (arg === "--app-info-localization-id") options.appInfoLocalizationId = argv[++index];
     else if (arg === "--review-detail-id") options.appStoreReviewDetailId = argv[++index];
-    else if (arg === "--screenshot-set-id") options.appScreenshotSetId = argv[++index];
     else if (arg === "--processed-build-id") options.processedBuildId = argv[++index];
-    else if (arg === "--review-submission-id") options.reviewSubmissionId = argv[++index];
     else if (arg === "--screenshot") options.screenshots.push(argv[++index]);
     else if (arg === "--artifact") options.artifactPath = argv[++index];
+    else if (isGeneratedResourceIdFlag(arg)) throw generatedResourceIdFlagError(arg);
     else throw new Error(`unknown argument: ${arg}`);
   }
 
@@ -84,7 +80,27 @@ function parseArgs(argv) {
     options.selftest = true;
     options.targetVersionId = DEFAULTS.staleRejectedIds[0];
   }
+  guardAgainstGeneratedResourceIdFlags(argv);
   return options;
+}
+
+function guardAgainstGeneratedResourceIdFlags(argv) {
+  const found = argv.find(isGeneratedResourceIdFlag);
+  if (found) throw generatedResourceIdFlagError(found);
+}
+
+function isGeneratedResourceIdFlag(arg) {
+  return [
+    "--target-version-id",
+    "--version-localization-id",
+    "--app-info-localization-id",
+    "--screenshot-set-id",
+    "--review-submission-id"
+  ].includes(arg);
+}
+
+function generatedResourceIdFlagError(flag) {
+  return new Error(`${flag} is not accepted for create-mode request plans; generated resources must use captured IDs`);
 }
 
 function buildPlan(options) {

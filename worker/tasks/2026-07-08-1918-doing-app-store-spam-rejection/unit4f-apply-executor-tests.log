@@ -1,0 +1,24 @@
+Another instance of SwiftPM (PID: 12944) is already running using '/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/.build', waiting until that process has finished execution...Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.16s)
+Test Suite 'Selected tests' started at 2026-07-09 00:07:45.623.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-09 00:07:45.624.
+Test Suite 'OuroMDAppStoreApplyPlanTests' started at 2026-07-09 00:07:45.624.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorClassifiesRetryableFixtureErrors]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorClassifiesRetryableFixtureErrors]' passed (0.293 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorExecutesFakeTransportAndWritesRedactedArtifacts]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorExecutesFakeTransportAndWritesRedactedArtifacts]' passed (0.286 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRejectsBlockedDryRunPlans]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRejectsBlockedDryRunPlans]' passed (0.216 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRequiresExplicitApplyMode]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRequiresExplicitApplyMode]' passed (0.216 seconds).
+Test Suite 'OuroMDAppStoreApplyPlanTests' passed at 2026-07-09 00:07:46.636.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 1.012 (1.012) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-07-09 00:07:46.636.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 1.012 (1.012) seconds
+Test Suite 'Selected tests' passed at 2026-07-09 00:07:46.636.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 1.012 (1.013) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

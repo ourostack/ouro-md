@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "mode": "dry-run",
-  "generatedAt": "2026-07-09T06:58:13.347Z",
+  "generatedAt": "2026-07-09T07:08:10.952Z",
   "appId": "6787262892",
   "bundleId": "bot.ouro.md",
   "teamId": "743GT2AJ24",
@@ -18,28 +18,28 @@
   "screenshots": [
     {
       "scene": "folder-workspace",
-      "path": "/tmp/ouro-unit4e.L1Xuit/folder-workspace.png",
+      "path": "/tmp/ouro-unit4e.FQn0aM/folder-workspace.png",
       "fileName": "folder-workspace.png",
       "fileSize": 45,
       "sourceFileChecksum": "af4eaf7624f99b88ba227da8cca53f2c"
     },
     {
       "scene": "command-palette",
-      "path": "/tmp/ouro-unit4e.L1Xuit/command-palette.png",
+      "path": "/tmp/ouro-unit4e.FQn0aM/command-palette.png",
       "fileName": "command-palette.png",
       "fileSize": 44,
       "sourceFileChecksum": "fdb43636248f9a76b5e314b297634335"
     },
     {
       "scene": "search-outline",
-      "path": "/tmp/ouro-unit4e.L1Xuit/search-outline.png",
+      "path": "/tmp/ouro-unit4e.FQn0aM/search-outline.png",
       "fileName": "search-outline.png",
       "fileSize": 43,
       "sourceFileChecksum": "8cb8bc80f883b54197accde2703f5bd6"
     },
     {
       "scene": "themed-export-readability",
-      "path": "/tmp/ouro-unit4e.L1Xuit/themed-export-readability.png",
+      "path": "/tmp/ouro-unit4e.FQn0aM/themed-export-readability.png",
       "fileName": "themed-export-readability.png",
       "fileSize": 54,
       "sourceFileChecksum": "1ea1f2427e148290f8fa26a0555ac5d5"
@@ -151,7 +151,7 @@
     {
       "id": "fetch-app-info-localizations",
       "method": "GET",
-      "path": "/v1/appInfos/${appInfoId}/appInfoLocalizations",
+      "path": "/v1/appInfos/app-info-current/appInfoLocalizations",
       "query": {
         "limit": "200"
       }
@@ -173,7 +173,7 @@
             "appInfo": {
               "data": {
                 "type": "appInfos",
-                "id": "${appInfoId}"
+                "id": "app-info-current"
               }
             }
           }
@@ -199,11 +199,11 @@
     {
       "id": "update-app-category",
       "method": "PATCH",
-      "path": "/v1/appInfos/${appInfoId}",
+      "path": "/v1/appInfos/app-info-current",
       "body": {
         "data": {
           "type": "appInfos",
-          "id": "${appInfoId}",
+          "id": "app-info-current",
           "relationships": {
             "primaryCategory": {
               "data": {
@@ -223,11 +223,11 @@
     {
       "id": "update-app-review-detail",
       "method": "PATCH",
-      "path": "/v1/appStoreReviewDetails/${appStoreReviewDetailId}",
+      "path": "/v1/appStoreReviewDetails/review-detail-current",
       "body": {
         "data": {
           "type": "appStoreReviewDetails",
-          "id": "${appStoreReviewDetailId}",
+          "id": "review-detail-current",
           "attributes": {
             "notes": "Review path: No account or sample login is required. Create or open a Markdown file, then use Shift-Command-O to open a folder. Use the File Tree, Outline, and Search sidebars; open the Command Palette with Shift-Command-P; switch themes; export PDF or HTML from the File menu. The App Store build has direct-download updates and telemetry disabled."
           }
@@ -290,7 +290,7 @@
       "method": "UPLOAD_OPERATIONS",
       "dependsOn": "reserve-screenshot-01-folder-workspace",
       "uploadOperationsSource": "response.data.attributes.uploadOperations",
-      "filePath": "/tmp/ouro-unit4e.L1Xuit/folder-workspace.png",
+      "filePath": "/tmp/ouro-unit4e.FQn0aM/folder-workspace.png",
       "fileSize": 45,
       "sourceFileChecksum": "af4eaf7624f99b88ba227da8cca53f2c"
     },
@@ -336,7 +336,7 @@
       "method": "UPLOAD_OPERATIONS",
       "dependsOn": "reserve-screenshot-02-command-palette",
       "uploadOperationsSource": "response.data.attributes.uploadOperations",
-      "filePath": "/tmp/ouro-unit4e.L1Xuit/command-palette.png",
+      "filePath": "/tmp/ouro-unit4e.FQn0aM/command-palette.png",
       "fileSize": 44,
       "sourceFileChecksum": "fdb43636248f9a76b5e314b297634335"
     },
@@ -382,7 +382,7 @@
       "method": "UPLOAD_OPERATIONS",
       "dependsOn": "reserve-screenshot-03-search-outline",
       "uploadOperationsSource": "response.data.attributes.uploadOperations",
-      "filePath": "/tmp/ouro-unit4e.L1Xuit/search-outline.png",
+      "filePath": "/tmp/ouro-unit4e.FQn0aM/search-outline.png",
       "fileSize": 43,
       "sourceFileChecksum": "8cb8bc80f883b54197accde2703f5bd6"
     },
@@ -428,7 +428,7 @@
       "method": "UPLOAD_OPERATIONS",
       "dependsOn": "reserve-screenshot-04-themed-export-readability",
       "uploadOperationsSource": "response.data.attributes.uploadOperations",
-      "filePath": "/tmp/ouro-unit4e.L1Xuit/themed-export-readability.png",
+      "filePath": "/tmp/ouro-unit4e.FQn0aM/themed-export-readability.png",
       "fileSize": 54,
       "sourceFileChecksum": "1ea1f2427e148290f8fa26a0555ac5d5"
     },
@@ -454,7 +454,7 @@
       "body": {
         "data": {
           "type": "builds",
-          "id": "${processedBuildId}"
+          "id": "build-processed-0-9-80"
         }
       }
     },

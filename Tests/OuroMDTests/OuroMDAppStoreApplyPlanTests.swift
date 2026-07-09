@@ -84,7 +84,9 @@ final class OuroMDAppStoreApplyPlanTests: XCTestCase {
         XCTAssertTrue(isMD5Checksum(firstUpload["sourceFileChecksum"] as? String))
         XCTAssertFalse(String(describing: firstUpload).contains("assetToken"))
 
-        let body = result.stdout + (try String(contentsOfFile: tracePath, encoding: .utf8))
+        let traceBody = try String(contentsOfFile: tracePath, encoding: .utf8)
+        XCTAssertFalse(traceBody.contains("${"))
+        let body = result.stdout + traceBody
         for forbidden in ["assetToken", "Bearer ", "PRIVATE KEY", "AuthKey_", "eyJ"] {
             XCTAssertFalse(body.contains(forbidden), "apply artifacts leaked \(forbidden)")
         }
@@ -145,7 +147,13 @@ final class OuroMDAppStoreApplyPlanTests: XCTestCase {
             return ["--screenshot", screenshot.path]
         }
         let plan = root.appendingPathComponent("submit-plan.json")
-        let result = try runRequestPlanner(arguments: ["--json", "--artifact", plan.path] + screenshots)
+        let result = try runRequestPlanner(arguments: [
+            "--json",
+            "--artifact", plan.path,
+            "--app-info-id", "app-info-current",
+            "--review-detail-id", "review-detail-current",
+            "--processed-build-id", "build-processed-0-9-80"
+        ] + screenshots)
         XCTAssertEqual(result.status, 0, result.stderr)
         return plan
     }
