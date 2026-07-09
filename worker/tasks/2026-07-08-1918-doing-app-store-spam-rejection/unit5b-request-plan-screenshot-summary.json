@@ -1,0 +1,30 @@
+{
+  "blockers": [],
+  "screenshotCount": 4,
+  "screenshots": [
+    {
+      "scene": "folder-workspace",
+      "path": "store-assets/app-store/01-folder-workspace.png",
+      "fileSize": 244440,
+      "sourceFileChecksum": "403d078e80bc58ef95ca91dd270b2297"
+    },
+    {
+      "scene": "command-palette",
+      "path": "store-assets/app-store/02-command-palette.png",
+      "fileSize": 164414,
+      "sourceFileChecksum": "7b85eedee6a59d634b3cbe7fa0f2e66c"
+    },
+    {
+      "scene": "search-outline",
+      "path": "store-assets/app-store/03-search-outline.png",
+      "fileSize": 236123,
+      "sourceFileChecksum": "047747e665f5519c5879f6ca07db8965"
+    },
+    {
+      "scene": "themed-export-readability",
+      "path": "store-assets/app-store/04-themed-export-readability.png",
+      "fileSize": 182875,
+      "sourceFileChecksum": "3e3146c46bf2551e07fdd3dc236eba6b"
+    }
+  ]
+}

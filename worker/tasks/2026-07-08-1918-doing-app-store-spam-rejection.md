@@ -22,8 +22,8 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - [ ] App Review evidence is captured in docs or artifacts with no secrets and with concrete dates, app IDs, submission IDs, and version IDs.
 - [ ] Source-owned App Store metadata/review-note guidance no longer describes Ouro MD generically as only "The Markdown App" or a quiet Markdown editor.
 - [ ] Source-owned metadata recommends or encodes subtitle `Local Markdown Workspace`, Developer Tools category, a specific promotional text, specific keywords, and a review note that lists concrete reviewer steps.
-- [ ] A local screenshot set exists with at least four review-facing screenshots and the first screenshots show differentiated app surfaces, not only a single rendered document.
-- [ ] `scripts/check-apple-distribution-kit.sh` no longer reports screenshot proof as missing, or an explicit live-status path documents why remote proof is checked separately from CI.
+- [x] A local screenshot set exists with at least four review-facing screenshots and the first screenshots show differentiated app surfaces, not only a single rendered document.
+- [x] `scripts/check-apple-distribution-kit.sh` no longer reports screenshot proof as missing, or an explicit live-status path documents why remote proof is checked separately from CI.
 - [x] A redacted programmatic App Store review-status command can read app `6787262892`, version `7309944f-cbe8-4518-960c-444e6116ab46`, submission `b37f847e-0ecb-4e7a-bb00-14e3038b0f4c`, rejected item state, and remote screenshot count from the local config.
 - [ ] A new build/version carries visible in-app copy changes that align with the App Store positioning and can be cited in review notes.
 - [ ] Any final App Review reply/review-note text passes a harsh voice/posture reviewer gate and exact-state preflight before posting or submission.
@@ -140,7 +140,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Failing asset/manifest check plus red log.
 **Acceptance**: The check fails red until assets and manifest entries exist.
 
-### ⬜ Unit 5b: Screenshot Asset Set — Implementation
+### ✅ Unit 5b: Screenshot Asset Set — Implementation
 **What**: Add store screenshot fixtures and a deterministic screenshot generation/copy script that produces PNGs under a source-owned store asset path. Prefer real app/editor rendering and synthetic checked-in Markdown content. Do not commit private user documents or App Store asset tokens.
 **Output**: Screenshot fixtures, generation script, at least four PNG assets, manifest entries, and green asset-check log.
 **Acceptance**: At least four valid PNG assets exist locally, manifest order matches the intended review story, file sizes/dimensions are accepted by the checker, and the first asset visibly shows a differentiated workspace rather than a single rendered document only.
@@ -258,6 +258,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 2a complete: added app-visible positioning tests for shell/About subtitle, welcome copy, and release highlights; focused suite fails red against generic current copy.
 - 2026-07-09 Unit 2b complete: updated About/shell subtitle, first-launch welcome copy, release highlights, and CLI help to local-workspace positioning; focused positioning, shell, release, distribution metadata, and Apple distribution checks pass.
 - 2026-07-09 Unit 2c complete: full Swift tests, app build, visual QA, first-launch, UI-surface, accessibility, exact welcome snapshot, absurdity ledger, and harsh UI/native reviewer gate passed after review fixes for user-facing release highlights and tracked fixture drift.
+- 2026-07-09 Unit 5b complete: added synthetic App Store screenshot fixtures, deterministic app-render/composition generation, four 2880x1800 local PNGs in manifest order, PNG dimension validation, request-plan remote-proof fixture isolation, and green screenshot/distribution/request-plan checks.
 - 2026-07-09 Unit 3a complete: added failing App Store Connect status-reader tests requiring normalized app/version/submission/screenshot fields and redaction; focused suite fails red because `scripts/app-store-status.mjs` is not implemented.
 - 2026-07-09 Unit 3b complete: implemented `scripts/app-store-status.mjs` with JSON and compact text modes over shared-kit `asc get`, added redaction/missing-field selftests, captured live redacted status for rejected version `0.9.79`, and kept Apple distribution checks green.
 - 2026-07-09 Unit 3c complete: expanded status-reader tests to cover redaction, stale-id guards, explicit rejected-audit mode, review-item version relationships, `APP_DESKTOP` screenshot proof, and `COMPLETE` screenshot delivery state; live rejected-audit artifacts and harsh reviewer re-review passed.

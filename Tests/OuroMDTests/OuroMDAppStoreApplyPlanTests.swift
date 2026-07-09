@@ -159,8 +159,53 @@ final class OuroMDAppStoreApplyPlanTests: XCTestCase {
     }
 
     private func makeBlockedPlan(in root: URL) throws -> URL {
+        let manifest = root.appendingPathComponent("remote-proof-manifest.json")
+        try writeText(
+            """
+            {
+              "schemaVersion": 1,
+              "app": {
+                "name": "Ouro MD",
+                "bundleId": "bot.ouro.md",
+                "sku": "bot-ouro-md-macos",
+                "primaryLocale": "en-US"
+              },
+              "team": { "teamId": "743GT2AJ24" },
+              "channels": [
+                {
+                  "id": "mac-app-store",
+                  "platform": "macos",
+                  "distribution": "app-store",
+                  "bundleId": "bot.ouro.md",
+                  "store": {
+                    "version": "0.9.80",
+                    "category": "DEVELOPER_TOOLS",
+                    "subtitle": "Local Markdown Workspace",
+                    "promotionalText": "Local Markdown workspace for Mac files.",
+                    "description": "Ouro MD is a local Markdown workspace for Mac files.",
+                    "keywords": "markdown,local files,folder search,outline,command palette,pdf,html export,gfm,mac",
+                    "reviewNotes": "Review path: no account is required.",
+                    "screenshotRequirements": {
+                      "minimumCount": 4,
+                      "requiredScenes": [
+                        "folder-workspace",
+                        "command-palette",
+                        "search-outline",
+                        "themed-export-readability"
+                      ]
+                    },
+                    "screenshots": [
+                      "asc://screenshots/existing-remote-proof"
+                    ]
+                  }
+                }
+              ]
+            }
+            """,
+            to: manifest
+        )
         let plan = root.appendingPathComponent("blocked-plan.json")
-        let result = try runRequestPlanner(arguments: ["--json", "--artifact", plan.path])
+        let result = try runRequestPlanner(arguments: ["--json", "--manifest", manifest.path, "--artifact", plan.path])
         XCTAssertEqual(result.status, 0, result.stderr)
         return plan
     }
@@ -268,6 +313,10 @@ final class OuroMDAppStoreApplyPlanTests: XCTestCase {
     private func writeJSON(_ value: Any, to url: URL) throws {
         let data = try JSONSerialization.data(withJSONObject: value, options: [.prettyPrinted, .sortedKeys])
         try data.write(to: url)
+    }
+
+    private func writeText(_ text: String, to url: URL) throws {
+        try text.write(to: url, atomically: true, encoding: .utf8)
     }
 
     private func isMD5Checksum(_ value: String?) -> Bool {

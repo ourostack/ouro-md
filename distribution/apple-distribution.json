@@ -38,7 +38,10 @@
           ]
         },
         "screenshots": [
-          "asc://screenshots/80a8620a-643a-46bd-9e39-ab19f26ba424"
+          "store-assets/app-store/01-folder-workspace.png",
+          "store-assets/app-store/02-command-palette.png",
+          "store-assets/app-store/03-search-outline.png",
+          "store-assets/app-store/04-themed-export-readability.png"
         ],
         "privacy": {
           "policyUrl": "https://ouro.bot/privacy/",

@@ -7,6 +7,8 @@ const REQUIRED_SCENES = [
   "search-outline",
   "themed-export-readability"
 ];
+const MINIMUM_WIDTH = 1280;
+const MINIMUM_HEIGHT = 800;
 
 function validateScreenshotAssets(manifestPath = "distribution/apple-distribution.json") {
   const errors = [];
@@ -49,9 +51,16 @@ function validateScreenshotAssets(manifestPath = "distribution/apple-distributio
     const file = fs.readFileSync(asset);
     if (!isPNG(file)) {
       errors.push(`screenshot ${index + 1} is not a PNG: ${asset}`);
+      return;
     }
     if (file.length < 1024) {
       errors.push(`screenshot ${index + 1} is unexpectedly small: ${asset}`);
+    }
+    const dimensions = pngDimensions(file);
+    if (dimensions.width < MINIMUM_WIDTH || dimensions.height < MINIMUM_HEIGHT) {
+      errors.push(
+        `screenshot ${index + 1} is too small: ${asset} is ${dimensions.width}x${dimensions.height}; minimum is ${MINIMUM_WIDTH}x${MINIMUM_HEIGHT}`
+      );
     }
   });
 
@@ -68,6 +77,13 @@ function isPNG(file) {
     && file[5] === 0x0a
     && file[6] === 0x1a
     && file[7] === 0x0a;
+}
+
+function pngDimensions(file) {
+  return {
+    width: file.readUInt32BE(16),
+    height: file.readUInt32BE(20)
+  };
 }
 
 function isRemoteStoreProof(asset) {
@@ -91,13 +107,61 @@ function parseArgs(argv) {
 }
 
 function runSelftest() {
-  const errors = validateScreenshotAssets();
-  if (errors.length === 0) {
-    console.error("expected current manifest to fail until local screenshots exist");
+  const tempDir = fs.mkdtempSync("/tmp/ouro-md-app-store-screenshot-check-");
+  const remoteManifestPath = `${tempDir}/remote-proof-manifest.json`;
+  const remoteManifest = {
+    channels: [
+      {
+        id: "mac-app-store",
+        store: {
+          screenshots: ["asc://screenshots/remote-proof-only"]
+        }
+      }
+    ]
+  };
+  fs.writeFileSync(remoteManifestPath, JSON.stringify(remoteManifest), "utf8");
+  const errors = validateScreenshotAssets(remoteManifestPath);
+
+  const tinyPngPath = `${tempDir}/01-folder-workspace.png`;
+  fs.writeFileSync(tinyPngPath, tinyPNG());
+  const tinyManifestPath = `${tempDir}/tiny-png-manifest.json`;
+  fs.writeFileSync(tinyManifestPath, JSON.stringify({
+    channels: [
+      {
+        id: "mac-app-store",
+        store: {
+          screenshots: [
+            tinyPngPath,
+            tinyPngPath.replace("01-folder-workspace", "02-command-palette"),
+            tinyPngPath.replace("01-folder-workspace", "03-search-outline"),
+            tinyPngPath.replace("01-folder-workspace", "04-themed-export-readability")
+          ]
+        }
+      }
+    ]
+  }), "utf8");
+  fs.copyFileSync(tinyPngPath, tinyPngPath.replace("01-folder-workspace", "02-command-palette"));
+  fs.copyFileSync(tinyPngPath, tinyPngPath.replace("01-folder-workspace", "03-search-outline"));
+  fs.copyFileSync(tinyPngPath, tinyPngPath.replace("01-folder-workspace", "04-themed-export-readability"));
+  const tinyErrors = validateScreenshotAssets(tinyManifestPath);
+  errors.push(...tinyErrors);
+  fs.rmSync(tempDir, { recursive: true, force: true });
+  if (
+    !errors.some((error) => error.includes("local PNG"))
+    || !errors.some((error) => error.includes("too small"))
+  ) {
+    console.error("expected selftest to cover remote-only and too-small PNG validation");
     return 1;
   }
   console.log(errors.join("\n"));
   return 0;
+}
+
+function tinyPNG() {
+  return Buffer.from(
+    "89504e470d0a1a0a0000000d4948445200000001000000010802000000907753de0000000c49444154789c6360000000020001e221bc330000000049454e44ae426082",
+    "hex"
+  );
 }
 
 try {

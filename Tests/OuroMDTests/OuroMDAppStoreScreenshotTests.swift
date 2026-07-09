@@ -8,10 +8,21 @@ final class OuroMDAppStoreScreenshotTests: XCTestCase {
         XCTAssertTrue(result.stdout.contains("app store screenshot assets ok"))
     }
 
+    func testScreenshotCheckerSelftestCoversRemoteOnlyManifest() throws {
+        let result = try runScreenshotCheck(arguments: ["--selftest"])
+
+        XCTAssertEqual(result.status, 0, result.stderr)
+        XCTAssertTrue(result.stdout.contains("local PNG"), result.stdout)
+    }
+
     private func runScreenshotCheck() throws -> ProcessResult {
+        try runScreenshotCheck(arguments: [])
+    }
+
+    private func runScreenshotCheck(arguments: [String]) throws -> ProcessResult {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = ["node", "scripts/check-app-store-screenshots.mjs"]
+        process.arguments = ["node", "scripts/check-app-store-screenshots.mjs"] + arguments
         process.currentDirectoryURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 
         let stdout = Pipe()
