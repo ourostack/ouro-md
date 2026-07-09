@@ -7,8 +7,8 @@
 - Worktree: `/Users/arimendelow/Projects/ouro-md-file-truth`
 - Planning doc: `codex-file-truth/tasks/2026-07-09-1409-planning-document-truth-surface.md`
 - Doing doc: `codex-file-truth/tasks/2026-07-09-1409-doing-document-truth-surface.md`
-- Gate state: Unit 2e AppModel truth lifecycle implementation green.
-- Next action: execute Unit 2f lifecycle coverage/refactor pass.
+- Gate state: Unit 2 file/git truth model and AppModel lifecycle slice complete.
+- Next action: execute Unit 3a file truth command red tests.
 
 ## Terminal Evidence
 

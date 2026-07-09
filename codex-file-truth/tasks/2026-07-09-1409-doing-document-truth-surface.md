@@ -21,10 +21,10 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 ## Completion Criteria
 - [x] Native document title clicks no longer open the file picker and do not block AppKit document path/proxy behavior.
 - [ ] Current document file truth is visible without opening the sidebar.
-- [ ] File/git state labels are mechanical and correct for clean tracked, modified tracked, mixed staged/unstaged changes, untracked/not-in-git, and inaccessible/non-file cases covered by focused classification tests.
-- [ ] Git unavailable, sandbox/inaccessible metadata, and non-repo files show honest fallback state without blocking normal editing.
+- [x] File/git state labels are mechanical and correct for clean tracked, modified tracked, mixed staged/unstaged changes, untracked/not-in-git, and inaccessible/non-file cases covered by focused classification tests.
+- [x] Git unavailable, sandbox/inaccessible metadata, and non-repo files show honest fallback state without blocking normal editing.
 - [ ] Commands exist for Reveal in Finder, Copy Path, Copy Relative Path, and Copy Git Diff Command, with disabled or fallback behavior when no current file/repo exists.
-- [ ] Human edits saved to disk can be surfaced as "modified / visible in git diff" without writing any git state.
+- [x] Human edits saved to disk can be surfaced as "modified / visible in git diff" without writing any git state.
 - [ ] No hidden metadata or formatting churn is introduced by the file truth work.
 - [ ] 100% test coverage on all new code
 - [ ] All tests pass
@@ -91,9 +91,9 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 **What**: Publish the latest document truth snapshot from `AppModel`, refresh it at every file lifecycle point, and overlay unsaved/deleted state without faking git certainty.
 **Acceptance**: Unit 2d tests pass and saved human edits can surface as modified/visible in git diff after write without any git mutation. Evidence: `swift test --filter AppModelDocumentTruthTests` passed at 2026-07-09 14:39 -0700.
 
-### ⬜ Unit 2f: AppModel Truth Lifecycle - Coverage & Refactor
+### ✅ Unit 2f: AppModel Truth Lifecycle - Coverage & Refactor
 **What**: Tighten lifecycle refresh helpers and test seams so state transitions are explicit and non-flaky.
-**Acceptance**: AppModel lifecycle tests pass, all new AppModel branches are exercised, and the truth state cannot remain stale after open/save/rename/delete/reload paths.
+**Acceptance**: AppModel lifecycle tests pass, all new AppModel branches are exercised, and the truth state cannot remain stale after open/save/rename/delete/reload paths. Evidence: `swift test --filter 'DocumentTruthTests|AppModelDocumentTruthTests|AppModelReloadTests|AppModelDeletionTests'` passed 41 tests.
 
 ### ⬜ Unit 3a: File Truth Commands - Tests
 **What**: Add failing tests for command palette items, menu validation where source-fit, copy path, copy relative path, copy git diff command, and reveal-in-Finder routing with no-current-file fallbacks.
@@ -157,3 +157,4 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - 2026-07-09 14:34 -0700 Unit 2c coverage gate passed: `scripts/check-coverage.sh` reported `DocumentTruth.swift` 150/150 lines and 73/73 regions.
 - 2026-07-09 14:36 -0700 Unit 2d red test confirmed: `swift test --filter AppModelDocumentTruthTests` failed because AppModel has no live document truth API yet.
 - 2026-07-09 14:39 -0700 Unit 2e green test confirmed: `swift test --filter AppModelDocumentTruthTests` passed with live AppModel document truth refresh.
+- 2026-07-09 14:41 -0700 Unit 2f lifecycle regression suite passed: `DocumentTruthTests|AppModelDocumentTruthTests|AppModelReloadTests|AppModelDeletionTests` ran 41 tests with no failures.
