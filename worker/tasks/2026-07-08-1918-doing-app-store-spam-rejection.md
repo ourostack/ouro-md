@@ -155,7 +155,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Failing readiness test/check plus red log.
 **Acceptance**: Focused checks fail red for any missing new preflight evidence or stale metadata assumptions.
 
-### ⬜ Unit 6b: Package Readiness Contract — Implementation
+### ✅ Unit 6b: Package Readiness Contract — Implementation
 **What**: Make package/readiness scripts produce artifacts sufficient for final submission: manifest validation, package readiness, signing identity check, target version/build uniqueness preflight, app-store channel proof, telemetry-disabled proof, and no-secret scan.
 **Output**: Updated scripts/checks and green `./scripts/check-apple-distribution-kit.sh` plus `./scripts/package-app-store.sh --readiness` logs.
 **Acceptance**: Focused checks pass, readiness logs do not print secrets, and any missing signing/cert/profile/API capability or target-version/build collision is recorded as a hard blocker or next-patch bump artifact with exact command output.
@@ -271,3 +271,4 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 4e complete: implemented fixture-only `scripts/app-store-apply-plan.mjs` with apply-mode gates, blocked-plan refusal, placeholder ID substitution, fake request/upload trace writing, upload-operation redaction, and retryable error classification; focused executor tests and fake apply artifact pass without live Apple mutations.
 - 2026-07-09 Unit 4f complete: expanded executor/planner review coverage, removed generated-resource ID inputs from create-mode plans, added unresolved-placeholder executor guard, regenerated fake apply artifacts, and harsh executor reviewer gate passed after fixing captured-ID bypass findings.
 - 2026-07-09 Unit 5a complete: added failing App Store screenshot asset validator and Swift wrapper requiring four local PNG screenshots in folder-workspace, command-palette, search-outline, and themed-export-readability order; focused suite fails red because the manifest still has only one remote proof screenshot.
+- 2026-07-09 Unit 6b complete: implemented structured package-readiness artifacts with source-derived provenance for bundle/version/channel/category/direct-updates/encryption/telemetry/build-env claims, redacted secret-scan findings and artifact-path output, captured green focused/full/preflight logs, and passed harsh reviewer convergence after fixing false-security and stdout-leak findings.

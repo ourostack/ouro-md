@@ -26,25 +26,43 @@ final class OuroMDAppStorePackageReadinessTests: XCTestCase {
 
         let app = try XCTUnwrap(readiness["app"] as? [String: Any])
         XCTAssertEqual(app["bundleId"] as? String, "bot.ouro.md")
+        XCTAssertEqual(app["sourceBundleId"] as? String, "bot.ouro.md")
+        XCTAssertEqual(app["manifestBundleId"] as? String, "bot.ouro.md")
+        XCTAssertEqual(app["channelBundleId"] as? String, "bot.ouro.md")
+        XCTAssertEqual(app["buildScriptBundleId"] as? String, "bot.ouro.md")
+        XCTAssertEqual(app["bundleIdCoherent"] as? Bool, true)
         XCTAssertEqual(app["sourceVersion"] as? String, try releaseVersion())
         XCTAssertEqual(app["manifestVersion"] as? String, try releaseVersion())
         XCTAssertEqual(app["versionCoherent"] as? Bool, true)
 
         let distribution = try XCTUnwrap(readiness["distribution"] as? [String: Any])
         XCTAssertEqual(distribution["channel"] as? String, "app-store")
+        XCTAssertEqual(distribution["manifestDistribution"] as? String, "app-store")
+        XCTAssertEqual(distribution["buildCommandChannel"] as? String, "app-store")
+        XCTAssertEqual(distribution["packageScriptChannel"] as? String, "app-store")
         XCTAssertEqual(distribution["directUpdatesAllowed"] as? Bool, false)
+        XCTAssertEqual(distribution["directUpdatesSource"] as? String, "Sources/OuroMD/OuroMDDistribution.swift")
         XCTAssertEqual(distribution["category"] as? String, "public.app-category.developer-tools")
+        XCTAssertEqual(distribution["manifestCategory"] as? String, "public.app-category.developer-tools")
+        XCTAssertEqual(distribution["buildScriptAppStoreCategory"] as? String, "public.app-category.developer-tools")
         XCTAssertEqual(distribution["usesNonExemptEncryption"] as? Bool, false)
+        XCTAssertEqual(distribution["usesNonExemptEncryptionSource"] as? String, "make-app.sh")
 
         let telemetry = try XCTUnwrap(readiness["telemetry"] as? [String: Any])
         XCTAssertEqual(telemetry["defaultDisabled"] as? Bool, true)
         XCTAssertEqual(telemetry["posthogKeyEmbeddedByDefault"] as? Bool, false)
         XCTAssertEqual(telemetry["optInVariable"] as? String, "OURO_MD_APP_STORE_ENABLE_TELEMETRY")
+        XCTAssertEqual(telemetry["manifestBuildCommandDisablesTelemetry"] as? Bool, true)
+        XCTAssertEqual(telemetry["packageScriptDisablesTelemetryByDefault"] as? Bool, true)
+        XCTAssertEqual(telemetry["buildScriptHonorsTelemetryDisable"] as? Bool, true)
 
         let package = try XCTUnwrap(readiness["package"] as? [String: Any])
         let buildEnvironment = try XCTUnwrap(package["buildEnvironment"] as? [String])
         XCTAssertTrue(buildEnvironment.contains("OURO_MD_DISTRIBUTION_CHANNEL=app-store"))
         XCTAssertTrue(buildEnvironment.contains("OURO_MD_TELEMETRY_DISABLED=1"))
+        let manifestBuildEnvironment = try XCTUnwrap(package["manifestBuildEnvironment"] as? [String])
+        XCTAssertTrue(manifestBuildEnvironment.contains("OURO_MD_DISTRIBUTION_CHANNEL=app-store"))
+        XCTAssertTrue(manifestBuildEnvironment.contains("OURO_MD_TELEMETRY_DISABLED=1"))
 
         let secretScan = try XCTUnwrap(readiness["secretScan"] as? [String: Any])
         XCTAssertEqual(secretScan["ok"] as? Bool, true)
@@ -61,6 +79,70 @@ final class OuroMDAppStorePackageReadinessTests: XCTestCase {
         for forbidden in ["BEGIN PRIVATE KEY", "Bearer ", "AuthKey_", "APPLE_APP_SPECIFIC_PASSWORD", "gho_", "eyJ"] {
             XCTAssertFalse(artifactBody.contains(forbidden), "readiness artifact leaked \(forbidden)")
         }
+    }
+
+    func testArtifactFlagRequiresReadinessMode() throws {
+        let root = try makeTempDirectory()
+        let artifact = root.appendingPathComponent("app-store-package-readiness.json")
+
+        let result = try runPackageReadiness(arguments: [
+            "--artifact", artifact.path
+        ])
+
+        assertNoSecretValueLeak(result.stdout, surface: "artifact misuse stdout")
+        assertNoSecretValueLeak(result.stderr, surface: "artifact misuse stderr")
+        XCTAssertEqual(result.status, 64, sanitizedDiagnostics(result))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: artifact.path))
+    }
+
+    func testReadinessDoesNotEchoSecretShapedArtifactPath() throws {
+        let root = try makeTempDirectory()
+        let artifact = root.appendingPathComponent("AuthKey_1234567890.p8")
+
+        let result = try runPackageReadiness(arguments: [
+            "--readiness",
+            "--artifact", artifact.path
+        ])
+
+        assertNoSecretValueLeak(result.stdout, surface: "secret-shaped artifact path stdout")
+        assertNoSecretValueLeak(result.stderr, surface: "secret-shaped artifact path stderr")
+        XCTAssertEqual(result.status, 0, sanitizedDiagnostics(result))
+        guard result.status == 0 else { return }
+
+        let artifactBody = try String(contentsOf: artifact, encoding: .utf8)
+        assertNoSecretValueLeak(artifactBody, surface: "secret-shaped artifact path artifact")
+    }
+
+    func testReadinessSecretScanRedactsCredentialShapedFilenames() throws {
+        let repositoryRoot = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+        let secretFixtureDirectory = repositoryRoot.appendingPathComponent(".unit-test-secret-scan", isDirectory: true)
+        let secretFixture = secretFixtureDirectory.appendingPathComponent("AuthKey_1234567890.p8")
+        try FileManager.default.createDirectory(at: secretFixtureDirectory, withIntermediateDirectories: true)
+        try "not a real credential".write(to: secretFixture, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: secretFixtureDirectory) }
+
+        let root = try makeTempDirectory()
+        let artifact = root.appendingPathComponent("app-store-package-readiness.json")
+
+        let result = try runPackageReadiness(arguments: [
+            "--readiness",
+            "--artifact", artifact.path
+        ])
+
+        assertNoSecretValueLeak(result.stdout, surface: "redacted secret scan stdout")
+        assertNoSecretValueLeak(result.stderr, surface: "redacted secret scan stderr")
+        XCTAssertEqual(result.status, 0, sanitizedDiagnostics(result))
+        guard result.status == 0 else { return }
+
+        let artifactBody = try String(contentsOf: artifact, encoding: .utf8)
+        assertNoSecretValueLeak(artifactBody, surface: "redacted secret scan artifact")
+        XCTAssertFalse(artifactBody.contains("AuthKey_1234567890.p8"))
+        XCTAssertFalse(artifactBody.contains(".unit-test-secret-scan"))
+
+        let readiness = try parseJSONObject(artifactBody)
+        let secretScan = try XCTUnwrap(readiness["secretScan"] as? [String: Any])
+        XCTAssertEqual(secretScan["ok"] as? Bool, false)
+        XCTAssertEqual(secretScan["forbiddenMatches"] as? [String], ["[redacted-signing-material-filename]"])
     }
 
     private func runPackageReadiness(arguments: [String]) throws -> ProcessResult {
