@@ -92,6 +92,33 @@ final class OuroMDAppStoreApplyPlanTests: XCTestCase {
         }
     }
 
+    func testApplyExecutorCapturesReviewDetailIdFromFetchResponse() throws {
+        let root = try makeTempDirectory()
+        let plan = try makeSubmitCapablePlan(in: root, includeReviewDetailId: false)
+        let transport = try makeSuccessfulFakeTransport(in: root, includeReviewDetailFetchResponse: true)
+        let artifactDir = root.appendingPathComponent("artifacts", isDirectory: true)
+
+        let result = try runApplyExecutor(arguments: [
+            "--mode", "apply",
+            "--plan", plan.path,
+            "--transport-fixture", transport.path,
+            "--artifact-dir", artifactDir.path,
+            "--json"
+        ])
+
+        XCTAssertEqual(result.status, 0, result.stderr)
+        let summary = try parseJSONObject(result.stdout)
+        let resolvedIds = try XCTUnwrap(summary["resolvedIds"] as? [String: String])
+        XCTAssertEqual(resolvedIds["appStoreReviewDetailId"], "review-detail-fetched")
+
+        let tracePath = try XCTUnwrap(summary["traceArtifact"] as? String)
+        let trace = try parseJSONObject(String(contentsOfFile: tracePath, encoding: .utf8))
+        let events = try XCTUnwrap(trace["events"] as? [[String: Any]])
+        let updateReviewDetail = try event(in: events, requestId: "update-app-review-detail")
+        XCTAssertEqual(updateReviewDetail["path"] as? String, "/v1/appStoreReviewDetails/review-detail-fetched")
+        XCTAssertFalse(String(describing: updateReviewDetail).contains("${appStoreReviewDetailId}"))
+    }
+
     func testApplyExecutorClassifiesRetryableFixtureErrors() throws {
         let root = try makeTempDirectory()
         let plan = try makeSubmitCapablePlan(in: root)
@@ -112,6 +139,128 @@ final class OuroMDAppStoreApplyPlanTests: XCTestCase {
         XCTAssertEqual(failure["failedRequestId"] as? String, "create-target-app-store-version")
         XCTAssertEqual(failure["status"] as? Int, 503)
         XCTAssertFalse(result.stdout.contains("Bearer "))
+    }
+
+    func testApplyExecutorRejectsScreenshotBytesChangedAfterDryRun() throws {
+        let root = try makeTempDirectory()
+        let plan = try makeSubmitCapablePlan(in: root)
+        let transport = try makeSuccessfulFakeTransport(in: root)
+        let planBody = try parseJSONObject(String(contentsOf: plan, encoding: .utf8))
+        let screenshots = try XCTUnwrap(planBody["screenshots"] as? [[String: Any]])
+        let firstScreenshotPath = try XCTUnwrap(screenshots.first?["path"] as? String)
+        try Data("changed after dry run".utf8).write(to: URL(fileURLWithPath: firstScreenshotPath))
+
+        let result = try runApplyExecutor(arguments: [
+            "--mode", "apply",
+            "--plan", plan.path,
+            "--transport-fixture", transport.path,
+            "--artifact-dir", root.appendingPathComponent("artifacts").path,
+            "--json"
+        ])
+
+        XCTAssertNotEqual(result.status, 0)
+        XCTAssertTrue(result.stderr.contains("screenshot file changed since dry-run"))
+        XCTAssertFalse(result.stderr.contains("assetToken"))
+    }
+
+    func testLiveApplyRequiresStageAndExactStatePreflight() throws {
+        let root = try makeTempDirectory()
+        let plan = try makeSubmitCapablePlan(in: root)
+
+        let result = try runApplyExecutor(arguments: [
+            "--mode", "apply",
+            "--plan", plan.path,
+            "--transport", "live",
+            "--artifact-dir", root.appendingPathComponent("artifacts").path,
+            "--json"
+        ])
+
+        XCTAssertNotEqual(result.status, 0)
+        XCTAssertTrue(result.stderr.contains("live mutation requires --stage"))
+        XCTAssertTrue(result.stderr.contains("live mutation requires --preflight"))
+        XCTAssertFalse(result.stderr.contains("Bearer "))
+    }
+
+    func testLiveApplyRejectsMismatchedUploadedBuildPreflightBeforeNetwork() throws {
+        let root = try makeTempDirectory()
+        let plan = try makeSubmitCapablePlan(in: root)
+        let preflight = root.appendingPathComponent("preflight.json")
+        try writeJSON(livePreflight(uploadedBuildId: "wrong-build"), to: preflight)
+
+        let result = try runApplyExecutor(arguments: [
+            "--mode", "apply",
+            "--plan", plan.path,
+            "--transport", "live",
+            "--stage", "version-graph",
+            "--preflight", preflight.path,
+            "--state", root.appendingPathComponent("state.json").path,
+            "--artifact-dir", root.appendingPathComponent("artifacts").path,
+            "--json"
+        ])
+
+        XCTAssertNotEqual(result.status, 0)
+        XCTAssertTrue(result.stderr.contains("preflight uploaded build id wrong-build did not match plan build build-processed-0-9-80"))
+        XCTAssertFalse(result.stderr.contains("Bearer "))
+        XCTAssertFalse(result.stderr.contains("PRIVATE KEY"))
+    }
+
+    func testLiveApplyRejectsStalePersistedStateBeforeNetwork() throws {
+        let root = try makeTempDirectory()
+        let plan = try makeSubmitCapablePlan(in: root)
+        let preflight = root.appendingPathComponent("preflight.json")
+        try writeJSON(livePreflight(), to: preflight)
+        let state = root.appendingPathComponent("state.json")
+        try writeJSON([
+            "schemaVersion": 1,
+            "resolvedIds": [
+                "targetAppStoreVersionId": "7309944f-cbe8-4518-960c-444e6116ab46"
+            ]
+        ], to: state)
+
+        let result = try runApplyExecutor(arguments: [
+            "--mode", "apply",
+            "--plan", plan.path,
+            "--transport", "live",
+            "--stage", "metadata",
+            "--preflight", preflight.path,
+            "--state", state.path,
+            "--artifact-dir", root.appendingPathComponent("artifacts").path,
+            "--json"
+        ])
+
+        XCTAssertNotEqual(result.status, 0)
+        XCTAssertTrue(result.stderr.contains("state contains stale rejected App Store Connect id"))
+        XCTAssertTrue(result.stderr.contains("7309944f-cbe8-4518-960c-444e6116ab46"))
+        XCTAssertFalse(result.stderr.contains("Bearer "))
+    }
+
+    func testLiveApplyRejectsUnownedPersistedStateBeforeNetwork() throws {
+        let root = try makeTempDirectory()
+        let plan = try makeSubmitCapablePlan(in: root)
+        let preflight = root.appendingPathComponent("preflight.json")
+        try writeJSON(livePreflight(), to: preflight)
+        let state = root.appendingPathComponent("state.json")
+        try writeJSON([
+            "schemaVersion": 1,
+            "resolvedIds": [
+                "targetAppStoreVersionId": "some-other-version"
+            ]
+        ], to: state)
+
+        let result = try runApplyExecutor(arguments: [
+            "--mode", "apply",
+            "--plan", plan.path,
+            "--transport", "live",
+            "--stage", "metadata",
+            "--preflight", preflight.path,
+            "--state", state.path,
+            "--artifact-dir", root.appendingPathComponent("artifacts").path,
+            "--json"
+        ])
+
+        XCTAssertNotEqual(result.status, 0)
+        XCTAssertTrue(result.stderr.contains("state targetAppStoreVersionId some-other-version is not owned by preflight"))
+        XCTAssertFalse(result.stderr.contains("Bearer "))
     }
 
     private func runApplyExecutor(arguments: [String]) throws -> ProcessResult {
@@ -135,7 +284,7 @@ final class OuroMDAppStoreApplyPlanTests: XCTestCase {
         )
     }
 
-    private func makeSubmitCapablePlan(in root: URL) throws -> URL {
+    private func makeSubmitCapablePlan(in root: URL, includeReviewDetailId: Bool = true) throws -> URL {
         let screenshots = try [
             "folder-workspace",
             "command-palette",
@@ -147,13 +296,16 @@ final class OuroMDAppStoreApplyPlanTests: XCTestCase {
             return ["--screenshot", screenshot.path]
         }
         let plan = root.appendingPathComponent("submit-plan.json")
-        let result = try runRequestPlanner(arguments: [
+        var arguments = [
             "--json",
             "--artifact", plan.path,
             "--app-info-id", "app-info-current",
-            "--review-detail-id", "review-detail-current",
             "--processed-build-id", "build-processed-0-9-80"
-        ] + screenshots)
+        ]
+        if includeReviewDetailId {
+            arguments += ["--review-detail-id", "review-detail-current"]
+        }
+        let result = try runRequestPlanner(arguments: arguments + screenshots)
         XCTAssertEqual(result.status, 0, result.stderr)
         return plan
     }
@@ -231,10 +383,12 @@ final class OuroMDAppStoreApplyPlanTests: XCTestCase {
         )
     }
 
-    private func makeSuccessfulFakeTransport(in root: URL) throws -> URL {
+    private func makeSuccessfulFakeTransport(
+        in root: URL,
+        includeReviewDetailFetchResponse: Bool = false
+    ) throws -> URL {
         let fixture = root.appendingPathComponent("transport.json")
-        try writeJSON([
-            "responses": [
+        var responses: [String: Any] = [
                 "create-target-app-store-version": resource("appStoreVersions", "target-version-0-9-80"),
                 "create-version-localization": resource("appStoreVersionLocalizations", "version-localization-en-us"),
                 "create-app-info-localization": resource("appInfoLocalizations", "app-info-localization-en-us"),
@@ -252,8 +406,11 @@ final class OuroMDAppStoreApplyPlanTests: XCTestCase {
                         "attributes": ["state": "SUBMITTED"]
                     ]
                 ]
-            ]
-        ], to: fixture)
+        ]
+        if includeReviewDetailFetchResponse {
+            responses["fetch-app-review-detail"] = resource("appStoreReviewDetails", "review-detail-fetched")
+        }
+        try writeJSON(["responses": responses], to: fixture)
         return fixture
     }
 
@@ -268,6 +425,34 @@ final class OuroMDAppStoreApplyPlanTests: XCTestCase {
             ]
         ], to: fixture)
         return fixture
+    }
+
+    private func livePreflight(uploadedBuildId: String = "build-processed-0-9-80") -> [String: Any] {
+        [
+            "schemaVersion": 1,
+            "appId": "6787262892",
+            "bundleId": "bot.ouro.md",
+            "teamId": "743GT2AJ24",
+            "targetVersion": "0.9.80",
+            "targetAppStoreVersionExists": false,
+            "targetAppStoreVersionIds": [],
+            "appInfo": [
+                "id": "app-info-current",
+                "primaryCategoryId": "DEVELOPER_TOOLS"
+            ],
+            "appInfoLocalizations": [
+                [
+                    "id": "app-info-localization-en-us",
+                    "locale": "en-US"
+                ]
+            ],
+            "uploadedBuild": [
+                "id": uploadedBuildId,
+                "version": "0.9.80",
+                "processingState": "VALID",
+                "expired": false
+            ]
+        ]
     }
 
     private func resource(_ type: String, _ id: String) -> [String: Any] {

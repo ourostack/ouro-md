@@ -1,0 +1,36 @@
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.18s)
+Test Suite 'Selected tests' started at 2026-07-09 02:10:34.075.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-09 02:10:34.076.
+Test Suite 'OuroMDAppStoreApplyPlanTests' started at 2026-07-09 02:10:34.076.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorCapturesReviewDetailIdFromFetchResponse]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorCapturesReviewDetailIdFromFetchResponse]' passed (0.293 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorClassifiesRetryableFixtureErrors]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorClassifiesRetryableFixtureErrors]' passed (0.288 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorExecutesFakeTransportAndWritesRedactedArtifacts]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorExecutesFakeTransportAndWritesRedactedArtifacts]' passed (0.295 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRejectsBlockedDryRunPlans]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRejectsBlockedDryRunPlans]' passed (0.297 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRejectsScreenshotBytesChangedAfterDryRun]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRejectsScreenshotBytesChangedAfterDryRun]' passed (0.286 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRequiresExplicitApplyMode]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRequiresExplicitApplyMode]' passed (0.289 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRejectsMismatchedUploadedBuildPreflightBeforeNetwork]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRejectsMismatchedUploadedBuildPreflightBeforeNetwork]' passed (0.286 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRejectsStalePersistedStateBeforeNetwork]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRejectsStalePersistedStateBeforeNetwork]' passed (0.289 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRejectsUnownedPersistedStateBeforeNetwork]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRejectsUnownedPersistedStateBeforeNetwork]' passed (0.287 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRequiresStageAndExactStatePreflight]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRequiresStageAndExactStatePreflight]' passed (0.291 seconds).
+Test Suite 'OuroMDAppStoreApplyPlanTests' passed at 2026-07-09 02:10:36.978.
+	 Executed 10 tests, with 0 failures (0 unexpected) in 2.900 (2.901) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-07-09 02:10:36.978.
+	 Executed 10 tests, with 0 failures (0 unexpected) in 2.900 (2.901) seconds
+Test Suite 'Selected tests' passed at 2026-07-09 02:10:36.978.
+	 Executed 10 tests, with 0 failures (0 unexpected) in 2.900 (2.902) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

@@ -1,0 +1,20 @@
+Another instance of SwiftPM (PID: 40024) is already running using '/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/.build', waiting until that process has finished execution...Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.19s)
+Test Suite 'Selected tests' started at 2026-07-09 01:56:42.119.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-09 01:56:42.120.
+Test Suite 'OuroMDAppStoreApplyPlanTests' started at 2026-07-09 01:56:42.120.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRequiresStageAndExactStatePreflight]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreApplyPlanTests.swift:157: error: -[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRequiresStageAndExactStatePreflight] : XCTAssertTrue failed
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreApplyPlanTests.swift:158: error: -[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRequiresStageAndExactStatePreflight] : XCTAssertTrue failed
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRequiresStageAndExactStatePreflight]' failed (0.312 seconds).
+Test Suite 'OuroMDAppStoreApplyPlanTests' failed at 2026-07-09 01:56:42.432.
+	 Executed 1 test, with 2 failures (0 unexpected) in 0.312 (0.312) seconds
+Test Suite 'ouro-mdPackageTests.xctest' failed at 2026-07-09 01:56:42.432.
+	 Executed 1 test, with 2 failures (0 unexpected) in 0.312 (0.312) seconds
+Test Suite 'Selected tests' failed at 2026-07-09 01:56:42.432.
+	 Executed 1 test, with 2 failures (0 unexpected) in 0.312 (0.313) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

@@ -122,6 +122,31 @@ final class OuroMDAppStoreRequestPlanTests: XCTestCase {
         XCTAssertEqual(submitData["attributes"] as? [String: Bool], ["submitted": true])
     }
 
+    func testDryRunPlanReusesExistingAppInfoLocalizationWhenProvided() throws {
+        let result = try runRequestPlanner(arguments: [
+            "--selftest",
+            "--json",
+            "--app-info-id", "app-info-current",
+            "--app-info-localization-id", "app-info-localization-en-us"
+        ])
+
+        XCTAssertEqual(result.status, 0, result.stderr)
+        let plan = try parseJSONObject(result.stdout)
+        let requests = try XCTUnwrap(plan["requests"] as? [[String: Any]])
+        XCTAssertFalse(requests.contains { $0["id"] as? String == "create-app-info-localization" })
+
+        let updateAppInfoLocalization = try request(in: requests, id: "update-app-info-localization")
+        XCTAssertEqual(updateAppInfoLocalization["method"] as? String, "PATCH")
+        XCTAssertEqual(updateAppInfoLocalization["path"] as? String, "/v1/appInfoLocalizations/app-info-localization-en-us")
+        let data = try dataObject(try XCTUnwrap(updateAppInfoLocalization["body"] as? [String: Any]))
+        XCTAssertEqual(data["id"] as? String, "app-info-localization-en-us")
+        XCTAssertEqual(data["attributes"] as? [String: String], [
+            "name": "Ouro MD",
+            "subtitle": "Local Markdown Workspace",
+            "privacyPolicyUrl": "https://ouro.bot/privacy/"
+        ])
+    }
+
     func testDryRunPlanIncludesMacScreenshotReservationUploadAndCommitSteps() throws {
         let result = try runRequestPlanner(arguments: ["--selftest", "--json"])
 
@@ -205,7 +230,6 @@ final class OuroMDAppStoreRequestPlanTests: XCTestCase {
         for (flag, value) in [
             ("--target-version-id", "target-version-existing"),
             ("--version-localization-id", "localization-existing"),
-            ("--app-info-localization-id", "app-info-localization-existing"),
             ("--screenshot-set-id", "screenshot-set-existing"),
             ("--review-submission-id", "b37f847e-0ecb-4e7a-bb00-14e3038b0f4c")
         ] {

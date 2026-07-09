@@ -68,6 +68,7 @@ function parseArgs(argv) {
     else if (arg === "--bundle-id") options.bundleId = argv[++index];
     else if (arg === "--team-id") options.teamId = argv[++index];
     else if (arg === "--app-info-id") options.appInfoId = argv[++index];
+    else if (arg === "--app-info-localization-id") options.appInfoLocalizationId = argv[++index];
     else if (arg === "--review-detail-id") options.appStoreReviewDetailId = argv[++index];
     else if (arg === "--processed-build-id") options.processedBuildId = argv[++index];
     else if (arg === "--screenshot") options.screenshots.push(argv[++index]);
@@ -93,7 +94,6 @@ function isGeneratedResourceIdFlag(arg) {
   return [
     "--target-version-id",
     "--version-localization-id",
-    "--app-info-localization-id",
     "--screenshot-set-id",
     "--review-submission-id"
   ].includes(arg);
@@ -226,7 +226,7 @@ function versionRequests(context) {
 
 function appInfoRequests(context) {
   const { appId, store, ids } = context;
-  return [
+  const requests = [
     {
       id: "fetch-app-infos",
       method: "GET",
@@ -238,8 +238,11 @@ function appInfoRequests(context) {
       method: "GET",
       path: `/v1/appInfos/${ids.appInfoId}/appInfoLocalizations`,
       query: { limit: "200" }
-    },
-    {
+    }
+  ];
+
+  if (isPlaceholderValue(ids.appInfoLocalizationId)) {
+    requests.push({
       id: "create-app-info-localization",
       method: "POST",
       path: "/v1/appInfoLocalizations",
@@ -255,8 +258,10 @@ function appInfoRequests(context) {
           relationships: { appInfo: relationship("appInfos", ids.appInfoId) }
         }
       }
-    },
-    {
+    });
+  }
+
+  requests.push({
       id: "update-app-info-localization",
       method: "PATCH",
       path: `/v1/appInfoLocalizations/${ids.appInfoLocalizationId}`,
@@ -271,8 +276,9 @@ function appInfoRequests(context) {
           }
         }
       }
-    },
-    {
+    });
+
+  requests.push({
       id: "update-app-category",
       method: "PATCH",
       path: `/v1/appInfos/${ids.appInfoId}`,
@@ -283,8 +289,8 @@ function appInfoRequests(context) {
           relationships: { primaryCategory: relationship("appCategories", store.category) }
         }
       }
-    }
-  ];
+    });
+  return requests;
 }
 
 function reviewDetailRequests(context) {
@@ -535,6 +541,10 @@ function guardAgainstStaleTargetIds(options) {
 
 function relationship(type, id) {
   return { data: { type, id } };
+}
+
+function isPlaceholderValue(value) {
+  return typeof value === "string" && /^\$\{[^}]+\}$/.test(value);
 }
 
 function isRemoteStoreProof(asset) {

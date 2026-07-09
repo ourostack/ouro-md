@@ -16,7 +16,8 @@ Live discovery:
 
 Dry-run request plan:
 - Artifact: `unit7a-dry-run-request-plan.json`
-- Request count: 30
+- Request count: 29
+- Existing `en-US` app-info localization `b5bae77f-a94f-4b39-8ebd-841a6306b1c6` is patched in place; the plan does not create a duplicate app-info localization.
 - Screenshot scenes: folder workspace, command palette, search/outline, themed export/readability
 - Screenshot blockers: none
 - Processed build association target: `827fa5b9-6994-41eb-bc75-ab3ca469a96f`

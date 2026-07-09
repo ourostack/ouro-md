@@ -1,0 +1,24 @@
+Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/5] Emitting module OuroMDTests
+[4/5] Compiling OuroMDTests OuroMDAppStoreApplyPlanTests.swift
+[4/6] Write Objects.LinkFileList
+[5/6] Linking ouro-mdPackageTests
+Build complete! (3.35s)
+Test Suite 'Selected tests' started at 2026-07-09 02:09:53.880.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-09 02:09:53.881.
+Test Suite 'OuroMDAppStoreApplyPlanTests' started at 2026-07-09 02:09:53.881.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRejectsUnownedPersistedStateBeforeNetwork]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreApplyPlanTests.swift:262: error: -[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRejectsUnownedPersistedStateBeforeNetwork] : XCTAssertTrue failed
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRejectsUnownedPersistedStateBeforeNetwork]' failed (0.543 seconds).
+Test Suite 'OuroMDAppStoreApplyPlanTests' failed at 2026-07-09 02:09:54.424.
+	 Executed 1 test, with 1 failure (0 unexpected) in 0.543 (0.543) seconds
+Test Suite 'ouro-mdPackageTests.xctest' failed at 2026-07-09 02:09:54.424.
+	 Executed 1 test, with 1 failure (0 unexpected) in 0.543 (0.543) seconds
+Test Suite 'Selected tests' failed at 2026-07-09 02:09:54.424.
+	 Executed 1 test, with 1 failure (0 unexpected) in 0.543 (0.544) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
