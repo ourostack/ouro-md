@@ -5,11 +5,11 @@
 - Worktree: `/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection`
 - Planning doc: `worker/tasks/2026-07-08-1918-planning-app-store-spam-rejection.md`
 - Gate state: planning reviewer converged; planning approved. Doing-doc granularity, validation/source-fidelity, ambiguity, quality, and scrutiny passes converged. Unit 1c metadata validation reviewer converged. Autopilot/no-human-gates mandate active; human gates waived by operator; reviewer gates remain required through harsh sub-agents.
-- Next action: execute Unit 3a App Store Connect status-reader tests.
+- Next action: execute Unit 3b App Store Connect status-reader implementation.
 
 ## Terminal Evidence
 
-- Not terminal yet. Deep research is committed and pushed at `2aaf86e`; planning/doing approval is committed; Unit 0 baseline captured current App Store Connect state; Unit 1 metadata validation is complete through reviewer convergence; Unit 2 app-visible positioning, build, visual QA, and UI reviewer gates are complete. App Store Connect status automation, screenshots, packaging, upload, and App Store submission remain.
+- Not terminal yet. Deep research is committed and pushed at `2aaf86e`; planning/doing approval is committed; Unit 0 baseline captured current App Store Connect state; Unit 1 metadata validation is complete through reviewer convergence; Unit 2 app-visible positioning, build, visual QA, and UI reviewer gates are complete; Unit 3a status-reader tests are red. App Store Connect status implementation, screenshots, packaging, upload, and App Store submission remain.
 
 ## Continuation Scan
 

@@ -90,7 +90,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Build/test/visual logs, any captured screenshots, and `visual-absurdity-ledger.md`.
 **Acceptance**: Tests/build/visual QA pass, ledger has no `ready` or `needs reviewer gate` items, and a harsh UI/native reviewer gate converges.
 
-### ⬜ Unit 3a: App Store Connect Status Reader — Tests
+### ✅ Unit 3a: App Store Connect Status Reader — Tests
 **What**: Add failing tests/selftests for a source-owned status command that reads app `6787262892`, bundle `bot.ouro.md`, current version/localization/review-detail/screenshot/submission state via the local Apple Distribution Kit config and redacts secrets.
 **Output**: Failing test/selftest diff plus red log.
 **Acceptance**: Tests fail red because the status command does not yet exist or does not assert redaction/required fields.
@@ -258,3 +258,4 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 2a complete: added app-visible positioning tests for shell/About subtitle, welcome copy, and release highlights; focused suite fails red against generic current copy.
 - 2026-07-09 Unit 2b complete: updated About/shell subtitle, first-launch welcome copy, release highlights, and CLI help to local-workspace positioning; focused positioning, shell, release, distribution metadata, and Apple distribution checks pass.
 - 2026-07-09 Unit 2c complete: full Swift tests, app build, visual QA, first-launch, UI-surface, accessibility, exact welcome snapshot, absurdity ledger, and harsh UI/native reviewer gate passed after review fixes for user-facing release highlights and tracked fixture drift.
+- 2026-07-09 Unit 3a complete: added failing App Store Connect status-reader tests requiring normalized app/version/submission/screenshot fields and redaction; focused suite fails red because `scripts/app-store-status.mjs` is not implemented.
