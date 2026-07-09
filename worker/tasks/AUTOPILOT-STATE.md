@@ -4,12 +4,12 @@
 - Branch: `worker/app-store-spam-rejection`
 - Worktree: `/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection`
 - Planning doc: `worker/tasks/2026-07-08-1918-planning-app-store-spam-rejection.md`
-- Gate state: autopilot/no-human-gates mandate active; human gates waived by operator; reviewer gates remain required through harsh sub-agents.
-- Next action: converge planning reviewer, create doing doc, run doing-doc reviewer passes, execute through App Store submission.
+- Gate state: planning reviewer converged; planning approved. Autopilot/no-human-gates mandate active; human gates waived by operator; reviewer gates remain required through harsh sub-agents.
+- Next action: create doing doc, run doing-doc reviewer passes, execute through App Store submission.
 
 ## Terminal Evidence
 
-- Not terminal yet. Deep research is committed and pushed at `2aaf86e`; implementation, validation, packaging, upload, and App Store submission remain.
+- Not terminal yet. Deep research is committed and pushed at `2aaf86e`; planning approval is committed in this task stream; implementation, validation, packaging, upload, and App Store submission remain.
 
 ## Continuation Scan
 

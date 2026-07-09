@@ -1,6 +1,6 @@
 # Planning: Resolve App Store 4.3(a) Spam Rejection
 
-**Status**: NEEDS_REVIEW
+**Status**: approved
 **Created**: 2026-07-08 19:18
 
 ## Goal
@@ -108,3 +108,4 @@ Current live metadata evidence:
 - 2026-07-08 19:40 Added deep research findings and recommended new-build resubmission plan.
 - 2026-07-09 Recorded operator approval of positioning, fresh build/version path, Ouro MD wrapper-first automation, and no-human-gates execution.
 - 2026-07-09 Addressed planning reviewer blocker by removing stale human approval gates from posting/upload/submission scope.
+- 2026-07-09 Planning reviewer Round 2 converged; marked approved for doing-doc conversion.
