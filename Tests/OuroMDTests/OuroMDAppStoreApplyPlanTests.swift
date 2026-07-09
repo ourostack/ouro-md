@@ -204,16 +204,64 @@ final class OuroMDAppStoreApplyPlanTests: XCTestCase {
         XCTAssertFalse(result.stderr.contains("PRIVATE KEY"))
     }
 
+    func testLiveApplyRejectsLaterStagesWithoutUnit7cResolvedStateBeforeNetwork() throws {
+        let root = try makeTempDirectory()
+        let plan = try makeSubmitCapablePlan(in: root)
+        let preflight = root.appendingPathComponent("preflight.json")
+        try writeJSON(
+            livePreflight(
+                targetAppStoreVersionExists: true,
+                targetAppStoreVersionIds: ["7309944f-cbe8-4518-960c-444e6116ab46"],
+                appStoreVersionLocalizationId: "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
+                appStoreReviewDetailId: "3bc7284e-27d5-4dd3-a049-b9e859289bd1",
+                appScreenshotSetId: "f37ecb51-c96e-451d-9b29-20d86d7f118e",
+                reviewSubmissionId: "review-submission-new"
+            ),
+            to: preflight
+        )
+        let missingConfig = root.appendingPathComponent("missing-config.json")
+
+        let result = try runApplyExecutor(arguments: [
+            "--mode", "apply",
+            "--plan", plan.path,
+            "--transport", "live",
+            "--stage", "metadata",
+            "--preflight", preflight.path,
+            "--state", root.appendingPathComponent("empty-state.json").path,
+            "--config", missingConfig.path,
+            "--artifact-dir", root.appendingPathComponent("artifacts").path,
+            "--json"
+        ])
+
+        XCTAssertNotEqual(result.status, 0)
+        XCTAssertTrue(result.stderr.contains("state missing required resolved ids for metadata"))
+        XCTAssertTrue(result.stderr.contains("targetAppStoreVersionId"))
+        XCTAssertFalse(result.stderr.contains("missing-config.json"))
+        XCTAssertFalse(result.stderr.contains("Bearer "))
+    }
+
     func testLiveApplyRejectsStalePersistedStateBeforeNetwork() throws {
         let root = try makeTempDirectory()
         let plan = try makeSubmitCapablePlan(in: root)
         let preflight = root.appendingPathComponent("preflight.json")
-        try writeJSON(livePreflight(), to: preflight)
+        try writeJSON(
+            livePreflight(
+                appStoreVersionLocalizationId: "version-localization-en-us",
+                appStoreReviewDetailId: "review-detail-current",
+                appScreenshotSetId: "desktop-screenshot-set",
+                reviewSubmissionId: "review-submission-new"
+            ),
+            to: preflight
+        )
         let state = root.appendingPathComponent("state.json")
         try writeJSON([
             "schemaVersion": 1,
             "resolvedIds": [
-                "targetAppStoreVersionId": "7309944f-cbe8-4518-960c-444e6116ab46"
+                "targetAppStoreVersionId": "7309944f-cbe8-4518-960c-444e6116ab46",
+                "appStoreVersionLocalizationId": "version-localization-en-us",
+                "appStoreReviewDetailId": "review-detail-current",
+                "appScreenshotSetId": "desktop-screenshot-set",
+                "reviewSubmissionId": "review-submission-new"
             ]
         ], to: state)
 
@@ -234,16 +282,76 @@ final class OuroMDAppStoreApplyPlanTests: XCTestCase {
         XCTAssertFalse(result.stderr.contains("Bearer "))
     }
 
-    func testLiveApplyRejectsUnownedPersistedStateBeforeNetwork() throws {
+    func testLiveApplyAllowsRetargetedRejectedIdsWhenOwnedByPreflight() throws {
         let root = try makeTempDirectory()
         let plan = try makeSubmitCapablePlan(in: root)
         let preflight = root.appendingPathComponent("preflight.json")
-        try writeJSON(livePreflight(), to: preflight)
+        try writeJSON(
+            livePreflight(
+                targetAppStoreVersionExists: true,
+                targetAppStoreVersionIds: ["7309944f-cbe8-4518-960c-444e6116ab46"],
+                appStoreVersionLocalizationId: "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
+                appStoreReviewDetailId: "3bc7284e-27d5-4dd3-a049-b9e859289bd1",
+                appScreenshotSetId: "f37ecb51-c96e-451d-9b29-20d86d7f118e",
+                reviewSubmissionId: "review-submission-new"
+            ),
+            to: preflight
+        )
         let state = root.appendingPathComponent("state.json")
         try writeJSON([
             "schemaVersion": 1,
             "resolvedIds": [
-                "targetAppStoreVersionId": "some-other-version"
+                "targetAppStoreVersionId": "7309944f-cbe8-4518-960c-444e6116ab46",
+                "appStoreVersionLocalizationId": "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
+                "appStoreReviewDetailId": "3bc7284e-27d5-4dd3-a049-b9e859289bd1",
+                "appScreenshotSetId": "f37ecb51-c96e-451d-9b29-20d86d7f118e",
+                "reviewSubmissionId": "review-submission-new"
+            ]
+        ], to: state)
+        let missingConfig = root.appendingPathComponent("missing-config.json")
+
+        let result = try runApplyExecutor(arguments: [
+            "--mode", "apply",
+            "--plan", plan.path,
+            "--transport", "live",
+            "--stage", "metadata",
+            "--preflight", preflight.path,
+            "--state", state.path,
+            "--config", missingConfig.path,
+            "--artifact-dir", root.appendingPathComponent("artifacts").path,
+            "--json"
+        ])
+
+        XCTAssertNotEqual(result.status, 0)
+        XCTAssertTrue(result.stderr.contains("missing-config.json"))
+        XCTAssertFalse(result.stderr.contains("state contains stale rejected App Store Connect id"))
+        XCTAssertFalse(result.stderr.contains("Bearer "))
+    }
+
+    func testLiveApplyRejectsUnownedPersistedStateBeforeNetwork() throws {
+        let root = try makeTempDirectory()
+        let plan = try makeSubmitCapablePlan(in: root)
+        let preflight = root.appendingPathComponent("preflight.json")
+        try writeJSON(
+            livePreflight(
+                targetAppStoreVersionExists: true,
+                targetAppStoreVersionIds: ["target-version-0-9-80"],
+                appStoreVersionLocalizationId: "version-localization-en-us",
+                appStoreReviewDetailId: "review-detail-current",
+                appScreenshotSetId: "desktop-screenshot-set",
+                reviewSubmissionId: "review-submission-new"
+            ),
+            to: preflight
+        )
+        let state = root.appendingPathComponent("state.json")
+        try writeJSON([
+            "schemaVersion": 1,
+            "resolvedIds": [
+                "targetAppStoreVersionId": "some-other-version",
+                "appStoreVersionLocalizationId": "version-localization-en-us",
+                "appStoreReviewDetailId": "review-detail-current",
+                "appScreenshotSetId": "desktop-screenshot-set",
+                "reviewSubmissionId": "review-submission-new"
             ]
         ], to: state)
 
@@ -260,6 +368,54 @@ final class OuroMDAppStoreApplyPlanTests: XCTestCase {
 
         XCTAssertNotEqual(result.status, 0)
         XCTAssertTrue(result.stderr.contains("state targetAppStoreVersionId some-other-version is not owned by preflight"))
+        XCTAssertFalse(result.stderr.contains("Bearer "))
+    }
+
+    func testLiveFinalSubmitRequiresOldRejectionThreadReplyHandlingBeforeNetwork() throws {
+        let root = try makeTempDirectory()
+        let plan = try makeSubmitCapablePlan(in: root)
+        let preflight = root.appendingPathComponent("preflight.json")
+        try writeJSON(
+            livePreflight(
+                targetAppStoreVersionExists: true,
+                targetAppStoreVersionIds: ["target-version-0-9-80"],
+                appStoreVersionLocalizationId: "version-localization-en-us",
+                appStoreReviewDetailId: "review-detail-current",
+                appScreenshotSetId: "desktop-screenshot-set",
+                reviewSubmissionId: "review-submission-new",
+                reviewSubmissionItemId: "review-submission-item"
+            ),
+            to: preflight
+        )
+        let state = root.appendingPathComponent("state.json")
+        try writeJSON([
+            "schemaVersion": 1,
+            "resolvedIds": [
+                "targetAppStoreVersionId": "target-version-0-9-80",
+                "appStoreVersionLocalizationId": "version-localization-en-us",
+                "appStoreReviewDetailId": "review-detail-current",
+                "appScreenshotSetId": "desktop-screenshot-set",
+                "reviewSubmissionId": "review-submission-new",
+                "reviewSubmissionItemId": "review-submission-item"
+            ]
+        ], to: state)
+        let missingConfig = root.appendingPathComponent("missing-config.json")
+
+        let result = try runApplyExecutor(arguments: [
+            "--mode", "apply",
+            "--plan", plan.path,
+            "--transport", "live",
+            "--stage", "final-submit",
+            "--preflight", preflight.path,
+            "--state", state.path,
+            "--config", missingConfig.path,
+            "--artifact-dir", root.appendingPathComponent("artifacts").path,
+            "--json"
+        ])
+
+        XCTAssertNotEqual(result.status, 0)
+        XCTAssertTrue(result.stderr.contains("final submit requires old rejection-thread reply handling"))
+        XCTAssertFalse(result.stderr.contains("missing-config.json"))
         XCTAssertFalse(result.stderr.contains("Bearer "))
     }
 
@@ -427,15 +583,24 @@ final class OuroMDAppStoreApplyPlanTests: XCTestCase {
         return fixture
     }
 
-    private func livePreflight(uploadedBuildId: String = "build-processed-0-9-80") -> [String: Any] {
-        [
+    private func livePreflight(
+        uploadedBuildId: String = "build-processed-0-9-80",
+        targetAppStoreVersionExists: Bool = false,
+        targetAppStoreVersionIds: [String] = [],
+        appStoreVersionLocalizationId: String? = nil,
+        appStoreReviewDetailId: String? = nil,
+        appScreenshotSetId: String? = nil,
+        reviewSubmissionId: String? = nil,
+        reviewSubmissionItemId: String? = nil
+    ) -> [String: Any] {
+        var preflight: [String: Any] = [
             "schemaVersion": 1,
             "appId": "6787262892",
             "bundleId": "bot.ouro.md",
             "teamId": "743GT2AJ24",
             "targetVersion": "0.9.80",
-            "targetAppStoreVersionExists": false,
-            "targetAppStoreVersionIds": [],
+            "targetAppStoreVersionExists": targetAppStoreVersionExists,
+            "targetAppStoreVersionIds": targetAppStoreVersionIds,
             "appInfo": [
                 "id": "app-info-current",
                 "primaryCategoryId": "DEVELOPER_TOOLS"
@@ -453,6 +618,22 @@ final class OuroMDAppStoreApplyPlanTests: XCTestCase {
                 "expired": false
             ]
         ]
+        if let appStoreVersionLocalizationId {
+            preflight["appStoreVersionLocalizationId"] = appStoreVersionLocalizationId
+        }
+        if let appStoreReviewDetailId {
+            preflight["appStoreReviewDetailId"] = appStoreReviewDetailId
+        }
+        if let appScreenshotSetId {
+            preflight["appScreenshotSetId"] = appScreenshotSetId
+        }
+        if let reviewSubmissionId {
+            preflight["reviewSubmissionId"] = reviewSubmissionId
+        }
+        if let reviewSubmissionItemId {
+            preflight["reviewSubmissionItemId"] = reviewSubmissionItemId
+        }
+        return preflight
     }
 
     private func resource(_ type: String, _ id: String) -> [String: Any] {

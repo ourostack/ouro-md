@@ -1,0 +1,14 @@
+{
+  "status": 200,
+  "ok": true,
+  "data": {
+    "id": "7309944f-cbe8-4518-960c-444e6116ab46",
+    "type": "appStoreVersions",
+    "attributes": {
+      "versionString": "0.9.80",
+      "appStoreState": "REJECTED",
+      "appVersionState": "REJECTED",
+      "platform": "MAC_OS"
+    }
+  }
+}

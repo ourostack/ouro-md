@@ -1,0 +1,20 @@
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.18s)
+Test Suite 'Selected tests' started at 2026-07-09 02:23:47.490.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-09 02:23:47.491.
+Test Suite 'OuroMDAppStoreApplyPlanTests' started at 2026-07-09 02:23:47.491.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyAllowsRetargetedRejectedIdsWhenOwnedByPreflight]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreApplyPlanTests.swift:276: error: -[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyAllowsRetargetedRejectedIdsWhenOwnedByPreflight] : XCTAssertTrue failed
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDAppStoreApplyPlanTests.swift:277: error: -[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyAllowsRetargetedRejectedIdsWhenOwnedByPreflight] : XCTAssertFalse failed
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyAllowsRetargetedRejectedIdsWhenOwnedByPreflight]' failed (0.318 seconds).
+Test Suite 'OuroMDAppStoreApplyPlanTests' failed at 2026-07-09 02:23:47.810.
+	 Executed 1 test, with 2 failures (0 unexpected) in 0.318 (0.318) seconds
+Test Suite 'ouro-mdPackageTests.xctest' failed at 2026-07-09 02:23:47.810.
+	 Executed 1 test, with 2 failures (0 unexpected) in 0.318 (0.318) seconds
+Test Suite 'Selected tests' failed at 2026-07-09 02:23:47.810.
+	 Executed 1 test, with 2 failures (0 unexpected) in 0.318 (0.319) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

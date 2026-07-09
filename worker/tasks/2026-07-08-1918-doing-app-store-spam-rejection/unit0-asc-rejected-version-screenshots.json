@@ -9,18 +9,17 @@
           "fileSize": 127639,
           "fileName": "ouro-md-app-store-screenshot-2880x1800.png",
           "sourceFileChecksum": "813db59889b8a5f92eea6c2980a96712",
-          "imageAsset": {
-            "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/15/03/cb/1503cb09-64e3-e7c5-5e52-d59f624c683b/ouro-md-app-store-screenshot-2880x1800.png/{w}x{h}bb.{f}",
-            "width": 2880,
-            "height": 1800
-          },
           "assetType": "SortedDesktopScreenShot",
-          "uploadOperations": null,
           "assetDeliveryState": {
             "errors": [],
             "warnings": null,
             "state": "COMPLETE"
-          }
+          },
+          "imageAssetSummary": {
+            "width": 2880,
+            "height": 1800
+          },
+          "uploadOperationsSummary": "none"
         },
         "links": {
           "self": "https://api.appstoreconnect.apple.com/v1/appScreenshots/80a8620a-643a-46bd-9e39-ab19f26ba424"

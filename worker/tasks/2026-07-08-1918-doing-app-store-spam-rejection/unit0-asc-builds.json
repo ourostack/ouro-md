@@ -14,14 +14,13 @@
           "lsMinimumSystemVersion": "13.0",
           "computedMinMacOsVersion": null,
           "computedMinVisionOsVersion": null,
-          "iconAssetToken": {
-            "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/a9/f7/59/a9f75946-721f-2c5b-6e73-b127295ede3a/AppIcon.png/{w}x{h}bb.{f}",
-            "width": 1024,
-            "height": 1024
-          },
           "processingState": "VALID",
           "buildAudienceType": "APP_STORE_ELIGIBLE",
-          "usesNonExemptEncryption": false
+          "usesNonExemptEncryption": false,
+          "iconAssetSummary": {
+            "width": 1024,
+            "height": 1024
+          }
         },
         "relationships": {
           "preReleaseVersion": {

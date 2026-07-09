@@ -1,0 +1,46 @@
+{
+  "appStoreVersion": {
+    "attributes": {
+      "appStoreState": "REJECTED",
+      "appVersionState": "REJECTED",
+      "platform": "MAC_OS",
+      "versionString": "0.9.79"
+    },
+    "id": "7309944f-cbe8-4518-960c-444e6116ab46",
+    "type": "appStoreVersions"
+  },
+  "build": {
+    "attributes": {
+      "expired": false,
+      "processingState": "VALID",
+      "uploadedDate": "2026-07-03T15:56:07-07:00",
+      "usesNonExemptEncryption": false,
+      "version": "0.9.79"
+    },
+    "id": "2f55e88f-a05b-4065-a4b5-4e55180d8835",
+    "type": "builds"
+  },
+  "localizations": [
+    {
+      "attributes": {
+        "description": "Ouro MD is a calm Markdown editor for macOS. It keeps the document front and center with clean typography, native file handling, and a focused writing surface for notes, specs, plans, and working documents.\n\nOpen Markdown files directly from Finder, write in plain text, review rendered structure, and keep your documents portable. Ouro MD is built for people who live in Markdown and want the app around it to stay quiet, fast, and intentional.",
+        "keywords": "markdown,editor,notes,writing,plain text,documents,preview,tables,mac",
+        "locale": "en-US",
+        "marketingUrl": "https://ouro.bot/",
+        "promotionalText": "A quiet, native Markdown editor for macOS documents that should stay yours.",
+        "supportUrl": "https://ouro.bot/support/",
+        "whatsNew": null
+      },
+      "id": "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
+      "type": "appStoreVersionLocalizations"
+    }
+  ],
+  "reviewDetail": {
+    "attributes": {
+      "notes": "Ouro MD is a local Markdown editor for macOS. No sign-in, demo account, subscription, or server-side test account is required to review the app."
+    },
+    "id": "3bc7284e-27d5-4dd3-a049-b9e859289bd1",
+    "type": "appStoreReviewDetails"
+  },
+  "schemaVersion": 1
+}

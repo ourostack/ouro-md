@@ -125,7 +125,7 @@ async function applyLivePlan(options, plan) {
   fs.mkdirSync(options.artifactDir, { recursive: true });
 
   const state = readState(options.statePath);
-  validateResolvedState(plan, preflight, state);
+  validateResolvedState(plan, preflight, state, options.stage);
   const context = {
     ids: { ...(state.resolvedIds ?? {}) },
     screenshots: plan.screenshots ?? [],
@@ -298,15 +298,28 @@ function validateLivePreflight(plan, preflight, stage) {
   if (stage === "version-graph" && preflight.targetAppStoreVersionExists === true && !preflight.targetAppStoreVersionIds?.length) {
     errors.push("preflight says target version exists but provided no targetAppStoreVersionIds");
   }
+  if (stage === "final-submit" && !hasOldRejectionThreadReplyHandling(preflight)) {
+    errors.push("final submit requires old rejection-thread reply handling status ui-reply-posted or ui-reply-unavailable-review-notes-used");
+  }
 
   if (errors.length > 0) throw new Error(errors.join("; "));
 }
 
-function validateResolvedState(plan, preflight, state) {
+function hasOldRejectionThreadReplyHandling(preflight) {
+  const status = preflight.existingRejectionThread?.replyHandling?.status;
+  return ["ui-reply-posted", "ui-reply-unavailable-review-notes-used"].includes(status);
+}
+
+function validateResolvedState(plan, preflight, state, stage) {
   const ids = state.resolvedIds ?? {};
+  const missingRequiredIds = requiredResolvedStateIds(stage).filter((key) => !ids[key]);
+  if (missingRequiredIds.length > 0) {
+    throw new Error(`state missing required resolved ids for ${stage}: ${missingRequiredIds.join(",")}`);
+  }
+
   const staleIds = new Set(plan.staleRejectedVersionIds ?? []);
   for (const [key, value] of Object.entries(ids)) {
-    if (staleIds.has(value)) {
+    if (staleIds.has(value) && !isOwnedByPreflight(key, value, preflight)) {
       throw new Error(`state contains stale rejected App Store Connect id for ${key}: ${value}`);
     }
   }
@@ -338,6 +351,29 @@ function validateResolvedState(plan, preflight, state) {
       }
     }
   }
+}
+
+function requiredResolvedStateIds(stage) {
+  if (stage === "version-graph") return [];
+  const versionGraphIds = [
+    "targetAppStoreVersionId",
+    "appStoreVersionLocalizationId",
+    "appStoreReviewDetailId",
+    "appScreenshotSetId",
+    "reviewSubmissionId"
+  ];
+  if (stage === "final-submit") return [...versionGraphIds, "reviewSubmissionItemId"];
+  return versionGraphIds;
+}
+
+function isOwnedByPreflight(key, value, preflight) {
+  if (key === "targetAppStoreVersionId") {
+    return (preflight.targetAppStoreVersionIds ?? []).includes(value);
+  }
+  if (key === "appInfoLocalizationId") {
+    return (preflight.appInfoLocalizations ?? []).some((item) => item?.id === value);
+  }
+  return preflight[key] === value;
 }
 
 function plannedProcessedBuildId(plan) {

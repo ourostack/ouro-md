@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "result": {
+    "data": {
+      "attributes": {
+        "expired": false,
+        "minOsVersion": "13.0",
+        "processingState": "VALID",
+        "uploadedDate": "2026-07-03T15:56:07-07:00",
+        "usesNonExemptEncryption": false,
+        "version": "0.9.79"
+      },
+      "id": "2f55e88f-a05b-4065-a4b5-4e55180d8835",
+      "type": "builds"
+    }
+  },
+  "schemaVersion": 1,
+  "source": "sanitized App Store Connect /build summary; asset-token payloads intentionally omitted"
+}

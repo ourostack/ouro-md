@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "appId": "6787262892",
+  "targetVersion": "0.9.80",
+  "updatedAt": "2026-07-09T09:26:10.624Z",
+  "resolvedIds": {
+    "targetAppStoreVersionId": "7309944f-cbe8-4518-960c-444e6116ab46",
+    "appStoreVersionLocalizationId": "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
+    "appStoreReviewDetailId": "3bc7284e-27d5-4dd3-a049-b9e859289bd1",
+    "appScreenshotSetId": "f37ecb51-c96e-451d-9b29-20d86d7f118e",
+    "reviewSubmissionId": "e87d8ecd-9682-4d79-9e60-14c23befd11e"
+  }
+}

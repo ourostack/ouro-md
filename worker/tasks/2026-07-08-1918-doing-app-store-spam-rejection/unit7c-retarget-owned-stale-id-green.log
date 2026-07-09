@@ -1,0 +1,18 @@
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.18s)
+Test Suite 'Selected tests' started at 2026-07-09 02:24:03.711.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-09 02:24:03.712.
+Test Suite 'OuroMDAppStoreApplyPlanTests' started at 2026-07-09 02:24:03.712.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyAllowsRetargetedRejectedIdsWhenOwnedByPreflight]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyAllowsRetargetedRejectedIdsWhenOwnedByPreflight]' passed (0.294 seconds).
+Test Suite 'OuroMDAppStoreApplyPlanTests' passed at 2026-07-09 02:24:04.007.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.294 (0.294) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-07-09 02:24:04.007.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.294 (0.294) seconds
+Test Suite 'Selected tests' passed at 2026-07-09 02:24:04.007.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.294 (0.295) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
