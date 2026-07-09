@@ -1,0 +1,55 @@
+{
+  "ok": true,
+  "result": {
+    "data": [
+      {
+        "type": "bundleIds",
+        "id": "ALBZ38V6JH",
+        "attributes": {
+          "name": "Ouro MD",
+          "identifier": "bot.ouro.md",
+          "platform": "UNIVERSAL",
+          "seedId": "743GT2AJ24"
+        },
+        "relationships": {
+          "bundleIdCapabilities": {
+            "meta": {
+              "paging": {
+                "total": 0,
+                "limit": 2147483647
+              }
+            },
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/ALBZ38V6JH/relationships/bundleIdCapabilities",
+              "related": "https://api.appstoreconnect.apple.com/v1/bundleIds/ALBZ38V6JH/bundleIdCapabilities"
+            }
+          },
+          "profiles": {
+            "meta": {
+              "paging": {
+                "total": 0,
+                "limit": 2147483647
+              }
+            },
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/ALBZ38V6JH/relationships/profiles",
+              "related": "https://api.appstoreconnect.apple.com/v1/bundleIds/ALBZ38V6JH/profiles"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/ALBZ38V6JH"
+        }
+      }
+    ],
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/bundleIds?filter%5Bplatform%5D=MAC_OS&filter%5Bidentifier%5D=bot.ouro.md&limit=10"
+    },
+    "meta": {
+      "paging": {
+        "total": 1,
+        "limit": 10
+      }
+    }
+  }
+}

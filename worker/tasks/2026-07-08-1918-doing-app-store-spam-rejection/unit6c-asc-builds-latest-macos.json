@@ -1,0 +1,39 @@
+{
+  "ok": true,
+  "schemaVersion": 1,
+  "source": "sanitized App Store Connect /v1/builds summary; asset-token payloads intentionally omitted",
+  "result": {
+    "data": [
+      {
+        "id": "827fa5b9-6994-41eb-bc75-ab3ca469a96f",
+        "type": "builds",
+        "attributes": {
+          "version": "0.9.80",
+          "processingState": "VALID",
+          "uploadedDate": "2026-07-09T01:35:53-07:00",
+          "expired": false,
+          "minOsVersion": "13.0",
+          "usesNonExemptEncryption": false
+        }
+      },
+      {
+        "id": "2f55e88f-a05b-4065-a4b5-4e55180d8835",
+        "type": "builds",
+        "attributes": {
+          "version": "0.9.79",
+          "processingState": "VALID",
+          "uploadedDate": "2026-07-03T15:56:07-07:00",
+          "expired": false,
+          "minOsVersion": "13.0",
+          "usesNonExemptEncryption": false
+        }
+      }
+    ],
+    "meta": {
+      "paging": {
+        "total": 2,
+        "limit": 20
+      }
+    }
+  }
+}

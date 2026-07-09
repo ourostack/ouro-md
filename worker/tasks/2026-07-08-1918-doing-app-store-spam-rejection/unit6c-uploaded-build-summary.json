@@ -1,0 +1,43 @@
+{
+  "package": {
+    "bundleId": "bot.ouro.md",
+    "path": "dist/app-store/Ouro-MD-0.9.80-app-store.pkg",
+    "sha256Artifact": "unit6c-package-sha256.log",
+    "version": "0.9.80"
+  },
+  "preReleaseVersion": {
+    "id": "218c4e5f-7053-4263-8c0e-e2e5f8234bd8",
+    "platform": "MAC_OS",
+    "version": "0.9.80"
+  },
+  "provisioningProfile": {
+    "ApplicationIdentifier": "743GT2AJ24.bot.ouro.md",
+    "ExpirationDate": "2027-07-03 20:51:49",
+    "Platform": [
+      "OSX"
+    ],
+    "TeamEntitlement": "743GT2AJ24",
+    "downloadedPath": "/tmp/ouro-md-N984ZC9M2H.mobileprovision",
+    "id": "N984ZC9M2H",
+    "name": "Ouro MD Mac App Store",
+    "profileState": "ACTIVE",
+    "profileType": "MAC_APP_STORE"
+  },
+  "schemaVersion": 1,
+  "uploadedBuild": {
+    "expired": false,
+    "id": "827fa5b9-6994-41eb-bc75-ab3ca469a96f",
+    "processingState": "VALID",
+    "uploadedDate": "2026-07-09T01:35:53-07:00",
+    "version": "0.9.80"
+  },
+  "validation": {
+    "finalArtifact": "unit6c-package-validate-with-profile.log",
+    "finalStatus": "passed",
+    "initialFailure": {
+      "artifact": "unit6c-altool-validate-direct.log",
+      "reason": "missing embedded Mac App Store provisioning profile caused entitlement/profile mismatch",
+      "resolved": true
+    }
+  }
+}

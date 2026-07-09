@@ -1,0 +1,18 @@
+==> Building (release)…
+[0/1] Planning build
+Building for production...
+[0/2] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (1.79s)
+==> Assembling OuroMD.app…
+==> Telemetry: disabled by OURO_MD_TELEMETRY_DISABLED/VITE_POSTHOG_DISABLED
+==> Ad-hoc signing…
+==> Done: /Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/OuroMD.app
+    Launch with:  open OuroMD.app
+Command passed: codesign
+OuroMD.app: valid on disk
+OuroMD.app: satisfies its Designated Requirement
+Command passed: productbuild
+Command passed: altool-validate
+app store package ready: dist/app-store/Ouro-MD-0.9.80-app-store.pkg
+bundle id: bot.ouro.md
+version: 0.9.80

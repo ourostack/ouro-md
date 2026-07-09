@@ -1,0 +1,73 @@
+{
+  "app": {
+    "buildScriptBundleId": "bot.ouro.md",
+    "bundleId": "bot.ouro.md",
+    "bundleIdCoherent": true,
+    "channelBundleId": "bot.ouro.md",
+    "manifestBundleId": "bot.ouro.md",
+    "manifestVersion": "0.9.80",
+    "sourceBundleId": "bot.ouro.md",
+    "sourceVersion": "0.9.80",
+    "versionCoherent": true
+  },
+  "appStoreConnect": {
+    "authConfigured": true,
+    "authFilePresent": true,
+    "authMode": "api"
+  },
+  "blockers": [],
+  "distribution": {
+    "buildCommandChannel": "app-store",
+    "buildScriptAppStoreCategory": "public.app-category.developer-tools",
+    "category": "public.app-category.developer-tools",
+    "channel": "app-store",
+    "directUpdatesAllowed": false,
+    "directUpdatesSource": "Sources/OuroMD/OuroMDDistribution.swift",
+    "manifestCategory": "public.app-category.developer-tools",
+    "manifestDistribution": "app-store",
+    "packageScriptChannel": "app-store",
+    "usesNonExemptEncryption": false,
+    "usesNonExemptEncryptionSource": "make-app.sh"
+  },
+  "mode": "readiness",
+  "package": {
+    "buildEnvironment": [
+      "OURO_MD_DISTRIBUTION_CHANNEL=app-store",
+      "OURO_MD_TELEMETRY_DISABLED=1"
+    ],
+    "manifestBuildEnvironment": [
+      "OURO_MD_DISTRIBUTION_CHANNEL=app-store",
+      "OURO_MD_TELEMETRY_DISABLED=1"
+    ],
+    "outputDirectory": "dist/app-store",
+    "script": "scripts/package-app-store.sh"
+  },
+  "schemaVersion": 1,
+  "secretScan": {
+    "forbiddenMatches": [],
+    "ok": true
+  },
+  "signing": {
+    "appIdentityConfigured": true,
+    "appIdentityFound": true,
+    "installerIdentityConfigured": true,
+    "installerIdentityFound": true,
+    "provisioningProfileConfigured": false,
+    "provisioningProfilePresent": false
+  },
+  "telemetry": {
+    "buildScriptHonorsTelemetryDisable": true,
+    "defaultDisabled": true,
+    "manifestBuildCommandDisablesTelemetry": true,
+    "optInVariable": "OURO_MD_APP_STORE_ENABLE_TELEMETRY",
+    "packageScriptDisablesTelemetryByDefault": true,
+    "posthogKeyEmbeddedByDefault": false
+  },
+  "tooling": {
+    "altool": true,
+    "codesign": true,
+    "entitlements": true,
+    "productbuild": true,
+    "xcrun": true
+  }
+}

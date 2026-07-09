@@ -1,0 +1,58 @@
+{
+  "certificates": [
+    {
+      "certificateType": "MAC_APP_DISTRIBUTION",
+      "displayName": "Ari Mendelow",
+      "expirationDate": "2027-07-03T20:51:49.000+00:00",
+      "id": "8ND74L5TSU",
+      "name": "Mac App Distribution: Ari Mendelow",
+      "serialNumberPresent": true,
+      "type": "certificates",
+      "certPayloadOmittedFromArtifact": true
+    }
+  ],
+  "profiles": [
+    {
+      "AppIDName": "Ouro MD",
+      "ApplicationIdentifier": "743GT2AJ24.bot.ouro.md",
+      "CreationDate": "2026-07-03 21:02:32",
+      "DeveloperCertificatesCount": 1,
+      "EntitlementKeys": [
+        "com.apple.application-identifier",
+        "com.apple.developer.team-identifier",
+        "keychain-access-groups"
+      ],
+      "ExpirationDate": "2027-07-03 20:51:49",
+      "GetTaskAllow": null,
+      "Platform": [
+        "OSX"
+      ],
+      "ProvisionedDevicesCount": 0,
+      "TeamEntitlement": "743GT2AJ24",
+      "TeamIdentifier": [
+        "743GT2AJ24"
+      ],
+      "createdDate": "2026-07-03T21:02:32.000+00:00",
+      "downloadedPath": "/tmp/ouro-md-N984ZC9M2H.mobileprovision",
+      "id": "N984ZC9M2H",
+      "name": "Ouro MD Mac App Store",
+      "profileState": "ACTIVE",
+      "profileType": "MAC_APP_STORE",
+      "type": "profiles"
+    }
+  ],
+  "schemaVersion": 1,
+  "selectedProfile": {
+    "ApplicationIdentifier": "743GT2AJ24.bot.ouro.md",
+    "ExpirationDate": "2027-07-03 20:51:49",
+    "Platform": [
+      "OSX"
+    ],
+    "TeamEntitlement": "743GT2AJ24",
+    "downloadedPath": "/tmp/ouro-md-N984ZC9M2H.mobileprovision",
+    "id": "N984ZC9M2H",
+    "name": "Ouro MD Mac App Store",
+    "profileState": "ACTIVE",
+    "profileType": "MAC_APP_STORE"
+  }
+}
