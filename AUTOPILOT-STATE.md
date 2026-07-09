@@ -7,8 +7,8 @@
 - Worktree: `/Users/arimendelow/Projects/ouro-md-file-truth`
 - Planning doc: `codex-file-truth/tasks/2026-07-09-1409-planning-document-truth-surface.md`
 - Doing doc: `codex-file-truth/tasks/2026-07-09-1409-doing-document-truth-surface.md`
-- Gate state: Unit 2c support-model coverage gate passed.
-- Next action: execute Unit 2d AppModel truth lifecycle red tests.
+- Gate state: Unit 2d AppModel truth lifecycle red tests confirmed.
+- Next action: execute Unit 2e AppModel truth lifecycle implementation.
 
 ## Terminal Evidence
 

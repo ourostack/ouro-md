@@ -83,9 +83,9 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 **What**: Run focused app-support tests and the repo coverage gate, trim unused abstractions, and verify every new branch/error path is exercised.
 **Acceptance**: 100% coverage on new file truth support code under the existing `scripts/check-coverage.sh` gate, with focused tests still green. Evidence: `scripts/check-coverage.sh` passed with `DocumentTruth.swift` at 150/150 lines and 73/73 regions.
 
-### ⬜ Unit 2d: AppModel Truth Lifecycle - Tests
+### ✅ Unit 2d: AppModel Truth Lifecycle - Tests
 **What**: Add failing tests for `AppModel` refresh behavior on welcome/new, open/loadInitialFile, dirty edits, save/save-as/autosave-success path, rename, deleted/restored, external reload, and conflict resolution where testable without UI prompts.
-**Acceptance**: AppModel lifecycle tests fail against current code or fail to compile because no published truth state exists.
+**Acceptance**: AppModel lifecycle tests fail against current code or fail to compile because no published truth state exists. Evidence: `2026-07-09-1409-doing-document-truth-surface/unit-2d-red.txt`.
 
 ### ⬜ Unit 2e: AppModel Truth Lifecycle - Implementation
 **What**: Publish the latest document truth snapshot from `AppModel`, refresh it at every file lifecycle point, and overlay unsaved/deleted state without faking git certainty.
@@ -155,3 +155,4 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - 2026-07-09 14:29 -0700 Unit 2a red test confirmed: `swift test --filter DocumentTruthTests` failed because the file truth provider types do not exist yet.
 - 2026-07-09 14:30 -0700 Unit 2b green test confirmed: `swift test --filter DocumentTruthTests` passed for pure file/git truth support model.
 - 2026-07-09 14:34 -0700 Unit 2c coverage gate passed: `scripts/check-coverage.sh` reported `DocumentTruth.swift` 150/150 lines and 73/73 regions.
+- 2026-07-09 14:36 -0700 Unit 2d red test confirmed: `swift test --filter AppModelDocumentTruthTests` failed because AppModel has no live document truth API yet.
