@@ -18,6 +18,7 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - Preserve AppKit document chrome: `representedURL`, edited state, document proxy/path behavior, and deleted marker behavior.
 - Add main-surface file truth UI that does not require the sidebar, using a small document-state surface attached to the editor/status area or titlebar-adjacent chrome.
 - Add read-only file/git state detection for the current document: local file, tracked, clean, modified, mixed changes, not in git, and unavailable/inaccessible state where applicable.
+- Degrade git/file truth honestly when sandbox access, `git`, or repository metadata is unavailable; never infer certainty from partial access.
 - Add commands/menu/palette actions for Reveal in Finder, Copy Path, Copy Relative Path, and Copy Git Diff Command.
 - Keep git integration read-only and mechanical; no commits, staging, branch management, agent sessions, or hidden protocol state.
 - Add focused tests for native title behavior, command availability, file-state classification, clipboard/reveal command behavior where testable, and UI/accessibility strings.
@@ -35,6 +36,7 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - [ ] Native document title clicks no longer open the file picker and do not block AppKit document path/proxy behavior.
 - [ ] Current document file truth is visible without opening the sidebar.
 - [ ] File/git state labels are mechanical and correct for clean tracked, modified tracked, untracked/not-in-git, and inaccessible/non-file cases covered by tests.
+- [ ] Git unavailable, sandbox/inaccessible metadata, and non-repo files show honest fallback state without blocking normal editing.
 - [ ] Commands exist for Reveal in Finder, Copy Path, Copy Relative Path, and Copy Git Diff Command, with disabled or fallback behavior when no current file/repo exists.
 - [ ] Human edits saved to disk can be surfaced as "modified / visible in git diff" without writing any git state.
 - [ ] No hidden metadata or formatting churn is introduced by the file truth work.
@@ -57,6 +59,7 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - The primary product primitive is "file truth", not "agent features"; agent value comes from making plain-file and git state obvious.
 - The sidebar must remain optional; file truth belongs in native document chrome, status/title-adjacent surface, menus, and command palette.
 - Git behavior is read-only and local. Ouro MD may detect and explain state, but must not mutate repositories.
+- Git detection must use safe read-only probes and treat failures as `unavailable`/`not in git`, not as errors that interrupt editing.
 - Source diff remains the collaboration contract. Rendered or semantic diff views are deferred.
 - AppKit document affordances should be preferred over custom chrome wherever possible.
 
@@ -69,9 +72,11 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - `Tests/OuroMDTests/DocumentWindowControllerTests.swift`: current tests encode title-click-to-open-panel behavior that must change.
 - `Tests/OuroMDTests/AppModelReloadTests.swift`: external agent/human file-change loop coverage.
 - AppKit `NSWindow.representedURL` / `isDocumentEdited` behavior from local SDK headers.
+- `scripts/run-native-scenarios.sh`, `scripts/run-visual-qa.sh`, and `scripts/pr-preflight.sh`: validation gates for local app scenario and visual evidence.
 
 ## Notes
-The implementation should feel boringly native first. The custom document truth UI should be small, calm, and secondary to system document chrome.
+The implementation should feel boringly native first. The custom document truth UI should be small, calm, and secondary to system document chrome. Tinfoil pass tightened git fallback requirements: partial repo access must not produce fake confidence.
 
 ## Progress Log
 - 2026-07-09 14:11 -0700 Created
+- 2026-07-09 14:11 -0700 Tinfoil pass added honest git fallback and validation references
