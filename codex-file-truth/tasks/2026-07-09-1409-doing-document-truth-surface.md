@@ -95,9 +95,9 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 **What**: Tighten lifecycle refresh helpers and test seams so state transitions are explicit and non-flaky.
 **Acceptance**: AppModel lifecycle tests pass, all new AppModel branches are exercised, and the truth state cannot remain stale after open/save/rename/delete/reload paths. Evidence: `swift test --filter 'DocumentTruthTests|AppModelDocumentTruthTests|AppModelReloadTests|AppModelDeletionTests'` passed 41 tests.
 
-### ⬜ Unit 3a: File Truth Commands - Tests
+### ✅ Unit 3a: File Truth Commands - Tests
 **What**: Add failing tests for command palette items, menu validation where source-fit, copy path, copy relative path, copy git diff command, and reveal-in-Finder routing with no-current-file fallbacks.
-**Acceptance**: Focused command tests fail against current catalog/model/menu behavior.
+**Acceptance**: Focused command tests fail against current catalog/model/menu behavior. Evidence: `2026-07-09-1409-doing-document-truth-surface/unit-3a-red.txt`.
 
 ### ⬜ Unit 3b: File Truth Commands - Implementation
 **What**: Wire command palette/menu actions to model commands using testable pasteboard and reveal hooks.
@@ -158,3 +158,4 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - 2026-07-09 14:36 -0700 Unit 2d red test confirmed: `swift test --filter AppModelDocumentTruthTests` failed because AppModel has no live document truth API yet.
 - 2026-07-09 14:39 -0700 Unit 2e green test confirmed: `swift test --filter AppModelDocumentTruthTests` passed with live AppModel document truth refresh.
 - 2026-07-09 14:41 -0700 Unit 2f lifecycle regression suite passed: `DocumentTruthTests|AppModelDocumentTruthTests|AppModelReloadTests|AppModelDeletionTests` ran 41 tests with no failures.
+- 2026-07-09 14:44 -0700 Unit 3a red test confirmed: command tests failed because document truth commands/selectors are not wired yet.

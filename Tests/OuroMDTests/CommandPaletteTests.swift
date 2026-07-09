@@ -1,5 +1,5 @@
-import XCTest
 import OuroMDAppSupport
+import XCTest
 @testable import OuroMD
 
 final class CommandPaletteTests: XCTestCase {
@@ -45,6 +45,10 @@ final class CommandPaletteTests: XCTestCase {
         XCTAssertTrue(ids.contains("help.whats-new"))
         XCTAssertTrue(ids.contains("help.check-updates"))
         XCTAssertTrue(ids.contains("help.open-latest-release"))
+        XCTAssertTrue(ids.contains("file.reveal-in-finder"))
+        XCTAssertTrue(ids.contains("file.copy-path"))
+        XCTAssertTrue(ids.contains("file.copy-relative-path"))
+        XCTAssertTrue(ids.contains("file.copy-git-diff-command"))
     }
 
     func testPaletteVisibilityAndFindCommandsResetQuery() {
@@ -79,6 +83,79 @@ final class CommandPaletteTests: XCTestCase {
         XCTAssertTrue(model.sidebarVisible)
         XCTAssertEqual(model.sidebarMode, .search)
         XCTAssertEqual(model.themeID, "graphite")
+    }
+
+    func testDocumentTruthCommandsCopyAndRevealCurrentFile() {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-command-truth-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let file = dir.appendingPathComponent("note.md")
+        try? "# Note\n".write(to: file, atomically: true, encoding: .utf8)
+
+        let model = AppModel()
+        model.documentTruthProvider = commandTruthProvider(repo: dir)
+        model.loadInitialFile(file.path)
+
+        var copied: [String] = []
+        var revealed: [URL] = []
+        model.pasteboardWriter = { copied.append($0) }
+        model.revealInFinderHandler = { revealed.append($0) }
+
+        XCTAssertTrue(model.copyCurrentFilePath())
+        XCTAssertEqual(copied.last, file.path)
+        XCTAssertTrue(model.copyCurrentFileRelativePath())
+        XCTAssertEqual(copied.last, "note.md")
+        XCTAssertTrue(model.copyCurrentGitDiffCommand())
+        XCTAssertEqual(copied.last, "git -C \(dir.path) diff -- note.md")
+        XCTAssertTrue(model.revealCurrentFileInFinder())
+        XCTAssertEqual(revealed, [file])
+
+        model.performCommandPaletteItem(CommandPaletteItem(id: "file.copy-relative-path", title: "", keywords: ""))
+        XCTAssertEqual(copied.last, "note.md")
+        model.performCommandPaletteItem(CommandPaletteItem(id: "file.copy-git-diff-command", title: "", keywords: ""))
+        XCTAssertEqual(copied.last, "git -C \(dir.path) diff -- note.md")
+    }
+
+    func testDocumentTruthCommandsFailHonestlyWithoutCurrentFileOrRepository() {
+        let model = AppModel()
+        var copied: [String] = []
+        var revealed: [URL] = []
+        model.pasteboardWriter = { copied.append($0) }
+        model.revealInFinderHandler = { revealed.append($0) }
+
+        XCTAssertFalse(model.copyCurrentFilePath())
+        XCTAssertFalse(model.copyCurrentFileRelativePath())
+        XCTAssertFalse(model.copyCurrentGitDiffCommand())
+        XCTAssertFalse(model.revealCurrentFileInFinder())
+        XCTAssertTrue(copied.isEmpty)
+        XCTAssertTrue(revealed.isEmpty)
+    }
+}
+
+private func commandTruthProvider(repo: URL) -> DocumentTruthProvider {
+    DocumentTruthProvider(
+        gitRunner: CommandTruthGitRunner { command, _ in
+            switch command.arguments {
+            case ["rev-parse", "--show-toplevel"]:
+                return DocumentTruthGitResult(exitCode: 0, stdout: repo.path, stderr: "")
+            case ["ls-files", "--error-unmatch", "--", "note.md"]:
+                return DocumentTruthGitResult(exitCode: 0, stdout: "note.md", stderr: "")
+            case ["status", "--porcelain=v1", "--", "note.md"]:
+                return DocumentTruthGitResult(exitCode: 0, stdout: " M note.md\n", stderr: "")
+            default:
+                return DocumentTruthGitResult(exitCode: 1, stdout: "", stderr: "")
+            }
+        },
+        fileExists: { FileManager.default.fileExists(atPath: $0.path) }
+    )
+}
+
+private struct CommandTruthGitRunner: DocumentTruthGitRunning {
+    let handler: (DocumentTruthGitCommand, URL) -> DocumentTruthGitResult
+
+    func run(_ command: DocumentTruthGitCommand, workingDirectory: URL) throws -> DocumentTruthGitResult {
+        handler(command, workingDirectory)
     }
 }
 

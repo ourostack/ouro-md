@@ -52,6 +52,17 @@ final class CommandPaletteCatalogTests: XCTestCase {
         XCTAssertEqual(items["paragraph.h6"]?.shortcut, "⌘6")
     }
 
+    func testCatalogIncludesDocumentTruthCommands() {
+        let items = Dictionary(uniqueKeysWithValues: CommandPaletteCatalog.items(themes: []).map { ($0.id, $0) })
+
+        XCTAssertEqual(items["file.reveal-in-finder"]?.title, "Reveal in Finder")
+        XCTAssertEqual(items["file.copy-path"]?.title, "Copy File Path")
+        XCTAssertEqual(items["file.copy-relative-path"]?.title, "Copy Relative Path")
+        XCTAssertEqual(items["file.copy-git-diff-command"]?.title, "Copy Git Diff Command")
+        XCTAssertEqual(CommandPaletteCatalog.filter(Array(items.values), query: "git diff").map(\.id), ["file.copy-git-diff-command"])
+        XCTAssertEqual(CommandPaletteCatalog.filter(Array(items.values), query: "finder reveal").map(\.id), ["file.reveal-in-finder"])
+    }
+
     func testCatalogIncludesThemeCommandsFromDescriptors() {
         let themeItems = CommandPaletteCatalog.items(themes: [
             CommandPaletteTheme(id: "graphite", displayName: "Graphite"),
