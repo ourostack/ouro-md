@@ -142,6 +142,20 @@ node scripts/app-store-request-plan.mjs --json \
 The planner records blockers and omits review-submission-item/final-submit
 requests until local screenshots satisfy `store.screenshotRequirements`.
 
+Exercise the mutation executor against a reviewed plan with a fixture transport
+only:
+
+```sh
+node scripts/app-store-apply-plan.mjs --mode apply \
+  --plan <reviewed-plan.json> \
+  --transport-fixture <fixture-transport.json> \
+  --artifact-dir <artifact-dir> \
+  --json
+```
+
+The executor intentionally has no live App Store Connect transport until its
+review gate has passed.
+
 For a new target version, pass the reviewed App Store version and review
 submission ids from the dry-run/apply artifact. Live submission status reads
 without explicit ids fail fast to avoid accidentally reusing stale rejected ids:

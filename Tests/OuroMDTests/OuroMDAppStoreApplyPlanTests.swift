@@ -80,7 +80,7 @@ final class OuroMDAppStoreApplyPlanTests: XCTestCase {
         let firstUpload = try event(in: events, requestId: "upload-screenshot-01-folder-workspace")
         XCTAssertEqual(firstUpload["kind"] as? String, "upload")
         XCTAssertEqual(firstUpload["url"] as? String, "https://upload.example.invalid/folder-workspace")
-        XCTAssertEqual(firstUpload["fileSize"] as? Int, 39)
+        XCTAssertEqual(firstUpload["fileSize"] as? Int, "ouro-md-folder-workspace-app-store-screenshot".utf8.count)
         XCTAssertTrue(isMD5Checksum(firstUpload["sourceFileChecksum"] as? String))
         XCTAssertFalse(String(describing: firstUpload).contains("assetToken"))
 

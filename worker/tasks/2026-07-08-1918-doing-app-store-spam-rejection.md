@@ -125,7 +125,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Failing executor tests plus red log.
 **Acceptance**: Tests fail red until a mutation executor captures/asserts the actual outgoing HTTP requests and upload operations rather than only canned responses.
 
-### ⬜ Unit 4e: App Store Connect Mutation Executor — Implementation
+### ✅ Unit 4e: App Store Connect Mutation Executor — Implementation
 **What**: Implement apply-mode execution behind explicit `--mode apply` and exact-state preflight. Support JSON API requests, screenshot binary upload operations returned by Apple, response redaction, idempotent fetch-or-create for version/localization/review-detail/screenshot-set/review-submission objects, and artifact writing for every live request/response.
 **Output**: Executor implementation, green executor tests, and dry-run/apply-preflight sample artifacts from a non-mutating fake transport.
 **Acceptance**: Unit 4d tests pass green, mutation executor cannot run without reviewed dry-run/preflight artifacts, and no secret/asset token/private key is emitted in logs.
@@ -265,3 +265,4 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 4b complete: implemented `scripts/app-store-request-plan.mjs` dry-run planning with exact JSON:API request shapes, screenshot upload-operation placeholders, final submit patch, release-note extraction, stale rejected-ID guards, redaction, docs, wrapper-suffices note, green focused tests, and dry-run/stale-id artifacts.
 - 2026-07-09 Unit 4c complete: expanded request-planner coverage, corrected screenshot checksum planning to Apple-required MD5, added local screenshot readiness blockers that withhold final submit until required scenes exist, regenerated dry-run/default-blocked artifacts, and harsh API reviewer gate passed after the P1 submit-gating fix.
 - 2026-07-09 Unit 4d complete: added failing mutation-executor tests for explicit apply mode, blocked-plan refusal, fake transport request/upload execution, placeholder ID substitution, redacted artifacts, and retryable error classification; focused suite fails red because `scripts/app-store-apply-plan.mjs` is not implemented.
+- 2026-07-09 Unit 4e complete: implemented fixture-only `scripts/app-store-apply-plan.mjs` with apply-mode gates, blocked-plan refusal, placeholder ID substitution, fake request/upload trace writing, upload-operation redaction, and retryable error classification; focused executor tests and fake apply artifact pass without live Apple mutations.

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "mode": "apply",
+  "transport": "fixture",
+  "appId": "6787262892",
+  "targetVersion": "0.9.80",
+  "executedRequestCount": 30,
+  "executedUploadOperationCount": 4,
+  "resolvedIds": {
+    "targetAppStoreVersionId": "target-version-0-9-80",
+    "appStoreVersionLocalizationId": "version-localization-en-us",
+    "appInfoLocalizationId": "app-info-localization-en-us",
+    "appScreenshotSetId": "desktop-screenshot-set",
+    "reviewSubmissionId": "review-submission-new",
+    "reviewSubmissionItemId": "review-submission-item-version"
+  },
+  "traceArtifact": "worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit4e-fake-apply-artifacts/apply-trace.json"
+}
