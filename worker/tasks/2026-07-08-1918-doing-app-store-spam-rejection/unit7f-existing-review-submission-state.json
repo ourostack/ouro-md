@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-09T10:10:11.360Z",
+  "reviewSubmission": {
+    "id": "b37f847e-0ecb-4e7a-bb00-14e3038b0f4c",
+    "state": "UNRESOLVED_ISSUES",
+    "submitted": null
+  },
+  "items": [
+    {
+      "id": "YjM3Zjg0N2UtMGVjYi00ZTdhLWJiMDAtMTRlMzAzOGIwZjRjfDZ8ODg3ODEyNjgx",
+      "state": "REJECTED",
+      "appStoreVersionId": "7309944f-cbe8-4518-960c-444e6116ab46"
+    }
+  ]
+}
