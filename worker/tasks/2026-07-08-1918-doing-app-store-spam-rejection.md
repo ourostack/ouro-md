@@ -65,7 +65,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Failing test/script diff plus red log saved under the artifacts directory.
 **Acceptance**: Focused tests fail red against the current manifest/docs/check script.
 
-### ⬜ Unit 1b: Store Metadata Contract — Implementation
+### ✅ Unit 1b: Store Metadata Contract — Implementation
 **What**: Update `distribution/apple-distribution.json`, `docs/APP_STORE.md`, and `scripts/check-apple-distribution-kit.sh` so the app-local desired state is non-generic, length-checked, screenshot-aware, and review-note-aware. Keep Ouro MD-specific metadata in this repo; do not move reusable behavior into the shared shell.
 **Output**: Updated manifest/docs/check script and green focused validation log.
 **Acceptance**: Unit 1a tests pass green, `./scripts/check-apple-distribution-kit.sh` no longer reports missing screenshot proof for declared local or remote screenshot assets, and docs name the source-owned metadata as canonical.
@@ -253,3 +253,4 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Doing-doc reviewer chain converged; started Unit 0.
 - 2026-07-09 Unit 0 complete: captured redacted repo/tooling/App Store Connect baseline and artifact secret scan.
 - 2026-07-09 Unit 1a complete: added metadata contract test and captured expected red failure for missing App Store metadata fields.
+- 2026-07-09 Unit 1b complete: added source-owned App Store metadata, docs, and distribution preflight checks; focused metadata test and Apple distribution check pass.

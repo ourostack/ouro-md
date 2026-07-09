@@ -18,7 +18,7 @@ artifacts to the shared `ourostack/apple-distribution-kit` CLI through the thin
 Create or confirm the app record before uploading:
 
 - Name: `Ouro MD`
-- Subtitle: `The Markdown App`
+- Subtitle: `Local Markdown Workspace`
 - Bundle ID: `bot.ouro.md`
 - SKU: `bot-ouro-md-macos`
 - Platform: macOS
@@ -45,10 +45,11 @@ Recommended app/version metadata:
 - Content rights: Ouro MD owns or has rights to all included content
 - License agreement: Apple's standard license agreement
 - Copyright: `Copyright © 2026 Ari Mendelow`
-- Description: `A quiet Markdown editor for macOS, built for writing, reading, and keeping your document in focus.`
-- Keywords: `markdown, editor, notes, writing, documents`
-- Review notes: `Ouro MD is a local document editor. No account or sample login is required. Open or create a Markdown file, edit it, switch themes from the app menu, and export from the File menu.`
-- Screenshots: capture the real app editing and previewing Markdown, including at least one wide-table document and one clean writing view.
+- Promotional text: `Local Markdown workspace for Mac files: folder search, outline, command palette, themes, PDF/HTML export, no account.`
+- Description: starts with `Ouro MD is a local Markdown workspace for people who keep real files, not a hosted notes account.`
+- Keywords: `markdown,local files,folder search,outline,command palette,pdf,html export,gfm,mac`
+- Review notes: use the source-owned `store.reviewNotes` in `distribution/apple-distribution.json`. They should walk reviewers through Shift-Command-O folder opening, File Tree, Outline, Search, Command Palette, theme switching, PDF/HTML export, no account, App Store update behavior, and telemetry-disabled behavior.
+- Screenshots: source-owned assets or explicit remote proof URIs live in `store.screenshots`. The first resubmission needs at least four fresh local screenshots showing folder workspace, command palette, search/outline, and themed export/readability before final submit.
 - App previews: optional for the first submission.
 - Version release notes: use `OuroMDRelease.releaseHighlights` for the submitted version.
 
