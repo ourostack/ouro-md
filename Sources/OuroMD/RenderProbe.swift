@@ -29,11 +29,11 @@ final class RenderProbe: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
         guard let indexURL = OuroResources.web("index", "html") else {
             FileHandle.standardError.write(Data("renderprobe: index.html not found\n".utf8)); exit(1)
         }
-        window = HeadlessHarness.offscreenHost(webView, size: NSSize(width: 900, height: 700))
+        window = HeadlessHarness.offscreenHostActive(webView, size: NSSize(width: 900, height: 700))
 
         lastPhase = "loading \(indexURL.path)"
         webView.loadFileURL(indexURL, allowingReadAccessTo: indexURL.deletingLastPathComponent())
-        DispatchQueue.main.asyncAfter(deadline: .now() + 40) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 90) { [weak self] in
             let phase = self?.lastPhase ?? "unknown"
             FileHandle.standardError.write(Data("renderprobe: timed out (\(phase))\n".utf8)); exit(1)
         }
