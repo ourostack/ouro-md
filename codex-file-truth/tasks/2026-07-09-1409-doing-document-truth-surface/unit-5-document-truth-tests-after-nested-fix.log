@@ -1,0 +1,49 @@
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.38s)
+Test Suite 'Selected tests' started at 2026-07-09 16:50:36.851.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-09 16:50:36.857.
+Test Suite 'AppModelDocumentTruthTests' started at 2026-07-09 16:50:36.857.
+Test Case '-[OuroMDTests.AppModelDocumentTruthTests testDeletedAndRestoredFilesRefreshTruthWithoutMarkingGitCertainty]' started.
+Test Case '-[OuroMDTests.AppModelDocumentTruthTests testDeletedAndRestoredFilesRefreshTruthWithoutMarkingGitCertainty]' passed (0.034 seconds).
+Test Case '-[OuroMDTests.AppModelDocumentTruthTests testExternalReloadRefreshesTruthAfterAgentWritesFile]' started.
+Test Case '-[OuroMDTests.AppModelDocumentTruthTests testExternalReloadRefreshesTruthAfterAgentWritesFile]' passed (0.105 seconds).
+Test Case '-[OuroMDTests.AppModelDocumentTruthTests testTruthRefreshesAcrossWelcomeLoadDirtySaveRenameSaveAsAndNewDocument]' started.
+Test Case '-[OuroMDTests.AppModelDocumentTruthTests testTruthRefreshesAcrossWelcomeLoadDirtySaveRenameSaveAsAndNewDocument]' passed (0.008 seconds).
+Test Suite 'AppModelDocumentTruthTests' passed at 2026-07-09 16:50:37.005.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.147 (0.148) seconds
+Test Suite 'DocumentTruthTests' started at 2026-07-09 16:50:37.005.
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testDefaultFileExistenceProbeWorksForExistingFiles]' started.
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testDefaultFileExistenceProbeWorksForExistingFiles]' passed (0.001 seconds).
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testDiffCommandsMatchTheVisibleGitState]' started.
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testDiffCommandsMatchTheVisibleGitState]' passed (0.001 seconds).
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testGitUnavailableIsDifferentFromLocalNonRepositoryFile]' started.
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testGitUnavailableIsDifferentFromLocalNonRepositoryFile]' passed (0.001 seconds).
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testMissingOrUnreadableFileFallsBackWithoutGitCertainty]' started.
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testMissingOrUnreadableFileFallsBackWithoutGitCertainty]' passed (0.000 seconds).
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testRealGitClassifiesNestedTrackedModifiedFile]' started.
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testRealGitClassifiesNestedTrackedModifiedFile]' passed (0.582 seconds).
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testRepositoryMismatchAndStatusFailureFallBackHonestly]' started.
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testRepositoryMismatchAndStatusFailureFallBackHonestly]' passed (0.000 seconds).
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testShellEscapesDiffCommandComponents]' started.
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testShellEscapesDiffCommandComponents]' passed (0.000 seconds).
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testThrownSubcommandsAndRepositoryRootFilePathAreCovered]' started.
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testThrownSubcommandsAndRepositoryRootFilePathAreCovered]' passed (0.000 seconds).
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testTrackedCleanFileCarriesRepositoryPathsAndDiffCommand]' started.
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testTrackedCleanFileCarriesRepositoryPathsAndDiffCommand]' passed (0.000 seconds).
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testTrackedModifiedAndMixedStatesUseMechanicalPorcelainStatus]' started.
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testTrackedModifiedAndMixedStatesUseMechanicalPorcelainStatus]' passed (0.000 seconds).
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testUntitledAndNonFileURLsHaveHonestUnavailableState]' started.
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testUntitledAndNonFileURLsHaveHonestUnavailableState]' passed (0.000 seconds).
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testUntrackedAndIgnoredFilesAreNotPresentedAsTrackedDiffs]' started.
+Test Case '-[OuroMDAppSupportTests.DocumentTruthTests testUntrackedAndIgnoredFilesAreNotPresentedAsTrackedDiffs]' passed (0.000 seconds).
+Test Suite 'DocumentTruthTests' passed at 2026-07-09 16:50:37.592.
+	 Executed 12 tests, with 0 failures (0 unexpected) in 0.586 (0.587) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-07-09 16:50:37.592.
+	 Executed 15 tests, with 0 failures (0 unexpected) in 0.734 (0.735) seconds
+Test Suite 'Selected tests' passed at 2026-07-09 16:50:37.592.
+	 Executed 15 tests, with 0 failures (0 unexpected) in 0.734 (0.741) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

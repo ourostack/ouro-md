@@ -170,8 +170,9 @@ public struct DocumentTruthProvider {
             return DocumentTruthSnapshot(state: .notInGit, absolutePath: absolutePath, repositoryRoot: nil, relativePath: nil)
         }
 
-        let trackedResult = runGit(["ls-files", "--error-unmatch", "--", relativePath], workingDirectory: workingDirectory)
-        let statusResult = runGit(["status", "--porcelain=v1", "--", relativePath], workingDirectory: workingDirectory)
+        let repositoryDirectory = URL(fileURLWithPath: repositoryRoot, isDirectory: true)
+        let trackedResult = runGit(["ls-files", "--error-unmatch", "--", relativePath], workingDirectory: repositoryDirectory)
+        let statusResult = runGit(["status", "--porcelain=v1", "--", relativePath], workingDirectory: repositoryDirectory)
         guard statusResult.succeeded else {
             return DocumentTruthSnapshot(state: .gitUnavailable, absolutePath: absolutePath, repositoryRoot: nil, relativePath: nil)
         }

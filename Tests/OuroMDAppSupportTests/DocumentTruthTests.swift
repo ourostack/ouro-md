@@ -76,6 +76,37 @@ final class DocumentTruthTests: XCTestCase {
         XCTAssertEqual(provider.snapshot(for: file).absolutePath, file.path)
     }
 
+    func testRealGitClassifiesNestedTrackedModifiedFile() throws {
+        let repo = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-truth-nested-git-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: repo, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: repo) }
+
+        try RealGitRunner.run(["init"], in: repo)
+        try RealGitRunner.run(["config", "user.name", "Ouro MD Tests"], in: repo)
+        try RealGitRunner.run(["config", "user.email", "ouro-md-tests@example.invalid"], in: repo)
+
+        let nestedDirectory = repo.appendingPathComponent("docs/nested", isDirectory: true)
+        try FileManager.default.createDirectory(at: nestedDirectory, withIntermediateDirectories: true)
+        let file = nestedDirectory.appendingPathComponent("file.md")
+        try "# Original\n".write(to: file, atomically: true, encoding: .utf8)
+        try RealGitRunner.run(["add", "docs/nested/file.md"], in: repo)
+        try RealGitRunner.run(["commit", "-m", "baseline"], in: repo)
+
+        try "# Changed\n".write(to: file, atomically: true, encoding: .utf8)
+
+        let snapshot = DocumentTruthProvider(gitRunner: RealGitRunner()).snapshot(for: file)
+        let expectedRoot = try RealGitRunner.run(["rev-parse", "--show-toplevel"], in: repo)
+            .stdout
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        XCTAssertEqual(snapshot.state, .trackedModified)
+        XCTAssertEqual(snapshot.label, "Modified · visible in git diff")
+        XCTAssertEqual(snapshot.repositoryRoot, expectedRoot)
+        XCTAssertEqual(snapshot.relativePath, "docs/nested/file.md")
+        XCTAssertEqual(snapshot.gitDiffCommand, "git -C \(expectedRoot) diff -- docs/nested/file.md")
+    }
+
     func testTrackedCleanFileCarriesRepositoryPathsAndDiffCommand() {
         let provider = providerForTracked(status: "")
         let url = URL(fileURLWithPath: "/repo/docs/today.md")
@@ -278,6 +309,37 @@ private struct FakeGitRunner: DocumentTruthGitRunning {
 
     func run(_ command: DocumentTruthGitCommand, workingDirectory: URL) throws -> DocumentTruthGitResult {
         try handler(command, workingDirectory)
+    }
+}
+
+private struct RealGitRunner: DocumentTruthGitRunning {
+    func run(_ command: DocumentTruthGitCommand, workingDirectory: URL) throws -> DocumentTruthGitResult {
+        try Self.result(command.arguments, in: workingDirectory)
+    }
+
+    @discardableResult
+    static func run(_ arguments: [String], in workingDirectory: URL) throws -> DocumentTruthGitResult {
+        let result = try result(arguments, in: workingDirectory)
+        XCTAssertEqual(result.exitCode, 0, "git \(arguments.joined(separator: " ")) failed: \(result.stderr)")
+        return result
+    }
+
+    private static func result(_ arguments: [String], in workingDirectory: URL) throws -> DocumentTruthGitResult {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        process.arguments = arguments
+        process.currentDirectoryURL = workingDirectory
+
+        let output = Pipe()
+        let error = Pipe()
+        process.standardOutput = output
+        process.standardError = error
+        try process.run()
+        process.waitUntilExit()
+
+        let stdout = String(data: output.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+        let stderr = String(data: error.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+        return DocumentTruthGitResult(exitCode: process.terminationStatus, stdout: stdout, stderr: stderr)
     }
 }
 
