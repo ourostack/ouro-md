@@ -7,8 +7,8 @@
 - Worktree: `/Users/arimendelow/Projects/ouro-md-file-truth`
 - Planning doc: `codex-file-truth/tasks/2026-07-09-1409-planning-document-truth-surface.md`
 - Doing doc: `codex-file-truth/tasks/2026-07-09-1409-doing-document-truth-surface.md`
-- Gate state: Unit 1 native title chrome slice complete.
-- Next action: execute Unit 2a file/git truth support-model red tests.
+- Gate state: Unit 2a file/git truth support-model red tests confirmed.
+- Next action: execute Unit 2b support-model implementation.
 
 ## Terminal Evidence
 
