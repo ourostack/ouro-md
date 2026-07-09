@@ -60,7 +60,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Redacted baseline logs and JSON summaries in the artifacts directory.
 **Acceptance**: Logs prove the worktree is on `worker/app-store-spam-rejection`, local API config works without printing secrets, the rejected submission state is still readable, and no private key/JWT/cookie/asset token appears in artifacts.
 
-### ⬜ Unit 1a: Store Metadata Contract — Tests
+### ✅ Unit 1a: Store Metadata Contract — Tests
 **What**: Add failing tests or selftests that require source-owned App Store metadata to include subtitle `Local Markdown Workspace`, Developer Tools category, promotional text, description, keywords within Apple limits, review notes with concrete reviewer steps, non-empty screenshot assets, privacy/export compliance, and no generic `The Markdown App`/quiet-editor wording.
 **Output**: Failing test/script diff plus red log saved under the artifacts directory.
 **Acceptance**: Focused tests fail red against the current manifest/docs/check script.
@@ -252,3 +252,4 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Addressed second scrutiny findings: added stale localization/review-detail guards, explicit `APP_DESKTOP` screenshot-set proof, app category mutation authority, and next-unused-patch fallback for build/version collisions.
 - 2026-07-09 Doing-doc reviewer chain converged; started Unit 0.
 - 2026-07-09 Unit 0 complete: captured redacted repo/tooling/App Store Connect baseline and artifact secret scan.
+- 2026-07-09 Unit 1a complete: added metadata contract test and captured expected red failure for missing App Store metadata fields.

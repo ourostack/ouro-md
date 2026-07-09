@@ -5,7 +5,7 @@
 - Worktree: `/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection`
 - Planning doc: `worker/tasks/2026-07-08-1918-planning-app-store-spam-rejection.md`
 - Gate state: planning reviewer converged; planning approved. Doing-doc granularity, validation/source-fidelity, ambiguity, quality, and scrutiny passes converged. Autopilot/no-human-gates mandate active; human gates waived by operator; reviewer gates remain required through harsh sub-agents.
-- Next action: execute Unit 1a metadata contract tests, then continue sequentially through App Store submission.
+- Next action: execute Unit 1b metadata contract implementation, then continue sequentially through App Store submission.
 
 ## Terminal Evidence
 
