@@ -1,7 +1,7 @@
 # Planning: Document Truth Surface
 
 **Status**: drafting
-**Created**: pending initial commit
+**Created**: 2026-07-09 14:11 -0700
 
 ## Goal
 Make Ouro MD feel like a native macOS document editor that exposes the truth of the current file: where it lives, whether it is edited, and whether its saved edits are visible to other tools through plain file and git state. This solves the human-agent collaboration problem without adding an agent runner, sidebar dependency, hidden metadata, or heavy review UI.
@@ -74,4 +74,4 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 The implementation should feel boringly native first. The custom document truth UI should be small, calm, and secondary to system document chrome.
 
 ## Progress Log
-- pending initial commit Created
+- 2026-07-09 14:11 -0700 Created
