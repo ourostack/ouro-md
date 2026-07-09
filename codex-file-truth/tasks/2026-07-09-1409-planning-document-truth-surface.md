@@ -35,7 +35,7 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 ## Completion Criteria
 - [ ] Native document title clicks no longer open the file picker and do not block AppKit document path/proxy behavior.
 - [ ] Current document file truth is visible without opening the sidebar.
-- [ ] File/git state labels are mechanical and correct for clean tracked, modified tracked, untracked/not-in-git, and inaccessible/non-file cases covered by tests.
+- [ ] File/git state labels are mechanical and correct for clean tracked, modified tracked, mixed staged/unstaged changes, untracked/not-in-git, and inaccessible/non-file cases covered by focused classification tests.
 - [ ] Git unavailable, sandbox/inaccessible metadata, and non-repo files show honest fallback state without blocking normal editing.
 - [ ] Commands exist for Reveal in Finder, Copy Path, Copy Relative Path, and Copy Git Diff Command, with disabled or fallback behavior when no current file/repo exists.
 - [ ] Human edits saved to disk can be surfaced as "modified / visible in git diff" without writing any git state.
@@ -53,11 +53,12 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - Edge cases: null, empty, boundary values
 
 ## Open Questions
-- [ ] None requiring human input. Native surface placement will be decided by source-fit and reviewer gates.
+- [x] Native surface placement: user direction is that the sidebar must not be required. Implement the first pass as a compact, always-available document truth control attached to the editor/status/title-adjacent surface, with the exact source-fit chosen during implementation and validated by visual QA.
 
 ## Decisions Made
 - The primary product primitive is "file truth", not "agent features"; agent value comes from making plain-file and git state obvious.
 - The sidebar must remain optional; file truth belongs in native document chrome, status/title-adjacent surface, menus, and command palette.
+- The new document truth surface should be small and operational, not a workflow dashboard; clicking it may expose direct file commands, but it must not introduce a required sidebar or agent handoff panel.
 - Git behavior is read-only and local. Ouro MD may detect and explain state, but must not mutate repositories.
 - Git detection must use safe read-only probes and treat failures as `unavailable`/`not in git`, not as errors that interrupt editing.
 - Source diff remains the collaboration contract. Rendered or semantic diff views are deferred.
@@ -80,3 +81,4 @@ The implementation should feel boringly native first. The custom document truth 
 ## Progress Log
 - 2026-07-09 14:11 -0700 Created
 - 2026-07-09 14:11 -0700 Tinfoil pass added honest git fallback and validation references
+- 2026-07-09 14:18 -0700 Planning reviewer findings addressed: mixed-change tests required and native/sidebar-free placement decision recorded

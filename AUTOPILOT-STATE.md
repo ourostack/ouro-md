@@ -7,8 +7,8 @@
 - Worktree: `/Users/arimendelow/Projects/ouro-md-file-truth`
 - Planning doc: `codex-file-truth/tasks/2026-07-09-1409-planning-document-truth-surface.md`
 - Doing doc: pending planner conversion.
-- Gate state: planning reviewer gate pending.
-- Next action: run planning cold-review gate, convert to doing, then execute with TDD.
+- Gate state: planning reviewer gate returned findings; findings addressed in planning doc.
+- Next action: approve the converged plan, convert to doing, then execute with TDD.
 
 ## Terminal Evidence
 
