@@ -128,6 +128,13 @@ final class AppModel: ObservableObject {
     var documentTruthProvider = DocumentTruthProvider(gitRunner: ProcessDocumentTruthGitRunner()) {
         didSet { refreshDocumentTruth() }
     }
+    var pasteboardWriter: (String) -> Void = { value in
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(value, forType: .string)
+    }
+    var revealInFinderHandler: (URL) -> Void = { url in
+        NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
 
     private let defaults = UserDefaults.standard
     private var pendingMarkdown: String?
@@ -1093,6 +1100,34 @@ final class AppModel: ObservableObject {
     func undo() { bridge?.undo() }
     func redo() { bridge?.redo() }
 
+    @discardableResult
+    func copyCurrentFilePath() -> Bool {
+        guard let path = documentTruth.absolutePath else { return false }
+        pasteboardWriter(path)
+        return true
+    }
+
+    @discardableResult
+    func copyCurrentFileRelativePath() -> Bool {
+        guard let path = documentTruth.relativePath else { return false }
+        pasteboardWriter(path)
+        return true
+    }
+
+    @discardableResult
+    func copyCurrentGitDiffCommand() -> Bool {
+        guard let command = documentTruth.gitDiffCommand else { return false }
+        pasteboardWriter(command)
+        return true
+    }
+
+    @discardableResult
+    func revealCurrentFileInFinder() -> Bool {
+        guard let path = documentTruth.absolutePath else { return false }
+        revealInFinderHandler(URL(fileURLWithPath: path))
+        return true
+    }
+
     var commandPaletteItems: [CommandPaletteItem] {
         CommandPaletteCatalog.filter(CommandPaletteCatalog.items(), query: commandPaletteQuery)
     }
@@ -1123,6 +1158,10 @@ final class AppModel: ObservableObject {
         case "file.open-folder": openFolderPanel()
         case "file.save": save()
         case "file.save-as": saveAs()
+        case "file.reveal-in-finder": revealCurrentFileInFinder()
+        case "file.copy-path": copyCurrentFilePath()
+        case "file.copy-relative-path": copyCurrentFileRelativePath()
+        case "file.copy-git-diff-command": copyCurrentGitDiffCommand()
         case "file.export-html": exportHTML()
         case "file.export-pdf": exportPDF()
         case "file.print": printDocument()

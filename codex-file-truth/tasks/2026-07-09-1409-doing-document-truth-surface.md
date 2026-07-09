@@ -23,7 +23,7 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - [ ] Current document file truth is visible without opening the sidebar.
 - [x] File/git state labels are mechanical and correct for clean tracked, modified tracked, mixed staged/unstaged changes, untracked/not-in-git, and inaccessible/non-file cases covered by focused classification tests.
 - [x] Git unavailable, sandbox/inaccessible metadata, and non-repo files show honest fallback state without blocking normal editing.
-- [ ] Commands exist for Reveal in Finder, Copy Path, Copy Relative Path, and Copy Git Diff Command, with disabled or fallback behavior when no current file/repo exists.
+- [x] Commands exist for Reveal in Finder, Copy Path, Copy Relative Path, and Copy Git Diff Command, with disabled or fallback behavior when no current file/repo exists.
 - [x] Human edits saved to disk can be surfaced as "modified / visible in git diff" without writing any git state.
 - [ ] No hidden metadata or formatting churn is introduced by the file truth work.
 - [ ] 100% test coverage on all new code
@@ -99,9 +99,9 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 **What**: Add failing tests for command palette items, menu validation where source-fit, copy path, copy relative path, copy git diff command, and reveal-in-Finder routing with no-current-file fallbacks.
 **Acceptance**: Focused command tests fail against current catalog/model/menu behavior. Evidence: `2026-07-09-1409-doing-document-truth-surface/unit-3a-red.txt`.
 
-### ⬜ Unit 3b: File Truth Commands - Implementation
+### ✅ Unit 3b: File Truth Commands - Implementation
 **What**: Wire command palette/menu actions to model commands using testable pasteboard and reveal hooks.
-**Acceptance**: Unit 3a tests pass, command availability is honest for untitled/non-git documents, and commands do not write git state.
+**Acceptance**: Unit 3a tests pass, command availability is honest for untitled/non-git documents, and commands do not write git state. Evidence: focused command suite passed 15 tests and `swift build` passed.
 
 ### ⬜ Unit 3c: File Truth Commands - Coverage & Refactor
 **What**: Tighten command APIs and tests so copy/reveal behavior is deterministic and platform seams are isolated.
@@ -159,3 +159,4 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - 2026-07-09 14:39 -0700 Unit 2e green test confirmed: `swift test --filter AppModelDocumentTruthTests` passed with live AppModel document truth refresh.
 - 2026-07-09 14:41 -0700 Unit 2f lifecycle regression suite passed: `DocumentTruthTests|AppModelDocumentTruthTests|AppModelReloadTests|AppModelDeletionTests` ran 41 tests with no failures.
 - 2026-07-09 14:44 -0700 Unit 3a red test confirmed: command tests failed because document truth commands/selectors are not wired yet.
+- 2026-07-09 14:49 -0700 Unit 3b green test confirmed: focused command suite passed 15 tests and `swift build` completed cleanly.
