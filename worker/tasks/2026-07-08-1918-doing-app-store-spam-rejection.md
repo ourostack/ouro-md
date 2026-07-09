@@ -163,7 +163,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 ### ⬜ Unit 6c: Package Build, Validate, And Upload
 **What**: Run native validation matrix rows relevant to macOS App Store: `xcodebuild -version`, `swift --version`, Swift tests, `./make-app.sh`, `./scripts/package-app-store.sh --validate`, and `./scripts/package-app-store.sh --upload` with existing local signing/API credentials.
 **Output**: Package path, signed-app verification logs, altool validation/upload logs, and upload/build-processing status artifacts.
-**Acceptance**: No warnings in final green logs, package upload succeeds and the uploaded build can be discovered in App Store Connect, or a real Apple-side credential/capability/processing blocker artifact is recorded.
+**Acceptance**: No unresolved/actionable warnings in final green logs, package upload succeeds and the uploaded build can be discovered in App Store Connect, or a real Apple-side credential/capability/processing blocker artifact is recorded.
 
 ### ⬜ Unit 6d: Package And Upload — Release Review
 **What**: Run a harsh build/release reviewer gate on package, validation, upload, signing, version, and artifact evidence.
@@ -248,3 +248,4 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Created from approved planning doc.
 - 2026-07-09 Addressed doing-doc reviewer findings: explicit outputs, smaller ASC mutation units, absolute artifact path, exact live-mutation boundary, and continuity path.
 - 2026-07-09 Addressed scrutiny findings: explicit target version, version/submission graph creation, existing rejection-thread handling, apply-mode executor tests, Apple screenshot upload choreography, stale-ID guards, category assertion, softened review-note posture, and actionable-warning acceptance.
+- 2026-07-09 Removed remaining overbroad review-note provenance wording and aligned warning acceptance across docs.

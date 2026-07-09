@@ -182,8 +182,8 @@ Goal: give App Review a concise, verifiable reason to reconsider.
 Work:
 - Draft a reply in App Store Connect before resubmission:
   - Thank them for the review.
-  - State that Ouro MD is not a repackaged third-party template or duplicate bundle.
-  - Explain that it is a local macOS Markdown workspace for files and folders.
+  - Explain the verifiable local macOS Markdown workspace workflow for files and folders.
+  - Ground distinctiveness in native windowing, folder navigation, outline/search sidebars, command-palette operation, local export, and no-account behavior.
   - List 5-7 concrete review steps: open folder, use File Tree, Outline, Search, Command Palette, switch themes, export PDF/HTML, confirm no sign-in/account/server content.
   - Mention that metadata and screenshots were updated to reflect those features.
   - Avoid arguing that other apps exist or that Apple is wrong.

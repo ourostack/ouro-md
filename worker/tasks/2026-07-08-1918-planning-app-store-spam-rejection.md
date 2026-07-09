@@ -39,7 +39,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - [ ] Any final App Review reply/review-note text passes a harsh voice/posture reviewer gate and exact-state preflight before posting or submission.
 - [ ] 100% test coverage on all new code
 - [ ] All tests pass
-- [ ] No warnings
+- [ ] No unresolved/actionable warnings in final green logs; any benign Apple/Xcode/altool warning is recorded with reviewer-approved rationale.
 - [ ] If UI/rendering/layout changed: `visual-qa-dogfood` evidence captured, absurdity ledger closed, and automated visual metrics still pass
 
 ## Code Coverage Requirements
