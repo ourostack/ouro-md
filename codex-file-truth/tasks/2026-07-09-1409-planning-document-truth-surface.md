@@ -1,6 +1,6 @@
 # Planning: Document Truth Surface
 
-**Status**: drafting
+**Status**: approved
 **Created**: 2026-07-09 14:11 -0700
 
 ## Goal
@@ -82,3 +82,4 @@ The implementation should feel boringly native first. The custom document truth 
 - 2026-07-09 14:11 -0700 Created
 - 2026-07-09 14:11 -0700 Tinfoil pass added honest git fallback and validation references
 - 2026-07-09 14:18 -0700 Planning reviewer findings addressed: mixed-change tests required and native/sidebar-free placement decision recorded
+- 2026-07-09 14:19 -0700 Approved under autopilot/human-gates-waived execution
