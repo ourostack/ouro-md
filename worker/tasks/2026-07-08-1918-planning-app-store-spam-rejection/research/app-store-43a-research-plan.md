@@ -188,7 +188,7 @@ Work:
   - Mention that metadata and screenshots were updated to reflect those features.
   - Avoid arguing that other apps exist or that Apple is wrong.
 - Add the same reviewer-facing note to App Store Review Information for the new version.
-- Require explicit user approval before posting this reply or submitting.
+- Under the 2026-07-09 autopilot mandate, require a harsh voice/posture reviewer gate and exact-state preflight before posting this reply or submitting; do not wait for another human approval unless a true Apple credential/capability blocker or unrecoverable destructive shared-production action is reached.
 
 Draft:
 
@@ -220,7 +220,7 @@ Work:
 - Build and validate the App Store package using the existing signing/API credentials.
 - Upload the new version.
 - Verify App Store Connect processing state, version localization, review notes, screenshot assets, and review submission items programmatically.
-- Submit only after explicit user approval.
+- Submit only after source validation, packaging/upload verification, harsh reviewer-gate convergence, and exact-state preflight under the 2026-07-09 autopilot mandate.
 
 Acceptance:
 - API status summary shows the new processed build/version selected, updated metadata, screenshot count >= 4, and a new or updated review submission ready.
@@ -238,12 +238,12 @@ Work:
 Acceptance:
 - A single evidence-backed escalation packet exists with sources, screenshots, binary/source differentiators, and the App Review correspondence timeline.
 
-## Human Decisions To Make
+## Resolved Decisions
 
-1. Approve or revise the positioning phrase. Recommended: `Local Markdown Workspace`.
-2. Approve submitting a new build/version instead of editing only the rejected version metadata.
-3. Approve the final App Review reply/review-note text before it is posted.
-4. Decide whether the emergency fix may include an `apple-distribution-kit` patch, or whether that should be split into a follow-up shared-kit PR.
+1. Use positioning phrase `Local Markdown Workspace`.
+2. Submit a fresh build/version instead of editing only the rejected version metadata.
+3. Use Ouro MD wrapper/check automation first; patch `apple-distribution-kit` only if the wrapper path proves insufficient.
+4. Human gates are waived; final App Review reply, upload, and submission proceed after source validation, harsh sub-agent reviewer gates, and exact-state preflight.
 
 ## Threads Closed
 
@@ -254,6 +254,8 @@ Acceptance:
 - Submitted screenshot: downloaded and inspected.
 - Source differentiators: verified from README and source files.
 
-## Threads Still Human-Owned
+## Remaining Hard Exceptions
 
-- Posting a reply, resubmitting, uploading a new build, or appealing: requires explicit user approval at action time.
+- Creating or rotating Apple credentials/certificates/provisioning profiles.
+- Paid-account, signing, App Store Connect, or Apple-side capability blockers that cannot be worked around with the existing local config and account session.
+- Unrecoverable destructive shared-production actions with no safe staged path.
