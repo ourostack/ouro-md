@@ -1,10 +1,10 @@
 # Doing: Resolve App Store 4.3(a) Spam Rejection
 
-**Status**: drafting
+**Status**: READY_FOR_EXECUTION
 **Execution Mode**: direct
 **Created**: 2026-07-09
 **Planning**: ./2026-07-08-1918-planning-app-store-spam-rejection.md
-**Artifacts**: ./2026-07-08-1918-doing-app-store-spam-rejection/
+**Artifacts**: /Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/
 
 ## Execution Mode
 
@@ -56,86 +56,159 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **CRITICAL: Every unit header MUST start with status emoji (⬜ for new units).**
 
 ### ⬜ Unit 0: Setup And Live State Baseline
-**What**: Capture current repo/tooling/App Store Connect state into `./2026-07-08-1918-doing-app-store-spam-rejection/`, including `git status`, Xcode/Swift versions, current ASC app/version/submission/screenshot summaries via the local Apple Distribution Kit config, and a secrets scan of committed planning artifacts.
+**What**: Capture current repo/tooling/App Store Connect state into `/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/`, including `git status`, Xcode/Swift versions, current ASC app/version/submission/screenshot summaries via the local Apple Distribution Kit config, and a secrets scan of committed planning artifacts.
 **Output**: Redacted baseline logs and JSON summaries in the artifacts directory.
 **Acceptance**: Logs prove the worktree is on `worker/app-store-spam-rejection`, local API config works without printing secrets, the rejected submission state is still readable, and no private key/JWT/cookie/asset token appears in artifacts.
 
 ### ⬜ Unit 1a: Store Metadata Contract — Tests
 **What**: Add failing tests or selftests that require source-owned App Store metadata to include subtitle `Local Markdown Workspace`, promotional text, description, keywords within Apple limits, review notes with concrete reviewer steps, non-empty screenshot assets, privacy/export compliance, and no generic `The Markdown App`/quiet-editor wording.
+**Output**: Failing test/script diff plus red log saved under the artifacts directory.
 **Acceptance**: Focused tests fail red against the current manifest/docs/check script.
 
 ### ⬜ Unit 1b: Store Metadata Contract — Implementation
 **What**: Update `distribution/apple-distribution.json`, `docs/APP_STORE.md`, and `scripts/check-apple-distribution-kit.sh` so the app-local desired state is non-generic, length-checked, screenshot-aware, and review-note-aware. Keep Ouro MD-specific metadata in this repo; do not move reusable behavior into the shared shell.
+**Output**: Updated manifest/docs/check script and green focused validation log.
 **Acceptance**: Unit 1a tests pass green, `./scripts/check-apple-distribution-kit.sh` no longer reports missing screenshot proof for declared local or remote screenshot assets, and docs name the source-owned metadata as canonical.
 
 ### ⬜ Unit 1c: Store Metadata Contract — Coverage And Review
 **What**: Run coverage/validation for new contract code and a harsh sub-agent review of metadata posture, Apple guideline fit, and source-owned drift checks.
+**Output**: Coverage/validation logs plus reviewer transcript or summary in the artifacts directory.
 **Acceptance**: 100% coverage on new script/test branches, no warnings, reviewer returns `CONVERGED` or findings are fixed and re-reviewed.
 
 ### ⬜ Unit 2a: App-Visible Positioning — Tests
 **What**: Add failing Swift tests or source-contract assertions for the About/shell subtitle, welcome copy, first-launch content, release highlights, and any App Store channel behavior needed to show `Local Markdown Workspace` and concrete folder/search/command/export/no-account value.
+**Output**: Failing Swift test diff plus red focused test log.
 **Acceptance**: Focused tests fail red against the current generic welcome/about copy.
 
 ### ⬜ Unit 2b: App-Visible Positioning — Implementation
 **What**: Update `Sources/OuroMD/Welcome.swift`, `Sources/OuroMD/AppInfoView.swift`, `Sources/OuroMD/OuroMDShellContract.swift`, `Sources/OuroMDCore/OuroMDRelease.swift`, and tests so visible app copy aligns with the App Store metadata and review path. Bump to the next patch version with `scripts/bump-version.sh` before packaging.
+**Output**: Updated Swift source/tests/version files plus green focused test log.
 **Acceptance**: Unit 2a tests pass green, release version and manifest version match, and app-owned copy no longer presents Ouro MD as merely a generic Markdown editor.
 
 ### ⬜ Unit 2c: App-Visible Positioning — Build, Coverage, And Visual QA
-**What**: Run focused Swift tests, `swift test`, `./make-app.sh`, `./scripts/run-visual-qa.sh`, `--firstlaunchtest`, `--uisurfacetest`, and `--accessibilityaudit`; capture screenshots/logs and maintain an absurdity ledger.
+**What**: Run focused Swift tests, `swift test`, `./make-app.sh`, `./scripts/run-visual-qa.sh`, `.build/debug/ouro-md --firstlaunchtest`, `.build/debug/ouro-md --uisurfacetest`, and `.build/debug/ouro-md --accessibilityaudit`; capture screenshots/logs and maintain an absurdity ledger.
+**Output**: Build/test/visual logs, any captured screenshots, and `visual-absurdity-ledger.md`.
 **Acceptance**: Tests/build/visual QA pass, ledger has no `ready` or `needs reviewer gate` items, and a harsh UI/native reviewer gate converges.
 
-### ⬜ Unit 3a: App Store Connect Status And Mutation Automation — Tests
-**What**: Add failing tests/selftests for a source-owned App Store Connect wrapper that can summarize live state and build exact outgoing request plans for metadata/review-detail/screenshot/submission operations without sending them in dry-run mode. Adapter tests must assert outgoing request method, path, query/body, and redaction.
-**Acceptance**: Tests fail red because the wrapper/plan command does not yet exist or lacks the required request-shape assertions.
+### ⬜ Unit 3a: App Store Connect Status Reader — Tests
+**What**: Add failing tests/selftests for a source-owned status command that reads app `6787262892`, bundle `bot.ouro.md`, current version/localization/review-detail/screenshot/submission state via the local Apple Distribution Kit config and redacts secrets.
+**Output**: Failing test/selftest diff plus red log.
+**Acceptance**: Tests fail red because the status command does not yet exist or does not assert redaction/required fields.
 
-### ⬜ Unit 3b: App Store Connect Status And Mutation Automation — Implementation
-**What**: Implement the wrapper/check path in Ouro MD first, using the local Apple Distribution Kit config and shared kit where possible. The command must support redacted status, dry-run request plan, apply mode with explicit exact-state preflight, and artifacts for metadata, review notes, screenshots, build selection, review-submission items, and final submit. Patch `apple-distribution-kit` only if the wrapper cannot safely perform the required App Store Connect calls.
-**Acceptance**: Unit 3a tests pass green, `scripts/check-apple-distribution-kit.sh` invokes or references the new status path, and dry-run artifacts show the exact requests without secrets.
+### ⬜ Unit 3b: App Store Connect Status Reader — Implementation
+**What**: Implement the Ouro MD wrapper/status command using `scripts/apple-distribution-kit.sh asc get` where sufficient, producing normalized redacted JSON and a compact text summary.
+**Output**: New or updated script/test files plus green focused logs and a sample redacted status artifact.
+**Acceptance**: Unit 3a tests pass green, status artifacts include app id, bundle id, version id, review detail id, screenshot count/state, and current rejection/submission state without secrets.
 
-### ⬜ Unit 3c: App Store Connect Status And Mutation Automation — Coverage And API Review
-**What**: Run full coverage for new automation code and a harsh API/adaptor reviewer gate focused on outgoing request shapes, idempotency, redaction, and safe exact-state preflight.
+### ⬜ Unit 3c: App Store Connect Status Reader — Coverage And Review
+**What**: Run coverage/validation and a harsh reviewer gate focused on redaction, stale-state handling, and exact App Store Connect identifiers.
+**Output**: Coverage/validation logs and reviewer transcript or summary.
+**Acceptance**: 100% coverage on new status code, no secret-bearing artifacts, and reviewer converges.
+
+### ⬜ Unit 4a: App Store Connect Request Planner — Tests
+**What**: Add failing adapter-pattern tests for dry-run request planning. Tests must capture and assert outgoing request method/path/query/body for app version localization, app info localization subtitle, review detail notes, screenshot reservations/uploads/commits, build association, review submission item creation, and final submit.
+**Output**: Failing request-shape tests plus red log naming the first missing planner behavior.
+**Acceptance**: Tests fail red for missing request planner or incomplete outgoing-request assertions.
+
+### ⬜ Unit 4b: App Store Connect Request Planner — Implementation
+**What**: Implement the Ouro MD request planner and dry-run artifact generator. Authorized target scope is only app `6787262892`, bundle `bot.ouro.md`, team `743GT2AJ24`, the new Ouro MD version/build, app/version localizations, app review detail notes, screenshot assets for that version localization, review submission items, and final submit. Patch `/Users/arimendelow/Projects/apple-distribution-kit` only if the wrapper cannot safely sign/request/capture required ASC calls; if patched, use branch `worker/ouro-md-app-store-submit`, run that repo's tests, commit, and push.
+**Output**: Request planner implementation, dry-run JSON artifact, green tests, and either a wrapper-suffices note or shared-kit patch evidence.
+**Acceptance**: Unit 4a tests pass green, dry-run artifacts show exact requests without secrets, and any shared-kit patch has its own green `npm test`/equivalent log.
+
+### ⬜ Unit 4c: App Store Connect Request Planner — Coverage And API Review
+**What**: Run full coverage for new automation code and a harsh API/adaptor reviewer gate focused on outgoing request shapes, idempotency, redaction, Apple upload-operation handling, and exact-state preflight.
+**Output**: Coverage logs, API reviewer transcript or summary, and final dry-run request artifact.
 **Acceptance**: 100% coverage on new code, no secret-bearing artifacts, and reviewer converges.
 
-### ⬜ Unit 4a: Screenshot Asset Set — Tests
+### ⬜ Unit 5a: Screenshot Asset Set — Tests
 **What**: Add failing checks for at least four App Store screenshot assets generated from non-private fixtures and declared in the manifest in the intended order: folder workspace, command palette, search/outline, and themed export/readability.
+**Output**: Failing asset/manifest check plus red log.
 **Acceptance**: The check fails red until assets and manifest entries exist.
 
-### ⬜ Unit 4b: Screenshot Asset Set — Implementation
+### ⬜ Unit 5b: Screenshot Asset Set — Implementation
 **What**: Add store screenshot fixtures and a deterministic screenshot generation/copy script that produces PNGs under a source-owned store asset path. Prefer real app/editor rendering and synthetic checked-in Markdown content. Do not commit private user documents or App Store asset tokens.
+**Output**: Screenshot fixtures, generation script, at least four PNG assets, manifest entries, and green asset-check log.
 **Acceptance**: At least four valid PNG assets exist locally, manifest order matches the intended review story, file sizes/dimensions are accepted by the checker, and the first asset visibly shows a differentiated workspace rather than a single rendered document only.
 
-### ⬜ Unit 4c: Screenshot Asset Set — Visual QA And Review
+### ⬜ Unit 5c: Screenshot Asset Set — Visual QA And Review
 **What**: Run visual QA on generated screenshots, inspect them directly, write an absurdity ledger, and run a harsh visual reviewer gate.
+**Output**: Final screenshots, screenshot inspection notes, `screenshot-absurdity-ledger.md`, and reviewer transcript or summary.
 **Acceptance**: Ledger closed, reviewer converges, and final screenshots are ready for App Store Connect upload.
 
-### ⬜ Unit 5a: Package And Upload Preflight — Tests
+### ⬜ Unit 6a: Package Readiness Contract — Tests
 **What**: Add or update checks that package/readiness commands prove App Store distribution channel, telemetry disabled by default, direct updates disabled, version coherence, and no signing secret leakage.
+**Output**: Failing readiness test/check plus red log.
 **Acceptance**: Focused checks fail red for any missing new preflight evidence or stale metadata assumptions.
 
-### ⬜ Unit 5b: Package And Upload Preflight — Implementation
-**What**: Make package/readiness scripts produce artifacts sufficient for final submission: manifest validation, package readiness, signed package path, altool validation, and upload logs. Use existing local signing/API credentials; stop only for true missing Apple credential/capability blockers.
-**Acceptance**: Focused checks pass, `./scripts/package-app-store.sh --readiness` passes, App Store package builds and validates, and upload succeeds or a precise Apple capability blocker artifact is produced.
+### ⬜ Unit 6b: Package Readiness Contract — Implementation
+**What**: Make package/readiness scripts produce artifacts sufficient for final submission: manifest validation, package readiness, signing identity check, app-store channel proof, telemetry-disabled proof, and no-secret scan.
+**Output**: Updated scripts/checks and green `./scripts/check-apple-distribution-kit.sh` plus `./scripts/package-app-store.sh --readiness` logs.
+**Acceptance**: Focused checks pass, readiness logs do not print secrets, and any missing signing/cert/profile/API capability is recorded as a hard blocker artifact with exact command output.
 
-### ⬜ Unit 5c: Package And Upload Preflight — Build/Validation Review
-**What**: Run native validation matrix rows relevant to macOS App Store: `xcodebuild -version`, `swift --version`, Swift tests, macOS build/package, package validation, and a harsh build/release reviewer gate.
-**Acceptance**: No warnings in final green logs, reviewer converges, and uploaded build can be discovered or a real Apple-side processing blocker is recorded.
+### ⬜ Unit 6c: Package Build, Validate, And Upload
+**What**: Run native validation matrix rows relevant to macOS App Store: `xcodebuild -version`, `swift --version`, Swift tests, `./make-app.sh`, `./scripts/package-app-store.sh --validate`, and `./scripts/package-app-store.sh --upload` with existing local signing/API credentials.
+**Output**: Package path, signed-app verification logs, altool validation/upload logs, and upload/build-processing status artifacts.
+**Acceptance**: No warnings in final green logs, package upload succeeds and the uploaded build can be discovered in App Store Connect, or a real Apple-side credential/capability/processing blocker artifact is recorded.
 
-### ⬜ Unit 6a: App Store Connect Apply — Dry Run And Reviewer Gates
-**What**: Generate exact-state dry-run artifacts for metadata update, screenshot upload/update, review details, build association, review-submission item creation, App Review reply/note, and final submit. Run harsh reviewers for voice/posture and API mutation safety.
-**Acceptance**: Dry-run artifacts identify exact app/version/build/submission IDs, request bodies, screenshot count, review notes, and final submit action; reviewers converge.
+### ⬜ Unit 6d: Package And Upload — Release Review
+**What**: Run a harsh build/release reviewer gate on package, validation, upload, signing, version, and artifact evidence.
+**Output**: Reviewer transcript or summary plus any fix commits/logs.
+**Acceptance**: Reviewer converges and no unresolved local packaging/upload blockers remain.
 
-### ⬜ Unit 6b: App Store Connect Apply — Metadata, Screenshots, Build, And Submit
-**What**: Apply the verified App Store Connect operations: update metadata, upload/verify screenshots, attach processed build/version, create/update review submission items, post the reviewer-facing note if supported by API/UI, and submit the new version for review. Use Chrome UI automation only as a fallback for ASC surfaces not exposed by the available API, and capture evidence.
-**Acceptance**: App Store Connect reports the new version/build submitted for review with updated metadata/review notes, screenshot count >= 4, and no unresolved local automation blockers.
+### ⬜ Unit 7a: App Store Connect Apply — Exact-State Dry Run
+**What**: Generate exact-state dry-run artifacts for metadata update, screenshot upload/update, review details, build association, review-submission item creation, App Review reply/note, and final submit.
+**Output**: Dry-run request artifact that names app id, bundle id, team id, new version id, processed build id, localization ids, screenshot set ids, review detail id, review submission id/item ids, and expected final state.
+**Acceptance**: Dry-run artifacts identify exact app/version/build/submission IDs, request bodies, screenshot count, review notes, and final submit action without secrets.
 
-### ⬜ Unit 6c: App Store Connect Apply — Post-Submit Verification
+### ⬜ Unit 7b: App Store Connect Apply — Voice And API Reviewer Gates
+**What**: Run harsh voice/posture and API mutation safety reviewers against the dry-run artifacts and final App Review note.
+**Output**: Reviewer transcripts or summaries and fixed dry-run artifacts if findings require changes.
+**Acceptance**: Reviewers converge. BLOCKER/MAJOR findings are fixed and re-reviewed before any live mutation.
+
+### ⬜ Unit 7c: App Store Connect Apply — Metadata And Review Detail
+**What**: Apply only metadata and review-detail updates that passed Unit 7b. Exact-state preflight must match app id `6787262892`, bundle id `bot.ouro.md`, team id `743GT2AJ24`, and the intended new version/localization/review-detail IDs before sending.
+**Output**: Apply logs and post-apply status JSON for app info localization, app store version localization, and app review detail notes.
+**Acceptance**: App Store Connect returns updated subtitle/description/keywords/promotional text/review notes matching the manifest; otherwise a precise hard blocker or fixable API error is recorded and handled.
+
+### ⬜ Unit 7d: App Store Connect Apply — Screenshots
+**What**: Upload or replace the approved screenshot assets for the target macOS screenshot set using the verified API/UI path, then poll asset delivery state.
+**Output**: Screenshot upload logs, delivery-state JSON, and screenshot count/order summary.
+**Acceptance**: App Store Connect reports screenshot count >= 4 with complete asset delivery state, first screenshots match approved local asset names/order, and no asset token is committed.
+
+### ⬜ Unit 7e: App Store Connect Apply — Build Association And Review Items
+**What**: Associate the processed uploaded build with the new App Store version and create/update review submission item records for that version.
+**Output**: Build association logs, review-submission-item logs, and post-apply status JSON.
+**Acceptance**: The target version has the uploaded build selected, review submission items reference that version/build, and exact-state artifacts contain no secrets.
+
+### ⬜ Unit 7f: App Store Connect Apply — Final Submit
+**What**: Submit the new App Store review submission only after Units 7a-7e pass and the final preflight artifact shows all intended state fields already match except submission state. Use Chrome UI automation only as a fallback for ASC surfaces not exposed by the available API, and capture evidence.
+**Output**: Final submit log, submitted review submission id, and immediate post-submit status JSON.
+**Acceptance**: App Store Connect reports the new version/build submitted for review, or a precise hard blocker is documented after all safe fallback paths.
+
+### ⬜ Unit 7g: App Store Connect Apply — Post-Submit Verification
 **What**: Poll App Store Connect status programmatically after submission and capture redacted final state.
+**Output**: Redacted final App Store Connect state artifact and compact text summary.
 **Acceptance**: Artifact shows submitted/in-review equivalent state for the new submission, selected build/version, updated localization/review detail data, and screenshot assets complete; or a precise hard blocker is documented after all safe fallback paths.
 
-### ⬜ Unit 7: Final Cleanup, Merge Path, And Continuation Scan
-**What**: Update completion criteria, doing progress log, `AUTOPILOT-STATE.md`, run final harsh branch review, push all commits, open/merge PR or follow repo terminal path, clean stale worktree/branches if safe, and run continuation scan.
-**Output**: Final verification artifacts and clean repo state.
-**Acceptance**: Branch has no dirty state, submission terminal evidence is captured, reviewer gate converges, and no ready in-scope continuation work remains except true hard exceptions.
+### ⬜ Unit 8a: Final Evidence And Docs
+**What**: Update completion criteria, doing progress log, planning/doc references, and `/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/worker/tasks/AUTOPILOT-STATE.md` with terminal evidence.
+**Output**: Updated docs/state and final artifact index.
+**Acceptance**: Docs point to the submitted App Store evidence, all satisfied checkboxes are backed by artifacts, and no stale `drafting`/human-gate language remains.
+
+### ⬜ Unit 8b: Final Branch Review And Push
+**What**: Run final harsh branch review over all diffs, validation artifacts, and App Store submission evidence; fix/re-review BLOCKER/MAJOR findings; push all commits.
+**Output**: Reviewer transcript or summary, final commits, and pushed branch state.
+**Acceptance**: Reviewer converges, branch is pushed, and `git status --short` is clean.
+
+### ⬜ Unit 8c: PR/Merge Or Repo Terminal Path
+**What**: Follow the repo terminal path: open/merge a PR if branch protection requires it, or otherwise land the branch according to repository practice after reviewer convergence and green checks.
+**Output**: PR/merge/check evidence, or documented non-PR terminal path evidence.
+**Acceptance**: Source changes are landed or a true branch-protection/account blocker is recorded with exact evidence.
+
+### ⬜ Unit 8d: Cleanup And Continuation Scan
+**What**: Remove only task-created disposable artifacts that are untracked and outside committed evidence; do not delete shared worktrees/branches unless they are task-created, fully pushed/merged, clean, and not the current worktree. Run continuation scan.
+**Output**: Cleanup log and continuation scan in `/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/worker/tasks/AUTOPILOT-STATE.md`.
+**Acceptance**: No ready in-scope continuation work remains except true hard exceptions, no dirty state remains, and no task-created stale worktree/branch remains when safe to clean.
 
 ## Execution
 - **TDD strictly enforced**: tests → red → implement → green → refactor
@@ -143,9 +216,13 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - Push after each unit complete
 - Run full test suite before marking unit done
 - For UI/rendering/layout units, run `visual-qa-dogfood` before declaring the unit or task complete
-- **All artifacts**: Save outputs, logs, data to `./2026-07-08-1918-doing-app-store-spam-rejection/` directory
+- **All artifacts**: Save outputs, logs, data to `/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/`
 - **Fixes/blockers**: Spawn sub-agent immediately — don't ask, just do it
 - **Decisions made**: Update docs immediately, commit right away
+- **Authorized live Apple mutations**: only mutate app `6787262892`, bundle `bot.ouro.md`, team `743GT2AJ24`, the new Ouro MD app version/build, that version's localizations, review detail notes, screenshot assets, review submission items, and final review submission state.
+- **Hard stops**: stop only for missing/expired Apple credentials, missing signing identities/certificates/provisioning profiles, Apple account/legal/capability blockers, or unrecoverable destructive shared-production actions with no safe staged path. Do not create/delete/rotate Apple keys, certificates, provisioning profiles, bundle IDs, app records, or unrelated submissions.
+- **Exact-state preflight before live apply**: app id, bundle id, team id, target version, processed build id, metadata fields, review note, screenshot asset paths/count/order, and final request plan must match the reviewed dry-run artifacts before any live apply or submit request.
 
 ## Progress Log
 - 2026-07-09 Created from approved planning doc.
+- 2026-07-09 Addressed doing-doc reviewer findings: explicit outputs, smaller ASC mutation units, absolute artifact path, exact live-mutation boundary, and continuity path.
