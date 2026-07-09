@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-09T10:25:51.162Z",
+  "statusPurpose": "submission-readiness",
+  "usedRejectedAuditDefaults": false,
+  "rejectedAuditDefaultVersionString": null,
+  "appId": "6787262892",
+  "bundleId": "bot.ouro.md",
+  "teamId": "743GT2AJ24",
+  "appName": "Ouro MD",
+  "currentAppStoreVersionId": "7309944f-cbe8-4518-960c-444e6116ab46",
+  "currentVersionString": "0.9.80",
+  "currentVersionState": "WAITING_FOR_REVIEW",
+  "appStoreVersionLocalizationId": "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
+  "locale": "en-US",
+  "reviewDetailId": "3bc7284e-27d5-4dd3-a049-b9e859289bd1",
+  "reviewSubmissionId": "b37f847e-0ecb-4e7a-bb00-14e3038b0f4c",
+  "reviewSubmissionState": "WAITING_FOR_REVIEW",
+  "reviewSubmissionItemId": "YjM3Zjg0N2UtMGVjYi00ZTdhLWJiMDAtMTRlMzAzOGIwZjRjfDZ8ODg3ODEyNjgx",
+  "reviewSubmissionItemAppStoreVersionId": "7309944f-cbe8-4518-960c-444e6116ab46",
+  "reviewSubmissionItemState": "READY_FOR_REVIEW",
+  "buildId": "827fa5b9-6994-41eb-bc75-ab3ca469a96f",
+  "buildVersion": "0.9.80",
+  "buildProcessingState": "VALID",
+  "screenshotSetId": "f37ecb51-c96e-451d-9b29-20d86d7f118e",
+  "screenshotDisplayType": "APP_DESKTOP",
+  "screenshotCount": 4,
+  "screenshotIds": [
+    "ff2cbccb-ec2f-4847-835d-5547c964a979",
+    "b1a6690c-4303-4b0d-87e7-c6345f8a65d3",
+    "e844bca6-e0c6-44cd-86ba-25719cb2c5f9",
+    "d6cb623a-1435-4488-a793-59a6d9efe327"
+  ],
+  "screenshotDeliveryStates": [
+    "COMPLETE",
+    "COMPLETE",
+    "COMPLETE",
+    "COMPLETE"
+  ]
+}

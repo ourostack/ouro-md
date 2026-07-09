@@ -1,0 +1,151 @@
+{
+  "ok": true,
+  "result": {
+    "data": [
+      {
+        "type": "appInfos",
+        "id": "9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8",
+        "attributes": {
+          "appStoreState": "READY_FOR_REVIEW",
+          "state": "READY_FOR_REVIEW",
+          "appStoreAgeRating": "FOUR_PLUS",
+          "australiaAgeRating": null,
+          "brazilAgeRating": "L",
+          "brazilAgeRatingV2": "SELF_RATED_L",
+          "franceAgeRating": null,
+          "koreaAgeRating": null
+        },
+        "relationships": {
+          "ageRatingDeclaration": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appInfos/9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8/relationships/ageRatingDeclaration",
+              "related": "https://api.appstoreconnect.apple.com/v1/appInfos/9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8/ageRatingDeclaration"
+            }
+          },
+          "appInfoLocalizations": {
+            "meta": {
+              "paging": {
+                "total": 1,
+                "limit": 10
+              }
+            },
+            "data": [
+              {
+                "type": "appInfoLocalizations",
+                "id": "b5bae77f-a94f-4b39-8ebd-841a6306b1c6"
+              }
+            ],
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appInfos/9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8/relationships/appInfoLocalizations",
+              "related": "https://api.appstoreconnect.apple.com/v1/appInfos/9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8/appInfoLocalizations"
+            }
+          },
+          "primaryCategory": {
+            "data": {
+              "type": "appCategories",
+              "id": "DEVELOPER_TOOLS"
+            },
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appInfos/9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8/relationships/primaryCategory",
+              "related": "https://api.appstoreconnect.apple.com/v1/appInfos/9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8/primaryCategory"
+            }
+          },
+          "primarySubcategoryOne": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appInfos/9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8/relationships/primarySubcategoryOne",
+              "related": "https://api.appstoreconnect.apple.com/v1/appInfos/9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8/primarySubcategoryOne"
+            }
+          },
+          "primarySubcategoryTwo": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appInfos/9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8/relationships/primarySubcategoryTwo",
+              "related": "https://api.appstoreconnect.apple.com/v1/appInfos/9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8/primarySubcategoryTwo"
+            }
+          },
+          "secondaryCategory": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appInfos/9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8/relationships/secondaryCategory",
+              "related": "https://api.appstoreconnect.apple.com/v1/appInfos/9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8/secondaryCategory"
+            }
+          },
+          "secondarySubcategoryOne": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appInfos/9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8/relationships/secondarySubcategoryOne",
+              "related": "https://api.appstoreconnect.apple.com/v1/appInfos/9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8/secondarySubcategoryOne"
+            }
+          },
+          "secondarySubcategoryTwo": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appInfos/9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8/relationships/secondarySubcategoryTwo",
+              "related": "https://api.appstoreconnect.apple.com/v1/appInfos/9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8/secondarySubcategoryTwo"
+            }
+          },
+          "territoryAgeRatings": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appInfos/9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8/relationships/territoryAgeRatings",
+              "related": "https://api.appstoreconnect.apple.com/v1/appInfos/9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8/territoryAgeRatings"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appInfos/9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8"
+        }
+      }
+    ],
+    "included": [
+      {
+        "type": "appInfoLocalizations",
+        "id": "b5bae77f-a94f-4b39-8ebd-841a6306b1c6",
+        "attributes": {
+          "locale": "en-US",
+          "name": "Ouro MD",
+          "subtitle": "Local Markdown Workspace",
+          "privacyPolicyUrl": "https://ouro.bot/privacy/",
+          "privacyChoicesUrl": null,
+          "privacyPolicyText": null
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appInfoLocalizations/b5bae77f-a94f-4b39-8ebd-841a6306b1c6"
+        }
+      },
+      {
+        "type": "appCategories",
+        "id": "DEVELOPER_TOOLS",
+        "attributes": {
+          "platforms": [
+            "IOS",
+            "MAC_OS",
+            "TV_OS",
+            "VISION_OS"
+          ]
+        },
+        "relationships": {
+          "subcategories": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appCategories/DEVELOPER_TOOLS/relationships/subcategories",
+              "related": "https://api.appstoreconnect.apple.com/v1/appCategories/DEVELOPER_TOOLS/subcategories"
+            }
+          },
+          "parent": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appCategories/DEVELOPER_TOOLS/relationships/parent",
+              "related": "https://api.appstoreconnect.apple.com/v1/appCategories/DEVELOPER_TOOLS/parent"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appCategories/DEVELOPER_TOOLS"
+        }
+      }
+    ],
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/apps/6787262892/appInfos?include=primaryCategory%2CappInfoLocalizations&limit=200"
+    },
+    "meta": {
+      "paging": {
+        "total": 1,
+        "limit": 200
+      }
+    }
+  }
+}

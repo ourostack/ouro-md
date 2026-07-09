@@ -19,14 +19,14 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - `/Users/arimendelow/desk/ouro-md/app-store-connect-submission/task.md`
 
 ## Completion Criteria
-- [ ] App Review evidence is captured in docs or artifacts with no secrets and with concrete dates, app IDs, submission IDs, and version IDs.
-- [ ] Source-owned App Store metadata/review-note guidance no longer describes Ouro MD generically as only "The Markdown App" or a quiet Markdown editor.
-- [ ] Source-owned metadata recommends or encodes subtitle `Local Markdown Workspace`, Developer Tools category, a specific promotional text, specific keywords, and a review note that lists concrete reviewer steps.
+- [x] App Review evidence is captured in docs or artifacts with no secrets and with concrete dates, app IDs, submission IDs, and version IDs.
+- [x] Source-owned App Store metadata/review-note guidance no longer describes Ouro MD generically as only "The Markdown App" or a quiet Markdown editor.
+- [x] Source-owned metadata recommends or encodes subtitle `Local Markdown Workspace`, Developer Tools category, a specific promotional text, specific keywords, and a review note that lists concrete reviewer steps.
 - [x] A local screenshot set exists with at least four review-facing screenshots and the first screenshots show differentiated app surfaces, not only a single rendered document.
 - [x] `scripts/check-apple-distribution-kit.sh` no longer reports screenshot proof as missing, or an explicit live-status path documents why remote proof is checked separately from CI.
 - [x] A redacted programmatic App Store review-status command can read app `6787262892`, version `7309944f-cbe8-4518-960c-444e6116ab46`, submission `b37f847e-0ecb-4e7a-bb00-14e3038b0f4c`, rejected item state, and remote screenshot count from the local config.
-- [ ] A new build/version carries visible in-app copy changes that align with the App Store positioning and can be cited in review notes.
-- [ ] Any final App Review reply/review-note text passes a harsh voice/posture reviewer gate and exact-state preflight before posting or submission.
+- [x] A new build/version carries visible in-app copy changes that align with the App Store positioning and can be cited in review notes.
+- [x] Any final App Review reply/review-note text passes a harsh voice/posture reviewer gate and exact-state preflight before posting or submission.
 - [ ] 100% test coverage on all new code
 - [ ] All tests pass
 - [ ] No unresolved/actionable warnings in final green logs; any benign Apple/Xcode/altool warning is recorded with reviewer-approved rationale.
@@ -200,12 +200,12 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Build association logs, review-submission-record/item logs, and post-apply status JSON.
 **Acceptance**: The target version has the uploaded build selected, review submission items reference that target app store version/build, the review submission graph includes a create/fetch record plus item relationship, and exact-state artifacts contain no secrets.
 
-### ⬜ Unit 7g: App Store Connect Apply — Final Submit
+### ✅ Unit 7g: App Store Connect Apply — Final Submit
 **What**: Submit the target App Store review submission only after Units 7a-7f pass, `./scripts/check-apple-distribution-kit.sh --final-submission` passes, the final preflight artifact shows all intended state fields already match except submission state, and the old unresolved App Review thread has either a captured UI reply artifact or a captured UI-unavailable artifact with the response carried in review notes. Use Chrome UI automation for the App Review message reply surface because it is documented in App Store Connect UI help but not exposed in the official OpenAPI review-submission resources.
 **Output**: Final submit log, submitted review submission id, and immediate post-submit status JSON.
 **Acceptance**: App Store Connect reports the new version/build submitted for review, or a precise hard blocker is documented after all safe fallback paths.
 
-### ⬜ Unit 7h: App Store Connect Apply — Post-Submit Verification
+### ✅ Unit 7h: App Store Connect Apply — Post-Submit Verification
 **What**: Poll App Store Connect status programmatically after submission and capture redacted final state.
 **Output**: Redacted final App Store Connect state artifact and compact text summary.
 **Acceptance**: Artifact shows submitted/in-review equivalent state for the new submission, selected build/version, updated localization/review detail data, and screenshot assets complete; or a precise hard blocker is documented after all safe fallback paths.
@@ -280,3 +280,5 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 7d complete: live metadata apply initially failed because App Store Connect returned `STATE_ERROR` for `whatsNew`; captured that precise Apple error, applied the reviewed metadata plan without `whatsNew`, and verified live `DEVELOPER_TOOLS` category, `Local Markdown Workspace` subtitle, promotional text, description, keywords, support/marketing URLs, and App Review notes all match the source-owned metadata; Unit 7d leak scan is clean.
 - 2026-07-09 Unit 7e complete: deleted the old single screenshot from target screenshot set `f37ecb51-c96e-451d-9b29-20d86d7f118e`, uploaded and committed the four approved 2880x1800 screenshots with dry-run-matched sizes/checksums, and verified App Store Connect reports four `APP_DESKTOP` screenshots in manifest order with `COMPLETE` delivery state and no leak-scan findings.
 - 2026-07-09 Unit 7f complete: associated uploaded build `827fa5b9-6994-41eb-bc75-ab3ca469a96f` to target version `0.9.80`; Apple rejected adding the version to the new empty review submission because it was already present in existing unresolved submission `b37f847e-0ecb-4e7a-bb00-14e3038b0f4c`; resolved the existing review-submission item `YjM3Zjg0N2UtMGVjYi00ZTdhLWJiMDAtMTRlMzAzOGIwZjRjfDZ8ODg3ODEyNjgx`, captured item state `READY_FOR_REVIEW`, updated local state to the Apple-valid existing graph, and recorded that the empty `e87d8ecd-9682-4d79-9e60-14c23befd11e` submission has no items and is not used for final submit.
+- 2026-07-09 Unit 7g complete: posted the reviewed App Review reply in the existing review thread, captured `Messages (2)` proof, passed `./scripts/check-apple-distribution-kit.sh --final-submission`, ran the live final-submit executor against exact preflight `unit7g-final-submit-preflight.json`, and App Store Connect returned submission `b37f847e-0ecb-4e7a-bb00-14e3038b0f4c` state `WAITING_FOR_REVIEW`.
+- 2026-07-09 Unit 7h complete: programmatically polled App Store Connect after submission and verified version `0.9.80`, review submission `b37f847e-0ecb-4e7a-bb00-14e3038b0f4c`, and version state are `WAITING_FOR_REVIEW`, selected build `827fa5b9-6994-41eb-bc75-ab3ca469a96f` is `VALID`, and four `APP_DESKTOP` screenshots are `COMPLETE`.

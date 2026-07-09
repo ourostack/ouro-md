@@ -1,8 +1,13 @@
 {
   "schemaVersion": 1,
+  "ok": true,
+  "mode": "apply",
+  "transport": "live",
+  "stage": "final-submit",
   "appId": "6787262892",
   "targetVersion": "0.9.80",
-  "updatedAt": "2026-07-09T10:25:32.318Z",
+  "executedRequestCount": 1,
+  "executedUploadOperationCount": 0,
   "resolvedIds": {
     "targetAppStoreVersionId": "7309944f-cbe8-4518-960c-444e6116ab46",
     "appStoreVersionLocalizationId": "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
@@ -12,8 +17,6 @@
     "reviewSubmissionId": "b37f847e-0ecb-4e7a-bb00-14e3038b0f4c",
     "reviewSubmissionItemId": "YjM3Zjg0N2UtMGVjYi00ZTdhLWJiMDAtMTRlMzAzOGIwZjRjfDZ8ODg3ODEyNjgx"
   },
-  "notes": {
-    "reviewSubmissionId": "Using existing unresolved review submission because App Store Connect rejects adding this appStoreVersion to a second reviewSubmission.",
-    "emptyReviewSubmissionId": "e87d8ecd-9682-4d79-9e60-14c23befd11e was created in Unit 7c but has no items; cancel attempt failed because Apple reports it is not in cancellable state."
-  }
+  "traceArtifact": "worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit7g-live-apply-artifacts/apply-final-submit-trace.json",
+  "stateArtifact": "worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit7c-live-state.json"
 }

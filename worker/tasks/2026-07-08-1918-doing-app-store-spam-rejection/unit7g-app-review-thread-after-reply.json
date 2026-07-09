@@ -1,0 +1,123 @@
+{
+  "bodyTail": "Ouro MD\nDistributionAnalyticsTestFlightXcode Cloud\nApp Review\nmacOS Submission\nResubmit to App Review\n\nUnresolved Issues\n\nItems Submitted (1)\nYou can review and make edits to your items below, or communicate with Apple. Accepted items won't be available for release until all items with issues are resubmitted and accepted. You can also remove those items and resubmit them later.\nITEM\n\t\nTYPE\n\t\nREVIEW STATUS\n\t\nACTION\n\t\n\n\nmacOS App 0.9.80\n\n0.9.79 (0.9.79)\n\n\t\nApp Version\n\t\nReady for Review\n\t\n\t\nMessages (2)\nAppleYesterday 6:01 PM\nAri MendelowToday 3:22 AM\nHello App Review,\n\nWe have revised Ouro MD for resubmission after Guideline 4.3(a).\n\nChanges in version 0.9.80:\n- App metadata now positions Ouro MD as a local Markdown workspace for Mac files.\n- The selected build is 0.9.80 with App Store channel behavior: telemetry disabled and direct-download updates disabled.\n- Screenshots have been replaced with four workflow-specific images: folder workspace, command palette, search/outline, and themed export/readability.\n- Review path: no account is required. Create or open a Markdown file, use Shift-Command-O to open a folder, use File Tree/Outline/Search, open Command Palette with Shift-Command-P, switch themes, and export PDF or HTML from File.\n\nThank you.\n\nReply to App Review\n\nDate Submitted\nJul 3, 2026 at 8:59 PM\nSubmission ID\nb37f847e-0ecb-4e7a-bb00-14e3038b0f4c\nSubmitted By\nAPI user 8566429KZF\nLast Updated By\nAPI user 8566429KZF\nCancel Submission\nDraft Submissions (1)",
+  "capturedAt": "2026-07-09T10:22:38.608Z",
+  "containsPostedReplyOpening": true,
+  "containsVersion080": true,
+  "controls": [
+    {
+      "id": "logo",
+      "role": null,
+      "tag": "A",
+      "text": "App Store Connect",
+      "type": null,
+      "valueLength": 0
+    },
+    {
+      "id": "_m_sub_title",
+      "role": "button",
+      "tag": "DIV",
+      "text": "Ouro MD",
+      "type": null,
+      "valueLength": 0
+    },
+    {
+      "id": null,
+      "role": null,
+      "tag": "A",
+      "text": "Distribution",
+      "type": null,
+      "valueLength": 0
+    },
+    {
+      "id": null,
+      "role": null,
+      "tag": "A",
+      "text": "Analytics",
+      "type": null,
+      "valueLength": 0
+    },
+    {
+      "id": null,
+      "role": null,
+      "tag": "A",
+      "text": "TestFlight",
+      "type": null,
+      "valueLength": 0
+    },
+    {
+      "id": null,
+      "role": null,
+      "tag": "A",
+      "text": "Xcode Cloud",
+      "type": null,
+      "valueLength": 0
+    },
+    {
+      "id": null,
+      "role": null,
+      "tag": "A",
+      "text": "App Review",
+      "type": null,
+      "valueLength": 0
+    },
+    {
+      "id": null,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Resubmit to App Review",
+      "type": "button",
+      "valueLength": 0
+    },
+    {
+      "id": null,
+      "role": null,
+      "tag": "A",
+      "text": "0.9.79 (0.9.79)",
+      "type": null,
+      "valueLength": 0
+    },
+    {
+      "id": "accordion-toggle-0.6898923040619486-7",
+      "role": null,
+      "tag": "BUTTON",
+      "text": "AppleYesterday 6:01 PM",
+      "type": null,
+      "valueLength": 0
+    },
+    {
+      "id": "accordion-toggle-0.6898923040619486-295",
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Ari MendelowToday 3:22 AM",
+      "type": null,
+      "valueLength": 0
+    },
+    {
+      "id": null,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Reply to App Review",
+      "type": null,
+      "valueLength": 0
+    },
+    {
+      "id": null,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Cancel Submission",
+      "type": null,
+      "valueLength": 0
+    },
+    {
+      "id": null,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Draft Submissions (1)",
+      "type": null,
+      "valueLength": 0
+    }
+  ],
+  "hasDraftComposer": false,
+  "messagesLabelMatch": "2",
+  "url": "https://appstoreconnect.apple.com/apps/6787262892/distribution/reviewsubmissions/details/b37f847e-0ecb-4e7a-bb00-14e3038b0f4c"
+}

@@ -1,0 +1,190 @@
+{
+  "bodyExcerpt": "Ouro MD\nDistributionAnalyticsTestFlightXcode Cloud\nApp Review\nmacOS Submission\nResubmit to App Review\n\nUnresolved Issues\n\nItems Submitted (1)\nYou can review and make edits to your items below, or communicate with Apple. Accepted items won't be available for release until all items with issues are resubmitted and accepted. You can also remove those items and resubmit them later.\nITEM\n\t\nTYPE\n\t\nREVIEW STATUS\n\t\nACTION\n\t\n\n\nmacOS App 0.9.80\n\n0.9.79 (0.9.79)\n\n\t\nApp Version\n\t\nReady for Review\n\t\n\t\nMessages (1)\nAppleYesterday 6:01 PM\nHello, \n\nWe noticed this is your first app submission and want to congratulate you on joining the Apple Developer Program. We look forward to working together on your submissions.\n\nWhen App Review identifies an issue with a submission, we’ll contact you with a message in App Store Connect with details about what we found and how to resolve the issue. Learn more about App Review and tips for a smooth review experience. \n\nSee below for additional information about the issues that require your attention for this submission. If you have any questions, we are here to help. Reply to this message in App Store Connect and let us know.\n\n\nReview Environment\nSubmission ID: b37f847e-0ecb-4e7a-bb00-14e3038b0f4c\nReview date: July 09, 2026\nReview Device: MacBook Pro (14-inch, Nov 2024)\nVersion reviewed: 0.9.79 (0.9.79)\n\n\nGuideline 4.3(a) - Design - Spam\n\nIssue Description\n\nWe noticed the app shares a similar binary, metadata, and/or concept as apps submitted to the App Store by other developers, with only minor differences. \n\nSubmitting similar or repackaged apps is a form of spam that creates clutter and makes it difficult for users to discover new apps.\n\nNext Steps\n\nSince we do not accept spam apps on the App Store, we encourage you to review the app concept and submit a unique app with distinct content and functionality. \n\nResources\n\nSome factors that contribute to a spam rejection may include:\n\n- Submitting an app with the same source code or assets as other apps already submitted to the App Store\n- Creating and submitting multiple similar apps using a repackaged app template \n- Purchasing an app template with problematic code from a third party \n- Submitting several similar apps across multiple accounts\n\nLearn more about our requirements to prevent spam in guideline 4.3.\n\nSupport\n\n\n\nTest on the latest betas\nBetas of iOS 27, iPadOS 27, macOS 27, tvOS 27 and visionOS 27 are now available. Download the latest betas to prepare your app for upcoming software releases. Learn more about installing and using Apple beta software.\n\n\n\nReply to App Review\n\nDate Submitted\nJul 3, 2026 at 8:59 PM\nSubmission ID\nb37f847e-0ecb-4e7a-bb00-14e3038b0f4c\nSubmitted By\nAPI user 8566429KZF\nLast Updated By\nAPI user 8566429KZF\nCancel Submission\nDraft Submissions (1)",
+  "capturedAt": "2026-07-09T10:20:16.316Z",
+  "controls": [
+    {
+      "aria": null,
+      "href": "https://appstoreconnect.apple.com/",
+      "id": "logo",
+      "placeholder": null,
+      "role": null,
+      "tag": "A",
+      "text": "App Store Connect",
+      "type": null
+    },
+    {
+      "aria": "Apps menu, Ouro MD, selected",
+      "href": null,
+      "id": "_m_sub_title",
+      "placeholder": null,
+      "role": "button",
+      "tag": "DIV",
+      "text": "Ouro MD",
+      "type": null
+    },
+    {
+      "aria": null,
+      "href": "https://appstoreconnect.apple.com/apps/6787262892/distribution",
+      "id": null,
+      "placeholder": null,
+      "role": null,
+      "tag": "A",
+      "text": "Distribution",
+      "type": null
+    },
+    {
+      "aria": null,
+      "href": "https://appstoreconnect.apple.com/apps/6787262892/analytics",
+      "id": null,
+      "placeholder": null,
+      "role": null,
+      "tag": "A",
+      "text": "Analytics",
+      "type": null
+    },
+    {
+      "aria": null,
+      "href": "https://appstoreconnect.apple.com/teams/b25f0f77-25c0-44b8-9d21-2e95083f09ae/apps/6787262892/testflight",
+      "id": null,
+      "placeholder": null,
+      "role": null,
+      "tag": "A",
+      "text": "TestFlight",
+      "type": null
+    },
+    {
+      "aria": null,
+      "href": "https://appstoreconnect.apple.com/teams/b25f0f77-25c0-44b8-9d21-2e95083f09ae/apps/6787262892/ci",
+      "id": null,
+      "placeholder": null,
+      "role": null,
+      "tag": "A",
+      "text": "Xcode Cloud",
+      "type": null
+    },
+    {
+      "aria": null,
+      "href": "https://appstoreconnect.apple.com/apps/6787262892/distribution/reviewsubmissions",
+      "id": null,
+      "placeholder": null,
+      "role": null,
+      "tag": "A",
+      "text": "App Review",
+      "type": null
+    },
+    {
+      "aria": null,
+      "href": null,
+      "id": null,
+      "placeholder": null,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Resubmit to App Review",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "href": "https://appstoreconnect.apple.com/apps/6787262892/testflight/macos/2f55e88f-a05b-4065-a4b5-4e55180d8835/metadata",
+      "id": null,
+      "placeholder": null,
+      "role": null,
+      "tag": "A",
+      "text": "0.9.79 (0.9.79)",
+      "type": null
+    },
+    {
+      "aria": null,
+      "href": null,
+      "id": "accordion-toggle-0.6898923040619486-7",
+      "placeholder": null,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "AppleYesterday 6:01 PM",
+      "type": null
+    },
+    {
+      "aria": null,
+      "href": "https://developer.apple.com/distribute/app-review/",
+      "id": null,
+      "placeholder": null,
+      "role": null,
+      "tag": "A",
+      "text": "App Review",
+      "type": null
+    },
+    {
+      "aria": null,
+      "href": "https://developer.apple.com/forums/thread/810791",
+      "id": null,
+      "placeholder": null,
+      "role": null,
+      "tag": "A",
+      "text": "tips for a smooth review experience",
+      "type": null
+    },
+    {
+      "aria": null,
+      "href": "https://developer.apple.com/app-store/review/guidelines/#4.3",
+      "id": null,
+      "placeholder": null,
+      "role": null,
+      "tag": "A",
+      "text": "guideline 4.3",
+      "type": null
+    },
+    {
+      "aria": null,
+      "href": "https://developer.apple.com/news/releases/",
+      "id": null,
+      "placeholder": null,
+      "role": null,
+      "tag": "A",
+      "text": "Download the latest betas",
+      "type": null
+    },
+    {
+      "aria": null,
+      "href": "https://developer.apple.com/support/install-beta/#preparing",
+      "id": null,
+      "placeholder": null,
+      "role": null,
+      "tag": "A",
+      "text": "installing and using Apple beta software",
+      "type": null
+    },
+    {
+      "aria": null,
+      "href": null,
+      "id": null,
+      "placeholder": null,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Reply to App Review",
+      "type": null
+    },
+    {
+      "aria": null,
+      "href": null,
+      "id": null,
+      "placeholder": null,
+      "role": "button",
+      "tag": "BUTTON",
+      "text": "Cancel Submission",
+      "type": null
+    },
+    {
+      "aria": null,
+      "href": null,
+      "id": null,
+      "placeholder": null,
+      "role": null,
+      "tag": "BUTTON",
+      "text": "Draft Submissions (1)",
+      "type": null
+    }
+  ],
+  "hasReplyButton": true,
+  "hasResubmitButton": true,
+  "title": "App Store Connect",
+  "url": "https://appstoreconnect.apple.com/apps/6787262892/distribution/reviewsubmissions/details/b37f847e-0ecb-4e7a-bb00-14e3038b0f4c"
+}
