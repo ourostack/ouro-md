@@ -87,9 +87,9 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 **What**: Add failing tests for `AppModel` refresh behavior on welcome/new, open/loadInitialFile, dirty edits, save/save-as/autosave-success path, rename, deleted/restored, external reload, and conflict resolution where testable without UI prompts.
 **Acceptance**: AppModel lifecycle tests fail against current code or fail to compile because no published truth state exists. Evidence: `2026-07-09-1409-doing-document-truth-surface/unit-2d-red.txt`.
 
-### ⬜ Unit 2e: AppModel Truth Lifecycle - Implementation
+### ✅ Unit 2e: AppModel Truth Lifecycle - Implementation
 **What**: Publish the latest document truth snapshot from `AppModel`, refresh it at every file lifecycle point, and overlay unsaved/deleted state without faking git certainty.
-**Acceptance**: Unit 2d tests pass and saved human edits can surface as modified/visible in git diff after write without any git mutation.
+**Acceptance**: Unit 2d tests pass and saved human edits can surface as modified/visible in git diff after write without any git mutation. Evidence: `swift test --filter AppModelDocumentTruthTests` passed at 2026-07-09 14:39 -0700.
 
 ### ⬜ Unit 2f: AppModel Truth Lifecycle - Coverage & Refactor
 **What**: Tighten lifecycle refresh helpers and test seams so state transitions are explicit and non-flaky.
@@ -156,3 +156,4 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - 2026-07-09 14:30 -0700 Unit 2b green test confirmed: `swift test --filter DocumentTruthTests` passed for pure file/git truth support model.
 - 2026-07-09 14:34 -0700 Unit 2c coverage gate passed: `scripts/check-coverage.sh` reported `DocumentTruth.swift` 150/150 lines and 73/73 regions.
 - 2026-07-09 14:36 -0700 Unit 2d red test confirmed: `swift test --filter AppModelDocumentTruthTests` failed because AppModel has no live document truth API yet.
+- 2026-07-09 14:39 -0700 Unit 2e green test confirmed: `swift test --filter AppModelDocumentTruthTests` passed with live AppModel document truth refresh.
