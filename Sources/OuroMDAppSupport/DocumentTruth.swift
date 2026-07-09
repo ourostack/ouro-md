@@ -67,7 +67,18 @@ public struct DocumentTruthSnapshot: Equatable {
 
     public var gitDiffCommand: String? {
         guard let repositoryRoot, let relativePath else { return nil }
-        return "git -C \(Self.shellEscape(repositoryRoot)) diff -- \(Self.shellEscape(relativePath))"
+        let root = Self.shellEscape(repositoryRoot)
+        let path = Self.shellEscape(relativePath)
+        switch state {
+        case .trackedStaged:
+            return "git -C \(root) diff --cached -- \(path)"
+        case .trackedMixed:
+            return "git -C \(root) diff HEAD -- \(path)"
+        case .untracked:
+            return "git -C \(root) diff --no-index -- /dev/null \(path)"
+        default:
+            return "git -C \(root) diff -- \(path)"
+        }
     }
 
     static func shellEscape(_ value: String) -> String {
@@ -148,6 +159,9 @@ public struct DocumentTruthProvider {
             return DocumentTruthSnapshot(state: .gitUnavailable, absolutePath: absolutePath, repositoryRoot: nil, relativePath: nil)
         }
         guard rootResult.succeeded else {
+            guard rootResult.indicatesNotRepository else {
+                return DocumentTruthSnapshot(state: .gitUnavailable, absolutePath: absolutePath, repositoryRoot: nil, relativePath: nil)
+            }
             return DocumentTruthSnapshot(state: .notInGit, absolutePath: absolutePath, repositoryRoot: nil, relativePath: nil)
         }
 
@@ -204,5 +218,12 @@ public struct DocumentTruthProvider {
             return .trackedStaged
         }
         return .trackedModified
+    }
+}
+
+private extension DocumentTruthGitResult {
+    var indicatesNotRepository: Bool {
+        let text = "\(stdout)\n\(stderr)".lowercased()
+        return text.contains("not a git repository") || text.contains("not git")
     }
 }

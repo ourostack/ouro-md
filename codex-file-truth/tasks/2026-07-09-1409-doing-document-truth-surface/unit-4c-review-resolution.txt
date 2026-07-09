@@ -1,0 +1,24 @@
+Reviewer: Schrodinger (019f48e5-f93c-7bf1-b0de-846e0fb16ed7)
+
+Findings and resolution:
+- BLOCKER: Copy Git Diff Command used plain `git diff -- path`, which is empty for staged-only and untracked files.
+  Resolution: DocumentTruthSnapshot now emits state-specific commands:
+  - tracked modified: `git diff -- path`
+  - tracked staged: `git diff --cached -- path`
+  - tracked mixed: `git diff HEAD -- path`
+  - untracked: `git diff --no-index -- /dev/null path`
+  Evidence: `DocumentTruthTests/testDiffCommandsMatchTheVisibleGitState`.
+- MAJOR: non-repository and git-runtime failures were both treated as local/non-git.
+  Resolution: repo-root failures now return `notInGit` only when stderr/stdout indicates a non-repository; xcrun/git-runtime style errors become `gitUnavailable`.
+  Evidence: `DocumentTruthTests/testGitUnavailableIsDifferentFromLocalNonRepositoryFile`.
+- MINOR: visible `Document truth` wording felt agent-internal.
+  Resolution: visible control copy is now `File status`, while accessibility/source audit still pins the document-truth semantics.
+- MINOR: bottom-left overlay could obscure editor content.
+  Resolution: control moved into a reserved bottom strip with the optional status bar, so it no longer floats over WebView content.
+
+Validation:
+- `swift test --filter 'DocumentTruthTests|CommandPaletteTests|UndoRedoRoutingTests|AppModelDocumentTruthTests|DocumentWindowControllerTests'` passed 45 tests.
+- `swift run ouro-md --uisurfacetest` passed.
+- `swift run ouro-md --accessibilityaudit` passed.
+- `swift build` passed.
+- `scripts/check-coverage.sh` passed 315 tests; `DocumentTruth.swift` 169/169 lines, 82/82 regions.

@@ -69,7 +69,7 @@ final class AccessibilityAuditTester {
             .union(renderedText(OuroMDUpdateInstalledNotice(version: "0.10.0", onOpenAbout: {}, onDismiss: {}), size: NSSize(width: 380, height: 140)))
 
         let runtimeRequired = ["Light", "Dark", "Outline", "Files", "Search"]
-        let documentTruthRequired = ["Document truth"]
+        let documentTruthRequired = ["File status"]
         let missingRuntime = runtimeRequired.filter { expected in
             !labels.contains { $0.localizedCaseInsensitiveContains(expected) }
         }

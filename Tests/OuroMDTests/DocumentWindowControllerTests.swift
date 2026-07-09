@@ -39,6 +39,7 @@ final class DocumentWindowControllerTests: XCTestCase {
         controller.syncChrome()
         XCTAssertTrue(controller.window.isDocumentEdited)
 
+        controller.model.teardown()
         controller.model.markDeletedOnDiskForTesting()
         controller.syncChrome()
 

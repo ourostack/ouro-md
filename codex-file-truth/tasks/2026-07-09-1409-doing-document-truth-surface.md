@@ -115,9 +115,9 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 **What**: Add a compact document truth control to the editor/status/title-adjacent surface using existing styling patterns, with a small action menu and honest labels.
 **Acceptance**: Unit 4a tests pass, the control is visible without opening the sidebar, and it does not overlap editor content. Evidence: `swift run ouro-md --uisurfacetest`, `swift run ouro-md --accessibilityaudit`, and `swift build` passed.
 
-### ⬜ Unit 4c: Sidebar-Free Document Truth UI - Coverage & Refactor
+### ✅ Unit 4c: Sidebar-Free Document Truth UI - Coverage & Refactor
 **What**: Refine layout, accessibility strings, and status-bar interaction while keeping the control lightweight.
-**Acceptance**: UI tests pass and source-fit review finds no dashboard/agent overreach.
+**Acceptance**: UI tests pass and source-fit review finds no dashboard/agent overreach. Evidence: harsh reviewer findings resolved; focused document truth/command/window suite passed 45 tests; `--uisurfacetest`, `--accessibilityaudit`, `swift build`, and `scripts/check-coverage.sh` passed with `DocumentTruth.swift` 169/169 lines and 82/82 regions.
 
 ### ⬜ Unit 4d: Sidebar-Free Document Truth UI - Visual QA Dogfood
 **What**: Run screenshot-backed visual QA on the touched document surface with sidebar closed and status bar hidden/visible where applicable.
@@ -163,3 +163,4 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 - 2026-07-09 14:54 -0700 Unit 3c regression/coverage pass complete: command/menu suite passed 37 tests, `scripts/check-coverage.sh` passed 314 tests with pure support files at 100%, and failed dirty Save As no longer advances the saved-content baseline before a write succeeds.
 - 2026-07-09 14:55 -0700 Unit 4a red UI checks confirmed: `--uisurfacetest` and `--accessibilityaudit` fail only because the sidebar-free document truth control is missing.
 - 2026-07-09 14:57 -0700 Unit 4b green UI implementation confirmed: document truth control renders with status bar hidden, accessibility audit sees it, and `swift build` passed.
+- 2026-07-09 15:11 -0700 Unit 4c review/refactor complete: harsh reviewer blocker on empty staged/untracked diff commands resolved with state-specific diff commands; visible copy changed to `File status`; control moved into a reserved bottom strip; coverage gate passed 315 tests with pure support targets at 100%.

@@ -434,34 +434,38 @@ struct EditorPane: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
-        ZStack {
-            EditorWebView(model: model)
-            VStack {
-                HStack {
+        VStack(spacing: 0) {
+            ZStack {
+                EditorWebView(model: model)
+                VStack {
+                    HStack {
+                        Spacer()
+                        if model.findVisible {
+                            FindBar(model: model)
+                                .padding([.top, .trailing], 10)
+                        }
+                    }
                     Spacer()
-                    if model.findVisible {
-                        FindBar(model: model)
-                            .padding([.top, .trailing], 10)
+                }
+                if model.commandPaletteVisible {
+                    GeometryReader { proxy in
+                        CommandPaletteView(model: model)
+                            .frame(width: min(420, max(280, proxy.size.width - 32)))
+                            .position(x: proxy.size.width / 2, y: min(max(170, proxy.size.height * 0.36), proxy.size.height / 2))
                     }
                 }
+            }
+            HStack(alignment: .bottom) {
+                DocumentTruthControl(model: model)
                 Spacer()
-                HStack(alignment: .bottom) {
-                    DocumentTruthControl(model: model)
-                        .padding([.leading, .bottom], 10)
-                    Spacer()
-                    if model.statusBarVisible {
-                        DocumentStatusBar(model: model)
-                            .padding([.trailing, .bottom], 10)
-                    }
+                if model.statusBarVisible {
+                    DocumentStatusBar(model: model)
                 }
             }
-            if model.commandPaletteVisible {
-                GeometryReader { proxy in
-                    CommandPaletteView(model: model)
-                        .frame(width: min(420, max(280, proxy.size.width - 32)))
-                        .position(x: proxy.size.width / 2, y: min(max(170, proxy.size.height * 0.36), proxy.size.height / 2))
-                }
-            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(.regularMaterial)
+            .overlay(Divider(), alignment: .top)
         }
         .frame(minWidth: 400, minHeight: 320)
     }
@@ -495,7 +499,7 @@ struct DocumentTruthControl: View {
             HStack(spacing: 6) {
                 Image(systemName: iconName)
                     .font(.system(size: 11, weight: .semibold))
-                Text("Document truth · \(model.documentTruthDisplayLabel)")
+                Text("File status · \(model.documentTruthDisplayLabel)")
                     .lineLimit(1)
                     .truncationMode(.middle)
             }

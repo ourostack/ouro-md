@@ -51,6 +51,15 @@ final class DocumentTruthTests: XCTestCase {
         XCTAssertEqual(gitUnavailable.snapshot(for: url).label, "Git unavailable")
         XCTAssertEqual(local.snapshot(for: url).state, .notInGit)
         XCTAssertEqual(local.snapshot(for: url).label, "Local file")
+
+        let failedGit = DocumentTruthProvider(
+            gitRunner: FakeGitRunner { command, _ in
+                XCTAssertEqual(command.arguments, ["rev-parse", "--show-toplevel"])
+                return DocumentTruthGitResult(exitCode: 1, stdout: "", stderr: "xcrun: error: invalid active developer path")
+            },
+            fileExists: { _ in true }
+        )
+        XCTAssertEqual(failedGit.snapshot(for: url).state, .gitUnavailable)
     }
 
     func testDefaultFileExistenceProbeWorksForExistingFiles() throws {
@@ -91,6 +100,25 @@ final class DocumentTruthTests: XCTestCase {
         XCTAssertEqual(providerForTracked(status: "M  docs/today.md\n").snapshot(for: fileURL).label, "Staged changes")
         XCTAssertEqual(providerForTracked(status: "MM docs/today.md\n").snapshot(for: fileURL).state, .trackedMixed)
         XCTAssertEqual(providerForTracked(status: "MM docs/today.md\n").snapshot(for: fileURL).label, "Mixed changes")
+    }
+
+    func testDiffCommandsMatchTheVisibleGitState() {
+        XCTAssertEqual(
+            providerForTracked(status: " M docs/today.md\n").snapshot(for: fileURL).gitDiffCommand,
+            "git -C /repo diff -- docs/today.md"
+        )
+        XCTAssertEqual(
+            providerForTracked(status: "M  docs/today.md\n").snapshot(for: fileURL).gitDiffCommand,
+            "git -C /repo diff --cached -- docs/today.md"
+        )
+        XCTAssertEqual(
+            providerForTracked(status: "MM docs/today.md\n").snapshot(for: fileURL).gitDiffCommand,
+            "git -C /repo diff HEAD -- docs/today.md"
+        )
+        XCTAssertEqual(
+            providerForUntracked(status: "?? docs/today.md\n").snapshot(for: fileURL).gitDiffCommand,
+            "git -C /repo diff --no-index -- /dev/null docs/today.md"
+        )
     }
 
     func testUntrackedAndIgnoredFilesAreNotPresentedAsTrackedDiffs() {

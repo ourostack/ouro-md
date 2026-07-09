@@ -135,7 +135,7 @@ final class UISurfaceTester {
         let documentTruthOK = truthSize.width <= 560
             && truthSize.height <= 460
             && !truthModel.statusBarVisible
-            && containsAll(truthLabels, ["Document truth", "Modified"])
+            && containsAll(truthLabels, ["File status", "Modified"])
         let referenceOK = referenceSize.width <= 600 && referenceSize.height <= 660
         let statusPaletteOK = statusModel.wordCount == 123
             && statusModel.charCount == 456
