@@ -54,7 +54,7 @@ Make Ouro MD feel like a native macOS document editor that exposes the truth of 
 
 **CRITICAL: Every unit header MUST start with status emoji (⬜ for new units).**
 
-### ⬜ Unit 0: Setup/Research
+### ✅ Unit 0: Setup/Research
 **What**: Confirm the source-owned title interception, command routing, status surface, and test targets before code edits.
 **Output**: Notes in the artifact folder and no code changes.
 **Acceptance**: Relevant files and validation commands are known; no hidden branch/worktree drift.
