@@ -66,6 +66,14 @@ final class OuroMDDistributionTests: XCTestCase {
         XCTAssertFalse(screenshots.isEmpty)
         XCTAssertTrue(screenshots.allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
 
+        let screenshotRequirements = try XCTUnwrap(store["screenshotRequirements"] as? [String: Any])
+        XCTAssertEqual(screenshotRequirements["minimumCount"] as? Int, 4)
+        let requiredScenes = try XCTUnwrap(screenshotRequirements["requiredScenes"] as? [String])
+        XCTAssertEqual(
+            Set(requiredScenes),
+            ["folder-workspace", "command-palette", "search-outline", "themed-export-readability"]
+        )
+
         let privacy = try XCTUnwrap(store["privacy"] as? [String: Any])
         XCTAssertEqual(privacy["collectsData"] as? Bool, false)
         XCTAssertEqual(privacy["policyUrl"] as? String, "https://ouro.bot/privacy/")

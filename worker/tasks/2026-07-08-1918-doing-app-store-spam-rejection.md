@@ -70,7 +70,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Updated manifest/docs/check script and green focused validation log.
 **Acceptance**: Unit 1a tests pass green, `./scripts/check-apple-distribution-kit.sh` no longer reports missing screenshot proof for declared local or remote screenshot assets, and docs name the source-owned metadata as canonical.
 
-### ⬜ Unit 1c: Store Metadata Contract — Coverage And Review
+### ✅ Unit 1c: Store Metadata Contract — Coverage And Review
 **What**: Run coverage/validation for new contract code and a harsh sub-agent review of metadata posture, Apple guideline fit, category choice, and source-owned drift checks.
 **Output**: Coverage/validation logs plus reviewer transcript or summary in the artifacts directory.
 **Acceptance**: 100% coverage on new script/test branches, no warnings, reviewer returns `CONVERGED` or findings are fixed and re-reviewed.
@@ -201,7 +201,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Acceptance**: The target version has the uploaded build selected, review submission items reference that target app store version/build, the review submission graph includes a create/fetch record plus item relationship, and exact-state artifacts contain no secrets.
 
 ### ⬜ Unit 7g: App Store Connect Apply — Final Submit
-**What**: Submit the target App Store review submission only after Units 7a-7f pass and the final preflight artifact shows all intended state fields already match except submission state. Use Chrome UI automation only as a fallback for ASC surfaces not exposed by the available API, and capture evidence.
+**What**: Submit the target App Store review submission only after Units 7a-7f pass, `./scripts/check-apple-distribution-kit.sh --final-submission` passes, and the final preflight artifact shows all intended state fields already match except submission state. Use Chrome UI automation only as a fallback for ASC surfaces not exposed by the available API, and capture evidence.
 **Output**: Final submit log, submitted review submission id, and immediate post-submit status JSON.
 **Acceptance**: App Store Connect reports the new version/build submitted for review, or a precise hard blocker is documented after all safe fallback paths.
 
@@ -242,7 +242,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - **Target version**: use `0.9.80` unless App Store Connect proves it already exists in a state that cannot be reused/edited for this resubmission, or upload/processing proves the build/version is already consumed/colliding; in that case bump source/manifest/docs to the next unused patch version before packaging and record the evidence.
 - **Authorized live Apple mutations**: only mutate app `6787262892`, bundle `bot.ouro.md`, team `743GT2AJ24`, target version `0.9.80` or recorded next-patch fallback, app info category, that version's processed build, localizations, review detail notes, screenshot assets, review submission record/items, optional existing rejection-thread reply, and final review submission state.
 - **Hard stops**: stop only for missing/expired Apple credentials, missing signing identities/certificates/provisioning profiles, Apple account/legal/capability blockers, or unrecoverable destructive shared-production actions with no safe staged path. Do not create/delete/rotate Apple keys, certificates, provisioning profiles, bundle IDs, app records, or unrelated submissions.
-- **Exact-state preflight before live apply**: app id, bundle id, team id, target version, app store version id, processed build id, localization ids, review detail id, screenshot set id, screenshot set `appStoreVersionLocalization` relationship, screenshot display type `APP_DESKTOP`, review submission id/item ids, metadata fields, app category, review note, screenshot asset paths/checksums/file sizes/count/order, and final request plan must match the reviewed dry-run artifacts before any live apply or submit request.
+- **Exact-state preflight before live apply**: app id, bundle id, team id, target version, app store version id, processed build id, localization ids, review detail id, screenshot set id, screenshot set `appStoreVersionLocalization` relationship, screenshot display type `APP_DESKTOP`, review submission id/item ids, metadata fields, app category, review note, screenshot asset paths/checksums/file sizes/count/order, `./scripts/check-apple-distribution-kit.sh --final-submission`, and final request plan must match the reviewed dry-run artifacts before any live apply or submit request.
 
 ## Progress Log
 - 2026-07-09 Created from approved planning doc.
@@ -254,3 +254,4 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 0 complete: captured redacted repo/tooling/App Store Connect baseline and artifact secret scan.
 - 2026-07-09 Unit 1a complete: added metadata contract test and captured expected red failure for missing App Store metadata fields.
 - 2026-07-09 Unit 1b complete: added source-owned App Store metadata, docs, and distribution preflight checks; focused metadata test and Apple distribution check pass.
+- 2026-07-09 Unit 1c complete: extracted App Store metadata validator, added selftests for draft/final screenshot gates, wired `./scripts/check-apple-distribution-kit.sh --final-submission`, captured normal-pass and strict-red proof logs, and harsh reviewer gate converged.

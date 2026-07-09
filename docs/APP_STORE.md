@@ -12,6 +12,9 @@ Use `./scripts/check-apple-distribution-kit.sh` for no-secret CI/readiness check
 it delegates manifest validation, dry-run planning, and review-prep blocker
 artifacts to the shared `ourostack/apple-distribution-kit` CLI through the thin
 `scripts/apple-distribution-kit.sh` wrapper.
+Before final App Store submission, run
+`./scripts/check-apple-distribution-kit.sh --final-submission`; that stricter
+mode requires the final screenshot count to satisfy `store.screenshotRequirements`.
 
 ## App Store Connect setup
 
@@ -24,7 +27,7 @@ Create or confirm the app record before uploading:
 - Platform: macOS
 - Category: Developer Tools
 - Price: Free
-- Support URL: `https://ouro.bot/apps/ouro-md/`
+- Support URL: `https://ouro.bot/support/`
 - Marketing URL: `https://ouro.bot/apps/ouro-md/`
 - Privacy Policy URL: `https://ouro.bot/privacy/`
 
@@ -49,7 +52,7 @@ Recommended app/version metadata:
 - Description: starts with `Ouro MD is a local Markdown workspace for people who keep real files, not a hosted notes account.`
 - Keywords: `markdown,local files,folder search,outline,command palette,pdf,html export,gfm,mac`
 - Review notes: use the source-owned `store.reviewNotes` in `distribution/apple-distribution.json`. They should walk reviewers through Shift-Command-O folder opening, File Tree, Outline, Search, Command Palette, theme switching, PDF/HTML export, no account, App Store update behavior, and telemetry-disabled behavior.
-- Screenshots: source-owned assets or explicit remote proof URIs live in `store.screenshots`. The first resubmission needs at least four fresh local screenshots showing folder workspace, command palette, search/outline, and themed export/readability before final submit.
+- Screenshots: source-owned assets or explicit remote proof URIs live in `store.screenshots`. `store.screenshotRequirements` requires at least four fresh local screenshots showing folder workspace, command palette, search/outline, and themed export/readability before final submit.
 - App previews: optional for the first submission.
 - Version release notes: use `OuroMDRelease.releaseHighlights` for the submitted version.
 
@@ -106,6 +109,12 @@ Check local readiness:
 ```sh
 ./scripts/check-apple-distribution-kit.sh
 ./scripts/package-app-store.sh --readiness
+```
+
+Check final submission readiness after screenshots are generated and declared:
+
+```sh
+./scripts/check-apple-distribution-kit.sh --final-submission
 ```
 
 Build the package:

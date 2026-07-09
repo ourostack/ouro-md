@@ -15,6 +15,19 @@ wrapper="scripts/apple-distribution-kit.sh"
 manifest="distribution/apple-distribution.json"
 artifact_dir="${APPLE_DISTRIBUTION_ARTIFACT_DIR:-.build/apple-distribution-kit}"
 review_artifact="$artifact_dir/app-store-review-prep.json"
+final_submission=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --final-submission)
+      final_submission=1
+      shift
+      ;;
+    *)
+      fail "unknown argument: $1"
+      ;;
+  esac
+done
 
 [[ -x "$wrapper" ]] || fail "missing thin wrapper: $wrapper"
 [[ -f "$manifest" ]] || fail "missing canonical manifest: $manifest"
@@ -26,63 +39,11 @@ manifest_version="$(
 [[ "$manifest_version" == "$source_version" ]] \
   || fail "manifest mac-app-store version $manifest_version does not match OuroMDRelease.version $source_version"
 
-node <<'NODE'
-const fs = require("fs");
-const manifest = JSON.parse(fs.readFileSync("distribution/apple-distribution.json", "utf8"));
-const channel = manifest.channels.find((candidate) => candidate.id === "mac-app-store");
-const store = channel && channel.store;
-function fail(message) {
-  console.error(`error: ${message}`);
-  process.exit(1);
-}
-function requireString(field, limit) {
-  const value = store && store[field];
-  if (typeof value !== "string" || value.trim() === "") {
-    fail(`mac-app-store store.${field} is required`);
-  }
-  if (limit && value.length > limit) {
-    fail(`mac-app-store store.${field} exceeds ${limit} characters`);
-  }
-  return value;
-}
-if (!store) fail("mac-app-store store metadata is required");
-if (store.category !== "DEVELOPER_TOOLS") fail("mac-app-store category must be DEVELOPER_TOOLS");
-if (store.subtitle !== "Local Markdown Workspace") fail("mac-app-store subtitle must be Local Markdown Workspace");
-const promotionalText = requireString("promotionalText", 170);
-const description = requireString("description");
-const keywords = requireString("keywords", 100);
-const reviewNotes = requireString("reviewNotes");
-for (const forbidden of ["The Markdown App", "quiet Markdown editor"]) {
-  for (const [field, value] of Object.entries({ promotionalText, description, reviewNotes })) {
-    if (value.toLowerCase().includes(forbidden.toLowerCase())) {
-      fail(`mac-app-store store.${field} must not use generic phrase: ${forbidden}`);
-    }
-  }
-}
-for (const required of ["local Markdown", "command palette"]) {
-  if (!promotionalText.toLowerCase().includes(required.toLowerCase())) {
-    fail(`mac-app-store promotionalText must mention ${required}`);
-  }
-}
-for (const required of ["folder search", "PDF"]) {
-  if (!description.toLowerCase().includes(required.toLowerCase())) {
-    fail(`mac-app-store description must mention ${required}`);
-  }
-}
-for (const required of ["markdown", "local files", "folder search", "outline", "command palette", "pdf"]) {
-  if (!keywords.toLowerCase().includes(required.toLowerCase())) {
-    fail(`mac-app-store keywords must include ${required}`);
-  }
-}
-for (const required of ["Shift-Command-O", "File Tree", "Outline", "Search", "Command Palette", "PDF", "HTML", "No account"]) {
-  if (!reviewNotes.toLowerCase().includes(required.toLowerCase())) {
-    fail(`mac-app-store reviewNotes must include ${required}`);
-  }
-}
-if (!Array.isArray(store.screenshots) || store.screenshots.length === 0) {
-  fail("mac-app-store screenshots must include local assets or explicit remote proof");
-}
-NODE
+metadata_args=(--manifest "$manifest")
+if [[ "$final_submission" == 1 ]]; then
+  metadata_args+=(--final-screenshots)
+fi
+node scripts/check-app-store-metadata.mjs "${metadata_args[@]}"
 
 if ! grep -Eq 'apple-distribution-kit|apple-distribution-kit/dist/cli\.js' "$wrapper"; then
   fail "$wrapper must delegate to the shared apple-distribution-kit"

@@ -28,6 +28,15 @@
         "supportUrl": "https://ouro.bot/support/",
         "marketingUrl": "https://ouro.bot/apps/ouro-md/",
         "reviewNotes": "Review path: No account or sample login is required. Create or open a Markdown file, then use Shift-Command-O to open a folder. Use the File Tree, Outline, and Search sidebars; open the Command Palette with Shift-Command-P; switch themes; export PDF or HTML from the File menu. The App Store build has direct-download updates and telemetry disabled.",
+        "screenshotRequirements": {
+          "minimumCount": 4,
+          "requiredScenes": [
+            "folder-workspace",
+            "command-palette",
+            "search-outline",
+            "themed-export-readability"
+          ]
+        },
         "screenshots": [
           "asc://screenshots/80a8620a-643a-46bd-9e39-ab19f26ba424"
         ],
