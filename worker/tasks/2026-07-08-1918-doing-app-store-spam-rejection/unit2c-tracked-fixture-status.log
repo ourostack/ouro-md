@@ -1,0 +1,17 @@
+ M Sources/OuroMDCore/OuroMDRelease.swift
+A  Tests/Fixtures/welcome-app-store-positioning.md
+ M Tests/OuroMDTests/OuroMDPositioningTests.swift
+?? worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit2c-accessibilityaudit.log
+?? worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit2c-firstlaunchtest.log
+?? worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit2c-make-app.log
+?? worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit2c-review-fix-green-positioning-tests.log
+?? worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit2c-review-fix-red-positioning-tests.exitcode
+?? worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit2c-review-fix-red-positioning-tests.log
+?? worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit2c-run-visual-qa.log
+?? worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit2c-swift-test.log
+?? worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit2c-tracked-fixture-status.log
+?? worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit2c-uisurfacetest.log
+?? worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit2c-visual-absurdity-ledger.md
+?? worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit2c-welcome-snapshot-dimensions.log
+?? worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit2c-welcome-snapshot.log
+?? worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit2c-welcome-snapshot.png

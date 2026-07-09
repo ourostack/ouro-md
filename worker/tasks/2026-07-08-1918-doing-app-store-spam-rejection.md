@@ -85,7 +85,7 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Updated Swift source/tests/version files plus green focused test log.
 **Acceptance**: Unit 2a tests pass green, release version and manifest version match, and app-owned copy no longer presents Ouro MD as merely a generic Markdown editor.
 
-### ⬜ Unit 2c: App-Visible Positioning — Build, Coverage, And Visual QA
+### ✅ Unit 2c: App-Visible Positioning — Build, Coverage, And Visual QA
 **What**: Run focused Swift tests, `swift test`, `./make-app.sh`, `./scripts/run-visual-qa.sh`, `.build/debug/ouro-md --firstlaunchtest`, `.build/debug/ouro-md --uisurfacetest`, and `.build/debug/ouro-md --accessibilityaudit`; capture screenshots/logs and maintain an absurdity ledger.
 **Output**: Build/test/visual logs, any captured screenshots, and `visual-absurdity-ledger.md`.
 **Acceptance**: Tests/build/visual QA pass, ledger has no `ready` or `needs reviewer gate` items, and a harsh UI/native reviewer gate converges.
@@ -257,3 +257,4 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 1c complete: extracted App Store metadata validator, added selftests for draft/final screenshot gates, wired `./scripts/check-apple-distribution-kit.sh --final-submission`, captured normal-pass and strict-red proof logs, and harsh reviewer gate converged.
 - 2026-07-09 Unit 2a complete: added app-visible positioning tests for shell/About subtitle, welcome copy, and release highlights; focused suite fails red against generic current copy.
 - 2026-07-09 Unit 2b complete: updated About/shell subtitle, first-launch welcome copy, release highlights, and CLI help to local-workspace positioning; focused positioning, shell, release, distribution metadata, and Apple distribution checks pass.
+- 2026-07-09 Unit 2c complete: full Swift tests, app build, visual QA, first-launch, UI-surface, accessibility, exact welcome snapshot, absurdity ledger, and harsh UI/native reviewer gate passed after review fixes for user-facing release highlights and tracked fixture drift.

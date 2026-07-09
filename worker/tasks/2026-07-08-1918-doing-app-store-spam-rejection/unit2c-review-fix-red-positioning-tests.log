@@ -1,0 +1,36 @@
+[0/1] Planning build
+Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/5] Compiling OuroMDTests OuroMDPositioningTests.swift
+[4/5] Emitting module OuroMDTests
+[4/6] Write Objects.LinkFileList
+[5/6] Linking ouro-mdPackageTests
+Build complete! (3.42s)
+Test Suite 'Selected tests' started at 2026-07-08 22:34:33.826.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-08 22:34:33.829.
+Test Suite 'OuroMDPositioningTests' started at 2026-07-08 22:34:33.829.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsCarryReviewFacingDifferentiators]' started.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsCarryReviewFacingDifferentiators]' passed (0.002 seconds).
+Test Case '-[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsDoNotExposeInternalReviewRemediationLanguage]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:55: error: -[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsDoNotExposeInternalReviewRemediationLanguage] : XCTAssertFalse failed - release highlights should not expose internal review language: positioned
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:55: error: -[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsDoNotExposeInternalReviewRemediationLanguage] : XCTAssertFalse failed - release highlights should not expose internal review language: called out
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:55: error: -[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsDoNotExposeInternalReviewRemediationLanguage] : XCTAssertFalse failed - release highlights should not expose internal review language: review notes
+Test Case '-[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsDoNotExposeInternalReviewRemediationLanguage]' failed (4.244 seconds).
+Test Case '-[OuroMDTests.OuroMDPositioningTests testShellAboutSubtitleUsesLocalWorkspacePositioning]' started.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testShellAboutSubtitleUsesLocalWorkspacePositioning]' passed (0.003 seconds).
+Test Case '-[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow]' started.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDPositioningTests testWelcomeVisualFixtureMatchesSourceWelcomeCopy]' started.
+/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/OuroMDTests/OuroMDPositioningTests.swift:67: error: -[OuroMDTests.OuroMDPositioningTests testWelcomeVisualFixtureMatchesSourceWelcomeCopy] : failed: caught error: "Error Domain=NSCocoaErrorDomain Code=260 "The file “welcome-app-store-positioning.md” couldn’t be opened because there is no such file." UserInfo={NSFilePath=/Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/Fixtures/welcome-app-store-positioning.md, NSURL=file:///Users/arimendelow/Projects/ouro-md-app-store-spam-rejection/Tests/Fixtures/welcome-app-store-positioning.md, NSUnderlyingError=0xbd0c49110 {Error Domain=NSPOSIXErrorDomain Code=2 "No such file or directory"}}"
+Test Case '-[OuroMDTests.OuroMDPositioningTests testWelcomeVisualFixtureMatchesSourceWelcomeCopy]' failed (0.003 seconds).
+Test Suite 'OuroMDPositioningTests' failed at 2026-07-08 22:34:38.082.
+	 Executed 5 tests, with 4 failures (1 unexpected) in 4.252 (4.253) seconds
+Test Suite 'ouro-mdPackageTests.xctest' failed at 2026-07-08 22:34:38.082.
+	 Executed 5 tests, with 4 failures (1 unexpected) in 4.252 (4.253) seconds
+Test Suite 'Selected tests' failed at 2026-07-08 22:34:38.082.
+	 Executed 5 tests, with 4 failures (1 unexpected) in 4.252 (4.255) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

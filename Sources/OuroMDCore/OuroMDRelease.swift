@@ -9,7 +9,7 @@ public enum OuroMDRelease {
     public static let releaseDate = "2026-07-07"
     public static let positioningSubtitle = "Local Markdown workspace for Mac files."
     public static let releaseHighlights = [
-        "Ouro MD is positioned as a local Markdown workspace for Mac files, with folder opening, File Tree, Search, and Outline surfaces available from the first run.",
-        "Command Palette access, theme switching, and PDF/HTML export are called out in the app and review notes. No account is required.",
+        "Open folders as a local Markdown workspace for Mac files, with File Tree, Search, and Outline surfaces available from first launch.",
+        "Use the Command Palette to move quickly through editor, view, theme, PDF, and HTML export commands. No account is required.",
     ]
 }

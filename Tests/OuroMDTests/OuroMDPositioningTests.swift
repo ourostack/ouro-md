@@ -47,4 +47,26 @@ final class OuroMDPositioningTests: XCTestCase {
         }
         XCTAssertFalse(highlights.localizedCaseInsensitiveContains("Markdown editor"))
     }
+
+    func testReleaseHighlightsDoNotExposeInternalReviewRemediationLanguage() {
+        let highlights = OuroMDRelease.releaseHighlights.joined(separator: "\n")
+
+        for forbidden in ["positioned", "called out", "review notes", "remediation", "rejection"] {
+            XCTAssertFalse(
+                highlights.localizedCaseInsensitiveContains(forbidden),
+                "release highlights should not expose internal review language: \(forbidden)"
+            )
+        }
+    }
+
+    func testWelcomeVisualFixtureMatchesSourceWelcomeCopy() throws {
+        let fixtureURL = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Fixtures/welcome-app-store-positioning.md")
+        let fixture = try String(contentsOf: fixtureURL, encoding: .utf8)
+        let normalizedFixture = fixture.hasSuffix("\n") ? String(fixture.dropLast()) : fixture
+
+        XCTAssertEqual(normalizedFixture, Welcome.markdown)
+    }
 }
