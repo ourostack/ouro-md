@@ -194,7 +194,7 @@
 2026-07-09T10:52:01.8128970Z ##[endgroup]
 2026-07-09T10:52:07.2294650Z Apple Swift version 6.0.3 (swiftlang-6.0.3.1.10 clang-1600.0.30.1)
 2026-07-09T10:52:07.2295720Z Target: arm64-apple-macosx14.0
-2026-07-09T10:52:07.2345100Z swift-driver version: 1.115.1 
+2026-07-09T10:52:07.2345100Z swift-driver version: 1.115.1
 2026-07-09T10:52:07.2411350Z ##[group]Run ./scripts/verify-release-version.sh
 2026-07-09T10:52:07.2411760Z [36;1m./scripts/verify-release-version.sh[0m
 2026-07-09T10:52:07.2467660Z shell: /bin/bash -e {0}

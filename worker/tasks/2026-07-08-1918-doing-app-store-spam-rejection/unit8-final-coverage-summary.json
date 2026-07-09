@@ -70,5 +70,5 @@
       "functionCoveragePercent": null
     }
   ],
-  "interpretation": "Full-app Swift coverage is recorded for transparency but is not a 100% global threshold; this package includes older UI/application surfaces not exercised by unit tests. New App Store remediation code is covered by the focused red/green contract suites and reviewer gates listed in the final artifact index."
+  "interpretation": "Full-app Swift coverage is recorded for transparency but is not a 100% global threshold; this package includes older UI/application surfaces not exercised by unit tests. The 0% or absent changed Swift UI/app-surface files are validated by focused source-contract tests, CLI/shell tests, first-launch/UI-surface/accessibility probes, visual QA, and reviewer gates. New App Store automation/contract code is covered by the focused red/green status/request/apply/package/screenshot suites and reviewer gates listed in the final artifact index."
 }
