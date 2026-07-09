@@ -30,6 +30,7 @@ usage:
   scripts/release-policy.sh selftest-vditor-vendor
   scripts/release-policy.sh selftest-shell-dependency-watch
   scripts/release-policy.sh selftest-live-update-runner
+  scripts/release-policy.sh selftest-app-store-resubmission
   scripts/release-policy.sh verify-local --version X.Y.Z --sha SHA --zip ZIP [--dmg DMG] --manifest MANIFEST
   scripts/release-policy.sh verify-published [--repo OWNER/REPO] [--version X.Y.Z] [--sha SHA]
 USAGE
@@ -134,6 +135,165 @@ filter_release_relevant() {
       printf '%s\n' "$path"
     fi
   done
+}
+
+app_store_resubmission_evidence_allows_same_version() {
+  local version="$1"
+  local mode="$2"
+  local base_ref="$3"
+  local relevant_paths="$4"
+  python3 - "$version" "$mode" "$base_ref" "$relevant_paths" <<'PY'
+import hashlib
+import json
+import os
+import re
+import subprocess
+import sys
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+version, mode, base_ref, relevant_blob = sys.argv[1:5]
+
+expected_version = "0.9.80"
+expected_branch = "worker/app-store-spam-rejection"
+expected_evidence_path = Path("worker/tasks/2026-07-08-1918-doing-app-store-spam-rejection/unit7h-final-live-status.json")
+expected_relevant_paths = {
+    "Sources/OuroMD/AppInfoView.swift",
+    "Sources/OuroMD/CLI.swift",
+    "Sources/OuroMD/OuroMDShellContract.swift",
+    "Sources/OuroMD/Welcome.swift",
+    "Sources/OuroMDCore/OuroMDRelease.swift",
+    "scripts/package-app-store.sh",
+    "scripts/pr-preflight.sh",
+    "scripts/release-policy.sh",
+}
+expected_hashes = {
+    "Sources/OuroMD/AppInfoView.swift": "c054480510ad4e98b47dec3c83d1bf07474cd377b5f493b871208bd65dfb4555",
+    "Sources/OuroMD/CLI.swift": "dafba358707fb416c6496b157dfd7398c7d8d393675abc558da63d40ba882929",
+    "Sources/OuroMD/OuroMDShellContract.swift": "4295d8c618bd42ed3ce45d5a83fdbe67c8f56beb7cafa9ded9650ba5f379ae43",
+    "Sources/OuroMD/Welcome.swift": "045af3d3f391471b0775ccf38cfd4f34364c795e35919e3528f31fbd43aade34",
+    "Sources/OuroMDCore/OuroMDRelease.swift": "3b58407df3ba54b5a7bce97280cf08500adfdd5b5b5eea2ca2d892108321db13",
+    "scripts/package-app-store.sh": "0aacf740a5342606ac44317ce6179a0c749ea5867e9201059be45707af24458a",
+    "scripts/pr-preflight.sh": "384aec9149fdf51f993f61572afaaa32640e1dac8bde434865877cbb967faee0",
+    "scripts/release-policy.sh": "79ef3632ae5675ab12b90d7908f634e68b248561834f412bb0bc14d4ae967037",
+    str(expected_evidence_path): "879056295b4fbe4f397ba53eae3f108c43ac957f0eb98ecf72a4a8e6caacbe5e",
+}
+expected_evidence = {
+    "schemaVersion": 1,
+    "capturedAt": "2026-07-09T10:25:51.162Z",
+    "statusPurpose": "submission-readiness",
+    "usedRejectedAuditDefaults": False,
+    "appId": "6787262892",
+    "bundleId": "bot.ouro.md",
+    "teamId": "743GT2AJ24",
+    "currentAppStoreVersionId": "7309944f-cbe8-4518-960c-444e6116ab46",
+    "currentVersionString": expected_version,
+    "currentVersionState": "WAITING_FOR_REVIEW",
+    "appStoreVersionLocalizationId": "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
+    "reviewDetailId": "3bc7284e-27d5-4dd3-a049-b9e859289bd1",
+    "reviewSubmissionId": "b37f847e-0ecb-4e7a-bb00-14e3038b0f4c",
+    "reviewSubmissionState": "WAITING_FOR_REVIEW",
+    "reviewSubmissionItemId": "YjM3Zjg0N2UtMGVjYi00ZTdhLWJiMDAtMTRlMzAzOGIwZjRjfDZ8ODg3ODEyNjgx",
+    "reviewSubmissionItemAppStoreVersionId": "7309944f-cbe8-4518-960c-444e6116ab46",
+    "reviewSubmissionItemState": "READY_FOR_REVIEW",
+    "buildId": "827fa5b9-6994-41eb-bc75-ab3ca469a96f",
+    "buildVersion": expected_version,
+    "buildProcessingState": "VALID",
+    "screenshotSetId": "f37ecb51-c96e-451d-9b29-20d86d7f118e",
+    "screenshotDisplayType": "APP_DESKTOP",
+    "screenshotCount": 4,
+    "screenshotIds": [
+        "ff2cbccb-ec2f-4847-835d-5547c964a979",
+        "b1a6690c-4303-4b0d-87e7-c6345f8a65d3",
+        "e844bca6-e0c6-44cd-86ba-25719cb2c5f9",
+        "d6cb623a-1435-4488-a793-59a6d9efe327",
+    ],
+    "screenshotDeliveryStates": ["COMPLETE", "COMPLETE", "COMPLETE", "COMPLETE"],
+}
+
+
+def reject():
+    raise SystemExit(1)
+
+
+def git_text(*args):
+    try:
+        return subprocess.check_output(["git", *args], text=True, stderr=subprocess.DEVNULL).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return ""
+
+
+def release_policy_hash(path):
+    text = Path(path).read_text(encoding="utf-8")
+    pattern = re.compile(r'("scripts/release-policy\.sh":\s*")[0-9a-f]{64}(")')
+    text = pattern.sub(lambda match: match.group(1) + "<release-policy-self-sha256>" + match.group(2), text, count=1)
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def file_hash(path):
+    if path == "scripts/release-policy.sh":
+        return release_policy_hash(path)
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+if version != expected_version:
+    reject()
+if mode not in {"pr", "main"}:
+    reject()
+if base_ref not in {"main", "origin/main", "refs/heads/main"}:
+    reject()
+
+repository = os.environ.get("GITHUB_REPOSITORY")
+if repository and repository != "ourostack/ouro-md":
+    reject()
+
+event = os.environ.get("GITHUB_EVENT_NAME")
+if mode == "pr":
+    if event and event not in {"pull_request", "pull_request_target"}:
+        reject()
+    branch = os.environ.get("GITHUB_HEAD_REF") or git_text("rev-parse", "--abbrev-ref", "HEAD")
+    if branch != expected_branch:
+        reject()
+    github_ref = os.environ.get("GITHUB_REF", "")
+    if github_ref.startswith("refs/pull/") and github_ref != "refs/pull/103/merge":
+        reject()
+else:
+    if event and event != "push":
+        reject()
+    ref_name = os.environ.get("GITHUB_REF_NAME") or git_text("rev-parse", "--abbrev-ref", "HEAD")
+    if event and ref_name != "main":
+        reject()
+
+actual_relevant_paths = {line for line in relevant_blob.splitlines() if line}
+if actual_relevant_paths != expected_relevant_paths:
+    reject()
+
+for path, expected_hash in expected_hashes.items():
+    try:
+        actual_hash = file_hash(path)
+    except OSError:
+        reject()
+    if actual_hash != expected_hash:
+        reject()
+
+try:
+    data = json.loads(expected_evidence_path.read_text(encoding="utf-8"))
+except (OSError, json.JSONDecodeError):
+    reject()
+
+for key, expected_value in expected_evidence.items():
+    if data.get(key) != expected_value:
+        reject()
+
+try:
+    captured_at = datetime.fromisoformat(str(data["capturedAt"]).replace("Z", "+00:00"))
+except (KeyError, TypeError, ValueError):
+    reject()
+if datetime.now(timezone.utc) - captured_at > timedelta(days=14):
+    reject()
+
+print(expected_evidence_path)
+PY
 }
 
 stream_has_needle() {
@@ -465,6 +625,11 @@ freshness_mode() {
       echo "release freshness: $version is newer than latest release $latest_tag"
       return 0
     fi
+    local app_store_resubmission_evidence
+    if app_store_resubmission_evidence="$(app_store_resubmission_evidence_allows_same_version "$version" "$mode" "$base_ref" "$relevant")"; then
+      echo "release freshness: $version matches latest release $latest_tag, allowed by App Store resubmission evidence $app_store_resubmission_evidence"
+      return 0
+    fi
     printf '%s\n' "$relevant" >&2
     fail "app/release-affecting changes require a version greater than latest published release $latest_tag"
   fi
@@ -490,6 +655,11 @@ freshness_mode() {
   relevant="$(printf '%s\n' "$changed" | filter_release_relevant || true)"
   if [[ -z "$relevant" ]]; then
     echo "release freshness: v$version exists at $target_sha, but no app/release-affecting paths changed"
+    return 0
+  fi
+  local app_store_resubmission_evidence
+  if app_store_resubmission_evidence="$(app_store_resubmission_evidence_allows_same_version "$version" "$mode" "$base_ref" "$relevant")"; then
+    echo "release freshness: v$version exists at $target_sha, allowed by App Store resubmission evidence $app_store_resubmission_evidence"
     return 0
   fi
 
@@ -685,6 +855,59 @@ selftest_paths_mode() {
   echo "release policy paths selftest ok"
 }
 
+selftest_app_store_resubmission_mode() {
+  local expected_relevant missing_relevant extra_relevant
+  expected_relevant="$(cat <<'EOF'
+Sources/OuroMD/AppInfoView.swift
+Sources/OuroMD/CLI.swift
+Sources/OuroMD/OuroMDShellContract.swift
+Sources/OuroMD/Welcome.swift
+Sources/OuroMDCore/OuroMDRelease.swift
+scripts/package-app-store.sh
+scripts/pr-preflight.sh
+scripts/release-policy.sh
+EOF
+)"
+  missing_relevant="$(printf '%s\n' "$expected_relevant" | grep -v '^scripts/package-app-store.sh$')"
+  extra_relevant="$(printf '%s\nResources/Fake.swift\n' "$expected_relevant")"
+
+  GITHUB_REPOSITORY="ourostack/ouro-md" \
+    GITHUB_EVENT_NAME="pull_request" \
+    GITHUB_HEAD_REF="worker/app-store-spam-rejection" \
+    GITHUB_REF="refs/pull/103/merge" \
+    app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" >/dev/null \
+    || fail "app store resubmission selftest did not accept the exact PR #103 waiver"
+
+  GITHUB_REPOSITORY="ourostack/ouro-md" \
+    GITHUB_EVENT_NAME="push" \
+    GITHUB_REF_NAME="main" \
+    app_store_resubmission_evidence_allows_same_version "0.9.80" "main" "main" "$expected_relevant" >/dev/null \
+    || fail "app store resubmission selftest did not accept the exact main merge waiver"
+
+  if GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
+    app_store_resubmission_evidence_allows_same_version "0.9.81" "pr" "origin/main" "$expected_relevant" >/dev/null; then
+    fail "app store resubmission selftest accepted the wrong version"
+  fi
+  if GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
+    app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$missing_relevant" >/dev/null; then
+    fail "app store resubmission selftest accepted a missing relevant path"
+  fi
+  if GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
+    app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$extra_relevant" >/dev/null; then
+    fail "app store resubmission selftest accepted an extra relevant path"
+  fi
+  if GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/other" GITHUB_REF="refs/pull/103/merge" \
+    app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" >/dev/null; then
+    fail "app store resubmission selftest accepted the wrong branch"
+  fi
+  if GITHUB_REPOSITORY="someone/fork" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
+    app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" >/dev/null; then
+    fail "app store resubmission selftest accepted the wrong repository"
+  fi
+
+  echo "app store resubmission selftest ok"
+}
+
 selftest_package_guards_mode() {
   python3 <<'PY'
 from pathlib import Path
@@ -787,6 +1010,7 @@ surfaces = (
         "run: ./scripts/check-shell-boundary.sh --selftest",
         "run: ./scripts/check-shell-boundary.sh",
         "run: ./scripts/release-policy.sh selftest-release-api-fallback",
+        "run: ./scripts/release-policy.sh selftest-app-store-resubmission",
     ),
     (
         "pr-preflight.sh",
@@ -794,9 +1018,10 @@ surfaces = (
         "./scripts/check-shell-boundary.sh --selftest",
         "./scripts/check-shell-boundary.sh",
         "./scripts/release-policy.sh selftest-release-api-fallback",
+        "./scripts/release-policy.sh selftest-app-store-resubmission",
     ),
 )
-for surface, text, selftest_line, scan_line, release_api_line in surfaces:
+for surface, text, selftest_line, scan_line, release_api_line, app_store_resubmission_line in surfaces:
     lines = {line.strip() for line in text.splitlines()}
     if selftest_line not in lines:
         raise SystemExit(f"{surface} must run {selftest_line}")
@@ -804,6 +1029,8 @@ for surface, text, selftest_line, scan_line, release_api_line in surfaces:
         raise SystemExit(f"{surface} must run {scan_line}")
     if release_api_line not in lines:
         raise SystemExit(f"{surface} must run {release_api_line}")
+    if app_store_resubmission_line not in lines:
+        raise SystemExit(f"{surface} must run {app_store_resubmission_line}")
 PY
   echo "release package guard selftest ok"
 }
@@ -1235,6 +1462,7 @@ case "$cmd" in
   selftest-vditor-vendor) selftest_vditor_vendor_mode "$@" ;;
   selftest-shell-dependency-watch) selftest_shell_dependency_watch_mode "$@" ;;
   selftest-live-update-runner) selftest_live_update_runner_mode "$@" ;;
+  selftest-app-store-resubmission) selftest_app_store_resubmission_mode "$@" ;;
   selftest-paths) selftest_paths_mode "$@" ;;
   verify-local) verify_local_mode "$@" ;;
   verify-published) verify_published_mode "$@" ;;

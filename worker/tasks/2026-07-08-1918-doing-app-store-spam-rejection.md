@@ -215,12 +215,12 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 **Output**: Updated docs/state and final artifact index.
 **Acceptance**: Docs point to the submitted App Store evidence, all satisfied checkboxes are backed by artifacts, and no stale `drafting`/human-gate language remains.
 
-### ⬜ Unit 8b: Final Branch Review And Push
+### ✅ Unit 8b: Final Branch Review And Push
 **What**: Run final harsh branch review over all diffs, validation artifacts, and App Store submission evidence; fix/re-review BLOCKER/MAJOR findings; push all commits.
 **Output**: Reviewer transcript or summary, final commits, and pushed branch state.
 **Acceptance**: Reviewer converges, branch is pushed, and `git status --short` is clean.
 
-### ⬜ Unit 8c: PR/Merge Or Repo Terminal Path
+### 🔄 Unit 8c: PR/Merge Or Repo Terminal Path
 **What**: Follow the repo terminal path: open/merge a PR if branch protection requires it, or otherwise land the branch according to repository practice after reviewer convergence and green checks.
 **Output**: PR/merge/check evidence, or documented non-PR terminal path evidence.
 **Acceptance**: Source changes are landed or a true branch-protection/account blocker is recorded with exact evidence.
@@ -283,3 +283,5 @@ Resolve the App Store Connect rejection for Ouro MD macOS by making a new submis
 - 2026-07-09 Unit 7g complete: posted the reviewed App Review reply in the existing review thread, captured `Messages (2)` proof, passed `./scripts/check-apple-distribution-kit.sh --final-submission`, ran the live final-submit executor against exact preflight `unit7g-final-submit-preflight.json`, and App Store Connect returned submission `b37f847e-0ecb-4e7a-bb00-14e3038b0f4c` state `WAITING_FOR_REVIEW`.
 - 2026-07-09 Unit 7h complete: programmatically polled App Store Connect after submission and verified version `0.9.80`, review submission `b37f847e-0ecb-4e7a-bb00-14e3038b0f4c`, and version state are `WAITING_FOR_REVIEW`, selected build `827fa5b9-6994-41eb-bc75-ab3ca469a96f` is `VALID`, and four `APP_DESKTOP` screenshots are `COMPLETE`.
 - 2026-07-09 Unit 8a complete: synced planning/doing completion checklists, added final artifact index, captured final green Swift test, coverage-form test, App Store distribution check, coverage interpretation, and zero-byte severe leak scan.
+- 2026-07-09 Unit 8b complete: final branch review converged after fixes for raw App Store asset evidence, whitespace in preserved logs, and an overbroad first release-freshness exception; the final exception is pinned to PR #103/main merge context, exact paths, hashes, App Store IDs, and final submission evidence.
+- 2026-07-09 Unit 8c in progress: PR #103 is open; initial CI failed release freshness because this resubmission intentionally keeps submitted App Store version `0.9.80`; Unit 8c adds the narrowed same-version resubmission waiver and local PR/main freshness simulations are green.
