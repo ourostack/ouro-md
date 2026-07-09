@@ -6,9 +6,9 @@
 - Branch: `codex-file-truth/product-surface`
 - Worktree: `/Users/arimendelow/Projects/ouro-md-file-truth`
 - Planning doc: `codex-file-truth/tasks/2026-07-09-1409-planning-document-truth-surface.md`
-- Doing doc: pending planner conversion.
-- Gate state: planning approved under autopilot/human-gates-waived execution.
-- Next action: convert to doing, then execute with TDD.
+- Doing doc: `codex-file-truth/tasks/2026-07-09-1409-doing-document-truth-surface.md`
+- Gate state: doing doc drafted; reviewer gate next.
+- Next action: run doing-doc reviewer gate, mark ready, then execute with TDD.
 
 ## Terminal Evidence
 
