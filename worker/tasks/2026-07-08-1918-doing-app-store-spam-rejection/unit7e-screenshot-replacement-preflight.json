@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-09T09:58:36.864Z",
+  "appId": "6787262892",
+  "targetVersion": "0.9.80",
+  "appStoreVersionLocalizationId": "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
+  "appScreenshotSetId": "f37ecb51-c96e-451d-9b29-20d86d7f118e",
+  "existingRemoteScreenshots": [
+    {
+      "id": "80a8620a-643a-46bd-9e39-ab19f26ba424",
+      "fileName": "ouro-md-app-store-screenshot-2880x1800.png",
+      "assetDeliveryState": "COMPLETE"
+    }
+  ],
+  "existingRemoteScreenshotIds": [
+    "80a8620a-643a-46bd-9e39-ab19f26ba424"
+  ],
+  "replacementStrategy": "delete existing remote screenshots from target APP_DESKTOP set, then reserve/upload/commit four local screenshots in manifest order",
+  "localScreenshots": [
+    {
+      "order": 1,
+      "scene": "folder-workspace",
+      "path": "store-assets/app-store/01-folder-workspace.png",
+      "fileName": "01-folder-workspace.png",
+      "fileSize": 244440,
+      "md5": "403d078e80bc58ef95ca91dd270b2297",
+      "matchesDryRun": true
+    },
+    {
+      "order": 2,
+      "scene": "command-palette",
+      "path": "store-assets/app-store/02-command-palette.png",
+      "fileName": "02-command-palette.png",
+      "fileSize": 164414,
+      "md5": "7b85eedee6a59d634b3cbe7fa0f2e66c",
+      "matchesDryRun": true
+    },
+    {
+      "order": 3,
+      "scene": "search-outline",
+      "path": "store-assets/app-store/03-search-outline.png",
+      "fileName": "03-search-outline.png",
+      "fileSize": 236123,
+      "md5": "047747e665f5519c5879f6ca07db8965",
+      "matchesDryRun": true
+    },
+    {
+      "order": 4,
+      "scene": "themed-export-readability",
+      "path": "store-assets/app-store/04-themed-export-readability.png",
+      "fileName": "04-themed-export-readability.png",
+      "fileSize": 182875,
+      "md5": "3e3146c46bf2551e07fdd3dc236eba6b",
+      "matchesDryRun": true
+    }
+  ],
+  "allLocalFilesMatchDryRun": true
+}

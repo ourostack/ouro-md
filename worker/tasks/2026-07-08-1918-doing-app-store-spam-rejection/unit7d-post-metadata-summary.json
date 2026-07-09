@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-09T09:51:21.405Z",
+  "appId": "6787262892",
+  "bundleId": "bot.ouro.md",
+  "teamId": "743GT2AJ24",
+  "targetVersion": "0.9.80",
+  "appInfo": {
+    "id": "9cfeeca8-42d0-4ad6-a2cb-fae6a95681f8",
+    "primaryCategoryId": "DEVELOPER_TOOLS",
+    "expectedPrimaryCategoryId": "DEVELOPER_TOOLS",
+    "categoryMatches": true
+  },
+  "appInfoLocalization": {
+    "id": "b5bae77f-a94f-4b39-8ebd-841a6306b1c6",
+    "locale": "en-US",
+    "name": "Ouro MD",
+    "subtitle": "Local Markdown Workspace",
+    "expectedSubtitle": "Local Markdown Workspace",
+    "subtitleMatches": true,
+    "privacyPolicyUrl": "https://ouro.bot/privacy/"
+  },
+  "appStoreVersionLocalization": {
+    "id": "5dca4b0b-3e0d-4913-acbd-b172f6c1bacb",
+    "locale": "en-US",
+    "promotionalText": "Local Markdown workspace for Mac files: folder search, outline, command palette, themes, PDF/HTML export, no account.",
+    "expectedPromotionalText": "Local Markdown workspace for Mac files: folder search, outline, command palette, themes, PDF/HTML export, no account.",
+    "promotionalTextMatches": true,
+    "descriptionMatches": true,
+    "keywords": "markdown,local files,folder search,outline,command palette,pdf,html export,gfm,mac",
+    "expectedKeywords": "markdown,local files,folder search,outline,command palette,pdf,html export,gfm,mac",
+    "keywordsMatches": true,
+    "supportUrl": "https://ouro.bot/support/",
+    "marketingUrl": "https://ouro.bot/apps/ouro-md/",
+    "whatsNew": null,
+    "whatsNewStatus": "not-updated; Apple returned STATE_ERROR for whatsNew in unit7d-update-version-localization-direct.json"
+  },
+  "appStoreReviewDetail": {
+    "id": "3bc7284e-27d5-4dd3-a049-b9e859289bd1",
+    "notes": "Review path: No account or sample login is required. Create or open a Markdown file, then use Shift-Command-O to open a folder. Use the File Tree, Outline, and Search sidebars; open the Command Palette with Shift-Command-P; switch themes; export PDF or HTML from the File menu. The App Store build has direct-download updates and telemetry disabled.",
+    "expectedNotes": "Review path: No account or sample login is required. Create or open a Markdown file, then use Shift-Command-O to open a folder. Use the File Tree, Outline, and Search sidebars; open the Command Palette with Shift-Command-P; switch themes; export PDF or HTML from the File menu. The App Store build has direct-download updates and telemetry disabled.",
+    "notesMatches": true,
+    "demoAccountRequired": false
+  },
+  "allRequiredMetadataMatches": true
+}
