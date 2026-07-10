@@ -1,6 +1,6 @@
 # Doing: Document Truth Surface
 
-**Status**: in-progress
+**Status**: shipped
 **Execution Mode**: direct
 **Created**: 2026-07-09 14:22 -0700
 **Planning**: ./2026-07-09-1409-planning-document-truth-surface.md
@@ -14,6 +14,12 @@
 
 ## Objective
 Make Ouro MD feel like a native macOS document editor that exposes the truth of the current file: where it lives, whether it is edited, and whether its saved edits are visible to other tools through plain file and git state. This solves the human-agent collaboration problem without adding an agent runner, sidebar dependency, hidden metadata, or heavy review UI.
+
+## Published Evidence
+- PR #104 merged to `main`: `2e5665f4bb89f9e22af0ebef0e80cdab01260385`.
+- GitHub Release `v0.9.81` published with zip, DMG, and manifest assets.
+- Release workflow passed, including published release verification, hosted installer verification, and live update verification from `0.9.80` to `0.9.81`.
+- Main CI passed on attempt 2 after rerunning a wedged Swift-tests runner; local `./scripts/swift-test-budget.sh` passed 316 tests in 94 seconds.
 
 ## Upstream Work Items
 - None
