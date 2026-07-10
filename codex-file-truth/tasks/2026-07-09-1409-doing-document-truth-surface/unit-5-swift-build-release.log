@@ -1,0 +1,53 @@
+Building for production...
+[0/47] Write sources
+[1/47] Write swift-version--58304C5D6DBC2206.txt
+[2/47] Copying web
+[3/47] Compiling cmark-gfm-extensions core-extensions.c
+[4/47] Compiling cmark-gfm xml.c
+[5/47] Compiling cmark-gfm-extensions tasklist.c
+[6/47] Compiling cmark-gfm-extensions strikethrough.c
+[7/47] Compiling cmark-gfm syntax_extension.c
+[8/47] Compiling cmark-gfm registry.c
+[9/47] Compiling cmark-gfm plugin.c
+[10/47] Compiling cmark-gfm references.c
+[11/47] Compiling cmark-gfm render.c
+[12/47] Compiling cmark-gfm-extensions table.c
+[13/47] Compiling cmark-gfm plaintext.c
+[14/47] Compiling cmark-gfm man.c
+[14/47] Compiling cmark-gfm map.c
+[16/47] Compiling cmark-gfm-extensions tagfilter.c
+[17/47] Compiling cmark-gfm linked_list.c
+[18/47] Compiling cmark-gfm node.c
+[19/47] Compiling cmark-gfm latex.c
+[20/47] Compiling cmark-gfm iterator.c
+[21/47] Compiling cmark-gfm houdini_html_e.c
+[22/47] Compiling cmark-gfm houdini_html_u.c
+[23/47] Compiling cmark-gfm houdini_href_e.c
+[24/47] Compiling cmark-gfm-extensions autolink.c
+[25/47] Compiling cmark-gfm html.c
+[26/47] Compiling cmark-gfm footnotes.c
+[27/47] Compiling cmark-gfm cmark_ctype.c
+[28/47] Write sources
+[30/47] Compiling cmark-gfm cmark.c
+[31/47] Compiling cmark-gfm-extensions ext_scanners.c
+[32/47] Write sources
+[35/47] Compiling cmark-gfm arena.c
+[36/47] Write sources
+[38/47] Compiling cmark-gfm buffer.c
+[39/47] Compiling cmark-gfm commonmark.c
+[40/47] Compiling CAtomic CAtomic.c
+[41/50] Compiling cmark-gfm blocks.c
+[42/50] Compiling cmark-gfm scanners.c
+[43/50] Compiling cmark-gfm inlines.c
+[44/50] Compiling cmark-gfm utf8.c
+[46/51] Compiling OuroMDCore HTMLDocument.swift
+[47/51] Compiling OuroMDAppSupport CommandPaletteCatalog.swift
+[48/51] Compiling OuroAppShellCore AppIdentity.swift
+[49/53] Compiling OuroAppShellContract OuroAppShellContract.swift
+[50/53] Compiling OuroAppShellUI AppShellAboutModel.swift
+[51/54] Compiling OuroAppShellAppKit AppShellWindowPresenter.swift
+[52/54] Compiling Markdown ChildIndexPath.swift
+[53/55] Compiling OuroMD AccessibilityAuditTest.swift
+[53/55] Write Objects.LinkFileList
+[54/55] Linking ouro-md
+Build complete! (34.01s)

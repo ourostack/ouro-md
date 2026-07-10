@@ -5,7 +5,11 @@ import WebKit
 /// marker visually without removing it from the Markdown source.
 final class AlertMarkerTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     private var webView: WKWebView!
+    private var window: NSWindow!
     private var didStart = false
+    private var didFinishNavigation = false
+    private var didReceiveReady = false
+    private var lastPhase = "not started"
 
     func run() -> Never {
         let app = NSApplication.shared
@@ -16,17 +20,20 @@ final class AlertMarkerTester: NSObject, WKScriptMessageHandler, WKNavigationDel
         controller.add(self, name: "ouro")
         configuration.userContentController = controller
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
+        configuration.websiteDataStore = .nonPersistent()
 
         webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 800, height: 600), configuration: configuration)
         webView.navigationDelegate = self
         guard let indexURL = OuroResources.web("index", "html") else {
             FileHandle.standardError.write(Data("alerttest: index.html not found\n".utf8)); exit(1)
         }
-        HeadlessHarness.offscreenHost(webView, size: NSSize(width: 800, height: 600))
+        window = HeadlessHarness.offscreenHostActive(webView, size: NSSize(width: 800, height: 600))
 
+        lastPhase = "loading \(indexURL.path)"
         webView.loadFileURL(indexURL, allowingReadAccessTo: indexURL.deletingLastPathComponent())
-        DispatchQueue.main.asyncAfter(deadline: .now() + 30) {
-            FileHandle.standardError.write(Data("alerttest: timed out\n".utf8)); exit(1)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 40) { [weak self] in
+            let phase = self?.lastPhase ?? "unknown"
+            FileHandle.standardError.write(Data("alerttest: timed out (\(phase))\n".utf8)); exit(1)
         }
         app.run()
         exit(0)
@@ -36,9 +43,11 @@ final class AlertMarkerTester: NSObject, WKScriptMessageHandler, WKNavigationDel
         guard let body = message.body as? [String: Any], let type = body["type"] as? String else { return }
         if type == "ready" {
             guard !didStart else { return }
-            didStart = true
-            webView.evaluateJavaScript(Self.script, completionHandler: nil)
+            didReceiveReady = true
+            lastPhase = "editor ready; waiting for navigation finish"
+            startScriptIfReady()
         } else if type == "alerttest" {
+            lastPhase = "results received"
             let results = body["results"] as? [[String: Any]] ?? []
             var allPassed = true
             for result in results {
@@ -52,9 +61,54 @@ final class AlertMarkerTester: NSObject, WKScriptMessageHandler, WKNavigationDel
         }
     }
 
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        didFinishNavigation = true
+        if !didStart {
+            lastPhase = "navigation finished; waiting for editor ready"
+        }
+        startScriptIfReady()
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        FileHandle.standardError.write(Data("alerttest: navigation failed: \(error)\n".utf8))
+        exit(1)
+    }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        FileHandle.standardError.write(Data("alerttest: provisional navigation failed: \(error)\n".utf8))
+        exit(1)
+    }
+
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        FileHandle.standardError.write(Data("alerttest: web content process terminated\n".utf8))
+        exit(1)
+    }
+
+    private func startScriptIfReady() {
+        guard didReceiveReady, didFinishNavigation, !didStart else { return }
+        didStart = true
+        lastPhase = "editor ready and navigation finished; running alert script"
+        webView.evaluateJavaScript(Self.script) { _, error in
+            if let error {
+                FileHandle.standardError.write(Data("alerttest: script dispatch failed: \(error)\n".utf8))
+                exit(1)
+            }
+            self.lastPhase = "alert script dispatched"
+        }
+    }
+
     private static let script = #"""
     (async function () {
       var results = [];
+      function postResults() {
+        window.webkit.messageHandlers.ouro.postMessage({ type: "alerttest", results: results });
+      }
+      function postFailure(error) {
+        var detail = error && (error.stack || error.message) ? (error.stack || error.message) : String(error);
+        results.push({ name: "alerttest script error", ok: false, detail: detail });
+        postResults();
+      }
+      try {
       function delay(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
       async function waitFor(label, fn) {
         for (var i = 0; i < 70; i++) {
@@ -291,7 +345,11 @@ final class AlertMarkerTester: NSObject, WKScriptMessageHandler, WKNavigationDel
         editedMarker.alertCount === 0 && editedMarker.value.indexOf("> [!CUSTOM]") !== -1,
         editedMarker);
 
-      window.webkit.messageHandlers.ouro.postMessage({ type: "alerttest", results: results });
+      postResults();
+      } catch (error) {
+        postFailure(error);
+      }
     })();
+    undefined;
     """#
 }

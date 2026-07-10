@@ -113,12 +113,28 @@ final class AppModel: ObservableObject {
     @Published var searchRegexp = false
     @Published var commandPaletteVisible = false
     @Published var commandPaletteQuery = ""
+    @Published private(set) var documentTruth = DocumentTruthSnapshot(
+        state: .untitled,
+        absolutePath: nil,
+        repositoryRoot: nil,
+        relativePath: nil
+    )
 
     weak var bridge: EditorBridge?
     /// Invoked whenever window-chrome-relevant state changes.
     var onChromeUpdate: (() -> Void)?
     var presentErrorHandler: ((String, Error) -> Void)?
     var telemetryHandler: ((String, [String: OuroMDTelemetryValue]) -> Void)?
+    var documentTruthProvider = DocumentTruthProvider(gitRunner: ProcessDocumentTruthGitRunner()) {
+        didSet { refreshDocumentTruth() }
+    }
+    var pasteboardWriter: (String) -> Void = { value in
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(value, forType: .string)
+    }
+    var revealInFinderHandler: (URL) -> Void = { url in
+        NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
 
     private let defaults = UserDefaults.standard
     private var pendingMarkdown: String?
@@ -171,6 +187,18 @@ final class AppModel: ObservableObject {
 
     var theme: Theme { ThemeStore.shared.theme(id: themeID) }
     var windowTitle: String { currentURL?.lastPathComponent ?? "Untitled" }
+    var documentTruthDisplayLabel: String {
+        if deletedOnDisk { return "Deleted on disk" }
+        if isDirty {
+            guard currentURL != nil else { return "Unsaved changes" }
+            return "\(documentTruth.label) · unsaved"
+        }
+        return documentTruth.label
+    }
+
+    private func refreshDocumentTruth() {
+        documentTruth = documentTruthProvider.snapshot(for: currentURL)
+    }
 
     /// Reads a text file tolerantly: UTF-8 first, then system detection, then
     /// common legacy encodings — so a non-UTF-8 document still opens instead of
@@ -224,6 +252,7 @@ final class AppModel: ObservableObject {
     func setDirty(_ dirty: Bool) {
         guard dirty != isDirty else { return }
         isDirty = dirty
+        refreshDocumentTruth()
         onChromeUpdate?()
         if dirty { scheduleAutosave() }
     }
@@ -270,6 +299,7 @@ final class AppModel: ObservableObject {
         currentURL = nil
         lastLoadedContent = nil
         deletedOnDisk = false
+        refreshDocumentTruth()
         pushMarkdown(Welcome.markdown)
         isDirty = false
         onChromeUpdate?()
@@ -282,6 +312,7 @@ final class AppModel: ObservableObject {
             self.currentURL = nil
             self.lastLoadedContent = nil
             self.stopWatching()
+            self.refreshDocumentTruth()
             self.pushMarkdown("")
             self.isDirty = false
             self.onChromeUpdate?()
@@ -322,6 +353,7 @@ final class AppModel: ObservableObject {
             self.lastLoadedContent = text
             self.pushMarkdown(text)
             self.isDirty = false
+            self.refreshDocumentTruth()
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
             self.refreshFolder()
             self.startWatching()
@@ -355,6 +387,7 @@ final class AppModel: ObservableObject {
         lastLoadedContent = text
         pushMarkdown(text)
         isDirty = false
+        refreshDocumentTruth()
         NSDocumentController.shared.noteNewRecentDocumentURL(url)
         refreshFolder()
         startWatching()
@@ -405,6 +438,7 @@ final class AppModel: ObservableObject {
             NSDocumentController.shared.noteNewRecentDocumentURL(dest)
             refreshFolder()
             startWatching()
+            refreshDocumentTruth()
             onChromeUpdate?()
             captureTelemetry(
                 "ouro_md_document_renamed",
@@ -446,6 +480,7 @@ final class AppModel: ObservableObject {
                 NSDocumentController.shared.noteNewRecentDocumentURL(url)
             } else {
                 self.currentURL = previousURL
+                self.refreshDocumentTruth()
             }
             completion(ok)
         }
@@ -545,8 +580,8 @@ final class AppModel: ObservableObject {
         completion: @escaping (Bool) -> Void
     ) {
         do {
-            lastLoadedContent = markdown
             try markdown.write(to: target, atomically: true, encoding: .utf8)
+            lastLoadedContent = markdown
             markSaveSucceeded(telemetrySource: telemetrySource, result: "written")
             completion(true)
         } catch {
@@ -589,6 +624,7 @@ final class AppModel: ObservableObject {
         bridge?.markSaved()
         isDirty = false
         startWatching()
+        refreshDocumentTruth()
         onChromeUpdate?()
         captureTelemetry(
             "ouro_md_document_save_completed",
@@ -646,6 +682,7 @@ final class AppModel: ObservableObject {
     private func reconcileExternalContent(_ disk: String, url: URL) {
         if deletedOnDisk {
             deletedOnDisk = false
+            refreshDocumentTruth()
             onChromeUpdate?()
             captureTelemetry("ouro_md_document_restored_on_disk")
         }
@@ -657,6 +694,7 @@ final class AppModel: ObservableObject {
             presentExternalChangeConflict(diskContent: disk, url: url)
         } else {
             lastLoadedContent = disk
+            refreshDocumentTruth()
             guard isReady, let bridge else {
                 pendingMarkdown = disk
                 captureTelemetry(
@@ -684,6 +722,7 @@ final class AppModel: ObservableObject {
             }
             guard !self.deletedOnDisk else { return }
             self.deletedOnDisk = true
+            self.refreshDocumentTruth()
             self.onChromeUpdate?()
             self.captureTelemetry("ouro_md_document_deleted_on_disk")
         }
@@ -692,6 +731,7 @@ final class AppModel: ObservableObject {
     #if DEBUG
     func markDeletedOnDiskForTesting() {
         deletedOnDisk = true
+        refreshDocumentTruth()
         onChromeUpdate?()
     }
 
@@ -715,9 +755,11 @@ final class AppModel: ObservableObject {
         if response == .alertFirstButtonReturn {
             bridge?.reloadMarkdown(diskContent)
             isDirty = false
+            refreshDocumentTruth()
             onChromeUpdate?()
             captureTelemetry("ouro_md_document_external_conflict_resolved", properties: ["choice": .string("reload")])
         } else {
+            refreshDocumentTruth()
             captureTelemetry("ouro_md_document_external_conflict_resolved", properties: ["choice": .string("keep_edits")])
         }
         // "Keep My Edits": leave the dirty buffer untouched; a later save wins.
@@ -1058,6 +1100,34 @@ final class AppModel: ObservableObject {
     func undo() { bridge?.undo() }
     func redo() { bridge?.redo() }
 
+    @discardableResult
+    func copyCurrentFilePath() -> Bool {
+        guard let path = documentTruth.absolutePath else { return false }
+        pasteboardWriter(path)
+        return true
+    }
+
+    @discardableResult
+    func copyCurrentFileRelativePath() -> Bool {
+        guard let path = documentTruth.relativePath else { return false }
+        pasteboardWriter(path)
+        return true
+    }
+
+    @discardableResult
+    func copyCurrentGitDiffCommand() -> Bool {
+        guard let command = documentTruth.gitDiffCommand else { return false }
+        pasteboardWriter(command)
+        return true
+    }
+
+    @discardableResult
+    func revealCurrentFileInFinder() -> Bool {
+        guard let path = documentTruth.absolutePath else { return false }
+        revealInFinderHandler(URL(fileURLWithPath: path))
+        return true
+    }
+
     var commandPaletteItems: [CommandPaletteItem] {
         CommandPaletteCatalog.filter(CommandPaletteCatalog.items(), query: commandPaletteQuery)
     }
@@ -1088,6 +1158,10 @@ final class AppModel: ObservableObject {
         case "file.open-folder": openFolderPanel()
         case "file.save": save()
         case "file.save-as": saveAs()
+        case "file.reveal-in-finder": revealCurrentFileInFinder()
+        case "file.copy-path": copyCurrentFilePath()
+        case "file.copy-relative-path": copyCurrentFileRelativePath()
+        case "file.copy-git-diff-command": copyCurrentGitDiffCommand()
         case "file.export-html": exportHTML()
         case "file.export-pdf": exportPDF()
         case "file.print": printDocument()

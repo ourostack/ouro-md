@@ -103,6 +103,12 @@ enum MenuBuilder {
         add(menu, "Rename…", #selector(AppDelegate.renameDocument(_:)), "", target)
 
         menu.addItem(.separator())
+        add(menu, "Reveal in Finder", #selector(AppDelegate.revealDocumentInFinder(_:)), "", target)
+        add(menu, "Copy File Path", #selector(AppDelegate.copyDocumentPath(_:)), "", target)
+        add(menu, "Copy Relative Path", #selector(AppDelegate.copyDocumentRelativePath(_:)), "", target)
+        add(menu, "Copy Git Diff Command", #selector(AppDelegate.copyDocumentGitDiffCommand(_:)), "", target)
+
+        menu.addItem(.separator())
         let export = menu.addItem(withTitle: "Export", action: nil, keyEquivalent: "")
         let exportMenu = NSMenu(title: "Export")
         add(exportMenu, "HTML…", #selector(AppDelegate.exportHTML(_:)), "", target)

@@ -7,6 +7,11 @@ import WebKit
 /// GUI. A reusable regression harness for the rendering surface.
 final class RenderProbe: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     private var webView: WKWebView!
+    private var window: NSWindow!
+    private var didStart = false
+    private var didFinishNavigation = false
+    private var didReceiveReady = false
+    private var lastPhase = "not started"
 
     func run() -> Never {
         let app = NSApplication.shared
@@ -17,17 +22,20 @@ final class RenderProbe: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
         controller.add(self, name: "ouro")
         configuration.userContentController = controller
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
+        configuration.websiteDataStore = .nonPersistent()
 
         webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 900, height: 700), configuration: configuration)
         webView.navigationDelegate = self
         guard let indexURL = OuroResources.web("index", "html") else {
             FileHandle.standardError.write(Data("renderprobe: index.html not found\n".utf8)); exit(1)
         }
-        HeadlessHarness.offscreenHost(webView, size: NSSize(width: 900, height: 700))
+        window = HeadlessHarness.offscreenHostActive(webView, size: NSSize(width: 900, height: 700))
 
+        lastPhase = "loading \(indexURL.path)"
         webView.loadFileURL(indexURL, allowingReadAccessTo: indexURL.deletingLastPathComponent())
-        DispatchQueue.main.asyncAfter(deadline: .now() + 22) {
-            FileHandle.standardError.write(Data("renderprobe: timed out\n".utf8)); exit(1)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 90) { [weak self] in
+            let phase = self?.lastPhase ?? "unknown"
+            FileHandle.standardError.write(Data("renderprobe: timed out (\(phase))\n".utf8)); exit(1)
         }
         app.run()
         exit(0)
@@ -36,8 +44,16 @@ final class RenderProbe: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let body = message.body as? [String: Any], let type = body["type"] as? String else { return }
         if type == "ready" {
-            webView.evaluateJavaScript(Self.script, completionHandler: nil)
+            guard !didStart else { return }
+            didReceiveReady = true
+            lastPhase = "editor ready; waiting for navigation finish"
+            startScriptIfReady()
         } else if type == "renderprobe" {
+            lastPhase = "results received"
+            if let error = body["error"] as? String {
+                print("script      : MISSING ✗ — \(error)")
+                exit(1)
+            }
             let features = ["heading", "bold", "inlineCode", "codeBlock", "table",
                             "taskList", "math", "footnote", "alert", "mermaid"]
             var allCore = true
@@ -54,8 +70,51 @@ final class RenderProbe: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
         }
     }
 
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        didFinishNavigation = true
+        if !didStart {
+            lastPhase = "navigation finished; waiting for editor ready"
+        }
+        startScriptIfReady()
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        FileHandle.standardError.write(Data("renderprobe: navigation failed: \(error)\n".utf8))
+        exit(1)
+    }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        FileHandle.standardError.write(Data("renderprobe: provisional navigation failed: \(error)\n".utf8))
+        exit(1)
+    }
+
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        FileHandle.standardError.write(Data("renderprobe: web content process terminated\n".utf8))
+        exit(1)
+    }
+
+    private func startScriptIfReady() {
+        guard didReceiveReady, didFinishNavigation, !didStart else { return }
+        didStart = true
+        lastPhase = "editor ready and navigation finished; running render probe"
+        webView.evaluateJavaScript(Self.script) { _, error in
+            if let error {
+                FileHandle.standardError.write(Data("renderprobe: script dispatch failed: \(error)\n".utf8))
+                exit(1)
+            }
+            self.lastPhase = "render probe dispatched"
+        }
+    }
+
     private static let script = #"""
     (function () {
+      function post(payload) {
+        window.webkit.messageHandlers.ouro.postMessage(Object.assign({ type: "renderprobe" }, payload));
+      }
+      function errorDetail(error) {
+        return error && (error.stack || error.message) ? (error.stack || error.message) : String(error);
+      }
+      try {
       var doc = [
         "# Heading",
         "",
@@ -124,6 +183,7 @@ final class RenderProbe: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
       ].join("\n");
       window.ouro.setValue(doc);
       setTimeout(function () {
+        try {
         var root = document.querySelector("#editor");
         function has(sel) { return !!root.querySelector(sel); }
         function alertProbe() {
@@ -172,8 +232,15 @@ final class RenderProbe: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
           alertDetail: alert.detail,
           mermaid: has(".language-mermaid svg") || has('[data-type="mermaid"] svg') || has(".vditor-ir__preview svg")
         };
-        window.webkit.messageHandlers.ouro.postMessage(Object.assign({ type: "renderprobe" }, result));
+        post(result);
+        } catch (error) {
+          post({ error: errorDetail(error) });
+        }
       }, 2500);
+      } catch (error) {
+        post({ error: errorDetail(error) });
+      }
     })();
+    undefined;
     """#
 }

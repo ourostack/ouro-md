@@ -1,0 +1,13 @@
+Command:
+swift test --filter AppModelDocumentTruthTests
+
+Result:
+Failed as expected.
+
+Key failures:
+- value of type 'AppModel' has no member 'documentTruthProvider'
+- value of type 'AppModel' has no member 'documentTruth'
+- value of type 'AppModel' has no member 'documentTruthDisplayLabel'
+
+Interpretation:
+The lifecycle tests now require AppModel to publish live document truth, refresh it across file lifecycle operations, and overlay unsaved/deleted state honestly.

@@ -1,4 +1,5 @@
 import AppKit
+import OuroMDAppSupport
 import WebKit
 import XCTest
 @testable import OuroMD
@@ -55,6 +56,21 @@ final class UndoRedoRoutingTests: XCTestCase {
         XCTAssertEqual(palette?.keyEquivalent, "p")
         XCTAssertTrue(palette?.keyEquivalentModifierMask.contains(.command) == true)
         XCTAssertTrue(palette?.keyEquivalentModifierMask.contains(.shift) == true)
+    }
+
+    func testFileMenuSurfacesDocumentTruthCommands() {
+        let app = NSApplication.shared
+        let previousMenu = app.mainMenu
+        defer { app.mainMenu = previousMenu }
+        let delegate = AppDelegate()
+
+        MenuBuilder.install(into: app, target: delegate)
+
+        let fileMenu = app.mainMenu?.items.compactMap(\.submenu).first { $0.title == "File" }
+        XCTAssertEqual(fileMenu?.item(withTitle: "Reveal in Finder")?.action, #selector(AppDelegate.revealDocumentInFinder(_:)))
+        XCTAssertEqual(fileMenu?.item(withTitle: "Copy File Path")?.action, #selector(AppDelegate.copyDocumentPath(_:)))
+        XCTAssertEqual(fileMenu?.item(withTitle: "Copy Relative Path")?.action, #selector(AppDelegate.copyDocumentRelativePath(_:)))
+        XCTAssertEqual(fileMenu?.item(withTitle: "Copy Git Diff Command")?.action, #selector(AppDelegate.copyDocumentGitDiffCommand(_:)))
     }
 
     func testHelpMenuSurfacesKeyboardShortcutsReference() {
@@ -180,12 +196,40 @@ final class UndoRedoRoutingTests: XCTestCase {
         let undo = NSMenuItem(title: "Undo", action: #selector(AppDelegate.undoEdit(_:)), keyEquivalent: "")
         let search = NSMenuItem(title: "Search", action: #selector(AppDelegate.showSearchSidebar(_:)), keyEquivalent: "")
         let palette = NSMenuItem(title: "Command Palette", action: #selector(AppDelegate.showCommandPalette(_:)), keyEquivalent: "")
+        let reveal = NSMenuItem(title: "Reveal", action: #selector(AppDelegate.revealDocumentInFinder(_:)), keyEquivalent: "")
+        let copyPath = NSMenuItem(title: "Copy Path", action: #selector(AppDelegate.copyDocumentPath(_:)), keyEquivalent: "")
+        let copyRelative = NSMenuItem(title: "Copy Relative", action: #selector(AppDelegate.copyDocumentRelativePath(_:)), keyEquivalent: "")
+        let copyDiff = NSMenuItem(title: "Copy Diff", action: #selector(AppDelegate.copyDocumentGitDiffCommand(_:)), keyEquivalent: "")
 
         XCTAssertFalse(delegate.validateMenuItem(save))
         XCTAssertFalse(delegate.validateMenuItem(rename))
         XCTAssertFalse(delegate.validateMenuItem(undo))
         XCTAssertFalse(delegate.validateMenuItem(search))
         XCTAssertFalse(delegate.validateMenuItem(palette))
+        XCTAssertFalse(delegate.validateMenuItem(reveal))
+        XCTAssertFalse(delegate.validateMenuItem(copyPath))
+        XCTAssertFalse(delegate.validateMenuItem(copyRelative))
+        XCTAssertFalse(delegate.validateMenuItem(copyDiff))
+    }
+
+    func testMenuValidationEnablesDocumentTruthCommandsFromCurrentDocumentState() {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-menu-truth-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let file = dir.appendingPathComponent("note.md")
+        try? "# Note\n".write(to: file, atomically: true, encoding: .utf8)
+
+        let delegate = AppDelegate()
+        delegate.openInNewWindow(file)
+        let controller = try! XCTUnwrap(delegate.frontController)
+        defer { controller.window.close() }
+        controller.model.documentTruthProvider = menuTruthProvider(repo: dir)
+
+        XCTAssertTrue(delegate.validateMenuItem(NSMenuItem(title: "Reveal", action: #selector(AppDelegate.revealDocumentInFinder(_:)), keyEquivalent: "")))
+        XCTAssertTrue(delegate.validateMenuItem(NSMenuItem(title: "Copy Path", action: #selector(AppDelegate.copyDocumentPath(_:)), keyEquivalent: "")))
+        XCTAssertTrue(delegate.validateMenuItem(NSMenuItem(title: "Copy Relative", action: #selector(AppDelegate.copyDocumentRelativePath(_:)), keyEquivalent: "")))
+        XCTAssertTrue(delegate.validateMenuItem(NSMenuItem(title: "Copy Diff", action: #selector(AppDelegate.copyDocumentGitDiffCommand(_:)), keyEquivalent: "")))
     }
 
     func testMenuValidationKeepsGlobalCommandsEnabledWithoutAWindow() {
@@ -398,5 +442,31 @@ private final class RecordingUndoManager: UndoManager {
 
     override func redo() {
         redoCalls += 1
+    }
+}
+
+private func menuTruthProvider(repo: URL) -> DocumentTruthProvider {
+    DocumentTruthProvider(
+        gitRunner: MenuTruthGitRunner { command, _ in
+            switch command.arguments {
+            case ["rev-parse", "--show-toplevel"]:
+                return DocumentTruthGitResult(exitCode: 0, stdout: repo.path, stderr: "")
+            case ["ls-files", "--error-unmatch", "--", "note.md"]:
+                return DocumentTruthGitResult(exitCode: 0, stdout: "note.md", stderr: "")
+            case ["status", "--porcelain=v1", "--", "note.md"]:
+                return DocumentTruthGitResult(exitCode: 0, stdout: "", stderr: "")
+            default:
+                return DocumentTruthGitResult(exitCode: 1, stdout: "", stderr: "")
+            }
+        },
+        fileExists: { FileManager.default.fileExists(atPath: $0.path) }
+    )
+}
+
+private struct MenuTruthGitRunner: DocumentTruthGitRunning {
+    let handler: (DocumentTruthGitCommand, URL) -> DocumentTruthGitResult
+
+    func run(_ command: DocumentTruthGitCommand, workingDirectory: URL) throws -> DocumentTruthGitResult {
+        handler(command, workingDirectory)
     }
 }

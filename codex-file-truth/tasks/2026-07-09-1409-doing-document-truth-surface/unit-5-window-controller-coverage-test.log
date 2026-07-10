@@ -1,0 +1,20 @@
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.15s)
+Test Suite 'Selected tests' started at 2026-07-09 15:46:08.138.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-09 15:46:08.139.
+Test Suite 'DocumentWindowControllerTests' started at 2026-07-09 15:46:08.139.
+Test Case '-[OuroMDTests.DocumentWindowControllerTests testDocumentChromeAcrossSavedRenamedDirtyAndDeletedStates]' started.
+Test Case '-[OuroMDTests.DocumentWindowControllerTests testDocumentChromeAcrossSavedRenamedDirtyAndDeletedStates]' passed (0.444 seconds).
+Test Case '-[OuroMDTests.DocumentWindowControllerTests testWindowUsesNativeDocumentChromeInsteadOfCustomTitleClickRouting]' started.
+Test Case '-[OuroMDTests.DocumentWindowControllerTests testWindowUsesNativeDocumentChromeInsteadOfCustomTitleClickRouting]' passed (0.089 seconds).
+Test Suite 'DocumentWindowControllerTests' passed at 2026-07-09 15:46:08.673.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.534 (0.534) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-07-09 15:46:08.673.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.534 (0.534) seconds
+Test Suite 'Selected tests' passed at 2026-07-09 15:46:08.673.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.534 (0.535) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

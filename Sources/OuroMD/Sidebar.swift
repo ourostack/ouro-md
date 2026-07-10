@@ -434,34 +434,112 @@ struct EditorPane: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
-        ZStack {
-            EditorWebView(model: model)
-            VStack {
-                HStack {
+        VStack(spacing: 0) {
+            ZStack {
+                EditorWebView(model: model)
+                VStack {
+                    HStack {
+                        Spacer()
+                        if model.findVisible {
+                            FindBar(model: model)
+                                .padding([.top, .trailing], 10)
+                        }
+                    }
                     Spacer()
-                    if model.findVisible {
-                        FindBar(model: model)
-                            .padding([.top, .trailing], 10)
+                }
+                if model.commandPaletteVisible {
+                    GeometryReader { proxy in
+                        CommandPaletteView(model: model)
+                            .frame(width: min(420, max(280, proxy.size.width - 32)))
+                            .position(x: proxy.size.width / 2, y: min(max(170, proxy.size.height * 0.36), proxy.size.height / 2))
                     }
                 }
+            }
+            HStack(alignment: .bottom) {
+                DocumentTruthControl(model: model)
                 Spacer()
-                HStack {
-                    Spacer()
-                    if model.statusBarVisible {
-                        DocumentStatusBar(model: model)
-                            .padding([.trailing, .bottom], 10)
-                    }
+                if model.statusBarVisible {
+                    DocumentStatusBar(model: model)
                 }
             }
-            if model.commandPaletteVisible {
-                GeometryReader { proxy in
-                    CommandPaletteView(model: model)
-                        .frame(width: min(420, max(280, proxy.size.width - 32)))
-                        .position(x: proxy.size.width / 2, y: min(max(170, proxy.size.height * 0.36), proxy.size.height / 2))
-                }
-            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(.regularMaterial)
+            .overlay(Divider(), alignment: .top)
         }
         .frame(minWidth: 400, minHeight: 320)
+    }
+}
+
+struct DocumentTruthControl: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        Menu {
+            Button { model.revealCurrentFileInFinder() } label: {
+                Label("Reveal in Finder", systemImage: "folder")
+            }
+            .disabled(!model.documentTruth.canCopyPath)
+
+            Button { model.copyCurrentFilePath() } label: {
+                Label("Copy File Path", systemImage: "doc.on.clipboard")
+            }
+            .disabled(!model.documentTruth.canCopyPath)
+
+            Button { model.copyCurrentFileRelativePath() } label: {
+                Label("Copy Relative Path", systemImage: "point.topleft.down.curvedto.point.bottomright.up")
+            }
+            .disabled(!model.documentTruth.canCopyRelativePath)
+
+            Button { model.copyCurrentGitDiffCommand() } label: {
+                Label("Copy Git Diff Command", systemImage: "terminal")
+            }
+            .disabled(!model.documentTruth.canCopyGitDiffCommand)
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: iconName)
+                    .font(.system(size: 11, weight: .semibold))
+                Text("File status · \(model.documentTruthDisplayLabel)")
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .frame(maxWidth: 260, alignment: .leading)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
+            .overlay(RoundedRectangle(cornerRadius: 6).stroke(.quaternary, lineWidth: 1))
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize(horizontal: false, vertical: true)
+        .help("Document truth: \(model.documentTruth.absolutePath ?? model.documentTruthDisplayLabel)")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Document truth")
+        .accessibilityValue(model.documentTruthDisplayLabel)
+    }
+
+    private var iconName: String {
+        switch model.documentTruth.state {
+        case .untitled:
+            return "doc"
+        case .unavailable:
+            return "exclamationmark.triangle"
+        case .gitUnavailable:
+            return "questionmark.folder"
+        case .notInGit:
+            return "doc.text"
+        case .untracked:
+            return "plus.circle"
+        case .trackedClean:
+            return "checkmark.circle"
+        case .trackedModified:
+            return "pencil.circle"
+        case .trackedStaged:
+            return "tray.and.arrow.up"
+        case .trackedMixed:
+            return "arrow.triangle.2.circlepath"
+        }
     }
 }
 

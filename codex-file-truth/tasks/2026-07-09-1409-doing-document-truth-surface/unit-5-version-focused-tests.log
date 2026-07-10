@@ -1,0 +1,122 @@
+Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/7] Compiling OuroMDCore OuroMDRelease.swift
+[4/7] Emitting module OuroMDCore
+[5/19] Compiling OuroMD OuroMDTelemetry.swift
+[6/19] Compiling OuroMD CLI.swift
+[7/19] Compiling OuroMD OuroMDShellContract.swift
+[8/19] Compiling OuroMD OuroMDUpdateInstaller.swift
+[9/20] Compiling OuroMD LiveUpdateTest.swift
+[10/20] Compiling OuroMD ReleaseUpdate.swift
+[11/20] Compiling OuroMD OuroMDUpdateCoordinator.swift
+[12/20] Emitting module OuroMD
+[13/20] Compiling OuroMD AccessibilityAuditTest.swift
+[14/20] Compiling OuroMD AppDelegate.swift
+[15/20] Compiling OuroMD AppInfoView.swift
+[16/20] Compiling OuroMD UISurfaceTest.swift
+[16/21] Write Objects.LinkFileList
+[17/21] Linking ouro-md
+[18/21] Applying ouro-md
+[20/26] Compiling OuroMDTests OuroMDPositioningTests.swift
+[21/26] Compiling OuroMDTests ReleaseUpdateTests.swift
+[22/26] Emitting module OuroMDTests
+[23/26] Compiling OuroMDTests OuroMDUpdateCoordinatorTests.swift
+[24/26] Compiling OuroMDTests OuroMDShellContractTests.swift
+[24/26] Write Objects.LinkFileList
+[25/26] Linking ouro-mdPackageTests
+Build complete! (6.10s)
+Test Suite 'Selected tests' started at 2026-07-09 15:35:17.566.
+Test Suite 'ouro-mdPackageTests.xctest' started at 2026-07-09 15:35:17.569.
+Test Suite 'OuroMDAppStoreApplyPlanTests' started at 2026-07-09 15:35:17.569.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorCapturesReviewDetailIdFromFetchResponse]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorCapturesReviewDetailIdFromFetchResponse]' passed (0.294 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorClassifiesRetryableFixtureErrors]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorClassifiesRetryableFixtureErrors]' passed (0.291 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorExecutesFakeTransportAndWritesRedactedArtifacts]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorExecutesFakeTransportAndWritesRedactedArtifacts]' passed (0.292 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRejectsBlockedDryRunPlans]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRejectsBlockedDryRunPlans]' passed (0.291 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRejectsScreenshotBytesChangedAfterDryRun]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRejectsScreenshotBytesChangedAfterDryRun]' passed (0.290 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRequiresExplicitApplyMode]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testApplyExecutorRequiresExplicitApplyMode]' passed (0.290 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyAllowsRetargetedRejectedIdsWhenOwnedByPreflight]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyAllowsRetargetedRejectedIdsWhenOwnedByPreflight]' passed (0.289 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRejectsLaterStagesWithoutUnit7cResolvedStateBeforeNetwork]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRejectsLaterStagesWithoutUnit7cResolvedStateBeforeNetwork]' passed (0.289 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRejectsMismatchedUploadedBuildPreflightBeforeNetwork]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRejectsMismatchedUploadedBuildPreflightBeforeNetwork]' passed (0.289 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRejectsStalePersistedStateBeforeNetwork]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRejectsStalePersistedStateBeforeNetwork]' passed (0.289 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRejectsUnownedPersistedStateBeforeNetwork]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRejectsUnownedPersistedStateBeforeNetwork]' passed (0.294 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRequiresStageAndExactStatePreflight]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveApplyRequiresStageAndExactStatePreflight]' passed (0.289 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveFinalSubmitRequiresOldRejectionThreadReplyHandlingBeforeNetwork]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreApplyPlanTests testLiveFinalSubmitRequiresOldRejectionThreadReplyHandlingBeforeNetwork]' passed (0.289 seconds).
+Test Suite 'OuroMDAppStoreApplyPlanTests' passed at 2026-07-09 15:35:21.346.
+	 Executed 13 tests, with 0 failures (0 unexpected) in 3.775 (3.777) seconds
+Test Suite 'OuroMDAppStoreRequestPlanTests' started at 2026-07-09 15:35:21.346.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanBuildsExactTargetVersionRequestGraph]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanBuildsExactTargetVersionRequestGraph]' passed (0.145 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanDoesNotSubmitWhenManifestOnlyHasRemoteScreenshotProof]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanDoesNotSubmitWhenManifestOnlyHasRemoteScreenshotProof]' passed (0.146 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanIncludesMacScreenshotReservationUploadAndCommitSteps]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanIncludesMacScreenshotReservationUploadAndCommitSteps]' passed (0.146 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanIncludesSubmitOnlyAfterRequiredLocalScreenshots]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanIncludesSubmitOnlyAfterRequiredLocalScreenshots]' passed (0.146 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanOutputAndErrorsAreRedacted]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanOutputAndErrorsAreRedacted]' passed (0.147 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRecordsExistingRejectionThreadStrategyWithoutMutatingStaleSubmission]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRecordsExistingRejectionThreadStrategyWithoutMutatingStaleSubmission]' passed (0.145 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsExplicitGeneratedResourceIds]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsExplicitGeneratedResourceIds]' passed (0.577 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsMissingReleaseHighlights]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsMissingReleaseHighlights]' passed (0.147 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsStaleRejectedIdsForTargetGraph]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsStaleRejectedIdsForTargetGraph]' passed (0.145 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsUnexpectedBundleInManifest]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsUnexpectedBundleInManifest]' passed (0.144 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsUnknownArguments]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanRejectsUnknownArguments]' passed (0.144 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanReusesExistingAppInfoLocalizationWhenProvided]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanReusesExistingAppInfoLocalizationWhenProvided]' passed (0.146 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanUsesLocalScreenshotInputsAndIgnoresRemoteProofUris]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanUsesLocalScreenshotInputsAndIgnoresRemoteProofUris]' passed (0.145 seconds).
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanWritesTextArtifactWhenRequested]' started.
+Test Case '-[OuroMDTests.OuroMDAppStoreRequestPlanTests testDryRunPlanWritesTextArtifactWhenRequested]' passed (0.146 seconds).
+Test Suite 'OuroMDAppStoreRequestPlanTests' passed at 2026-07-09 15:35:23.817.
+	 Executed 14 tests, with 0 failures (0 unexpected) in 2.469 (2.471) seconds
+Test Suite 'OuroMDDistributionTests' started at 2026-07-09 15:35:23.817.
+Test Case '-[OuroMDTests.OuroMDDistributionTests testAppStoreDisablesDirectUpdates]' started.
+Test Case '-[OuroMDTests.OuroMDDistributionTests testAppStoreDisablesDirectUpdates]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDDistributionTests testAppStoreManifestCarriesDistinctReviewMetadata]' started.
+Test Case '-[OuroMDTests.OuroMDDistributionTests testAppStoreManifestCarriesDistinctReviewMetadata]' passed (0.001 seconds).
+Test Case '-[OuroMDTests.OuroMDDistributionTests testDefaultsToDeveloperIDDirectUpdates]' started.
+Test Case '-[OuroMDTests.OuroMDDistributionTests testDefaultsToDeveloperIDDirectUpdates]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDDistributionTests testLocalBuildsAllowDirectUpdates]' started.
+Test Case '-[OuroMDTests.OuroMDDistributionTests testLocalBuildsAllowDirectUpdates]' passed (0.000 seconds).
+Test Suite 'OuroMDDistributionTests' passed at 2026-07-09 15:35:23.819.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'OuroMDPositioningTests' started at 2026-07-09 15:35:23.819.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsCarryReviewFacingDifferentiators]' started.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsCarryReviewFacingDifferentiators]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsDoNotExposeInternalReviewRemediationLanguage]' started.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testReleaseHighlightsDoNotExposeInternalReviewRemediationLanguage]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDPositioningTests testShellAboutSubtitleUsesLocalWorkspacePositioning]' started.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testShellAboutSubtitleUsesLocalWorkspacePositioning]' passed (0.005 seconds).
+Test Case '-[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow]' started.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testWelcomeCopyExplainsLocalWorkspaceWorkflow]' passed (0.000 seconds).
+Test Case '-[OuroMDTests.OuroMDPositioningTests testWelcomeVisualFixtureMatchesSourceWelcomeCopy]' started.
+Test Case '-[OuroMDTests.OuroMDPositioningTests testWelcomeVisualFixtureMatchesSourceWelcomeCopy]' passed (0.001 seconds).
+Test Suite 'OuroMDPositioningTests' passed at 2026-07-09 15:35:23.826.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.006 (0.007) seconds
+Test Suite 'ouro-mdPackageTests.xctest' passed at 2026-07-09 15:35:23.826.
+	 Executed 36 tests, with 0 failures (0 unexpected) in 6.252 (6.257) seconds
+Test Suite 'Selected tests' passed at 2026-07-09 15:35:23.826.
+	 Executed 36 tests, with 0 failures (0 unexpected) in 6.252 (6.259) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

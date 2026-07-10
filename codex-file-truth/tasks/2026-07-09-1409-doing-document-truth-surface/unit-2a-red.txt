@@ -1,0 +1,14 @@
+Command:
+swift test --filter DocumentTruthTests
+
+Result:
+Failed as expected.
+
+Key failures:
+- cannot find type 'DocumentTruthProvider' in scope
+- cannot find type 'DocumentTruthGitCommand' in scope
+- cannot find type 'DocumentTruthGitResult' in scope
+- cannot find type 'DocumentTruthGitRunning' in scope
+
+Interpretation:
+The coverage-gated support tests now define the expected read-only file/git truth API and state behavior before implementation exists.

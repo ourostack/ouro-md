@@ -424,6 +424,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     @objc func saveDocument(_ sender: Any?) { model.save() }
     @objc func saveDocumentAs(_ sender: Any?) { model.saveAs() }
     @objc func renameDocument(_ sender: Any?) { frontController?.presentRename() }
+    @objc func revealDocumentInFinder(_ sender: Any?) { model.revealCurrentFileInFinder() }
+    @objc func copyDocumentPath(_ sender: Any?) { model.copyCurrentFilePath() }
+    @objc func copyDocumentRelativePath(_ sender: Any?) { model.copyCurrentFileRelativePath() }
+    @objc func copyDocumentGitDiffCommand(_ sender: Any?) { model.copyCurrentGitDiffCommand() }
     @objc func exportHTML(_ sender: Any?) { model.exportHTML() }
     @objc func exportPDF(_ sender: Any?) { model.exportPDF() }
 
@@ -513,6 +517,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             return !recentDocumentURLsProvider().isEmpty
         case #selector(renameDocument(_:)):
             return hasEditor && model.currentURL != nil
+        case #selector(revealDocumentInFinder(_:)),
+             #selector(copyDocumentPath(_:)):
+            return hasEditor && model.documentTruth.canCopyPath
+        case #selector(copyDocumentRelativePath(_:)):
+            return hasEditor && model.documentTruth.canCopyRelativePath
+        case #selector(copyDocumentGitDiffCommand(_:)):
+            return hasEditor && model.documentTruth.canCopyGitDiffCommand
         case #selector(installUpdateAndRelaunch(_:)):
             return OuroMDDistribution.allowsDirectUpdates()
                 && updateCoordinator.updateBadgeText != nil

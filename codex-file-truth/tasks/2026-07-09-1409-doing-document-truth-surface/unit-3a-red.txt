@@ -1,0 +1,17 @@
+Command:
+swift test --filter 'CommandPaletteCatalogTests|CommandPaletteTests|UndoRedoRoutingTests/testFileMenuSurfacesDocumentTruthCommands|UndoRedoRoutingTests/testMenuValidationDisablesEditorOnlyCommandsWithoutAWindow|UndoRedoRoutingTests/testMenuValidationEnablesDocumentTruthCommandsFromCurrentDocumentState'
+
+Result:
+Failed as expected.
+
+Key failures:
+- type 'AppDelegate' has no member 'revealDocumentInFinder'
+- type 'AppDelegate' has no member 'copyDocumentPath'
+- type 'AppDelegate' has no member 'copyDocumentRelativePath'
+- type 'AppDelegate' has no member 'copyDocumentGitDiffCommand'
+- value of type 'AppModel' has no member 'pasteboardWriter'
+- value of type 'AppModel' has no member 'revealInFinderHandler'
+- value of type 'AppModel' has no copy/reveal document truth command methods
+
+Interpretation:
+The command tests now require command-palette discovery, menu exposure/validation, testable clipboard/Finder seams, and honest no-current-file fallbacks.

@@ -39,6 +39,20 @@ final class UISurfaceTester {
         let editorFitModel = AppModel()
         editorFitModel.showCommandPalette()
         editorFitModel.commandPaletteQuery = "find"
+        let truthRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-ui-truth-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: truthRoot, withIntermediateDirectories: true)
+        let truthFile = truthRoot.appendingPathComponent("note.md")
+        try? "# Note\n".write(to: truthFile, atomically: true, encoding: .utf8)
+        let truthModel = AppModel()
+        truthModel.statusBarVisible = false
+        truthModel.documentTruthProvider = uiSurfaceTruthProvider(repo: truthRoot)
+        truthModel.loadInitialFile(truthFile.path)
+        let truthWithStatusModel = AppModel()
+        truthWithStatusModel.statusBarVisible = true
+        truthWithStatusModel.setCounts(words: 12, chars: 48)
+        truthWithStatusModel.documentTruthProvider = uiSurfaceTruthProvider(repo: truthRoot)
+        truthWithStatusModel.loadInitialFile(truthFile.path)
 
         let updateCoordinator = OuroMDUpdateCoordinator()
         let availableUpdateCoordinator = makeAvailableUpdateCoordinator()
@@ -57,6 +71,24 @@ final class UISurfaceTester {
         )
         let editorSize = fittingSize(
             EditorPane(model: editorFitModel),
+            constrainedTo: NSSize(width: 520, height: 420)
+        )
+        let truthSize = fittingSize(
+            EditorPane(model: truthModel),
+            constrainedTo: NSSize(width: 520, height: 420)
+        )
+        let truthWithStatusSize = fittingSize(
+            EditorPane(model: truthWithStatusModel),
+            constrainedTo: NSSize(width: 520, height: 420)
+        )
+        saveDebugSnapshot(
+            EditorPane(model: truthModel),
+            name: "document-truth-status-hidden",
+            constrainedTo: NSSize(width: 520, height: 420)
+        )
+        saveDebugSnapshot(
+            EditorPane(model: truthWithStatusModel),
+            name: "document-truth-status-visible",
             constrainedTo: NSSize(width: 520, height: 420)
         )
         let referenceSize = fittingSize(
@@ -104,6 +136,14 @@ final class UISurfaceTester {
             SidebarView(model: searchModel),
             constrainedTo: NSSize(width: 300, height: 640)
         )
+        let truthLabels = accessibilityLabels(
+            EditorPane(model: truthModel),
+            constrainedTo: NSSize(width: 520, height: 420)
+        )
+        let truthWithStatusLabels = accessibilityLabels(
+            EditorPane(model: truthWithStatusModel),
+            constrainedTo: NSSize(width: 520, height: 420)
+        )
         let updateLabels = accessibilityLabels(
             UpdateProgressView(updateCoordinator: installingCoordinator),
             constrainedTo: NSSize(width: 420, height: 180)
@@ -115,6 +155,14 @@ final class UISurfaceTester {
         let aboutOK = aboutSize.width <= 540 && aboutSize.height <= 540
         let searchOK = searchSize.width <= 380 && searchSize.height <= 700
         let editorOK = editorSize.width <= 560 && editorSize.height <= 460
+        let documentTruthOK = truthSize.width <= 560
+            && truthSize.height <= 460
+            && truthWithStatusSize.width <= 560
+            && truthWithStatusSize.height <= 460
+            && !truthModel.statusBarVisible
+            && truthWithStatusModel.statusBarVisible
+            && containsAll(truthLabels, ["File status", "Modified"])
+            && containsAll(truthWithStatusLabels, ["File status", "Modified"])
         let referenceOK = referenceSize.width <= 600 && referenceSize.height <= 660
         let statusPaletteOK = statusModel.wordCount == 123
             && statusModel.charCount == 456
@@ -155,6 +203,7 @@ final class UISurfaceTester {
         print(String(format: "about fitting size: %.1fx%.1f %@", aboutSize.width, aboutSize.height, aboutOK ? "✓" : "✗"))
         print(String(format: "search sidebar fitting size: %.1fx%.1f %@", searchSize.width, searchSize.height, searchOK ? "✓" : "✗"))
         print(String(format: "editor palette/status fitting size: %.1fx%.1f %@", editorSize.width, editorSize.height, editorOK ? "✓" : "✗"))
+        print(String(format: "document truth control fitting size: hidden %.1fx%.1f visible %.1fx%.1f %@", truthSize.width, truthSize.height, truthWithStatusSize.width, truthWithStatusSize.height, documentTruthOK ? "✓" : "✗"))
         print(String(format: "command reference fitting size: %.1fx%.1f %@", referenceSize.width, referenceSize.height, referenceOK ? "✓" : "✗"))
         print("status/palette semantic state: \(statusPaletteOK ? "✓" : "✗")")
         print("command discoverability semantic state: \(commandDiscoveryOK ? "✓" : "✗")")
@@ -178,11 +227,18 @@ final class UISurfaceTester {
             print("sidebar labels: \(sidebarLabels.sorted().joined(separator: " | "))")
             print("update labels: \(updateLabels.sorted().joined(separator: " | "))")
         }
+        if !documentTruthOK {
+            print("document truth labels: \(truthLabels.sorted().joined(separator: " | "))")
+            print("document truth visible-status labels: \(truthWithStatusLabels.sorted().joined(separator: " | "))")
+        }
 
         invalidModel.teardown()
         searchModel.teardown()
+        truthModel.teardown()
+        truthWithStatusModel.teardown()
         try? FileManager.default.removeItem(at: root)
-        exit(regexErrorOK && searchResultsOK && prefsOK && aboutOK && searchOK && editorOK && referenceOK && statusPaletteOK && commandDiscoveryOK && installingOK && availableUpdateSizeOK && progressOK && installingReviewStateOK && directInstallSuppressedOK && menuOK && axOK ? 0 : 1)
+        try? FileManager.default.removeItem(at: truthRoot)
+        exit(regexErrorOK && searchResultsOK && prefsOK && aboutOK && searchOK && editorOK && documentTruthOK && referenceOK && statusPaletteOK && commandDiscoveryOK && installingOK && availableUpdateSizeOK && progressOK && installingReviewStateOK && directInstallSuppressedOK && menuOK && axOK ? 0 : 1)
     }
 
     private func fittingSize<Content: View>(_ view: Content, constrainedTo size: NSSize) -> NSSize {
@@ -225,6 +281,25 @@ final class UISurfaceTester {
         return recognizeText(in: image)
     }
 
+    private func saveDebugSnapshot<Content: View>(_ view: Content, name: String, constrainedTo size: NSSize) {
+        guard debugSnapshotDirectory != nil else { return }
+        let host = NSHostingController(
+            rootView: view
+                .background(Color.white)
+                .environment(\.colorScheme, .light)
+        )
+        host.view.frame = NSRect(origin: .zero, size: size)
+        let window = HeadlessHarness.offscreenHost(host.view, size: size)
+        RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.2))
+        host.view.layoutSubtreeIfNeeded()
+        window.displayIfNeeded()
+        host.view.displayIfNeeded()
+        if let image = snapshot(host.view) {
+            saveDebugSnapshot(image, name: name)
+        }
+        window.orderOut(nil)
+    }
+
     private func snapshot(_ view: NSView) -> CGImage? {
         let bounds = view.bounds
         guard bounds.width > 0, bounds.height > 0,
@@ -236,12 +311,24 @@ final class UISurfaceTester {
     }
 
     private func saveDebugSnapshot(_ image: CGImage, name: String) {
-        guard ProcessInfo.processInfo.environment["OURO_MD_UI_SURFACE_DEBUG_SNAPSHOT"] != nil else { return }
+        guard let directory = debugSnapshotDirectory else { return }
         let rep = NSBitmapImageRep(cgImage: image)
         guard let data = rep.representation(using: .png, properties: [:]) else { return }
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("ouro-md-\(name).png")
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let url = directory.appendingPathComponent("ouro-md-\(name).png")
         try? data.write(to: url)
         print("debug snapshot: \(url.path)")
+    }
+
+    private var debugSnapshotDirectory: URL? {
+        guard let raw = ProcessInfo.processInfo.environment["OURO_MD_UI_SURFACE_DEBUG_SNAPSHOT"] else {
+            return nil
+        }
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed != "1", trimmed.lowercased() != "true" else {
+            return FileManager.default.temporaryDirectory
+        }
+        return URL(fileURLWithPath: trimmed, isDirectory: true)
     }
 
     private func recognizeText(in image: CGImage) -> Set<String> {
@@ -410,10 +497,36 @@ final class UISurfaceTester {
         )
     }
 
+    private func uiSurfaceTruthProvider(repo: URL) -> DocumentTruthProvider {
+        DocumentTruthProvider(
+            gitRunner: UISurfaceTruthGitRunner { command, _ in
+                switch command.arguments {
+                case ["rev-parse", "--show-toplevel"]:
+                    return DocumentTruthGitResult(exitCode: 0, stdout: repo.path, stderr: "")
+                case ["ls-files", "--error-unmatch", "--", "note.md"]:
+                    return DocumentTruthGitResult(exitCode: 0, stdout: "note.md", stderr: "")
+                case ["status", "--porcelain=v1", "--", "note.md"]:
+                    return DocumentTruthGitResult(exitCode: 0, stdout: " M note.md\n", stderr: "")
+                default:
+                    return DocumentTruthGitResult(exitCode: 1, stdout: "", stderr: "")
+                }
+            },
+            fileExists: { FileManager.default.fileExists(atPath: $0.path) }
+        )
+    }
+
     private func waitUntil(timeout: TimeInterval, condition: () -> Bool) {
         let deadline = Date().addingTimeInterval(timeout)
         while !condition(), Date() < deadline {
             RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.05))
         }
+    }
+}
+
+private struct UISurfaceTruthGitRunner: DocumentTruthGitRunning {
+    let handler: (DocumentTruthGitCommand, URL) -> DocumentTruthGitResult
+
+    func run(_ command: DocumentTruthGitCommand, workingDirectory: URL) throws -> DocumentTruthGitResult {
+        handler(command, workingDirectory)
     }
 }
