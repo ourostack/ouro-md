@@ -1,0 +1,612 @@
+shell dependency fresh: ouro-native-apple-app-shell@014cf09b21721987027dad19c7eaa50fb5d70566 (remote main 805ff2bece925c1ac6be759b338f4c35cc4d636e has no newer package-relevant shell changes)
+==> Building (release)…
+[0/1] Planning build
+Building for production...
+[0/3] Write sources
+[1/3] Write swift-version--58304C5D6DBC2206.txt
+[3/4] Compiling OuroMDAppSupport CommandPaletteCatalog.swift
+[3/5] Write Objects.LinkFileList
+[4/5] Linking ouro-md
+Build complete! (3.36s)
+==> Assembling OuroMD.app…
+==> Telemetry: disabled (set OURO_MD_POSTHOG_KEY or VITE_POSTHOG_KEY to configure)
+==> Ad-hoc signing…
+==> Done: /Users/arimendelow/Projects/ouro-md-file-truth/OuroMD.app
+    Launch with:  open OuroMD.app
+==> Archiving Ouro MD.app -> dist/Ouro-MD-0.9.81.zip
+==> Creating Ouro MD DMG -> dist/Ouro-MD-0.9.81.dmg
+dmg created: /Users/arimendelow/Projects/ouro-md-file-truth/dist/Ouro-MD-0.9.81.dmg
+==> Wrote dist/Ouro-MD-0.9.81.manifest.json
+    zip 8026814 bytes · sha256 64216204a257c2f877838b2317b3391bebfcd1bfa00767e64d248fbba052b66f
+    dmg 10612503 bytes · sha256 73df3257ac7156733201341cf573ea3e02a2a33c307cfc9f69152e84c909b89d
+packaged app: version=0.9.81 build=0.9.81 bundle=bot.ouro.md git=d97e738d269e
+/tmp/ouro-md-dmg-verify.6wYWWk/installed/Ouro MD.app: valid on disk
+/tmp/ouro-md-dmg-verify.6wYWWk/installed/Ouro MD.app: satisfies its Designated Requirement
+telemetry: not embedded (allowed for this run)
+version output: ouro-md 0.9.81 (d97e738d269e)
+bundleURL:    /tmp/ouro-md-dmg-verify.6wYWWk/installed/Ouro MD.app
+resourceURL:  /tmp/ouro-md-dmg-verify.6wYWWk/installed/Ouro MD.app/Contents/Resources
+executableURL:/tmp/ouro-md-dmg-verify.6wYWWk/installed/Ouro MD.app/Contents/MacOS/ouro-md
+  bundleURL/ouro-md_OuroMD.bundle: missing  (/tmp/ouro-md-dmg-verify.6wYWWk/installed/Ouro MD.app/ouro-md_OuroMD.bundle)
+  resourceURL/ouro-md_OuroMD.bundle: EXISTS  (/tmp/ouro-md-dmg-verify.6wYWWk/installed/Ouro MD.app/Contents/Resources/ouro-md_OuroMD.bundle)
+OuroResources.web(index.html): FOUND  (/tmp/ouro-md-dmg-verify.6wYWWk/installed/Ouro MD.app/Contents/Resources/ouro-md_OuroMD.bundle/web/index.html)
+PASS initial callout hides raw marker and keeps source: label=initial hasAlert=true alertCount=2 hasMarker=true markerText=[!NOTE] markerFont=0px markerOpacity=0 before="Note"/block hasTip=true tipNested=true value=# Alerts\n\n> Leading-space top-level quote stays normal.\n\n- List item\n  > [!NOTE]\n  > List-contained marker stays normal.\n  >\n\n> [!NOTE]\n> An alert.\n\n> [!TIP]\n> Tip alert.\n>\n>> Nested quote body.\n>>\n\n> `[!NOTE]`\n> Code marker stays normal.\n\n> [!NOTE](https://x.com)\n> Link marker stays normal.\n\n> **[!NOTE]**\n> Strong marker stays normal.\n\n> [!NOTE][ref]\n> Ref marker stays normal.\n\n> Ordinary quote first.\n> [!NOTE] later stays normal.\n\n>> [!NOTE]\n>> Nested marker stays normal.\n>>\n\nOutside paragraph.\n
+PASS focused callout reveals editable marker: label=focused hasAlert=true alertCount=2 hasMarker=true markerText=[!NOTE] markerFont=16px markerOpacity=0.6 before="Note"/none hasTip=true tipNested=true value=# Alerts\n\n> Leading-space top-level quote stays normal.\n\n- List item\n  > [!NOTE]\n  > List-contained marker stays normal.\n  >\n\n> [!NOTE]\n> An alert.\n\n> [!TIP]\n> Tip alert.\n>\n>> Nested quote body.\n>>\n\n> `[!NOTE]`\n> Code marker stays normal.\n\n> [!NOTE](https://x.com)\n> Link marker stays normal.\n\n> **[!NOTE]**\n> Strong marker stays normal.\n\n> [!NOTE][ref]\n> Ref marker stays normal.\n\n> Ordinary quote first.\n> [!NOTE] later stays normal.\n\n>> [!NOTE]\n>> Nested marker stays normal.\n>>\n\nOutside paragraph.\n
+PASS editing alert body preserves marker: label=edited hasAlert=true alertCount=2 hasMarker=true markerText=[!NOTE] markerFont=16px markerOpacity=0.6 before="Note"/none hasTip=true tipNested=true value=# Alerts\n\n> Leading-space top-level quote stays normal.\n\n- List item\n  > [!NOTE]\n  > List-contained marker stays normal.\n  >\n\n> [!NOTE]\n> An alert. Edited\n\n> [!TIP]\n> Tip alert.\n>\n>> Nested quote body.\n>>\n\n> `[!NOTE]`\n> Code marker stays normal.\n\n> [!NOTE](https://x.com)\n> Link marker stays normal.\n\n> **[!NOTE]**\n> Strong marker stays normal.\n\n> [!NOTE][ref]\n> Ref marker stays normal.\n\n> Ordinary quote first.\n> [!NOTE] later stays normal.\n\n>> [!NOTE]\n>> Nested marker stays normal.\n>>\n\nOutside paragraph.\n
+PASS alert body undo/redo preserves marker: undo=label=alert-undo hasAlert=true alertCount=2 hasMarker=true markerText=[!NOTE] markerFont=16px markerOpacity=0.6 before="Note"/none hasTip=true tipNested=true value=# Alerts\n\n> Leading-space top-level quote stays normal.\n\n- List item\n  > [!NOTE]\n  > List-contained marker stays normal.\n  >\n\n> [!NOTE]\n> An alert.\n\n> [!TIP]\n> Tip alert.\n>\n>> Nested quote body.\n>>\n\n> `[!NOTE]`\n> Code marker stays normal.\n\n> [!NOTE](https://x.com)\n> Link marker stays normal.\n\n> **[!NOTE]**\n> Strong marker stays normal.\n\n> [!NOTE][ref]\n> Ref marker stays normal.\n\n> Ordinary quote first.\n> [!NOTE] later stays normal.\n\n>> [!NOTE]\n>> Nested marker stays normal.\n>>\n\nOutside paragraph.\n redo=label=alert-redo hasAlert=true alertCount=2 hasMarker=true markerText=[!NOTE] markerFont=16px markerOpacity=0.6 before="Note"/none hasTip=true tipNested=true value=# Alerts\n\n> Leading-space top-level quote stays normal.\n\n- List item\n  > [!NOTE]\n  > List-contained marker stays normal.\n  >\n\n> [!NOTE]\n> An alert. Edited\n\n> [!TIP]\n> Tip alert.\n>\n>> Nested quote body.\n>>\n\n> `[!NOTE]`\n> Code marker stays normal.\n\n> [!NOTE](https://x.com)\n> Link marker stays normal.\n\n> **[!NOTE]**\n> Strong marker stays normal.\n\n> [!NOTE][ref]\n> Ref marker stays normal.\n\n> Ordinary quote first.\n> [!NOTE] later stays normal.\n\n>> [!NOTE]\n>> Nested marker stays normal.\n>>\n\nOutside paragraph.\n
+PASS split-view rebuild preserves callout marker: label=sv hasAlert=true alertCount=2 hasMarker=true markerText=[!NOTE] markerFont=0px markerOpacity=0 before="Note"/block hasTip=true tipNested=true value=# Alerts\n\n> Leading-space top-level quote stays normal.\n\n- List item\n  > [!NOTE]\n  > List-contained marker stays normal.\n\n> [!NOTE]\n> An alert. Edited\n\n> [!TIP]\n> Tip alert.\n> \n> > Nested quote body.\n\n> `[!NOTE]`\n> Code marker stays normal.\n\n> [!NOTE](https://x.com)\n> Link marker stays normal.\n\n> **[!NOTE]**\n> Strong marker stays normal.\n\n> [!NOTE][ref]\n> Ref marker stays normal.\n\n> Ordinary quote first.\n> [!NOTE] later stays normal.\n\n> > [!NOTE]\n> > Nested marker stays normal.\n\nOutside paragraph.\n\n
+PASS instant-render rebuild preserves callout marker: label=ir hasAlert=true alertCount=2 hasMarker=true markerText=[!NOTE] markerFont=0px markerOpacity=0 before="Note"/block hasTip=true tipNested=true value=# Alerts\n\n> Leading-space top-level quote stays normal.\n\n- List item\n  > [!NOTE]\n  > List-contained marker stays normal.\n  >\n\n> [!NOTE]\n> An alert. Edited\n\n> [!TIP]\n> Tip alert.\n>\n>> Nested quote body.\n>>\n\n> `[!NOTE]`\n> Code marker stays normal.\n\n> [!NOTE](https://x.com)\n> Link marker stays normal.\n\n> **[!NOTE]**\n> Strong marker stays normal.\n\n> [!NOTE][ref]\n> Ref marker stays normal.\n\n> Ordinary quote first.\n> [!NOTE] later stays normal.\n\n>> [!NOTE]\n>> Nested marker stays normal.\n>>\n\nOutside paragraph.\n
+PASS spanning selection includes hidden marker: label=spanning-selection hasAlert=true alertCount=1 hasMarker=true markerText=[!NOTE] markerFont=0px markerOpacity=0 before="Note"/block hasTip=false tipNested=false value=Before paragraph.\n\n> [!NOTE]\n> Selection body.\n\nAfter paragraph.\n
+PASS editing marker to unsupported type removes alert styling: label=unsupported-marker-edit hasAlert=false alertCount=0 hasMarker=false markerText= markerFont= markerOpacity= before=/ hasTip=false tipNested=false value=> [!CUSTOM]\n> Marker edit body.\n
+==> ouro-md --undotest
+PASS multi-step undo/redo: edit=ONE TWOAlpha line.\n undo1=ONEAlpha line.\n undo2=Alpha line.\n redo1=ONEAlpha line.\n redo2=ONE TWOAlpha line.\n
+==> ouro-md --wraptest
+type " over selection: hello "world"   OK ✓
+type ( over selection: hello (world)   OK ✓
+paste url over selection: hello [world](https://x.com)   OK ✓
+auto-pair ( then x: hello(x)   OK ✓
+skip over typed ): ()x   OK ✓
+skip over a curly close-quote: a”xb   OK ✓
+backspace deletes pair:    OK ✓
+==> ouro-md --linktest
+linktest script completed: ok   OK ✓
+IR link node rendered for [text](url): found=true   OK ✓
+⌘-mousedown posts openURL with the link's URL: opened=https://ouro.bot   OK ✓
+==> ouro-md --wrapgluetest
+leading enumerator wrapped in .ouro-nowrap: 3. Instructions   OK ✓
+bracketed inline code wrapped in .ouro-nowrap: code in: (`abc123`)   OK ✓
+glue does not change the Markdown round-trip: before==after: true   OK ✓
+==> ouro-md --renderprobe
+heading     : rendered ✓
+bold        : rendered ✓
+inlineCode  : rendered ✓
+codeBlock   : rendered ✓
+table       : rendered ✓
+taskList    : rendered ✓
+math        : rendered ✓
+footnote    : rendered ✓
+alert       : rendered ✓
+mermaid     : rendered ✓
+==> ouro-md --mermaidcliptest
+mermaid rendered: yes ✓ (6 labels)
+max label overflow: 0.0px ✓
+==> ouro-md --reloadrendertest
+new diagram rendered: yes ✓ (svg=true beta=true)
+stale diagram cleared: yes ✓
+scroll preserved: yes ✓ (before=150 after=150)
+==> ouro-md --darkdiagramtest
+[light] nodeFillLuminance=238 fill=rgb(236, 236, 255) found=true
+[dark] nodeFillLuminance=32 fill=rgb(31, 32, 32) found=true
+diagram re-themed on light→dark switch: yes ✓ (light=238 dark=32)
+==> ouro-md --selectionblurtest
+selection made:                 ✓
+blur to chrome mutes:           ✓
+focus return un-mutes:          ✓
+focus within editor no flicker: ✓
+file switch clears selection:   ✓
+==> ouro-md --copyflavortest
+default  : ✓  plain[md=true vis=true] html[rendered=true empty=false]
+markdown : ✓  plain[md=true vis=true] html[rendered=false empty=true]
+plain    : ✓  plain[md=false vis=true] html[rendered=false empty=true]
+html     : ✓  plain[md=false vis=true] html[rendered=true empty=false]
+==> ouro-md --performanceprobe
+large document load: 253.0ms headings=0 tables=0 html=37469 value=33246 ✓
+large document edit latency: 77.0ms ✓
+large document replace latency: 130.0ms ✓
+large document clear latency: 4.0ms ✓
+folder search latency: 20.3ms results=107 ✓
+resident memory: 81.0MB delta=72.2MB ✓
+==> ouro-md --accessibilityaudit
+runtime accessibility smoke: ✓
+document truth accessibility: ✓
+shell rendered accessibility labels: ✓
+source accessibility labels: ✓
+menu shortcut coverage: ✓
+menu shortcut conflicts: ✓
+command discoverability catalog: ✓
+==> ouro-md --markdownparitytest
+renderer parity: ✓
+html quartz parity: ✓
+html graphite parity: ✓
+html manuscript parity: ✓
+html newsprint parity: ✓
+pdf export parity: ✓ bytes=36264
+==> ouro-md --codewraptest
+code blocks present: 1 ✓
+page horizontal overflow: 0.0px ✓
+code blocks clipped by viewport: 0 ✓
+code blocks with own horizontal scroll: 1 ✓ (max 1908.0px)
+code blocks initially scrolled sideways: 0 ✓
+==> visual QA: fallback-quartz
+page horizontal overflow: 0.0px ✓
+headings: 2, long: 1, escaped: 0 ✓
+images: 1, unloaded: 0, escaped: 0 ✓
+nested list items: 3 ✓
+callouts: 2 ✓
+tables: 2, escaped: 0, collapsed cells: 0, imbalanced: 0 ✓
+visual QA ok: fallback-quartz
+==> visual QA: dogfood-quartz
+page horizontal overflow: 0.0px ✓
+headings: 2, long: 1, escaped: 0 ✓
+images: 1, unloaded: 0, escaped: 0 ✓
+nested list items: 5 ✓
+callouts: 2 ✓
+tables: 2, escaped: 0, collapsed cells: 0, imbalanced: 0 ✓
+visual QA ok: dogfood-quartz
+==> visual QA: dogfood-graphite
+page horizontal overflow: 0.0px ✓
+headings: 2, long: 1, escaped: 0 ✓
+images: 1, unloaded: 0, escaped: 0 ✓
+nested list items: 5 ✓
+callouts: 2 ✓
+tables: 2, escaped: 0, collapsed cells: 0, imbalanced: 0 ✓
+visual QA ok: dogfood-graphite
+visual QA ok
+==> ouro-md --searchrevealtest
+whole-word reveal selection: needle before[
+] after[
+] in needlex
+needle
+111
+222 ✓
+regex reveal selection: 222 in needlex
+needle
+111
+222 matches[111,222] ✓
+==> ouro-md --uisurfacetest
+preferences fitting size: 560.0x413.0 ✓
+about fitting size: 520.0x520.0 ✓
+search sidebar fitting size: 208.0x95.0 ✓
+editor palette/status fitting size: 400.0x320.0 ✓
+document truth control fitting size: hidden 400.0x320.0 visible 500.0x320.0 ✓
+command reference fitting size: 560.0x620.0 ✓
+status/palette semantic state: ✓
+command discoverability semantic state: ✓
+available update controls fitting size: 560.0x130.0 ✓
+update progress fitting size: installing 400.0x131.0 failed 400.0x105.0 ✓
+installing update review state: ✓
+direct shell install suppressed; review prompt available: ✓
+invalid regex visible state: ✓
+search result row state: ✓
+menu topology: ✓
+accessibility labels: ✓
+==> ouro-md --editorsurfacetest
+markdown file drop classification: ok
+image paste data-uri insertion: ok
+image drop data-uri insertion: ok
+web content recovery reload: ok
+html exports all themes: ok
+print dry-run operation: ok
+pdf export probe: ok
+==> ouro-md --firstlaunchtest
+first launch welcome pixels: 957 nonblank samples
+==> ouro-md --tablewraptest
+tables present: 8 ✓
+page horizontal overflow: 0.0px ✓
+tables clipped by viewport: 0 ✓
+tables with own horizontal scroll: 7 ✓
+clearly-scrollable tables with edge affordance: 7/7 ✓
+fitting tables with stray affordance: 0 ✓
+tables not flush with text left edge: 0 ✓
+tables initially scrolled sideways: 0 ✓
+collapsed long cells: 0 ✓
+cells with clipped (hidden) code: 0 ✓
+collapsed empty cells: 0 ✓
+code spilling across cells: 0 ✓
+inline elements spilling across cells: 0 ✓
+invalid table metrics: 0 ✓
+table 01 width 412.0px scroll 709.0px left 0.0px min-long 283.0px min-code 492.5px column-ratio 8.02
+table 02 width 412.0px scroll 278.0px left 0.0px min-long 283.0px min-code 405.8px column-ratio 1.43
+table 03 width 412.0px scroll 1359.0px left 0.0px min-long 283.0px min-code 1090.7px column-ratio 9.64
+table 04 width 412.0px scroll 840.0px left 0.0px min-long 283.0px min-code 475.2px column-ratio 1.74
+table 05 width 412.0px scroll 721.0px left 0.0px min-long 283.0px min-code 0.0px column-ratio 1.00
+table 06 width 412.0px scroll 825.0px left 0.0px min-long 431.8px min-code 431.8px column-ratio 1.86
+table 07 width 412.0px scroll 155.0px left 0.0px min-long 283.0px min-code 0.0px column-ratio 1.00
+table 08 width 420.0px scroll 0.0px left 0.0px min-long 327.7px min-code 0.0px column-ratio 3.59
+==> ouro-md --tablewraptest --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
+tables present: 16 ✓
+pathological categories: alignment,empty,html,huge,long-code,sparse,url ✓
+alignment matrix center/right: true/true ✓
+huge table metrics present: true ✓
+page horizontal overflow: 0.0px ✓
+tables clipped by viewport: 0 ✓
+tables with own horizontal scroll: 15 ✓
+clearly-scrollable tables with edge affordance: 15/15 ✓
+fitting tables with stray affordance: 0 ✓
+tables not flush with text left edge: 0 ✓
+tables initially scrolled sideways: 0 ✓
+collapsed long cells: 0 ✓
+cells with clipped (hidden) code: 0 ✓
+collapsed empty cells: 0 ✓
+code spilling across cells: 0 ✓
+inline elements spilling across cells: 0 ✓
+invalid table metrics: 0 ✓
+table 01 width 412.0px scroll 875.0px left 0.0px min-long 283.0px min-code 431.8px column-ratio 8.30
+table 02 width 412.0px scroll 1359.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 9.64
+table 03 width 412.0px scroll 526.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 3.21
+table 04 [sparse] width 412.0px scroll 769.0px left 0.0px min-long 283.0px min-code 743.9px column-ratio 11.40
+table 05 width 412.0px scroll 1160.0px left 0.0px min-long 283.0px min-code 1203.4px column-ratio 14.26
+table 06 width 412.0px scroll 1616.0px left 0.0px min-long 275.8px min-code 275.8px column-ratio 8.05
+table 07 width 412.0px scroll 155.0px left 0.0px min-long 283.0px min-code 0.0px column-ratio 1.00
+table 08 width 412.0px scroll 200.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 1.16
+table 09 width 412.0px scroll 569.0px left 0.0px min-long 283.0px min-code 605.2px column-ratio 6.61
+table 10 [empty] width 412.0px scroll 330.0px left 0.0px min-long 283.0px min-code 0.0px column-ratio 3.64
+table 11 [alignment] width 420.0px scroll 0.0px left 0.0px min-long 0.0px min-code 121.9px column-ratio 1.46
+table 12 [html] width 412.0px scroll 721.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 1.00
+table 13 [url] width 412.0px scroll 706.0px left 0.0px min-long 283.0px min-code 726.6px column-ratio 6.79
+table 14 [sparse] width 412.0px scroll 278.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 4.22
+table 15 [long-code] width 412.0px scroll 1005.0px left 0.0px min-long 283.0px min-code 1021.3px column-ratio 9.16
+table 16 [huge] width 412.0px scroll 255.0px left 0.0px min-long 0.0px min-code 0.0px column-ratio 1.00
+==> ouro-md --tablewraptest --tablewrap-width 1000 --tablewrap-height 1300 --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
+tables present: 16 ✓
+pathological categories: alignment,empty,html,huge,long-code,sparse,url ✓
+alignment matrix center/right: true/true ✓
+huge table metrics present: true ✓
+page horizontal overflow: 0.0px ✓
+tables clipped by viewport: 0 ✓
+tables with own horizontal scroll: 10 ✓
+clearly-scrollable tables with edge affordance: 10/10 ✓
+fitting tables with stray affordance: 0 ✓
+tables not flush with text left edge: 0 ✓
+tables initially scrolled sideways: 0 ✓
+collapsed long cells: 0 ✓
+cells with clipped (hidden) code: 0 ✓
+collapsed empty cells: 0 ✓
+code spilling across cells: 0 ✓
+inline elements spilling across cells: 0 ✓
+invalid table metrics: 0 ✓
+table 01 width 792.0px scroll 495.0px left 0.0px min-long 283.0px min-code 431.8px column-ratio 8.30
+table 02 width 792.0px scroll 979.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 9.64
+table 03 width 792.0px scroll 146.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 3.21
+table 04 [sparse] width 792.0px scroll 389.0px left 0.0px min-long 283.0px min-code 743.9px column-ratio 11.40
+table 05 width 792.0px scroll 780.0px left 0.0px min-long 283.0px min-code 1203.4px column-ratio 14.26
+table 06 width 792.0px scroll 1236.0px left 0.0px min-long 275.8px min-code 275.8px column-ratio 8.05
+table 07 width 714.0px scroll 0.0px left 0.0px min-long 283.0px min-code 0.0px column-ratio 1.52
+table 08 width 800.0px scroll 0.0px left 0.0px min-long 399.5px min-code 399.5px column-ratio 1.00
+table 09 width 792.0px scroll 189.0px left 0.0px min-long 283.0px min-code 605.2px column-ratio 6.61
+table 10 [empty] width 800.0px scroll 0.0px left 0.0px min-long 283.0px min-code 0.0px column-ratio 4.39
+table 11 [alignment] width 529.0px scroll 0.0px left 0.0px min-long 0.0px min-code 155.0px column-ratio 1.52
+table 12 [html] width 792.0px scroll 341.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 1.00
+table 13 [url] width 792.0px scroll 326.0px left 0.0px min-long 283.0px min-code 726.6px column-ratio 6.79
+table 14 [sparse] width 800.0px scroll 0.0px left 0.0px min-long 355.0px min-code 355.0px column-ratio 4.70
+table 15 [long-code] width 792.0px scroll 625.0px left 0.0px min-long 283.0px min-code 1021.3px column-ratio 9.16
+table 16 [huge] width 800.0px scroll 0.0px left 0.0px min-long 0.0px min-code 0.0px column-ratio 1.00
+==> ouro-md --tablewraptest --tablewrap-width 1400 --tablewrap-height 5000 --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
+tables present: 16 ✓
+pathological categories: alignment,empty,html,huge,long-code,sparse,url ✓
+alignment matrix center/right: true/true ✓
+huge table metrics present: true ✓
+page horizontal overflow: 0.0px ✓
+tables clipped by viewport: 0 ✓
+tables with own horizontal scroll: 9 ✓
+clearly-scrollable tables with edge affordance: 9/9 ✓
+fitting tables with stray affordance: 0 ✓
+tables not flush with text left edge: 0 ✓
+tables initially scrolled sideways: 0 ✓
+collapsed long cells: 0 ✓
+cells with clipped (hidden) code: 0 ✓
+collapsed empty cells: 0 ✓
+code spilling across cells: 0 ✓
+inline elements spilling across cells: 0 ✓
+invalid table metrics: 0 ✓
+table 01 width 956.0px scroll 331.0px left 0.0px min-long 283.0px min-code 431.8px column-ratio 8.30
+table 02 width 956.0px scroll 815.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 9.64
+table 03 width 964.0px scroll 0.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 3.50
+table 04 [sparse] width 956.0px scroll 225.0px left 0.0px min-long 283.0px min-code 743.9px column-ratio 11.40
+table 05 width 956.0px scroll 616.0px left 0.0px min-long 283.0px min-code 1203.4px column-ratio 14.26
+table 06 width 956.0px scroll 1072.0px left 0.0px min-long 275.8px min-code 275.8px column-ratio 8.05
+table 07 width 714.0px scroll 0.0px left 0.0px min-long 283.0px min-code 0.0px column-ratio 1.52
+table 08 width 964.0px scroll 0.0px left 0.0px min-long 481.5px min-code 481.5px column-ratio 1.00
+table 09 width 956.0px scroll 25.0px left 0.0px min-long 283.0px min-code 605.2px column-ratio 6.61
+table 10 [empty] width 964.0px scroll 0.0px left 0.0px min-long 283.0px min-code 0.0px column-ratio 6.35
+table 11 [alignment] width 529.0px scroll 0.0px left 0.0px min-long 0.0px min-code 155.0px column-ratio 1.52
+table 12 [html] width 956.0px scroll 177.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 1.00
+table 13 [url] width 956.0px scroll 162.0px left 0.0px min-long 283.0px min-code 726.6px column-ratio 6.79
+table 14 [sparse] width 964.0px scroll 0.0px left 0.0px min-long 440.5px min-code 440.5px column-ratio 5.71
+table 15 [long-code] width 956.0px scroll 461.0px left 0.0px min-long 283.0px min-code 1021.3px column-ratio 9.16
+table 16 [huge] width 964.0px scroll 0.0px left 0.0px min-long 0.0px min-code 0.0px column-ratio 1.00
+==> ouro-md --roundtrip /tmp/ouro-md-native-scenarios.obvmQ4/roundtrip.md --out /tmp/ouro-md-native-scenarios.obvmQ4/roundtrip-out.md
+==> ouro-md selftest
+native scenarios ok
+PASS multi-step undo/redo: edit=ONE TWOAlpha line.\n undo1=ONEAlpha line.\n undo2=Alpha line.\n redo1=ONEAlpha line.\n redo2=ONE TWOAlpha line.\n
+release policy scan ok
+packaged app probes ok
+release policy scan ok
+packaged app: version=0.9.81 build=0.9.81 bundle=bot.ouro.md git=d97e738d269e
+/tmp/ouro-md-local-release.1Q8UzH/extracted/Ouro MD.app: valid on disk
+/tmp/ouro-md-local-release.1Q8UzH/extracted/Ouro MD.app: satisfies its Designated Requirement
+telemetry: not embedded (allowed for this run)
+version output: ouro-md 0.9.81 (d97e738d269e)
+bundleURL:    /tmp/ouro-md-local-release.1Q8UzH/extracted/Ouro MD.app
+resourceURL:  /tmp/ouro-md-local-release.1Q8UzH/extracted/Ouro MD.app/Contents/Resources
+executableURL:/tmp/ouro-md-local-release.1Q8UzH/extracted/Ouro MD.app/Contents/MacOS/ouro-md
+  bundleURL/ouro-md_OuroMD.bundle: missing  (/tmp/ouro-md-local-release.1Q8UzH/extracted/Ouro MD.app/ouro-md_OuroMD.bundle)
+  resourceURL/ouro-md_OuroMD.bundle: EXISTS  (/tmp/ouro-md-local-release.1Q8UzH/extracted/Ouro MD.app/Contents/Resources/ouro-md_OuroMD.bundle)
+OuroResources.web(index.html): FOUND  (/tmp/ouro-md-local-release.1Q8UzH/extracted/Ouro MD.app/Contents/Resources/ouro-md_OuroMD.bundle/web/index.html)
+PASS initial callout hides raw marker and keeps source: label=initial hasAlert=true alertCount=2 hasMarker=true markerText=[!NOTE] markerFont=0px markerOpacity=0 before="Note"/block hasTip=true tipNested=true value=# Alerts\n\n> Leading-space top-level quote stays normal.\n\n- List item\n  > [!NOTE]\n  > List-contained marker stays normal.\n  >\n\n> [!NOTE]\n> An alert.\n\n> [!TIP]\n> Tip alert.\n>\n>> Nested quote body.\n>>\n\n> `[!NOTE]`\n> Code marker stays normal.\n\n> [!NOTE](https://x.com)\n> Link marker stays normal.\n\n> **[!NOTE]**\n> Strong marker stays normal.\n\n> [!NOTE][ref]\n> Ref marker stays normal.\n\n> Ordinary quote first.\n> [!NOTE] later stays normal.\n\n>> [!NOTE]\n>> Nested marker stays normal.\n>>\n\nOutside paragraph.\n
+PASS focused callout reveals editable marker: label=focused hasAlert=true alertCount=2 hasMarker=true markerText=[!NOTE] markerFont=16px markerOpacity=0.6 before="Note"/none hasTip=true tipNested=true value=# Alerts\n\n> Leading-space top-level quote stays normal.\n\n- List item\n  > [!NOTE]\n  > List-contained marker stays normal.\n  >\n\n> [!NOTE]\n> An alert.\n\n> [!TIP]\n> Tip alert.\n>\n>> Nested quote body.\n>>\n\n> `[!NOTE]`\n> Code marker stays normal.\n\n> [!NOTE](https://x.com)\n> Link marker stays normal.\n\n> **[!NOTE]**\n> Strong marker stays normal.\n\n> [!NOTE][ref]\n> Ref marker stays normal.\n\n> Ordinary quote first.\n> [!NOTE] later stays normal.\n\n>> [!NOTE]\n>> Nested marker stays normal.\n>>\n\nOutside paragraph.\n
+PASS editing alert body preserves marker: label=edited hasAlert=true alertCount=2 hasMarker=true markerText=[!NOTE] markerFont=16px markerOpacity=0.6 before="Note"/none hasTip=true tipNested=true value=# Alerts\n\n> Leading-space top-level quote stays normal.\n\n- List item\n  > [!NOTE]\n  > List-contained marker stays normal.\n  >\n\n> [!NOTE]\n> An alert. Edited\n\n> [!TIP]\n> Tip alert.\n>\n>> Nested quote body.\n>>\n\n> `[!NOTE]`\n> Code marker stays normal.\n\n> [!NOTE](https://x.com)\n> Link marker stays normal.\n\n> **[!NOTE]**\n> Strong marker stays normal.\n\n> [!NOTE][ref]\n> Ref marker stays normal.\n\n> Ordinary quote first.\n> [!NOTE] later stays normal.\n\n>> [!NOTE]\n>> Nested marker stays normal.\n>>\n\nOutside paragraph.\n
+PASS alert body undo/redo preserves marker: undo=label=alert-undo hasAlert=true alertCount=2 hasMarker=true markerText=[!NOTE] markerFont=16px markerOpacity=0.6 before="Note"/none hasTip=true tipNested=true value=# Alerts\n\n> Leading-space top-level quote stays normal.\n\n- List item\n  > [!NOTE]\n  > List-contained marker stays normal.\n  >\n\n> [!NOTE]\n> An alert.\n\n> [!TIP]\n> Tip alert.\n>\n>> Nested quote body.\n>>\n\n> `[!NOTE]`\n> Code marker stays normal.\n\n> [!NOTE](https://x.com)\n> Link marker stays normal.\n\n> **[!NOTE]**\n> Strong marker stays normal.\n\n> [!NOTE][ref]\n> Ref marker stays normal.\n\n> Ordinary quote first.\n> [!NOTE] later stays normal.\n\n>> [!NOTE]\n>> Nested marker stays normal.\n>>\n\nOutside paragraph.\n redo=label=alert-redo hasAlert=true alertCount=2 hasMarker=true markerText=[!NOTE] markerFont=16px markerOpacity=0.6 before="Note"/none hasTip=true tipNested=true value=# Alerts\n\n> Leading-space top-level quote stays normal.\n\n- List item\n  > [!NOTE]\n  > List-contained marker stays normal.\n  >\n\n> [!NOTE]\n> An alert. Edited\n\n> [!TIP]\n> Tip alert.\n>\n>> Nested quote body.\n>>\n\n> `[!NOTE]`\n> Code marker stays normal.\n\n> [!NOTE](https://x.com)\n> Link marker stays normal.\n\n> **[!NOTE]**\n> Strong marker stays normal.\n\n> [!NOTE][ref]\n> Ref marker stays normal.\n\n> Ordinary quote first.\n> [!NOTE] later stays normal.\n\n>> [!NOTE]\n>> Nested marker stays normal.\n>>\n\nOutside paragraph.\n
+PASS split-view rebuild preserves callout marker: label=sv hasAlert=true alertCount=2 hasMarker=true markerText=[!NOTE] markerFont=0px markerOpacity=0 before="Note"/block hasTip=true tipNested=true value=# Alerts\n\n> Leading-space top-level quote stays normal.\n\n- List item\n  > [!NOTE]\n  > List-contained marker stays normal.\n\n> [!NOTE]\n> An alert. Edited\n\n> [!TIP]\n> Tip alert.\n> \n> > Nested quote body.\n\n> `[!NOTE]`\n> Code marker stays normal.\n\n> [!NOTE](https://x.com)\n> Link marker stays normal.\n\n> **[!NOTE]**\n> Strong marker stays normal.\n\n> [!NOTE][ref]\n> Ref marker stays normal.\n\n> Ordinary quote first.\n> [!NOTE] later stays normal.\n\n> > [!NOTE]\n> > Nested marker stays normal.\n\nOutside paragraph.\n\n
+PASS instant-render rebuild preserves callout marker: label=ir hasAlert=true alertCount=2 hasMarker=true markerText=[!NOTE] markerFont=0px markerOpacity=0 before="Note"/block hasTip=true tipNested=true value=# Alerts\n\n> Leading-space top-level quote stays normal.\n\n- List item\n  > [!NOTE]\n  > List-contained marker stays normal.\n  >\n\n> [!NOTE]\n> An alert. Edited\n\n> [!TIP]\n> Tip alert.\n>\n>> Nested quote body.\n>>\n\n> `[!NOTE]`\n> Code marker stays normal.\n\n> [!NOTE](https://x.com)\n> Link marker stays normal.\n\n> **[!NOTE]**\n> Strong marker stays normal.\n\n> [!NOTE][ref]\n> Ref marker stays normal.\n\n> Ordinary quote first.\n> [!NOTE] later stays normal.\n\n>> [!NOTE]\n>> Nested marker stays normal.\n>>\n\nOutside paragraph.\n
+PASS spanning selection includes hidden marker: label=spanning-selection hasAlert=true alertCount=1 hasMarker=true markerText=[!NOTE] markerFont=0px markerOpacity=0 before="Note"/block hasTip=false tipNested=false value=Before paragraph.\n\n> [!NOTE]\n> Selection body.\n\nAfter paragraph.\n
+PASS editing marker to unsupported type removes alert styling: label=unsupported-marker-edit hasAlert=false alertCount=0 hasMarker=false markerText= markerFont= markerOpacity= before=/ hasTip=false tipNested=false value=> [!CUSTOM]\n> Marker edit body.\n
+==> ouro-md --undotest
+PASS multi-step undo/redo: edit=ONE TWOAlpha line.\n undo1=ONEAlpha line.\n undo2=Alpha line.\n redo1=ONEAlpha line.\n redo2=ONE TWOAlpha line.\n
+==> ouro-md --wraptest
+type " over selection: hello "world"   OK ✓
+type ( over selection: hello (world)   OK ✓
+paste url over selection: hello [world](https://x.com)   OK ✓
+auto-pair ( then x: hello(x)   OK ✓
+skip over typed ): ()x   OK ✓
+skip over a curly close-quote: a”xb   OK ✓
+backspace deletes pair:    OK ✓
+==> ouro-md --linktest
+linktest script completed: ok   OK ✓
+IR link node rendered for [text](url): found=true   OK ✓
+⌘-mousedown posts openURL with the link's URL: opened=https://ouro.bot   OK ✓
+==> ouro-md --wrapgluetest
+leading enumerator wrapped in .ouro-nowrap: 3. Instructions   OK ✓
+bracketed inline code wrapped in .ouro-nowrap: code in: (`abc123`)   OK ✓
+glue does not change the Markdown round-trip: before==after: true   OK ✓
+==> ouro-md --renderprobe
+heading     : rendered ✓
+bold        : rendered ✓
+inlineCode  : rendered ✓
+codeBlock   : rendered ✓
+table       : rendered ✓
+taskList    : rendered ✓
+math        : rendered ✓
+footnote    : rendered ✓
+alert       : rendered ✓
+mermaid     : rendered ✓
+==> ouro-md --mermaidcliptest
+mermaid rendered: yes ✓ (6 labels)
+max label overflow: 0.0px ✓
+==> ouro-md --reloadrendertest
+new diagram rendered: yes ✓ (svg=true beta=true)
+stale diagram cleared: yes ✓
+scroll preserved: yes ✓ (before=150 after=150)
+==> ouro-md --darkdiagramtest
+[light] nodeFillLuminance=238 fill=rgb(236, 236, 255) found=true
+[dark] nodeFillLuminance=32 fill=rgb(31, 32, 32) found=true
+diagram re-themed on light→dark switch: yes ✓ (light=238 dark=32)
+==> ouro-md --selectionblurtest
+selection made:                 ✓
+blur to chrome mutes:           ✓
+focus return un-mutes:          ✓
+focus within editor no flicker: ✓
+file switch clears selection:   ✓
+==> ouro-md --copyflavortest
+default  : ✓  plain[md=true vis=true] html[rendered=true empty=false]
+markdown : ✓  plain[md=true vis=true] html[rendered=false empty=true]
+plain    : ✓  plain[md=false vis=true] html[rendered=false empty=true]
+html     : ✓  plain[md=false vis=true] html[rendered=true empty=false]
+==> ouro-md --performanceprobe
+large document load: 242.0ms headings=0 tables=0 html=37469 value=33246 ✓
+large document edit latency: 78.0ms ✓
+large document replace latency: 129.0ms ✓
+large document clear latency: 4.0ms ✓
+folder search latency: 27.0ms results=107 ✓
+resident memory: 71.4MB delta=62.6MB ✓
+==> ouro-md --accessibilityaudit
+runtime accessibility smoke: ✓
+document truth accessibility: ✓
+shell rendered accessibility labels: ✓
+source accessibility labels: ✓
+menu shortcut coverage: ✓
+menu shortcut conflicts: ✓
+command discoverability catalog: ✓
+==> ouro-md --markdownparitytest
+renderer parity: ✓
+html quartz parity: ✓
+html graphite parity: ✓
+html manuscript parity: ✓
+html newsprint parity: ✓
+pdf export parity: ✓ bytes=36264
+==> ouro-md --codewraptest
+code blocks present: 1 ✓
+page horizontal overflow: 0.0px ✓
+code blocks clipped by viewport: 0 ✓
+code blocks with own horizontal scroll: 1 ✓ (max 1908.0px)
+code blocks initially scrolled sideways: 0 ✓
+==> visual QA: fallback-quartz
+page horizontal overflow: 0.0px ✓
+headings: 2, long: 1, escaped: 0 ✓
+images: 1, unloaded: 0, escaped: 0 ✓
+nested list items: 3 ✓
+callouts: 2 ✓
+tables: 2, escaped: 0, collapsed cells: 0, imbalanced: 0 ✓
+visual QA ok: fallback-quartz
+==> visual QA: dogfood-quartz
+page horizontal overflow: 0.0px ✓
+headings: 2, long: 1, escaped: 0 ✓
+images: 1, unloaded: 0, escaped: 0 ✓
+nested list items: 5 ✓
+callouts: 2 ✓
+tables: 2, escaped: 0, collapsed cells: 0, imbalanced: 0 ✓
+visual QA ok: dogfood-quartz
+==> visual QA: dogfood-graphite
+page horizontal overflow: 0.0px ✓
+headings: 2, long: 1, escaped: 0 ✓
+images: 1, unloaded: 0, escaped: 0 ✓
+nested list items: 5 ✓
+callouts: 2 ✓
+tables: 2, escaped: 0, collapsed cells: 0, imbalanced: 0 ✓
+visual QA ok: dogfood-graphite
+visual QA ok
+==> ouro-md --searchrevealtest
+whole-word reveal selection: needle before[
+] after[
+] in needlex
+needle
+111
+222 ✓
+regex reveal selection: 222 in needlex
+needle
+111
+222 matches[111,222] ✓
+==> ouro-md --uisurfacetest
+preferences fitting size: 560.0x413.0 ✓
+about fitting size: 520.0x520.0 ✓
+search sidebar fitting size: 208.0x95.0 ✓
+editor palette/status fitting size: 400.0x320.0 ✓
+document truth control fitting size: hidden 400.0x320.0 visible 500.0x320.0 ✓
+command reference fitting size: 560.0x620.0 ✓
+status/palette semantic state: ✓
+command discoverability semantic state: ✓
+available update controls fitting size: 560.0x130.0 ✓
+update progress fitting size: installing 400.0x131.0 failed 400.0x105.0 ✓
+installing update review state: ✓
+direct shell install suppressed; review prompt available: ✓
+invalid regex visible state: ✓
+search result row state: ✓
+menu topology: ✓
+accessibility labels: ✓
+==> ouro-md --editorsurfacetest
+markdown file drop classification: ok
+image paste data-uri insertion: ok
+image drop data-uri insertion: ok
+web content recovery reload: ok
+html exports all themes: ok
+print dry-run operation: ok
+pdf export probe: ok
+==> ouro-md --firstlaunchtest
+first launch welcome pixels: 957 nonblank samples
+==> ouro-md --tablewraptest
+tables present: 8 ✓
+page horizontal overflow: 0.0px ✓
+tables clipped by viewport: 0 ✓
+tables with own horizontal scroll: 7 ✓
+clearly-scrollable tables with edge affordance: 7/7 ✓
+fitting tables with stray affordance: 0 ✓
+tables not flush with text left edge: 0 ✓
+tables initially scrolled sideways: 0 ✓
+collapsed long cells: 0 ✓
+cells with clipped (hidden) code: 0 ✓
+collapsed empty cells: 0 ✓
+code spilling across cells: 0 ✓
+inline elements spilling across cells: 0 ✓
+invalid table metrics: 0 ✓
+table 01 width 412.0px scroll 709.0px left 0.0px min-long 283.0px min-code 492.5px column-ratio 8.02
+table 02 width 412.0px scroll 278.0px left 0.0px min-long 283.0px min-code 405.8px column-ratio 1.43
+table 03 width 412.0px scroll 1359.0px left 0.0px min-long 283.0px min-code 1090.7px column-ratio 9.64
+table 04 width 412.0px scroll 840.0px left 0.0px min-long 283.0px min-code 475.2px column-ratio 1.74
+table 05 width 412.0px scroll 721.0px left 0.0px min-long 283.0px min-code 0.0px column-ratio 1.00
+table 06 width 412.0px scroll 825.0px left 0.0px min-long 431.8px min-code 431.8px column-ratio 1.86
+table 07 width 412.0px scroll 155.0px left 0.0px min-long 283.0px min-code 0.0px column-ratio 1.00
+table 08 width 420.0px scroll 0.0px left 0.0px min-long 327.7px min-code 0.0px column-ratio 3.59
+==> ouro-md --tablewraptest --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
+tables present: 16 ✓
+pathological categories: alignment,empty,html,huge,long-code,sparse,url ✓
+alignment matrix center/right: true/true ✓
+huge table metrics present: true ✓
+page horizontal overflow: 0.0px ✓
+tables clipped by viewport: 0 ✓
+tables with own horizontal scroll: 15 ✓
+clearly-scrollable tables with edge affordance: 15/15 ✓
+fitting tables with stray affordance: 0 ✓
+tables not flush with text left edge: 0 ✓
+tables initially scrolled sideways: 0 ✓
+collapsed long cells: 0 ✓
+cells with clipped (hidden) code: 0 ✓
+collapsed empty cells: 0 ✓
+code spilling across cells: 0 ✓
+inline elements spilling across cells: 0 ✓
+invalid table metrics: 0 ✓
+table 01 width 412.0px scroll 875.0px left 0.0px min-long 283.0px min-code 431.8px column-ratio 8.30
+table 02 width 412.0px scroll 1359.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 9.64
+table 03 width 412.0px scroll 526.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 3.21
+table 04 [sparse] width 412.0px scroll 769.0px left 0.0px min-long 283.0px min-code 743.9px column-ratio 11.40
+table 05 width 412.0px scroll 1160.0px left 0.0px min-long 283.0px min-code 1203.4px column-ratio 14.26
+table 06 width 412.0px scroll 1616.0px left 0.0px min-long 275.8px min-code 275.8px column-ratio 8.05
+table 07 width 412.0px scroll 155.0px left 0.0px min-long 283.0px min-code 0.0px column-ratio 1.00
+table 08 width 412.0px scroll 200.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 1.16
+table 09 width 412.0px scroll 569.0px left 0.0px min-long 283.0px min-code 605.2px column-ratio 6.61
+table 10 [empty] width 412.0px scroll 330.0px left 0.0px min-long 283.0px min-code 0.0px column-ratio 3.64
+table 11 [alignment] width 420.0px scroll 0.0px left 0.0px min-long 0.0px min-code 121.9px column-ratio 1.46
+table 12 [html] width 412.0px scroll 721.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 1.00
+table 13 [url] width 412.0px scroll 706.0px left 0.0px min-long 283.0px min-code 726.6px column-ratio 6.79
+table 14 [sparse] width 412.0px scroll 278.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 4.22
+table 15 [long-code] width 412.0px scroll 1005.0px left 0.0px min-long 283.0px min-code 1021.3px column-ratio 9.16
+table 16 [huge] width 412.0px scroll 255.0px left 0.0px min-long 0.0px min-code 0.0px column-ratio 1.00
+==> ouro-md --tablewraptest --tablewrap-width 1000 --tablewrap-height 1300 --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
+tables present: 16 ✓
+pathological categories: alignment,empty,html,huge,long-code,sparse,url ✓
+alignment matrix center/right: true/true ✓
+huge table metrics present: true ✓
+page horizontal overflow: 0.0px ✓
+tables clipped by viewport: 0 ✓
+tables with own horizontal scroll: 10 ✓
+clearly-scrollable tables with edge affordance: 10/10 ✓
+fitting tables with stray affordance: 0 ✓
+tables not flush with text left edge: 0 ✓
+tables initially scrolled sideways: 0 ✓
+collapsed long cells: 0 ✓
+cells with clipped (hidden) code: 0 ✓
+collapsed empty cells: 0 ✓
+code spilling across cells: 0 ✓
+inline elements spilling across cells: 0 ✓
+invalid table metrics: 0 ✓
+table 01 width 792.0px scroll 495.0px left 0.0px min-long 283.0px min-code 431.8px column-ratio 8.30
+table 02 width 792.0px scroll 979.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 9.64
+table 03 width 792.0px scroll 146.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 3.21
+table 04 [sparse] width 792.0px scroll 389.0px left 0.0px min-long 283.0px min-code 743.9px column-ratio 11.40
+table 05 width 792.0px scroll 780.0px left 0.0px min-long 283.0px min-code 1203.4px column-ratio 14.26
+table 06 width 792.0px scroll 1236.0px left 0.0px min-long 275.8px min-code 275.8px column-ratio 8.05
+table 07 width 714.0px scroll 0.0px left 0.0px min-long 283.0px min-code 0.0px column-ratio 1.52
+table 08 width 800.0px scroll 0.0px left 0.0px min-long 399.5px min-code 399.5px column-ratio 1.00
+table 09 width 792.0px scroll 189.0px left 0.0px min-long 283.0px min-code 605.2px column-ratio 6.61
+table 10 [empty] width 800.0px scroll 0.0px left 0.0px min-long 283.0px min-code 0.0px column-ratio 4.39
+table 11 [alignment] width 529.0px scroll 0.0px left 0.0px min-long 0.0px min-code 155.0px column-ratio 1.52
+table 12 [html] width 792.0px scroll 341.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 1.00
+table 13 [url] width 792.0px scroll 326.0px left 0.0px min-long 283.0px min-code 726.6px column-ratio 6.79
+table 14 [sparse] width 800.0px scroll 0.0px left 0.0px min-long 355.0px min-code 355.0px column-ratio 4.70
+table 15 [long-code] width 792.0px scroll 625.0px left 0.0px min-long 283.0px min-code 1021.3px column-ratio 9.16
+table 16 [huge] width 800.0px scroll 0.0px left 0.0px min-long 0.0px min-code 0.0px column-ratio 1.00
+==> ouro-md --tablewraptest --tablewrap-width 1400 --tablewrap-height 5000 --tablewrap-file Tests/Fixtures/dogfood-wide-tables.md
+tables present: 16 ✓
+pathological categories: alignment,empty,html,huge,long-code,sparse,url ✓
+alignment matrix center/right: true/true ✓
+huge table metrics present: true ✓
+page horizontal overflow: 0.0px ✓
+tables clipped by viewport: 0 ✓
+tables with own horizontal scroll: 9 ✓
+clearly-scrollable tables with edge affordance: 9/9 ✓
+fitting tables with stray affordance: 0 ✓
+tables not flush with text left edge: 0 ✓
+tables initially scrolled sideways: 0 ✓
+collapsed long cells: 0 ✓
+cells with clipped (hidden) code: 0 ✓
+collapsed empty cells: 0 ✓
+code spilling across cells: 0 ✓
+inline elements spilling across cells: 0 ✓
+invalid table metrics: 0 ✓
+table 01 width 956.0px scroll 331.0px left 0.0px min-long 283.0px min-code 431.8px column-ratio 8.30
+table 02 width 956.0px scroll 815.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 9.64
+table 03 width 964.0px scroll 0.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 3.50
+table 04 [sparse] width 956.0px scroll 225.0px left 0.0px min-long 283.0px min-code 743.9px column-ratio 11.40
+table 05 width 956.0px scroll 616.0px left 0.0px min-long 283.0px min-code 1203.4px column-ratio 14.26
+table 06 width 956.0px scroll 1072.0px left 0.0px min-long 275.8px min-code 275.8px column-ratio 8.05
+table 07 width 714.0px scroll 0.0px left 0.0px min-long 283.0px min-code 0.0px column-ratio 1.52
+table 08 width 964.0px scroll 0.0px left 0.0px min-long 481.5px min-code 481.5px column-ratio 1.00
+table 09 width 956.0px scroll 25.0px left 0.0px min-long 283.0px min-code 605.2px column-ratio 6.61
+table 10 [empty] width 964.0px scroll 0.0px left 0.0px min-long 283.0px min-code 0.0px column-ratio 6.35
+table 11 [alignment] width 529.0px scroll 0.0px left 0.0px min-long 0.0px min-code 155.0px column-ratio 1.52
+table 12 [html] width 956.0px scroll 177.0px left 0.0px min-long 283.0px min-code 283.0px column-ratio 1.00
+table 13 [url] width 956.0px scroll 162.0px left 0.0px min-long 283.0px min-code 726.6px column-ratio 6.79
+table 14 [sparse] width 964.0px scroll 0.0px left 0.0px min-long 440.5px min-code 440.5px column-ratio 5.71
+table 15 [long-code] width 956.0px scroll 461.0px left 0.0px min-long 283.0px min-code 1021.3px column-ratio 9.16
+table 16 [huge] width 964.0px scroll 0.0px left 0.0px min-long 0.0px min-code 0.0px column-ratio 1.00
+==> ouro-md --roundtrip /tmp/ouro-md-native-scenarios.GJac9x/roundtrip.md --out /tmp/ouro-md-native-scenarios.GJac9x/roundtrip-out.md
+==> ouro-md selftest
+native scenarios ok
+PASS multi-step undo/redo: edit=ONE TWOAlpha line.\n undo1=ONEAlpha line.\n undo2=Alpha line.\n redo1=ONEAlpha line.\n redo2=ONE TWOAlpha line.\n
+release policy scan ok
+packaged app probes ok
+local release artifact verified: dist/Ouro-MD-0.9.81.zip (d97e738d269edb81e32e459fd00964c2a60f65e4)
+
+Publish with:
+  gh release create v0.9.81 "dist/Ouro-MD-0.9.81.zip" "dist/Ouro-MD-0.9.81.dmg" "dist/Ouro-MD-0.9.81.manifest.json" \
+    --repo ourostack/ouro-md --target "d97e738d269edb81e32e459fd00964c2a60f65e4" \
+    --title "Ouro MD 0.9.81" --notes "…"
