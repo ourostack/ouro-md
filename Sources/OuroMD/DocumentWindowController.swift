@@ -12,6 +12,8 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
     private var renamePopover: NSPopover?
     private var renameField: NSTextField?
     var renamePresentationHandler: (() -> Void)?
+    /// Test seam: overrides what a title click does (defaults to the Open panel).
+    var openDocumentFromTitleClickHandler: (() -> Void)?
 
     /// `onBecomeKey` lets the app re-point menu state at the active window.
     var onBecomeKey: ((DocumentWindowController) -> Void)?
@@ -32,7 +34,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         split.addSplitViewItem(NSSplitViewItem(viewController: editorVC))
         self.sidebarItem = sidebar
 
-        let window = NSWindow(contentViewController: split)
+        let window = DocumentWindow(contentViewController: split)
         window.setContentSize(NSSize(width: 1080, height: 800))
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
         window.titlebarAppearsTransparent = true
@@ -44,6 +46,10 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         super.init()
 
         window.delegate = self
+        // Click the filename to open a document (same as File ▸ Open), while the
+        // window subclass still distinguishes a click from a title-bar drag.
+        window.onTitleClicked = { [weak self] in self?.openDocumentFromTitleClick() }
+        window.titleHitView = { [weak self] in self?.nativeTitleField() }
         model.onChromeUpdate = { [weak self] in
             Task { @MainActor in self?.syncChrome() }
         }
@@ -84,6 +90,19 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         window.appearance = NSAppearance(named: model.theme.uiMode == "dark" ? .darkAqua : .aqua)
         if let background = NSColor(hex: model.theme.backgroundHex) { window.backgroundColor = background }
         MenuBuilder.refreshDynamicState(model: model)
+    }
+
+    // MARK: - Title click / open
+
+    /// A plain click on the filename opens the standard Open panel (same as
+    /// File ▸ Open), reusing the existing unsaved-changes guard. Rename stays a
+    /// menu command so a title click can never risk an accidental rename.
+    func openDocumentFromTitleClick() {
+        if let openDocumentFromTitleClickHandler {
+            openDocumentFromTitleClickHandler()
+            return
+        }
+        model.openPanel()
     }
 
     // MARK: - Rename
@@ -235,5 +254,57 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         default:
             return false
         }
+    }
+}
+
+/// A document window whose title click is app-defined. AppKit only provides
+/// richer title actions to `NSDocument`-based windows, so we detect a click on
+/// the title text ourselves while preserving the ability to drag the window by
+/// its title bar (a drag past a small threshold moves the window instead).
+final class DocumentWindow: NSWindow {
+    var onTitleClicked: (() -> Void)?
+    var titleHitView: (() -> NSView?)?
+
+    override func mouseDown(with event: NSEvent) {
+        guard event.clickCount == 1,
+              let titleView = titleHitView?() else {
+            super.mouseDown(with: event)
+            return
+        }
+        let titleRect = titleView.convert(titleView.bounds, to: nil)
+        guard titleRect.contains(event.locationInWindow) else {
+            super.mouseDown(with: event)
+            return
+        }
+
+        // Distinguish a click from a drag. Track the mouse until it is released;
+        // treat motion past a few points as a drag that moves the window.
+        let startMouse = NSEvent.mouseLocation
+        let startOrigin = frame.origin
+        var didDrag = false
+        trackingLoop: while let next = nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
+            switch next.type {
+            case .leftMouseUp:
+                break trackingLoop
+            case .leftMouseDragged:
+                let now = NSEvent.mouseLocation
+                let dx = now.x - startMouse.x
+                let dy = now.y - startMouse.y
+                if !didDrag && !TitleClickGesture.isDrag(deltaX: dx, deltaY: dy) { continue }
+                didDrag = true
+                setFrameOrigin(NSPoint(x: startOrigin.x + dx, y: startOrigin.y + dy))
+            default:
+                break
+            }
+        }
+        if !didDrag { onTitleClicked?() }
+    }
+}
+
+enum TitleClickGesture {
+    static let dragThresholdSquared: CGFloat = 9
+
+    static func isDrag(deltaX: CGFloat, deltaY: CGFloat) -> Bool {
+        (deltaX * deltaX + deltaY * deltaY) >= dragThresholdSquared
     }
 }
