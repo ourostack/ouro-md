@@ -4,14 +4,29 @@ import XCTest
 
 @MainActor
 final class DocumentWindowControllerTests: XCTestCase {
-    func testWindowUsesNativeDocumentChromeInsteadOfCustomTitleClickRouting() {
+    func testTitleClickRoutesToOpenPanelWhileKeepingNativeChrome() {
         let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
         defer { controller.window.close() }
 
-        XCTAssertTrue(type(of: controller.window) == NSWindow.self)
+        // Native document chrome is preserved (system-drawn title + proxy icon,
+        // draggable title bar) — the subclass only adds title-click routing.
+        XCTAssertTrue(controller.window is DocumentWindow)
         XCTAssertTrue(controller.window.isMovableByWindowBackground)
         XCTAssertNil(controller.window.representedURL)
         XCTAssertFalse(controller.window.isDocumentEdited)
+
+        // A plain title click opens a document rather than renaming inline.
+        var opened = false
+        controller.openDocumentFromTitleClickHandler = { opened = true }
+        controller.openDocumentFromTitleClick()
+        XCTAssertTrue(opened)
+    }
+
+    func testTitleClickGestureDistinguishesClickFromDrag() {
+        XCTAssertFalse(TitleClickGesture.isDrag(deltaX: 1, deltaY: 1))
+        XCTAssertFalse(TitleClickGesture.isDrag(deltaX: 2, deltaY: 2))
+        XCTAssertTrue(TitleClickGesture.isDrag(deltaX: 3, deltaY: 0))
+        XCTAssertTrue(TitleClickGesture.isDrag(deltaX: 0, deltaY: -4))
     }
 
     func testDocumentChromeAcrossSavedRenamedDirtyAndDeletedStates() {
