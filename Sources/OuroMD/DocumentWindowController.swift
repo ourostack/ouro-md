@@ -9,6 +9,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
     let model = AppModel()
     let window: NSWindow
     private var sidebarItem: NSSplitViewItem?
+    private var truthAccessory: NSTitlebarAccessoryViewController?
     private var renamePopover: NSPopover?
     private var renameField: NSTextField?
     var renamePresentationHandler: (() -> Void)?
@@ -50,6 +51,16 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         // window subclass still distinguishes a click from a title-bar drag.
         window.onTitleClicked = { [weak self] in self?.openDocumentFromTitleClick() }
         window.titleHitView = { [weak self] in self?.nativeTitleField() }
+        // Subtle title-bar document-status glyph (git truth + path/diff actions),
+        // placed trailing so it never collides with the filename's click-to-open
+        // on the left. Hidden in Focus Mode (see syncChrome) for a bare canvas.
+        let truthAccessory = NSTitlebarAccessoryViewController()
+        let truthHost = NSHostingView(rootView: DocumentTruthTitleControl(model: model))
+        truthHost.frame = NSRect(x: 0, y: 0, width: 28, height: 28)
+        truthAccessory.view = truthHost
+        truthAccessory.layoutAttribute = .trailing
+        window.addTitlebarAccessoryViewController(truthAccessory)
+        self.truthAccessory = truthAccessory
         model.onChromeUpdate = { [weak self] in
             Task { @MainActor in self?.syncChrome() }
         }
@@ -89,6 +100,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         window.isDocumentEdited = model.isDirty
         window.appearance = NSAppearance(named: model.theme.uiMode == "dark" ? .darkAqua : .aqua)
         if let background = NSColor(hex: model.theme.backgroundHex) { window.backgroundColor = background }
+        truthAccessory?.isHidden = model.focusMode
         MenuBuilder.refreshDynamicState(model: model)
     }
 

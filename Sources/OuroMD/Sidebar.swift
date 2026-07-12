@@ -455,23 +455,27 @@ struct EditorPane: View {
                     }
                 }
             }
-            HStack(alignment: .bottom) {
-                DocumentTruthControl(model: model)
-                Spacer()
-                if model.statusBarVisible {
+            if model.statusBarVisible && !model.focusMode {
+                HStack {
+                    Spacer()
                     DocumentStatusBar(model: model)
                 }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(.regularMaterial)
+                .overlay(Divider(), alignment: .top)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(.regularMaterial)
-            .overlay(Divider(), alignment: .top)
         }
         .frame(minWidth: 400, minHeight: 320)
     }
 }
 
-struct DocumentTruthControl: View {
+/// A whisper-quiet document-status affordance for the window title bar: just a
+/// state glyph, no canvas chrome. Click it for the file's git truth plus the
+/// path / git-diff actions. The full status text lives in the tooltip and the
+/// accessibility value, so the editor surface stays distraction-free — the point
+/// of the app. Focus Mode hides it entirely (see DocumentWindowController).
+struct DocumentTruthTitleControl: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
@@ -496,26 +500,26 @@ struct DocumentTruthControl: View {
             }
             .disabled(!model.documentTruth.canCopyGitDiffCommand)
         } label: {
-            HStack(spacing: 6) {
-                Image(systemName: iconName)
-                    .font(.system(size: 11, weight: .semibold))
+            ZStack {
+                // Rendered clear so the title bar shows only the glyph, while
+                // VoiceOver and the headless accessibility audit still read the
+                // status. Humans get the icon plus the tooltip.
                 Text("File status · \(model.documentTruthDisplayLabel)")
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                    .font(.system(size: 1))
+                    .foregroundStyle(.clear)
+                Image(systemName: iconName)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
             }
-            .font(.system(size: 11, weight: .medium))
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .frame(maxWidth: 260, alignment: .leading)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
-            .overlay(RoundedRectangle(cornerRadius: 6).stroke(.quaternary, lineWidth: 1))
+            .frame(width: 22, height: 22)
+            .clipped()
+            .contentShape(Rectangle())
         }
         .menuStyle(.borderlessButton)
-        .fixedSize(horizontal: false, vertical: true)
-        .help("Document truth: \(model.documentTruth.absolutePath ?? model.documentTruthDisplayLabel)")
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Document truth")
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("File status · \(model.documentTruthDisplayLabel)")
+        .accessibilityLabel("File status")
         .accessibilityValue(model.documentTruthDisplayLabel)
     }
 
