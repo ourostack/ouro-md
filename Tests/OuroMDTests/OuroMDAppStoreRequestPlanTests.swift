@@ -12,7 +12,7 @@ final class OuroMDAppStoreRequestPlanTests: XCTestCase {
         XCTAssertEqual(plan["bundleId"] as? String, "bot.ouro.md")
         XCTAssertEqual(plan["teamId"] as? String, "743GT2AJ24")
         XCTAssertEqual(plan["platform"] as? String, "MAC_OS")
-        XCTAssertEqual(plan["targetVersion"] as? String, "0.9.81")
+        XCTAssertEqual(plan["targetVersion"] as? String, "0.9.82")
         XCTAssertEqual(plan["locale"] as? String, "en-US")
         XCTAssertEqual(plan["staleRejectedVersionIds"] as? [String], [
             "7309944f-cbe8-4518-960c-444e6116ab46",
@@ -30,7 +30,7 @@ final class OuroMDAppStoreRequestPlanTests: XCTestCase {
         XCTAssertEqual(fetchVersion["path"] as? String, "/v1/apps/6787262892/appStoreVersions")
         XCTAssertEqual(fetchVersion["query"] as? [String: String], [
             "filter[platform]": "MAC_OS",
-            "filter[versionString]": "0.9.81",
+            "filter[versionString]": "0.9.82",
             "limit": "1"
         ])
 
@@ -42,7 +42,7 @@ final class OuroMDAppStoreRequestPlanTests: XCTestCase {
         XCTAssertEqual(createVersionData["type"] as? String, "appStoreVersions")
         XCTAssertEqual(createVersionData["attributes"] as? [String: String], [
             "platform": "MAC_OS",
-            "versionString": "0.9.81",
+            "versionString": "0.9.82",
             "copyright": "Copyright © 2026 Ari Mendelow"
         ])
         XCTAssertEqual(
@@ -271,7 +271,7 @@ final class OuroMDAppStoreRequestPlanTests: XCTestCase {
         XCTAssertEqual(result.status, 0, result.stderr)
         let artifactBody = try String(contentsOf: artifact, encoding: .utf8)
         XCTAssertEqual(artifactBody, result.stdout)
-        XCTAssertTrue(result.stdout.contains("Dry-run App Store request plan for 6787262892 0.9.81 (MAC_OS)"))
+        XCTAssertTrue(result.stdout.contains("Dry-run App Store request plan for 6787262892 0.9.82 (MAC_OS)"))
         XCTAssertTrue(result.stdout.contains("Requests 30; screenshots 4"))
         XCTAssertFalse(result.stdout.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("{"))
     }
@@ -320,7 +320,7 @@ final class OuroMDAppStoreRequestPlanTests: XCTestCase {
                   "distribution": "app-store",
                   "bundleId": "bot.ouro.md",
                   "store": {
-                    "version": "0.9.81",
+                    "version": "0.9.82",
                     "category": "DEVELOPER_TOOLS",
                     "subtitle": "Local Markdown Workspace",
                     "promotionalText": "Local Markdown workspace for Mac files.",
@@ -419,7 +419,7 @@ final class OuroMDAppStoreRequestPlanTests: XCTestCase {
                   "platform": "macos",
                   "distribution": "app-store",
                   "bundleId": "example.wrong",
-                  "store": { "version": "0.9.81" }
+                  "store": { "version": "0.9.82" }
                 }
               ]
             }
