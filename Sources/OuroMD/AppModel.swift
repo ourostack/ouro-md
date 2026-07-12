@@ -66,7 +66,7 @@ final class AppModel: ObservableObject {
     private(set) var lastDarkThemeID: String
     private(set) var mode = "ir"
     private(set) var showOutline = false
-    private(set) var focusMode = false
+    @Published private(set) var focusMode = false
     private(set) var typewriter = false
     @Published private(set) var zoom = 1.0
     @Published var autoSaveEnabled = true

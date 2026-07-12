@@ -74,11 +74,11 @@ final class UISurfaceTester {
             constrainedTo: NSSize(width: 520, height: 420)
         )
         let truthSize = fittingSize(
-            EditorPane(model: truthModel),
+            DocumentTruthTitleControl(model: truthModel),
             constrainedTo: NSSize(width: 520, height: 420)
         )
         let truthWithStatusSize = fittingSize(
-            EditorPane(model: truthWithStatusModel),
+            DocumentTruthTitleControl(model: truthWithStatusModel),
             constrainedTo: NSSize(width: 520, height: 420)
         )
         saveDebugSnapshot(
@@ -137,11 +137,11 @@ final class UISurfaceTester {
             constrainedTo: NSSize(width: 300, height: 640)
         )
         let truthLabels = accessibilityLabels(
-            EditorPane(model: truthModel),
+            DocumentTruthTitleControl(model: truthModel),
             constrainedTo: NSSize(width: 520, height: 420)
         )
         let truthWithStatusLabels = accessibilityLabels(
-            EditorPane(model: truthWithStatusModel),
+            DocumentTruthTitleControl(model: truthWithStatusModel),
             constrainedTo: NSSize(width: 520, height: 420)
         )
         let updateLabels = accessibilityLabels(

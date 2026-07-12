@@ -60,6 +60,7 @@ final class AccessibilityAuditTester {
         .union(accessibilityStrings(SidebarView(model: model), size: NSSize(width: 320, height: 720)))
         .union(accessibilityStrings(SidebarView(model: invalidModel), size: NSSize(width: 320, height: 720)))
         .union(accessibilityStrings(EditorPane(model: model), size: NSSize(width: 680, height: 520)))
+        .union(accessibilityStrings(DocumentTruthTitleControl(model: model), size: NSSize(width: 60, height: 44)))
         .union(accessibilityStrings(CommandReferenceView(items: CommandPaletteCatalog.items()), size: NSSize(width: 560, height: 620)))
         .union(accessibilityStrings(OuroMDAboutView(updateCoordinator: makeCurrentUpdateCoordinator()), size: NSSize(width: 540, height: 540)))
         .union(accessibilityStrings(UpdateProgressView(updateCoordinator: updateCoordinator), size: NSSize(width: 440, height: 190)))
@@ -304,8 +305,8 @@ final class AccessibilityAuditTester {
             "AppShellCommandReferenceView(",
             "shellWindows.close(id: \"keyboard-shortcuts\")",
             ".accessibilityLabel(\"Document status\")",
-            "DocumentTruthControl(model: model)",
-            ".accessibilityLabel(\"Document truth\")",
+            "struct DocumentTruthTitleControl",
+            ".accessibilityLabel(\"File status\")",
             ".accessibilityValue(model.documentTruthDisplayLabel)",
             "model.revealCurrentFileInFinder()",
             "model.copyCurrentGitDiffCommand()",
