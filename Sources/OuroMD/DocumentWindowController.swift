@@ -1,4 +1,6 @@
 import AppKit
+import Combine
+import OuroMDAppSupport
 import SwiftUI
 
 /// Owns one document window: its `AppModel`, the sidebar+editor split, the
@@ -10,6 +12,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
     let window: NSWindow
     private var sidebarItem: NSSplitViewItem?
     private var truthAccessory: NSTitlebarAccessoryViewController?
+    private var truthButton: DocumentTruthTitleButton?
     private var renamePopover: NSPopover?
     private var renameField: NSTextField?
     var renamePresentationHandler: (() -> Void)?
@@ -51,16 +54,16 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         // window subclass still distinguishes a click from a title-bar drag.
         window.onTitleClicked = { [weak self] in self?.openDocumentFromTitleClick() }
         window.titleHitView = { [weak self] in self?.nativeTitleField() }
-        // Subtle title-bar document-status glyph (git truth + path/diff actions),
-        // placed trailing so it never collides with the filename's click-to-open
-        // on the left. Hidden in Focus Mode (see syncChrome) for a bare canvas.
+        // Native fixed-size title-bar document-status glyph. A SwiftUI `Menu`
+        // here previously let hidden accessibility text affect title-bar layout,
+        // producing the malformed white chip/artifacts seen in 0.9.82.
         let truthAccessory = NSTitlebarAccessoryViewController()
-        let truthHost = NSHostingView(rootView: DocumentTruthTitleControl(model: model))
-        truthHost.frame = NSRect(x: 0, y: 0, width: 28, height: 28)
-        truthAccessory.view = truthHost
+        let truthButton = DocumentTruthTitleButton(model: model)
+        truthAccessory.view = truthButton
         truthAccessory.layoutAttribute = .trailing
         window.addTitlebarAccessoryViewController(truthAccessory)
         self.truthAccessory = truthAccessory
+        self.truthButton = truthButton
         model.onChromeUpdate = { [weak self] in
             Task { @MainActor in self?.syncChrome() }
         }
@@ -100,6 +103,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         window.isDocumentEdited = model.isDirty
         window.appearance = NSAppearance(named: model.theme.uiMode == "dark" ? .darkAqua : .aqua)
         if let background = NSColor(hex: model.theme.backgroundHex) { window.backgroundColor = background }
+        truthButton?.refresh()
         truthAccessory?.isHidden = model.focusMode
         MenuBuilder.refreshDynamicState(model: model)
     }
@@ -269,47 +273,223 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
     }
 }
 
-/// A document window whose title click is app-defined. AppKit only provides
-/// richer title actions to `NSDocument`-based windows, so we detect a click on
-/// the title text ourselves while preserving the ability to drag the window by
-/// its title bar (a drag past a small threshold moves the window instead).
+/// Fixed-size native title-bar button for document truth. Keeping this surface
+/// entirely in AppKit guarantees that accessibility metadata never participates
+/// in visual layout.
+@MainActor
+final class DocumentTruthTitleButton: NSButton {
+    static let controlSize = NSSize(width: 24, height: 24)
+
+    private weak var model: AppModel?
+    private var truthCancellable: AnyCancellable?
+
+    override var intrinsicContentSize: NSSize { Self.controlSize }
+
+    init(model: AppModel) {
+        self.model = model
+        super.init(frame: NSRect(origin: .zero, size: Self.controlSize))
+        title = ""
+        imagePosition = .imageOnly
+        imageScaling = .scaleProportionallyDown
+        isBordered = false
+        bezelStyle = .inline
+        focusRingType = .none
+        target = self
+        action = #selector(showDocumentTruthMenu(_:))
+        setAccessibilityLabel("File status")
+        truthCancellable = model.$documentTruth.sink { [weak self] snapshot in
+            self?.refresh(snapshot: snapshot)
+        }
+        refresh()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func refresh() {
+        guard let model else { return }
+        refresh(snapshot: model.documentTruth)
+    }
+
+    func makeMenu() -> NSMenu {
+        guard let model else { return NSMenu() }
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        menu.addItem(menuItem(
+            "Reveal in Finder",
+            systemImage: "folder",
+            action: #selector(revealInFinder(_:)),
+            enabled: model.documentTruth.canCopyPath
+        ))
+        menu.addItem(menuItem(
+            "Copy File Path",
+            systemImage: "doc.on.clipboard",
+            action: #selector(copyFilePath(_:)),
+            enabled: model.documentTruth.canCopyPath
+        ))
+        menu.addItem(menuItem(
+            "Copy Relative Path",
+            systemImage: "point.topleft.down.curvedto.point.bottomright.up",
+            action: #selector(copyRelativePath(_:)),
+            enabled: model.documentTruth.canCopyRelativePath
+        ))
+        menu.addItem(menuItem(
+            "Copy Git Diff Command",
+            systemImage: "terminal",
+            action: #selector(copyGitDiffCommand(_:)),
+            enabled: model.documentTruth.canCopyGitDiffCommand
+        ))
+        return menu
+    }
+
+    private func refresh(snapshot: DocumentTruthSnapshot) {
+        guard let model else { return }
+        let configuration = NSImage.SymbolConfiguration(pointSize: 12, weight: .medium)
+        image = NSImage(
+            systemSymbolName: Self.iconName(for: snapshot.state),
+            accessibilityDescription: nil
+        )?.withSymbolConfiguration(configuration)
+        image?.isTemplate = true
+        contentTintColor = .secondaryLabelColor
+        let displayLabel: String
+        if model.deletedOnDisk {
+            displayLabel = "Deleted on disk"
+        } else if model.isDirty {
+            displayLabel = model.currentURL == nil
+                ? "Unsaved changes"
+                : "\(snapshot.label) · unsaved"
+        } else {
+            displayLabel = snapshot.label
+        }
+        toolTip = "File status · \(displayLabel)"
+        setAccessibilityValue(displayLabel)
+        setAccessibilityHelp(toolTip)
+    }
+
+    private func menuItem(
+        _ title: String,
+        systemImage: String,
+        action: Selector,
+        enabled: Bool
+    ) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+        item.target = self
+        item.image = NSImage(systemSymbolName: systemImage, accessibilityDescription: nil)
+        item.isEnabled = enabled
+        return item
+    }
+
+    @objc private func showDocumentTruthMenu(_ sender: NSButton) {
+        makeMenu().popUp(positioning: nil, at: NSPoint(x: bounds.minX, y: bounds.minY), in: self)
+    }
+
+    @objc private func revealInFinder(_ sender: Any?) {
+        model?.revealCurrentFileInFinder()
+    }
+
+    @objc private func copyFilePath(_ sender: Any?) {
+        model?.copyCurrentFilePath()
+    }
+
+    @objc private func copyRelativePath(_ sender: Any?) {
+        model?.copyCurrentFileRelativePath()
+    }
+
+    @objc private func copyGitDiffCommand(_ sender: Any?) {
+        model?.copyCurrentGitDiffCommand()
+    }
+
+    private static func iconName(for state: DocumentTruthState) -> String {
+        switch state {
+        case .untitled:
+            return "doc"
+        case .unavailable:
+            return "exclamationmark.triangle"
+        case .gitUnavailable:
+            return "questionmark.folder"
+        case .notInGit:
+            return "doc.text"
+        case .untracked:
+            return "plus.circle"
+        case .trackedClean:
+            return "checkmark.circle"
+        case .trackedModified:
+            return "pencil.circle"
+        case .trackedStaged:
+            return "tray.and.arrow.up"
+        case .trackedMixed:
+            return "arrow.triangle.2.circlepath"
+        }
+    }
+}
+
+/// A document window that observes native title-field clicks without consuming
+/// AppKit's events. `mouseDown(with:)` is not reached when the click belongs to
+/// the system title text field; `sendEvent(_:)` sees every event before AppKit
+/// dispatches it to that subview.
 final class DocumentWindow: NSWindow {
     var onTitleClicked: (() -> Void)?
     var titleHitView: (() -> NSView?)?
+    var titleClickDelay = NSEvent.doubleClickInterval
+    private var titleClickStart: NSPoint?
+    private var pendingTitleClick: DispatchWorkItem?
+    private var titleClickGeneration = 0
 
-    override func mouseDown(with event: NSEvent) {
-        guard event.clickCount == 1,
-              let titleView = titleHitView?() else {
-            super.mouseDown(with: event)
-            return
-        }
-        let titleRect = titleView.convert(titleView.bounds, to: nil)
-        guard titleRect.contains(event.locationInWindow) else {
-            super.mouseDown(with: event)
-            return
-        }
-
-        // Distinguish a click from a drag. Track the mouse until it is released;
-        // treat motion past a few points as a drag that moves the window.
-        let startMouse = NSEvent.mouseLocation
-        let startOrigin = frame.origin
-        var didDrag = false
-        trackingLoop: while let next = nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
-            switch next.type {
-            case .leftMouseUp:
-                break trackingLoop
-            case .leftMouseDragged:
-                let now = NSEvent.mouseLocation
-                let dx = now.x - startMouse.x
-                let dy = now.y - startMouse.y
-                if !didDrag && !TitleClickGesture.isDrag(deltaX: dx, deltaY: dy) { continue }
-                didDrag = true
-                setFrameOrigin(NSPoint(x: startOrigin.x + dx, y: startOrigin.y + dy))
-            default:
-                break
+    override func sendEvent(_ event: NSEvent) {
+        var scheduleOpenAfterDispatch = false
+        switch event.type {
+        case .leftMouseDown:
+            cancelPendingTitleClick()
+            titleClickStart = isPlainTitleClick(event) ? event.locationInWindow : nil
+        case .leftMouseDragged:
+            if let start = titleClickStart,
+               TitleClickGesture.isDrag(
+                   deltaX: event.locationInWindow.x - start.x,
+                   deltaY: event.locationInWindow.y - start.y
+               ) {
+                titleClickStart = nil
             }
+        case .leftMouseUp:
+            scheduleOpenAfterDispatch = titleClickStart != nil && titleContains(event.locationInWindow)
+            titleClickStart = nil
+        default:
+            break
         }
-        if !didDrag { onTitleClicked?() }
+        // Preserve native title-bar dragging, double-click behavior, proxy-icon
+        // behavior, and traffic-light handling. We only observe the event stream.
+        super.sendEvent(event)
+        if scheduleOpenAfterDispatch { scheduleTitleClick() }
+    }
+
+    private func isPlainTitleClick(_ event: NSEvent) -> Bool {
+        guard event.clickCount == 1 else { return false }
+        let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
+        return modifiers.isEmpty && titleContains(event.locationInWindow)
+    }
+
+    private func titleContains(_ point: NSPoint) -> Bool {
+        guard let titleView = titleHitView?() else { return false }
+        return titleView.convert(titleView.bounds, to: nil).contains(point)
+    }
+
+    private func scheduleTitleClick() {
+        cancelPendingTitleClick()
+        let generation = titleClickGeneration
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, self.titleClickGeneration == generation else { return }
+            self.pendingTitleClick = nil
+            self.onTitleClicked?()
+        }
+        pendingTitleClick = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + titleClickDelay, execute: work)
+    }
+
+    private func cancelPendingTitleClick() {
+        titleClickGeneration &+= 1
+        pendingTitleClick?.cancel()
+        pendingTitleClick = nil
     }
 }
 

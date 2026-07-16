@@ -48,11 +48,13 @@ final class UISurfaceTester {
         truthModel.statusBarVisible = false
         truthModel.documentTruthProvider = uiSurfaceTruthProvider(repo: truthRoot)
         truthModel.loadInitialFile(truthFile.path)
+        let truthControl = DocumentTruthTitleButton(model: truthModel)
         let truthWithStatusModel = AppModel()
         truthWithStatusModel.statusBarVisible = true
         truthWithStatusModel.setCounts(words: 12, chars: 48)
         truthWithStatusModel.documentTruthProvider = uiSurfaceTruthProvider(repo: truthRoot)
         truthWithStatusModel.loadInitialFile(truthFile.path)
+        let truthWithStatusControl = DocumentTruthTitleButton(model: truthWithStatusModel)
 
         let updateCoordinator = OuroMDUpdateCoordinator()
         let availableUpdateCoordinator = makeAvailableUpdateCoordinator()
@@ -73,14 +75,8 @@ final class UISurfaceTester {
             EditorPane(model: editorFitModel),
             constrainedTo: NSSize(width: 520, height: 420)
         )
-        let truthSize = fittingSize(
-            DocumentTruthTitleControl(model: truthModel),
-            constrainedTo: NSSize(width: 520, height: 420)
-        )
-        let truthWithStatusSize = fittingSize(
-            DocumentTruthTitleControl(model: truthWithStatusModel),
-            constrainedTo: NSSize(width: 520, height: 420)
-        )
+        let truthSize = truthControl.intrinsicContentSize
+        let truthWithStatusSize = truthWithStatusControl.intrinsicContentSize
         saveDebugSnapshot(
             EditorPane(model: truthModel),
             name: "document-truth-status-hidden",
@@ -136,14 +132,8 @@ final class UISurfaceTester {
             SidebarView(model: searchModel),
             constrainedTo: NSSize(width: 300, height: 640)
         )
-        let truthLabels = accessibilityLabels(
-            DocumentTruthTitleControl(model: truthModel),
-            constrainedTo: NSSize(width: 520, height: 420)
-        )
-        let truthWithStatusLabels = accessibilityLabels(
-            DocumentTruthTitleControl(model: truthWithStatusModel),
-            constrainedTo: NSSize(width: 520, height: 420)
-        )
+        let truthLabels = collectAccessibilityLabels(from: truthControl)
+        let truthWithStatusLabels = collectAccessibilityLabels(from: truthWithStatusControl)
         let updateLabels = accessibilityLabels(
             UpdateProgressView(updateCoordinator: installingCoordinator),
             constrainedTo: NSSize(width: 420, height: 180)
@@ -159,6 +149,18 @@ final class UISurfaceTester {
             && truthSize.height <= 460
             && truthWithStatusSize.width <= 560
             && truthWithStatusSize.height <= 460
+            && truthSize == DocumentTruthTitleButton.controlSize
+            && truthWithStatusSize == DocumentTruthTitleButton.controlSize
+            && truthControl.title.isEmpty
+            && truthWithStatusControl.title.isEmpty
+            && !truthControl.subviews.contains { $0 is NSTextField }
+            && !truthWithStatusControl.subviews.contains { $0 is NSTextField }
+            && truthControl.makeMenu().items.map(\.title) == [
+                "Reveal in Finder",
+                "Copy File Path",
+                "Copy Relative Path",
+                "Copy Git Diff Command",
+            ]
             && !truthModel.statusBarVisible
             && truthWithStatusModel.statusBarVisible
             && containsAll(truthLabels, ["File status", "Modified"])
@@ -203,7 +205,7 @@ final class UISurfaceTester {
         print(String(format: "about fitting size: %.1fx%.1f %@", aboutSize.width, aboutSize.height, aboutOK ? "✓" : "✗"))
         print(String(format: "search sidebar fitting size: %.1fx%.1f %@", searchSize.width, searchSize.height, searchOK ? "✓" : "✗"))
         print(String(format: "editor palette/status fitting size: %.1fx%.1f %@", editorSize.width, editorSize.height, editorOK ? "✓" : "✗"))
-        print(String(format: "document truth control fitting size: hidden %.1fx%.1f visible %.1fx%.1f %@", truthSize.width, truthSize.height, truthWithStatusSize.width, truthWithStatusSize.height, documentTruthOK ? "✓" : "✗"))
+        print(String(format: "native titlebar document truth control: hidden %.1fx%.1f visible %.1fx%.1f %@", truthSize.width, truthSize.height, truthWithStatusSize.width, truthWithStatusSize.height, documentTruthOK ? "✓" : "✗"))
         print(String(format: "command reference fitting size: %.1fx%.1f %@", referenceSize.width, referenceSize.height, referenceOK ? "✓" : "✗"))
         print("status/palette semantic state: \(statusPaletteOK ? "✓" : "✗")")
         print("command discoverability semantic state: \(commandDiscoveryOK ? "✓" : "✗")")
