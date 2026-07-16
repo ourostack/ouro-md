@@ -4,22 +4,77 @@ import XCTest
 
 @MainActor
 final class DocumentWindowControllerTests: XCTestCase {
-    func testTitleClickRoutesToOpenPanelWhileKeepingNativeChrome() {
-        let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
+    func testRealTitleClickEventsRouteToOpenPanelWithoutConsumingNativeChrome() throws {
+        let controller = DocumentWindowController(filePath: nil, selfTest: true, useAutosave: false)
         defer { controller.window.close() }
 
-        // Native document chrome is preserved (system-drawn title + proxy icon,
-        // draggable title bar) — the subclass only adds title-click routing.
-        XCTAssertTrue(controller.window is DocumentWindow)
+        let window = try XCTUnwrap(controller.window as? DocumentWindow)
         XCTAssertTrue(controller.window.isMovableByWindowBackground)
         XCTAssertNil(controller.window.representedURL)
         XCTAssertFalse(controller.window.isDocumentEdited)
 
-        // A plain title click opens a document rather than renaming inline.
+        // Send real NSEvents through AppKit's actual native title text field.
+        // The old test only called openDocumentFromTitleClick() directly, so it
+        // could not catch that NSWindow.mouseDown never receives these clicks.
+        waitUntil(timeout: 1) { window.titleHitView?() != nil }
+        let hitView = try XCTUnwrap(window.titleHitView?())
+        let point = hitView.convert(NSPoint(x: 20, y: 12), to: nil)
+
         var opened = false
         controller.openDocumentFromTitleClickHandler = { opened = true }
-        controller.openDocumentFromTitleClick()
+        window.sendEvent(try XCTUnwrap(mouseEvent(.leftMouseDown, at: point, in: window)))
+        window.sendEvent(try XCTUnwrap(mouseEvent(.leftMouseUp, at: point, in: window)))
         XCTAssertTrue(opened)
+
+        // A drag remains AppKit's window-drag gesture and never opens a panel.
+        opened = false
+        window.sendEvent(try XCTUnwrap(mouseEvent(.leftMouseDown, at: point, in: window)))
+        let dragged = NSPoint(x: point.x + 4, y: point.y)
+        window.sendEvent(try XCTUnwrap(mouseEvent(.leftMouseDragged, at: dragged, in: window)))
+        window.sendEvent(try XCTUnwrap(mouseEvent(.leftMouseUp, at: dragged, in: window)))
+        XCTAssertFalse(opened)
+
+        // Modified clicks are preserved for native title-bar behavior.
+        window.sendEvent(try XCTUnwrap(mouseEvent(
+            .leftMouseDown,
+            at: point,
+            in: window,
+            modifiers: .command
+        )))
+        window.sendEvent(try XCTUnwrap(mouseEvent(
+            .leftMouseUp,
+            at: point,
+            in: window,
+            modifiers: .command
+        )))
+        XCTAssertFalse(opened)
+    }
+
+    func testDocumentTruthAccessoryIsFixedSizeNativeGlyphWithAccessibleMenu() throws {
+        let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
+        defer { controller.window.close() }
+
+        let button = try XCTUnwrap(
+            controller.window.titlebarAccessoryViewControllers
+                .compactMap { $0.view as? DocumentTruthTitleButton }
+                .first
+        )
+        XCTAssertEqual(button.intrinsicContentSize, DocumentTruthTitleButton.controlSize)
+        XCTAssertEqual(button.frame.width, DocumentTruthTitleButton.controlSize.width)
+        XCTAssertGreaterThanOrEqual(button.frame.height, DocumentTruthTitleButton.controlSize.height)
+        XCTAssertLessThanOrEqual(button.frame.height, 32)
+        XCTAssertEqual(button.title, "")
+        XCTAssertNotNil(button.image)
+        XCTAssertFalse(button.subviews.contains { $0 is NSTextField })
+        XCTAssertEqual(button.accessibilityLabel(), "File status")
+        XCTAssertEqual(button.accessibilityValue() as? String, "Untitled")
+        XCTAssertEqual(button.makeMenu().items.map(\.title), [
+            "Reveal in Finder",
+            "Copy File Path",
+            "Copy Relative Path",
+            "Copy Git Diff Command",
+        ])
+        XCTAssertTrue(button.makeMenu().items.allSatisfy { !$0.isEnabled })
     }
 
     func testTitleClickGestureDistinguishesClickFromDrag() {
@@ -70,5 +125,24 @@ final class DocumentWindowControllerTests: XCTestCase {
         while !condition(), Date() < deadline {
             RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
         }
+    }
+
+    private func mouseEvent(
+        _ type: NSEvent.EventType,
+        at point: NSPoint,
+        in window: NSWindow,
+        modifiers: NSEvent.ModifierFlags = []
+    ) -> NSEvent? {
+        NSEvent.mouseEvent(
+            with: type,
+            location: point,
+            modifierFlags: modifiers,
+            timestamp: ProcessInfo.processInfo.systemUptime,
+            windowNumber: window.windowNumber,
+            context: nil,
+            eventNumber: 1,
+            clickCount: 1,
+            pressure: type == .leftMouseUp ? 0 : 1
+        )
     }
 }
