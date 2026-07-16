@@ -9,6 +9,7 @@ final class DocumentWindowControllerTests: XCTestCase {
         defer { controller.window.close() }
 
         let window = try XCTUnwrap(controller.window as? DocumentWindow)
+        window.titleClickDelay = 0.02
         XCTAssertTrue(controller.window.isMovableByWindowBackground)
         XCTAssertNil(controller.window.representedURL)
         XCTAssertFalse(controller.window.isDocumentEdited)
@@ -24,7 +25,28 @@ final class DocumentWindowControllerTests: XCTestCase {
         controller.openDocumentFromTitleClickHandler = { opened = true }
         window.sendEvent(try XCTUnwrap(mouseEvent(.leftMouseDown, at: point, in: window)))
         window.sendEvent(try XCTUnwrap(mouseEvent(.leftMouseUp, at: point, in: window)))
+        waitUntil(timeout: 0.2) { opened }
         XCTAssertTrue(opened)
+
+        // The first half of a double-click must not open a modal panel before
+        // AppKit receives the second click.
+        opened = false
+        window.sendEvent(try XCTUnwrap(mouseEvent(.leftMouseDown, at: point, in: window)))
+        window.sendEvent(try XCTUnwrap(mouseEvent(.leftMouseUp, at: point, in: window)))
+        window.sendEvent(try XCTUnwrap(mouseEvent(
+            .leftMouseDown,
+            at: point,
+            in: window,
+            clickCount: 2
+        )))
+        window.sendEvent(try XCTUnwrap(mouseEvent(
+            .leftMouseUp,
+            at: point,
+            in: window,
+            clickCount: 2
+        )))
+        waitUntil(timeout: 0.1) { opened }
+        XCTAssertFalse(opened)
 
         // A drag remains AppKit's window-drag gesture and never opens a panel.
         opened = false
@@ -131,7 +153,8 @@ final class DocumentWindowControllerTests: XCTestCase {
         _ type: NSEvent.EventType,
         at point: NSPoint,
         in window: NSWindow,
-        modifiers: NSEvent.ModifierFlags = []
+        modifiers: NSEvent.ModifierFlags = [],
+        clickCount: Int = 1
     ) -> NSEvent? {
         NSEvent.mouseEvent(
             with: type,
@@ -141,7 +164,7 @@ final class DocumentWindowControllerTests: XCTestCase {
             windowNumber: window.windowNumber,
             context: nil,
             eventNumber: 1,
-            clickCount: 1,
+            clickCount: clickCount,
             pressure: type == .leftMouseUp ? 0 : 1
         )
     }

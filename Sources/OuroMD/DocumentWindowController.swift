@@ -432,12 +432,16 @@ final class DocumentTruthTitleButton: NSButton {
 final class DocumentWindow: NSWindow {
     var onTitleClicked: (() -> Void)?
     var titleHitView: (() -> NSView?)?
+    var titleClickDelay = NSEvent.doubleClickInterval
     private var titleClickStart: NSPoint?
+    private var pendingTitleClick: DispatchWorkItem?
+    private var titleClickGeneration = 0
 
     override func sendEvent(_ event: NSEvent) {
-        var openAfterDispatch = false
+        var scheduleOpenAfterDispatch = false
         switch event.type {
         case .leftMouseDown:
+            cancelPendingTitleClick()
             titleClickStart = isPlainTitleClick(event) ? event.locationInWindow : nil
         case .leftMouseDragged:
             if let start = titleClickStart,
@@ -448,7 +452,7 @@ final class DocumentWindow: NSWindow {
                 titleClickStart = nil
             }
         case .leftMouseUp:
-            openAfterDispatch = titleClickStart != nil && titleContains(event.locationInWindow)
+            scheduleOpenAfterDispatch = titleClickStart != nil && titleContains(event.locationInWindow)
             titleClickStart = nil
         default:
             break
@@ -456,7 +460,7 @@ final class DocumentWindow: NSWindow {
         // Preserve native title-bar dragging, double-click behavior, proxy-icon
         // behavior, and traffic-light handling. We only observe the event stream.
         super.sendEvent(event)
-        if openAfterDispatch { onTitleClicked?() }
+        if scheduleOpenAfterDispatch { scheduleTitleClick() }
     }
 
     private func isPlainTitleClick(_ event: NSEvent) -> Bool {
@@ -468,6 +472,24 @@ final class DocumentWindow: NSWindow {
     private func titleContains(_ point: NSPoint) -> Bool {
         guard let titleView = titleHitView?() else { return false }
         return titleView.convert(titleView.bounds, to: nil).contains(point)
+    }
+
+    private func scheduleTitleClick() {
+        cancelPendingTitleClick()
+        let generation = titleClickGeneration
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, self.titleClickGeneration == generation else { return }
+            self.pendingTitleClick = nil
+            self.onTitleClicked?()
+        }
+        pendingTitleClick = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + titleClickDelay, execute: work)
+    }
+
+    private func cancelPendingTitleClick() {
+        titleClickGeneration &+= 1
+        pendingTitleClick?.cancel()
+        pendingTitleClick = nil
     }
 }
 
