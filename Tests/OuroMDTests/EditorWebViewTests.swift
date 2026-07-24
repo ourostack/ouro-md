@@ -66,14 +66,17 @@ final class EditorWebViewTests: XCTestCase {
 
         local = nil
         coordinator.handleOpenURL("missing.md")
-        XCTAssertNil(local)
-        XCTAssertEqual(errors.map { $0.0 }, ["Could not open missing.md"])
-        XCTAssertTrue(errors[0].1.contains("does not exist"))
+        XCTAssertEqual(local, root.appendingPathComponent("missing.md").standardizedFileURL)
+        XCTAssertTrue(errors.isEmpty)
 
         model.openLinkedDocumentHandler = nil
         coordinator.handleOpenURL("linked.md")
-        XCTAssertEqual(errors.map { $0.0 }, ["Could not open missing.md", "Could not open linked.md"])
-        XCTAssertTrue(errors[1].1.contains("No document window"))
+        XCTAssertEqual(errors.map { $0.0 }, ["Could not open linked.md"])
+        XCTAssertTrue(errors[0].1.contains("No document window"))
+
+        XCTAssertFalse(model.openLinkedDocument(root.appendingPathComponent("image.png")))
+        XCTAssertEqual(errors.map { $0.0 }, ["Could not open linked.md", "Could not open image.png"])
+        XCTAssertTrue(errors[1].1.contains("not a supported Markdown"))
 
         coordinator.handleOpenURL("#local-heading")
         coordinator.handleOpenURL("javascript:alert(1)")

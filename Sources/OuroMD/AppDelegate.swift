@@ -19,6 +19,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private var undoRedoShortcutMonitor: UndoRedoShortcutMonitor?
     var recentDocumentURLsProvider: () -> [URL] = { NSDocumentController.shared.recentDocumentURLs }
     var clearRecentDocumentsHandler: (Any?) -> Void = { NSDocumentController.shared.clearRecentDocuments($0) }
+    var linkedDocumentReadable: (URL) -> Bool = { AppModel.readText(at: $0) != nil }
+    var linkedDocumentAccessRequester: (URL, NSWindow, @escaping (URL?) -> Void) -> Void = {
+        target, window, completion in
+        let panel = NSOpenPanel()
+        panel.message = "Allow Ouro MD to open the linked Markdown file."
+        panel.prompt = "Open Link"
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.allowedContentTypes = AppModel.mdTypes
+        panel.allowsOtherFileTypes = false
+        panel.directoryURL = target.deletingLastPathComponent()
+        panel.nameFieldStringValue = target.lastPathComponent
+        panel.beginSheetModal(for: window) { response in
+            completion(response == .OK ? panel.url : nil)
+        }
+    }
 
     private var isSelfTest: Bool { ProcessInfo.processInfo.environment["OURO_SELFTEST"] == "1" }
 
@@ -39,8 +55,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     /// closes, so closed windows (and their watchers) don't leak.
     private func track(_ controller: DocumentWindowController) {
         activeController = controller
-        controller.model.openLinkedDocumentHandler = { [weak self] url in
-            self?.openInNewWindow(url)
+        controller.model.openLinkedDocumentHandler = { [weak self, weak controller] url in
+            guard let self, let controller else { return }
+            self.openLinkedDocument(url, from: controller)
         }
         controller.onBecomeKey = { [weak self] active in
             self?.activeController = active
@@ -304,6 +321,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         let controller = DocumentWindowController(filePath: url.path, selfTest: false, useAutosave: false)
         track(controller)
         controller.show(cascadeFrom: prev)
+    }
+
+    private func openLinkedDocument(_ url: URL, from source: DocumentWindowController) {
+        let target = url.standardizedFileURL
+        if linkedDocumentReadable(target) {
+            openInNewWindow(target)
+            return
+        }
+
+        // Direct-download builds can read sibling files immediately. A
+        // user-selected file in the App Store sandbox grants access only to that
+        // file, so ask the Powerbox for the linked target when needed.
+        linkedDocumentAccessRequester(target, source.window) { [weak self, weak source] selectedURL in
+            guard let self, let source, let selectedURL else { return }
+            let grantedURL = self.securityScopedResources.startAccessing(selectedURL.standardizedFileURL)
+            guard self.linkedDocumentReadable(grantedURL) else {
+                source.model.reportLinkedDocumentOpenFailure(grantedURL)
+                return
+            }
+            self.openInNewWindow(grantedURL)
+        }
     }
 
     @objc func printDocument(_ sender: Any?) { frontController?.printDocument() }

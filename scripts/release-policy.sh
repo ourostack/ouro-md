@@ -142,7 +142,8 @@ app_store_resubmission_evidence_allows_same_version() {
   local mode="$2"
   local base_ref="$3"
   local relevant_paths="$4"
-  python3 - "$version" "$mode" "$base_ref" "$relevant_paths" <<'PY'
+  local policy_now_override="${5:-}"
+  python3 - "$version" "$mode" "$base_ref" "$relevant_paths" "$policy_now_override" <<'PY'
 import hashlib
 import json
 import os
@@ -152,7 +153,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-version, mode, base_ref, relevant_blob = sys.argv[1:5]
+version, mode, base_ref, relevant_blob, policy_now_override = sys.argv[1:6]
 
 expected_version = "0.9.80"
 expected_branch = "worker/app-store-spam-rejection"
@@ -175,7 +176,7 @@ expected_hashes = {
     "Sources/OuroMDCore/OuroMDRelease.swift": "9cae9c56f381e3f82914b7e8c199b6e7a28f043849a998a6840219278a46d89c",
     "scripts/package-app-store.sh": "0aacf740a5342606ac44317ce6179a0c749ea5867e9201059be45707af24458a",
     "scripts/pr-preflight.sh": "384aec9149fdf51f993f61572afaaa32640e1dac8bde434865877cbb967faee0",
-    "scripts/release-policy.sh": "a423d70a60db4317ef44a573bd79ff3dfc8b699b213d578c84136d4ce0bd124f",
+    "scripts/release-policy.sh": "faa9981f0c1c4f9ca9d35dccd8d00a249e9f920d864328bd643ee1ab9d3274bd",
     str(expected_evidence_path): "879056295b4fbe4f397ba53eae3f108c43ac957f0eb98ecf72a4a8e6caacbe5e",
 }
 expected_evidence = {
@@ -290,9 +291,7 @@ try:
 except (KeyError, TypeError, ValueError):
     reject()
 try:
-    policy_now = datetime.fromisoformat(
-        os.environ.get("OURO_RELEASE_POLICY_NOW", datetime.now(timezone.utc).isoformat()).replace("Z", "+00:00")
-    )
+    policy_now = datetime.fromisoformat(policy_now_override.replace("Z", "+00:00")) if policy_now_override else datetime.now(timezone.utc)
 except ValueError:
     reject()
 if policy_now - captured_at > timedelta(days=14):
@@ -878,41 +877,41 @@ EOF
   extra_relevant="$(printf '%s\nResources/Fake.swift\n' "$expected_relevant")"
   selftest_now="2026-07-09T12:00:00Z"
 
-  OURO_RELEASE_POLICY_NOW="$selftest_now" GITHUB_REPOSITORY="ourostack/ouro-md" \
+  GITHUB_REPOSITORY="ourostack/ouro-md" \
     GITHUB_EVENT_NAME="pull_request" \
     GITHUB_HEAD_REF="worker/app-store-spam-rejection" \
     GITHUB_REF="refs/pull/103/merge" \
-    app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" >/dev/null \
+    app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" "$selftest_now" >/dev/null \
     || fail "app store resubmission selftest did not accept the exact PR #103 waiver"
 
-  OURO_RELEASE_POLICY_NOW="$selftest_now" GITHUB_REPOSITORY="ourostack/ouro-md" \
+  GITHUB_REPOSITORY="ourostack/ouro-md" \
     GITHUB_EVENT_NAME="push" \
     GITHUB_REF_NAME="main" \
-    app_store_resubmission_evidence_allows_same_version "0.9.80" "main" "main" "$expected_relevant" >/dev/null \
+    app_store_resubmission_evidence_allows_same_version "0.9.80" "main" "main" "$expected_relevant" "$selftest_now" >/dev/null \
     || fail "app store resubmission selftest did not accept the exact main merge waiver"
 
-  if OURO_RELEASE_POLICY_NOW="$selftest_now" GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
-    app_store_resubmission_evidence_allows_same_version "0.9.81" "pr" "origin/main" "$expected_relevant" >/dev/null; then
+  if GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
+    app_store_resubmission_evidence_allows_same_version "0.9.81" "pr" "origin/main" "$expected_relevant" "$selftest_now" >/dev/null; then
     fail "app store resubmission selftest accepted the wrong version"
   fi
-  if OURO_RELEASE_POLICY_NOW="$selftest_now" GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
-    app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$missing_relevant" >/dev/null; then
+  if GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
+    app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$missing_relevant" "$selftest_now" >/dev/null; then
     fail "app store resubmission selftest accepted a missing relevant path"
   fi
-  if OURO_RELEASE_POLICY_NOW="$selftest_now" GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
-    app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$extra_relevant" >/dev/null; then
+  if GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
+    app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$extra_relevant" "$selftest_now" >/dev/null; then
     fail "app store resubmission selftest accepted an extra relevant path"
   fi
-  if OURO_RELEASE_POLICY_NOW="$selftest_now" GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/other" GITHUB_REF="refs/pull/103/merge" \
-    app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" >/dev/null; then
+  if GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/other" GITHUB_REF="refs/pull/103/merge" \
+    app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" "$selftest_now" >/dev/null; then
     fail "app store resubmission selftest accepted the wrong branch"
   fi
-  if OURO_RELEASE_POLICY_NOW="$selftest_now" GITHUB_REPOSITORY="someone/fork" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
-    app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" >/dev/null; then
+  if GITHUB_REPOSITORY="someone/fork" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
+    app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" "$selftest_now" >/dev/null; then
     fail "app store resubmission selftest accepted the wrong repository"
   fi
-  if OURO_RELEASE_POLICY_NOW="2026-07-24T12:00:00Z" GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
-    app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" >/dev/null; then
+  if GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
+    app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" "2026-07-24T12:00:00Z" >/dev/null; then
     fail "app store resubmission selftest accepted expired evidence"
   fi
 

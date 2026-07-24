@@ -335,23 +335,23 @@ final class AppModel: ObservableObject {
     }
 
     /// Opens a Markdown link in a separate app window. Resolution happens in
-    /// `DocumentLinkResolver`; this final gate makes missing/unreadable targets a
-    /// visible error rather than a click that silently does nothing.
+    /// `DocumentLinkResolver`; the app delegate owns sandbox access because a
+    /// sibling file may require a Powerbox grant in the App Store build.
     @discardableResult
     func openLinkedDocument(_ url: URL) -> Bool {
         let target = url.standardizedFileURL
-        guard Self.isMarkdownURL(target), Self.readText(at: target) != nil else {
+        guard Self.isMarkdownURL(target) else {
             presentError(
                 "Could not open \(target.lastPathComponent)",
                 NSError(
                     domain: "ouro-md",
                     code: 4,
-                    userInfo: [NSLocalizedDescriptionKey: "The linked Markdown file does not exist or is not readable."]
+                    userInfo: [NSLocalizedDescriptionKey: "The linked file is not a supported Markdown document."]
                 )
             )
             captureTelemetry(
                 "ouro_md_linked_document_open_failed",
-                properties: ["code": .string("missing_or_unreadable")]
+                properties: ["code": .string("unsupported_type")]
             )
             return false
         }
@@ -373,6 +373,21 @@ final class AppModel: ObservableObject {
         openLinkedDocumentHandler(target)
         captureTelemetry("ouro_md_linked_document_opened")
         return true
+    }
+
+    func reportLinkedDocumentOpenFailure(_ url: URL) {
+        presentError(
+            "Could not open \(url.lastPathComponent)",
+            NSError(
+                domain: "ouro-md",
+                code: 6,
+                userInfo: [NSLocalizedDescriptionKey: "The linked Markdown file does not exist or is not readable."]
+            )
+        )
+        captureTelemetry(
+            "ouro_md_linked_document_open_failed",
+            properties: ["code": .string("missing_or_unreadable")]
+        )
     }
 
     private func open(url: URL, afterOpen: (() -> Void)?) {

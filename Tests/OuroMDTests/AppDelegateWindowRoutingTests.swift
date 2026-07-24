@@ -102,6 +102,68 @@ final class AppDelegateWindowRoutingTests: XCTestCase {
         XCTAssertTrue(delegate.frontController === linked)
     }
 
+    func testLinkedMarkdownRequestsSandboxAccessBeforeOpening() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-linked-sandbox-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let currentURL = dir.appendingPathComponent("current.md")
+        let linkedURL = dir.appendingPathComponent("linked.md")
+        try "# Current\n".write(to: currentURL, atomically: true, encoding: .utf8)
+        try "# Linked\n".write(to: linkedURL, atomically: true, encoding: .utf8)
+
+        let delegate = AppDelegate()
+        delegate.newWindow(nil)
+        let current = try XCTUnwrap(delegate.frontController)
+        XCTAssertTrue(current.model.loadInitialFile(currentURL.path))
+        defer { current.window.close() }
+
+        var granted = false
+        var requestedURL: URL?
+        delegate.linkedDocumentReadable = { granted && $0 == linkedURL.standardizedFileURL }
+        delegate.linkedDocumentAccessRequester = { target, _, completion in
+            requestedURL = target
+            granted = true
+            completion(target)
+        }
+
+        XCTAssertTrue(current.model.openLinkedDocument(linkedURL))
+        XCTAssertEqual(requestedURL, linkedURL.standardizedFileURL)
+        let linked = try XCTUnwrap(delegate.frontController)
+        defer { linked.window.close() }
+        XCTAssertEqual(linked.model.currentURL, linkedURL.standardizedFileURL)
+    }
+
+    func testLinkedMarkdownReportsUnreadableAfterSandboxGrant() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-linked-unreadable-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let currentURL = dir.appendingPathComponent("current.md")
+        let linkedURL = dir.appendingPathComponent("linked.md")
+        try "# Current\n".write(to: currentURL, atomically: true, encoding: .utf8)
+        try "# Linked\n".write(to: linkedURL, atomically: true, encoding: .utf8)
+
+        let delegate = AppDelegate()
+        delegate.newWindow(nil)
+        let current = try XCTUnwrap(delegate.frontController)
+        XCTAssertTrue(current.model.loadInitialFile(currentURL.path))
+        defer { current.window.close() }
+
+        var errorDescription = ""
+        current.model.presentErrorHandler = { _, error in
+            errorDescription = error.localizedDescription
+        }
+        delegate.linkedDocumentReadable = { _ in false }
+        delegate.linkedDocumentAccessRequester = { target, _, completion in completion(target) }
+
+        XCTAssertTrue(current.model.openLinkedDocument(linkedURL))
+        XCTAssertTrue(errorDescription.contains("does not exist or is not readable"))
+        XCTAssertTrue(delegate.frontController === current)
+    }
+
     func testSaveAndRenameCommandsTargetKeyWindowOnly() {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("ouro-save-routing-\(UUID().uuidString)", isDirectory: true)
