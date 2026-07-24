@@ -39,6 +39,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     /// closes, so closed windows (and their watchers) don't leak.
     private func track(_ controller: DocumentWindowController) {
         activeController = controller
+        controller.model.openLinkedDocumentHandler = { [weak self] url in
+            self?.openInNewWindow(url)
+        }
         controller.onBecomeKey = { [weak self] active in
             self?.activeController = active
         }

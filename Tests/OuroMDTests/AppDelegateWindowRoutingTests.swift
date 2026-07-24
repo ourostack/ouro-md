@@ -74,6 +74,34 @@ final class AppDelegateWindowRoutingTests: XCTestCase {
         XCTAssertEqual(delegate.frontController?.model.currentURL, secondURL)
     }
 
+    func testLinkedMarkdownDocumentOpensInAnotherWindowAndReusesIt() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-linked-window-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let currentURL = dir.appendingPathComponent("current.md")
+        let linkedURL = dir.appendingPathComponent("linked.md")
+        try "# Current\n".write(to: currentURL, atomically: true, encoding: .utf8)
+        try "# Linked\n".write(to: linkedURL, atomically: true, encoding: .utf8)
+
+        let delegate = AppDelegate()
+        delegate.newWindow(nil)
+        let current = try XCTUnwrap(delegate.frontController)
+        XCTAssertTrue(current.model.loadInitialFile(currentURL.path))
+        defer { current.window.close() }
+
+        XCTAssertTrue(current.model.openLinkedDocument(linkedURL))
+        let linked = try XCTUnwrap(delegate.frontController)
+        defer { linked.window.close() }
+        XCTAssertFalse(linked === current)
+        XCTAssertEqual(current.model.currentURL, currentURL)
+        XCTAssertEqual(linked.model.currentURL, linkedURL)
+
+        XCTAssertTrue(current.model.openLinkedDocument(linkedURL))
+        XCTAssertTrue(delegate.frontController === linked)
+    }
+
     func testSaveAndRenameCommandsTargetKeyWindowOnly() {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("ouro-save-routing-\(UUID().uuidString)", isDirectory: true)

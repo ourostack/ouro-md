@@ -302,7 +302,10 @@
       if (!target || !target.closest || !target.closest("#editor")) { return ""; }
       // WYSIWYG mode and the Split/preview pane render a real <a href>.
       var a = target.closest("a[href]");
-      if (a) { return a.href || a.getAttribute("href") || ""; }
+      // Preserve the authored relative target. `a.href` resolves it against the
+      // bundled editor HTML, which would point native code at the app resources
+      // instead of beside the open Markdown document.
+      if (a) { return a.getAttribute("href") || a.href || ""; }
       // IR (live-preview) mode renders a [text](url) / <url> link as a
       // <span data-type="a"> with no href — the URL is the text of its
       // .vditor-ir__marker--link child.
@@ -313,13 +316,29 @@
       if (e) { return urlTokenAtPoint(e.clientX, e.clientY); }
       return "";
     }
+
+    function isLocalMarkdownTarget(url) {
+      var target = (url || "").trim();
+      if (target.charAt(0) === "<" && target.charAt(target.length - 1) === ">") {
+        target = target.slice(1, -1).trim();
+      }
+      if (!target || target.charAt(0) === "#") { return false; }
+      if (/^(https?|mailto|javascript|data):/i.test(target)) { return false; }
+      var path = target.split("#", 1)[0].split("?", 1)[0];
+      return /\.(md|markdown|mdown|mkd|mdtext)$/i.test(path);
+    }
+
     var lastLinkOpenAt = 0;
     function maybeOpenEditorLink(e) {
-      if (!e.metaKey) { return; }
       var url = resolveEditorLinkURL(e.target, e);
       if (!url) { return; }
+      var localMarkdown = isLocalMarkdownTarget(url);
+      // External links keep the established ⌘-click gesture so ordinary clicks
+      // remain available for editing. A rendered local Markdown link opens on a
+      // normal click: it stays inside Ouro MD, in another document window.
+      if (!e.metaKey && !(localMarkdown && e.type === "click")) { return; }
       // Swallow the whole gesture (caret placement, Vditor handlers, the
-      // synthesized click) so a ⌘-click opens instead of editing.
+      // synthesized click) so the link opens instead of editing/navigating.
       e.preventDefault();
       e.stopImmediatePropagation();
       // One open per gesture: mousedown fires first; the click ~ms later is

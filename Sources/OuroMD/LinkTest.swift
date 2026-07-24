@@ -1,15 +1,13 @@
 import AppKit
 import WebKit
 
-/// Headless `--linktest`: loads the editor with a Markdown link in IR (live
-/// preview) mode, simulates a ⌘-click on it, and verifies the bridge resolves
-/// the URL and posts an `openURL` message — so the "links don't open" fix can be
-/// verified without a GUI (and without launching a browser: this harness
-/// intercepts `openURL` itself rather than calling NSWorkspace).
+/// Headless `--linktest`: verifies both link contracts in IR (live-preview):
+/// ⌘-click opens an external URL, while a normal click forwards a relative
+/// Markdown target for native resolution into another Ouro MD window.
 final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     private var webView: WKWebView!
     private var window: NSWindow!
-    private var openedURL: String?
+    private var openedURLs: [String] = []
     private var didStart = false
     private var didFinishNavigation = false
     private var didReceiveReady = false
@@ -51,17 +49,26 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
             lastPhase = "editor ready; waiting for navigation finish"
             startScriptIfReady()
         } else if type == "openURL" {
-            // The bridge's ⌘-click handler fired. Record it instead of opening.
-            openedURL = body["url"] as? String
+            if let url = body["url"] as? String { openedURLs.append(url) }
         } else if type == "linkprobe" {
             lastPhase = "results received"
-            let found = body["found"] as? Bool ?? false
+            let foundExternal = body["foundExternal"] as? Bool ?? false
+            let foundLocal = body["foundLocal"] as? Bool ?? false
             let scriptError = body["error"] as? String
-            let opened = openedURL ?? ""
             let checks: [(String, String, Bool)] = [
                 ("linktest script completed", scriptError ?? "ok", scriptError == nil),
-                ("IR link node rendered for [text](url)", "found=\(found)", found),
-                ("⌘-mousedown posts openURL with the link's URL", "opened=\(opened)", opened == "https://ouro.bot")
+                ("IR external link rendered", "found=\(foundExternal)", foundExternal),
+                ("IR local Markdown link rendered", "found=\(foundLocal)", foundLocal),
+                (
+                    "⌘-mousedown forwards external URL",
+                    "opened=\(openedURLs)",
+                    openedURLs.first == "https://ouro.bot"
+                ),
+                (
+                    "plain click forwards raw relative Markdown target",
+                    "opened=\(openedURLs)",
+                    openedURLs.count == 2 && openedURLs[1] == "mendelow-me-build-corpus.md"
+                )
             ]
             var allOK = true
             for (label, value, ok) in checks {
@@ -116,32 +123,41 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
       try {
         setTimeout(function () {
           try {
-            window.ouro.setValue("[OuroMD](https://ouro.bot)");
+            window.ouro.setValue("[OuroMD](https://ouro.bot)\\n\\n[build corpus](mendelow-me-build-corpus.md)");
             setTimeout(function () {
               try {
                 window.ouro.focus();
-                var node = document.querySelector('#editor span[data-type="a"]');
-                var target = node && (node.querySelector('.vditor-ir__link') || node);
-                var found = !!target;
+                var nodes = document.querySelectorAll('#editor span[data-type="a"]');
+                var externalTarget = nodes[0] && (nodes[0].querySelector('.vditor-ir__link') || nodes[0]);
+                var localTarget = nodes[1] && (nodes[1].querySelector('.vditor-ir__link') || nodes[1]);
+                var foundExternal = !!externalTarget;
+                var foundLocal = !!localTarget;
                 // ⌘-mousedown the link; the bridge now opens on mousedown (macOS
                 // WKWebView does not reliably fire a `click` for a ⌘-click in a
                 // contenteditable), so this is the event the real fix depends on.
-                if (found) {
-                  target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, metaKey: true }));
+                if (foundExternal) {
+                  externalTarget.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, metaKey: true }));
                 }
                 setTimeout(function () {
-                  post({ found: found });
-                }, 200);
+                  // Local Markdown stays inside the app, so a normal rendered-link
+                  // click should open another Ouro MD window without a modifier.
+                  if (foundLocal) {
+                    localTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+                  }
+                  setTimeout(function () {
+                    post({ foundExternal: foundExternal, foundLocal: foundLocal });
+                  }, 200);
+                }, 800);
               } catch (error) {
-                post({ found: false, error: error && (error.stack || error.message) ? (error.stack || error.message) : String(error) });
+                post({ foundExternal: false, foundLocal: false, error: error && (error.stack || error.message) ? (error.stack || error.message) : String(error) });
               }
             }, 600);
           } catch (error) {
-            post({ found: false, error: error && (error.stack || error.message) ? (error.stack || error.message) : String(error) });
+            post({ foundExternal: false, foundLocal: false, error: error && (error.stack || error.message) ? (error.stack || error.message) : String(error) });
           }
         }, 500);
       } catch (error) {
-        post({ found: false, error: error && (error.stack || error.message) ? (error.stack || error.message) : String(error) });
+        post({ foundExternal: false, foundLocal: false, error: error && (error.stack || error.message) ? (error.stack || error.message) : String(error) });
       }
     })();
     undefined;

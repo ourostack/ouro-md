@@ -125,6 +125,7 @@ final class AppModel: ObservableObject {
     var onChromeUpdate: (() -> Void)?
     var presentErrorHandler: ((String, Error) -> Void)?
     var telemetryHandler: ((String, [String: OuroMDTelemetryValue]) -> Void)?
+    var openLinkedDocumentHandler: ((URL) -> Void)?
     var documentTruthProvider = DocumentTruthProvider(gitRunner: ProcessDocumentTruthGitRunner()) {
         didSet { refreshDocumentTruth() }
     }
@@ -331,6 +332,47 @@ final class AppModel: ObservableObject {
 
     func open(url: URL) {
         open(url: url, afterOpen: nil)
+    }
+
+    /// Opens a Markdown link in a separate app window. Resolution happens in
+    /// `DocumentLinkResolver`; this final gate makes missing/unreadable targets a
+    /// visible error rather than a click that silently does nothing.
+    @discardableResult
+    func openLinkedDocument(_ url: URL) -> Bool {
+        let target = url.standardizedFileURL
+        guard Self.isMarkdownURL(target), Self.readText(at: target) != nil else {
+            presentError(
+                "Could not open \(target.lastPathComponent)",
+                NSError(
+                    domain: "ouro-md",
+                    code: 4,
+                    userInfo: [NSLocalizedDescriptionKey: "The linked Markdown file does not exist or is not readable."]
+                )
+            )
+            captureTelemetry(
+                "ouro_md_linked_document_open_failed",
+                properties: ["code": .string("missing_or_unreadable")]
+            )
+            return false
+        }
+        guard let openLinkedDocumentHandler else {
+            presentError(
+                "Could not open \(target.lastPathComponent)",
+                NSError(
+                    domain: "ouro-md",
+                    code: 5,
+                    userInfo: [NSLocalizedDescriptionKey: "No document window is available for this link."]
+                )
+            )
+            captureTelemetry(
+                "ouro_md_linked_document_open_failed",
+                properties: ["code": .string("window_unavailable")]
+            )
+            return false
+        }
+        openLinkedDocumentHandler(target)
+        captureTelemetry("ouro_md_linked_document_opened")
+        return true
     }
 
     private func open(url: URL, afterOpen: (() -> Void)?) {

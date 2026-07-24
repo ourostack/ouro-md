@@ -34,4 +34,49 @@ final class EditorWebViewTests: XCTestCase {
         XCTAssertTrue(ignored.writeObjects([image as NSURL]))
         XCTAssertNil(EditorDropWebView.openableMarkdownURL(from: ignored))
     }
+
+    func testCoordinatorRoutesExternalAndRelativeMarkdownLinks() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-link-routing-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let current = root.appendingPathComponent("current.md")
+        let linked = root.appendingPathComponent("linked.md")
+        try "# Current".write(to: current, atomically: true, encoding: .utf8)
+        try "# Linked".write(to: linked, atomically: true, encoding: .utf8)
+
+        let model = AppModel()
+        XCTAssertTrue(model.loadInitialFile(current.path))
+        var external: URL?
+        var local: URL?
+        var errors: [(String, String)] = []
+        model.openLinkedDocumentHandler = { local = $0 }
+        model.presentErrorHandler = { message, error in
+            errors.append((message, error.localizedDescription))
+        }
+        let coordinator = EditorWebView.Coordinator(model: model) { external = $0 }
+
+        coordinator.handleOpenURL("https://ouro.bot/docs")
+        XCTAssertEqual(external, URL(string: "https://ouro.bot/docs"))
+
+        coordinator.handleOpenURL("linked.md")
+        XCTAssertEqual(local, linked.standardizedFileURL)
+        XCTAssertTrue(errors.isEmpty)
+
+        local = nil
+        coordinator.handleOpenURL("missing.md")
+        XCTAssertNil(local)
+        XCTAssertEqual(errors.map { $0.0 }, ["Could not open missing.md"])
+        XCTAssertTrue(errors[0].1.contains("does not exist"))
+
+        model.openLinkedDocumentHandler = nil
+        coordinator.handleOpenURL("linked.md")
+        XCTAssertEqual(errors.map { $0.0 }, ["Could not open missing.md", "Could not open linked.md"])
+        XCTAssertTrue(errors[1].1.contains("No document window"))
+
+        coordinator.handleOpenURL("#local-heading")
+        coordinator.handleOpenURL("javascript:alert(1)")
+        XCTAssertEqual(errors.count, 2)
+    }
 }
