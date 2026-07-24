@@ -172,10 +172,10 @@ expected_hashes = {
     "Sources/OuroMD/CLI.swift": "dafba358707fb416c6496b157dfd7398c7d8d393675abc558da63d40ba882929",
     "Sources/OuroMD/OuroMDShellContract.swift": "4295d8c618bd42ed3ce45d5a83fdbe67c8f56beb7cafa9ded9650ba5f379ae43",
     "Sources/OuroMD/Welcome.swift": "045af3d3f391471b0775ccf38cfd4f34364c795e35919e3528f31fbd43aade34",
-    "Sources/OuroMDCore/OuroMDRelease.swift": "38519ee05e066ff66fa3c035ac3554495f32d8c26118f08d6658418afa395341",
+    "Sources/OuroMDCore/OuroMDRelease.swift": "9cae9c56f381e3f82914b7e8c199b6e7a28f043849a998a6840219278a46d89c",
     "scripts/package-app-store.sh": "0aacf740a5342606ac44317ce6179a0c749ea5867e9201059be45707af24458a",
     "scripts/pr-preflight.sh": "384aec9149fdf51f993f61572afaaa32640e1dac8bde434865877cbb967faee0",
-    "scripts/release-policy.sh": "f64e97a06813cee9420a4996e843f4bd5cf22fae1a09938387b10caddcc66c06",
+    "scripts/release-policy.sh": "a423d70a60db4317ef44a573bd79ff3dfc8b699b213d578c84136d4ce0bd124f",
     str(expected_evidence_path): "879056295b4fbe4f397ba53eae3f108c43ac957f0eb98ecf72a4a8e6caacbe5e",
 }
 expected_evidence = {
@@ -289,7 +289,13 @@ try:
     captured_at = datetime.fromisoformat(str(data["capturedAt"]).replace("Z", "+00:00"))
 except (KeyError, TypeError, ValueError):
     reject()
-if datetime.now(timezone.utc) - captured_at > timedelta(days=14):
+try:
+    policy_now = datetime.fromisoformat(
+        os.environ.get("OURO_RELEASE_POLICY_NOW", datetime.now(timezone.utc).isoformat()).replace("Z", "+00:00")
+    )
+except ValueError:
+    reject()
+if policy_now - captured_at > timedelta(days=14):
     reject()
 
 print(expected_evidence_path)
@@ -856,7 +862,7 @@ selftest_paths_mode() {
 }
 
 selftest_app_store_resubmission_mode() {
-  local expected_relevant missing_relevant extra_relevant
+  local expected_relevant missing_relevant extra_relevant selftest_now
   expected_relevant="$(cat <<'EOF'
 Sources/OuroMD/AppInfoView.swift
 Sources/OuroMD/CLI.swift
@@ -870,39 +876,44 @@ EOF
 )"
   missing_relevant="$(printf '%s\n' "$expected_relevant" | grep -v '^scripts/package-app-store.sh$')"
   extra_relevant="$(printf '%s\nResources/Fake.swift\n' "$expected_relevant")"
+  selftest_now="2026-07-09T12:00:00Z"
 
-  GITHUB_REPOSITORY="ourostack/ouro-md" \
+  OURO_RELEASE_POLICY_NOW="$selftest_now" GITHUB_REPOSITORY="ourostack/ouro-md" \
     GITHUB_EVENT_NAME="pull_request" \
     GITHUB_HEAD_REF="worker/app-store-spam-rejection" \
     GITHUB_REF="refs/pull/103/merge" \
     app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" >/dev/null \
     || fail "app store resubmission selftest did not accept the exact PR #103 waiver"
 
-  GITHUB_REPOSITORY="ourostack/ouro-md" \
+  OURO_RELEASE_POLICY_NOW="$selftest_now" GITHUB_REPOSITORY="ourostack/ouro-md" \
     GITHUB_EVENT_NAME="push" \
     GITHUB_REF_NAME="main" \
     app_store_resubmission_evidence_allows_same_version "0.9.80" "main" "main" "$expected_relevant" >/dev/null \
     || fail "app store resubmission selftest did not accept the exact main merge waiver"
 
-  if GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
+  if OURO_RELEASE_POLICY_NOW="$selftest_now" GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
     app_store_resubmission_evidence_allows_same_version "0.9.81" "pr" "origin/main" "$expected_relevant" >/dev/null; then
     fail "app store resubmission selftest accepted the wrong version"
   fi
-  if GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
+  if OURO_RELEASE_POLICY_NOW="$selftest_now" GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
     app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$missing_relevant" >/dev/null; then
     fail "app store resubmission selftest accepted a missing relevant path"
   fi
-  if GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
+  if OURO_RELEASE_POLICY_NOW="$selftest_now" GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
     app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$extra_relevant" >/dev/null; then
     fail "app store resubmission selftest accepted an extra relevant path"
   fi
-  if GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/other" GITHUB_REF="refs/pull/103/merge" \
+  if OURO_RELEASE_POLICY_NOW="$selftest_now" GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/other" GITHUB_REF="refs/pull/103/merge" \
     app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" >/dev/null; then
     fail "app store resubmission selftest accepted the wrong branch"
   fi
-  if GITHUB_REPOSITORY="someone/fork" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
+  if OURO_RELEASE_POLICY_NOW="$selftest_now" GITHUB_REPOSITORY="someone/fork" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
     app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" >/dev/null; then
     fail "app store resubmission selftest accepted the wrong repository"
+  fi
+  if OURO_RELEASE_POLICY_NOW="2026-07-24T12:00:00Z" GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
+    app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" >/dev/null; then
+    fail "app store resubmission selftest accepted expired evidence"
   fi
 
   echo "app store resubmission selftest ok"
