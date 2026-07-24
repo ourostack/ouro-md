@@ -1,4 +1,5 @@
 import AppKit
+import OuroMDAppSupport
 import SwiftUI
 import WebKit
 
@@ -104,9 +105,16 @@ struct EditorWebView: NSViewRepresentable {
 
     final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate, EditorBridge {
         let model: AppModel
+        let externalURLOpener: (URL) -> Void
         weak var webView: WKWebView?
 
-        init(model: AppModel) { self.model = model }
+        init(
+            model: AppModel,
+            externalURLOpener: @escaping (URL) -> Void = { _ = NSWorkspace.shared.open($0) }
+        ) {
+            self.model = model
+            self.externalURLOpener = externalURLOpener
+        }
 
         // MARK: JS -> native
 
@@ -135,17 +143,19 @@ struct EditorWebView: NSViewRepresentable {
             case "activeHeading":
                 if let index = body["index"] as? Int { model.setActiveHeading(index) }
             case "openURL":
-                // ⌘-click on a link in the editable area: the bridge resolved the
-                // anchor's href and asks us to open it. Same scheme allow-list as
-                // the navigation delegate so the editor can't be coaxed into
-                // opening file:// or other unexpected schemes.
-                if let urlString = body["url"] as? String,
-                   let url = URL(string: urlString),
-                   let scheme = url.scheme?.lowercased(),
-                   ["http", "https", "mailto"].contains(scheme) {
-                    NSWorkspace.shared.open(url)
-                }
+                if let rawTarget = body["url"] as? String { handleOpenURL(rawTarget) }
             default:
+                break
+            }
+        }
+
+        func handleOpenURL(_ rawTarget: String) {
+            switch DocumentLinkResolver.resolve(rawTarget, relativeTo: model.currentURL) {
+            case .external(let url):
+                externalURLOpener(url)
+            case .markdownFile(let url):
+                model.openLinkedDocument(url)
+            case .inDocumentAnchor, .unsupported:
                 break
             }
         }
