@@ -155,14 +155,14 @@ Make valid CommonMark reference-style links read and behave like links in every 
 **Acceptance**: Unit 4a is green; the same gate runs in local preflight, CI, and packaged-app verification; fixture source remains byte-identical.
 
 ### ⬜ Unit 4c: Release freshness metadata
-**What**: Run `scripts/bump-version.sh 0.9.85`, which updates `OuroMDRelease.swift`, `README.md`, and `distribution/apple-distribution.json` while leaving highlights untouched. Prefer adding a fourth highlight; preserve every positioning token, the `local Markdown files` substring used by App Store `whatsNew`, and the `Markdown editor` prohibition; keep `]` and `"` out of highlight strings. Update every live-`--selftest`-manifest-derived `0.9.84` expectation in `OuroMDAppStoreRequestPlanTests` (currently four: target version, filter, create-version payload, and dry-run text summary) while leaving test-local synthetic manifest expectations and `OuroMDAppStoreApplyPlanTests` unchanged. Run positioning, request-plan, package-readiness, release-version, and freshness checks.
+**What**: Run `scripts/bump-version.sh 0.9.85`, then add a parser-safe fourth highlight while preserving positioning/`whatsNew` tokens. Update the four live-`--selftest`-manifest-derived expectations in `OuroMDAppStoreRequestPlanTests` and the one live-manifest-derived `summary["targetVersion"]` expectation in `OuroMDAppStoreApplyPlanTests`. Leave test-local synthetic request/apply manifests and negative preflight fixtures at `0.9.84`. Run positioning, request-plan, apply-plan, package-readiness, release-version, and freshness checks.
 **Output**: Version `0.9.85` release metadata and `./2026-08-21-1214-doing-reference-links-and-anchors/unit4c/release-version.log`.
-**Acceptance**: All three version surfaces agree on `0.9.85`; `OuroMDPositioningTests`, `OuroMDAppStoreRequestPlanTests`, and `OuroMDAppStorePackageReadinessTests` are green; highlights describe both fixes without overclaiming; release verification and freshness pass against `v0.9.84`.
+**Acceptance**: All three version surfaces agree on `0.9.85`; positioning, request-plan, apply-plan, and package-readiness tests are green; only live-manifest-derived assertions move to `0.9.85`; highlights describe both fixes without overclaiming; release verification/freshness pass against `v0.9.84`.
 
 ### ⬜ Unit 4d: Integrated regression and preflight
 **What**: Run targeted Swift tests, `swift build`, the complete shared native scenarios and visual QA, `./scripts/check-shell-boundary.sh --selftest`, `./scripts/check-shell-boundary.sh`, `./scripts/check-vditor-vendor.sh`, coverage, and `./scripts/pr-preflight.sh`. Inspect the full branch diff for vendor-file changes, unrelated files, and source-format churn.
 **Output**: Green local CI-parity evidence under `./2026-08-21-1214-doing-reference-links-and-anchors/final/`, with final screenshots and command logs.
-**Acceptance**: All completion criteria are evidenced; vendor integrity confirms no files under `Sources/OuroMD/web/vditor/` changed; the full preflight passes with no warnings; the diff contains only the planned integration, tests, harness updates, shared fixtures, task artifacts, and required `0.9.85` changes in `Sources/OuroMDCore/OuroMDRelease.swift`, `README.md`, `distribution/apple-distribution.json`, and `Tests/OuroMDTests/OuroMDAppStoreRequestPlanTests.swift`.
+**Acceptance**: All completion criteria are evidenced; vendor integrity confirms no files under `Sources/OuroMD/web/vditor/` changed; the full preflight passes with no warnings; the diff contains only the planned integration, tests, harness updates, shared fixtures, task artifacts, and required `0.9.85` changes in `Sources/OuroMDCore/OuroMDRelease.swift`, `README.md`, `distribution/apple-distribution.json`, `Tests/OuroMDTests/OuroMDAppStoreRequestPlanTests.swift`, and `Tests/OuroMDTests/OuroMDAppStoreApplyPlanTests.swift`.
 
 ## Execution
 - **TDD strictly enforced**: tests → red → implement → green → refactor.
@@ -195,3 +195,4 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - 2026-08-21 15:01 Seventh tinfoil-hat scrutiny converged with no issues.
 - 2026-08-21 15:08 Seventh stranger-with-candy scrutiny aligned the approved planning contract with heading-first lookup and non-heading-only exact-ID fallback.
 - 2026-08-21 15:14 Eighth tinfoil-hat scrutiny converged with no issues.
+- 2026-08-21 15:17 Eighth stranger-with-candy scrutiny added the one live-manifest apply-plan `targetVersion` assertion affected by the `0.9.85` bump.
