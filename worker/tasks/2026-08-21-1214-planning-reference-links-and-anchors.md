@@ -18,6 +18,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - Preserve the fragment explicitly in the native link-target model instead of encoding it into or discarding it from the file URL.
 - Use one documented heading-slug and duplicate-heading contract across live-editor navigation, `window.ouro.getHTML()` app exports, and the standalone `MarkdownRenderer` used by `--render` and parity harnesses.
 - Keep Source Code mode and save/round-trip behavior byte-preserving; do not normalize reference links into inline links.
+- Use a dedicated strict round-trip fixture for the canonical full-reference syntax in the report, separate from the richer rendering/navigation fixture that exercises known Lute-normalized variants.
 - Extend unit and headless live-editor coverage for reference-style rendering, destination routing, anchor scrolling, duplicate headings, encoded fragments, and regressions in existing inline links.
 - Keep unresolved or malformed reference syntax visibly editable and non-clickable instead of inventing a destination.
 - Capture live visual evidence for the IR reference-link appearance and anchor-scroll result.
@@ -28,6 +29,8 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - Changing external links from Command-click to plain-click.
 - Adding non-CommonMark heading attribute syntax such as `{#custom-id}` or guaranteeing navigation to arbitrary raw-HTML `id` attributes.
 - Redesigning the outline, editor modes, or general link styling beyond the reference-marker defect.
+- Correcting pre-existing vendored Lute source normalizations for collapsed references, definition titles/angle brackets, or definition-block spacing during edited serialization.
+- Adding shared heading-anchor IDs to the rendered-HTML clipboard flavor; this task covers live navigation and app/standalone HTML/PDF export.
 
 ## Completion Criteria
 - [ ] Full, collapsed, and shortcut reference-style links show only their rendered label in IR mode, with no adjacent reference identifier or syntax markers while focused.
@@ -39,8 +42,8 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - [ ] Heading anchors use the same normalization and duplicate suffixes in live-editor navigation and HTML/PDF output, including percent-encoded fragments.
 - [ ] App HTML/PDF export input from `bridge.getHTML()` contains heading IDs under the shared anchor contract; this is tested independently from the pure `MarkdownRenderer` export harness.
 - [ ] App-export heading-ID reconciliation changes only heading IDs and leaves Vditor/Lute footnote and back-reference IDs byte-unchanged.
-- [ ] Source Code mode shows the original reference syntax and a no-edit open/save round trip remains byte-identical.
-- [ ] Editing nearby prose does not rewrite or inline unrelated reference-style links.
+- [ ] Source Code mode shows the original reference syntax, and the report's canonical full-reference form passes a strict raw no-edit round trip byte-for-byte.
+- [ ] Editing nearby prose does not convert unrelated reference-style links to inline syntax or change their destinations; known Lute normalization of noncanonical reference variants is documented rather than silently attributed to this fix.
 - [ ] Undefined or malformed reference labels remain source text and do not become clickable or lose syntax markers.
 - [ ] Existing inline external, bare autolink, and relative Markdown link behavior remains unchanged.
 - [ ] Fragment lookup is safe for digit-leading and punctuation-bearing anchors, and document-controlled fragments cross the Swift-to-JavaScript boundary only through the existing JSON-string escaping helper.
@@ -66,6 +69,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 ## Decisions Made
 - Treat the reported reference-style rendering defect and the source-verified anchor-navigation defect as one link-boundary fix spanning Vditor DOM rendering, editor gesture routing, native target resolution, and post-open scrolling.
 - Keep reference syntax untouched in the Markdown buffer; the IR appearance fix is render-only, and Source Code mode remains the place to edit reference identifiers.
+- Separate the rich navigation/rendering fixture from a strict raw round-trip fixture because the checked-in Lute normalizes collapsed references, definition titles/angle brackets, and some definition-block spacing; this fix must not hide those pre-existing behaviors behind `MarkdownTidy`.
 - Resolve reference destinations through the vendored parser's structured output so escaped labels, normalized labels, titles, collapsed references, and shortcut references follow CommonMark semantics.
 - Make fragments a first-class internal target rather than allowing WebKit to navigate against Vditor's mode-specific generated element IDs; try an exact rendered DOM ID first, then the shared heading-slug contract.
 - Preserve local-document fragments through native routing instead of silently discarding them as the current resolver does.
@@ -97,7 +101,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - Bundled Vditor/Lute `RenderJSON` output: reference links are `NodeLink` entries with resolved `NodeLinkDest`, while editor DOM nodes use `data-type="link-ref"` and expose no `href`. The vendor manifest records the pre-existing upstream version as unknown, so the plan relies on the checked-in bundle's behavior rather than a guessed release number.
 
 ## Notes
-The current bridge recognizes inline IR links (`data-type="a"`) but not reference links (`data-type="link-ref"`). It classifies `#fragment` separately in Swift and then drops it, and local Markdown resolution strips fragments before opening a file. Vditor also gives headings mode-specific generated IDs, so browser-default hash navigation cannot satisfy authored GitHub-style fragments. The implementation must distinguish resolved reference nodes from unresolved source-like text and must not regress Vditor's separate exact-ID footnote anchors. App HTML/PDF export currently uses `bridge.getHTML()`/`vditor.getHTML()`, while `MarkdownRenderer` covers `--render` and separate parity harnesses; both paths need explicit anchor parity coverage.
+The current bridge recognizes inline IR links (`data-type="a"`) but not reference links (`data-type="link-ref"`). It classifies `#fragment` separately in Swift and then drops it, and local Markdown resolution strips fragments before opening a file. Vditor also gives headings mode-specific generated IDs, so browser-default hash navigation cannot satisfy authored GitHub-style fragments. The implementation must distinguish resolved reference nodes from unresolved source-like text and must not regress Vditor's separate exact-ID footnote anchors. App HTML/PDF export currently uses `bridge.getHTML()`/`vditor.getHTML()`, while `MarkdownRenderer` covers `--render` and separate parity harnesses; both paths need explicit anchor parity coverage. The copy-as-rendered-HTML path calls Lute directly and is intentionally outside this task.
 
 ## Progress Log
 - 2026-08-21 12:16 Created.
@@ -105,3 +109,4 @@ The current bridge recognizes inline IR links (`data-type="a"`) but not referenc
 - 2026-08-21 12:22 Addressed cold-review findings for the actual app export path, safe fragment lookup, all editor modes, vendor provenance, heading-only deduplication, and native fragment propagation.
 - 2026-08-21 12:27 Addressed second-round findings for export footnote-ID safety, shared scenario-gate wiring, single-handled WebKit fragment navigation, and anchor-finding provenance.
 - 2026-08-21 12:28 Approved after two cold-review rounds converged with no blocking or major findings.
+- 2026-08-21 13:36 Updated after implementation scrutiny: split rich versus strict round-trip fixtures, documented pre-existing Lute normalizations, and bounded clipboard HTML out of scope.
