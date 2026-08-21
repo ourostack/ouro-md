@@ -197,3 +197,4 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - 2026-08-21 15:14 Eighth tinfoil-hat scrutiny converged with no issues.
 - 2026-08-21 15:17 Eighth stranger-with-candy scrutiny added the one live-manifest apply-plan `targetVersion` assertion affected by the `0.9.85` bump.
 - 2026-08-21 15:22 Ninth tinfoil-hat scrutiny added `livePreflight()` target/uploaded-build versions so negative apply-plan tests still reach their intended post-version validation layers.
+- 2026-08-21 15:30 Ninth stranger-with-candy scrutiny converged with no issues.
