@@ -68,7 +68,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - The real WebKit/Vditor surface is exercised by the headless harness in addition to pure Swift tests.
 
 ## Open Questions
-- None. The plan adopts parser-owned reference resolution, Ouro MD's existing slug mapping with heading-only NFC normalization and deterministic duplicate suffixes, and byte-preserving display-only handling.
+- None. The plan adopts parser-owned reference resolution, a cross-language Unicode-scalar heading contract with deterministic duplicate suffixes, and byte-preserving display-only handling.
 
 ## Decisions Made
 - Treat the reported reference-style rendering defect and the source-verified anchor-navigation defect as one link-boundary fix spanning Vditor DOM rendering, editor gesture routing, native target resolution, and post-open scrolling.
@@ -82,9 +82,10 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - Use `getElementById` for exact-ID lookup and escaped data handoff rather than constructing document-controlled CSS selectors or JavaScript source.
 - Intercept fragment gestures before WebKit navigation so only Ouro MD's exact-ID/heading-slug routing runs and the editor page URL never changes.
 - Define duplicate heading IDs with stable numeric suffixes at heading-collection/render time, not inside the generic slug normalizer used by footnote IDs, and use the same heading contract in the live editor and both export paths.
-- Define the heading base contract as the existing `HTMLVisitor.slug` character mapping (`_`, spaces, and hyphens become `-`; other punctuation is dropped), preceded by heading-only NFC normalization for deterministic Swift/JavaScript Unicode output. Keep the generic footnote slug path unchanged and pin decomposed Unicode in the shared contract fixture.
+- Define the heading base contract independently from the generic footnote slug: NFC-normalize, lowercase, NFC-normalize again, iterate Unicode scalars, retain alphabetic/numeric scalars, map space/hyphen/underscore to `-`, drop other scalars (including combining marks that remain after normalization), collapse/trim hyphens, then apply heading-only empty fallback and duplicate suffixes. Implement the same scalar predicate as Swift `Unicode.Scalar.Properties` and JavaScript Unicode-property escapes, and pin `İstanbul`, `a̱bc`, and `Mā́n` in the shared fixture.
 - Restrict app-export ID reconciliation to heading elements so existing Vditor/Lute footnote and back-reference IDs remain untouched.
 - Treat the version bump, `README.md`, `distribution/apple-distribution.json`, and release-highlight change as required release-policy consequences, not unrelated diff.
+- Amend rather than replace `OuroMDRelease.releaseHighlights`: preserve every App Store positioning token pinned by `OuroMDPositioningTests` and avoid the forbidden phrase `Markdown editor` while adding concise link/anchor release context.
 
 ## Context / References
 - `/Users/microsoft/personal-desk/ouro-md/_planning/reference-style-links/report.md`
@@ -108,7 +109,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - Bundled Vditor/Lute `RenderJSON` output: reference links are `NodeLink` entries with resolved `NodeLinkDest`, while editor DOM nodes use `data-type="link-ref"` and expose no `href`. The vendor manifest records the pre-existing upstream version as unknown, so the plan relies on the checked-in bundle's behavior rather than a guessed release number.
 
 ## Notes
-The current bridge recognizes inline IR links (`data-type="a"`) but not reference links (`data-type="link-ref"`). It classifies `#fragment` separately in Swift and then drops it, and local Markdown resolution strips fragments before opening a file. Vditor also gives headings mode-specific generated IDs, so browser-default hash navigation cannot satisfy authored GitHub-style fragments. Ouro MD exposes IR and Source Code (`sv`); SV contains a literal source pane and a rendered preview pane, while Vditor's WYSIWYG mode is not reachable from app UI. IR footnote spans have no IDs; SV preview/export owns exact-ID footnote navigation. App HTML/PDF export uses `bridge.getHTML()`/`vditor.getHTML()`, while `MarkdownRenderer` covers `--render` and separate parity harnesses; both export paths need explicit anchor parity coverage. The copy-as-rendered-HTML path calls Lute directly and is intentionally outside this task.
+The current bridge recognizes inline IR links (`data-type="a"`) but not reference links (`data-type="link-ref"`). It classifies `#fragment` separately in Swift and then drops it, and local Markdown resolution strips fragments before opening a file. Vditor also gives headings mode-specific generated IDs, so browser-default hash navigation cannot satisfy authored shared-contract fragments. Ouro MD exposes IR and Source Code (`sv`); SV contains a literal source pane and a rendered preview pane, while Vditor's WYSIWYG mode is not reachable from app UI. IR footnote spans have no IDs; SV preview/export owns exact-ID footnote navigation. App HTML/PDF export uses `bridge.getHTML()`/`vditor.getHTML()`, while `MarkdownRenderer` covers `--render` and separate parity harnesses; both export paths need explicit anchor parity coverage. The copy-as-rendered-HTML path calls Lute directly and is intentionally outside this task.
 
 ## Progress Log
 - 2026-08-21 12:16 Created.
@@ -119,3 +120,4 @@ The current bridge recognizes inline IR links (`data-type="a"`) but not referenc
 - 2026-08-21 13:36 Updated after implementation scrutiny: split rich versus strict round-trip fixtures, documented pre-existing Lute normalizations, and bounded clipboard HTML out of scope.
 - 2026-08-21 13:57 Updated after mode scrutiny: scoped behavior to shipping IR and Source Code (`sv`) source/preview panes, made WYSIWYG out of scope, and limited exact-ID footnote navigation to rendered preview/export surfaces.
 - 2026-08-21 14:18 Updated after convergence review: added the required `0.9.85` release-policy work and fixed the heading contract to an explicit Ouro mapping with heading-only NFC normalization.
+- 2026-08-21 14:33 Updated after final deception review: made heading slugs scalar-based across Swift/JavaScript and protected the App Store positioning contract while amending `0.9.85` release highlights.
