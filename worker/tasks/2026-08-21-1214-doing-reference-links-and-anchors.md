@@ -2,7 +2,7 @@
 
 **Status**: drafting
 **Execution Mode**: direct
-**Created**: 2026-08-21 12:29
+**Created**: 2026-08-21 12:30
 **Planning**: ./2026-08-21-1214-planning-reference-links-and-anchors.md
 **Artifacts**: ./2026-08-21-1214-doing-reference-links-and-anchors/
 
@@ -140,4 +140,4 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - Update this doing doc and the planning doc immediately when evidence changes a decision.
 
 ## Progress Log
-- 2026-08-21 12:29 Created from the approved planning doc.
+- 2026-08-21 12:30 Created from the approved planning doc.
