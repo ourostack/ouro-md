@@ -23,6 +23,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - Extend unit and headless live-editor coverage for reference-style rendering, destination routing, anchor scrolling, duplicate headings, encoded fragments, and regressions in existing inline links.
 - Keep unresolved or malformed reference syntax visibly editable and non-clickable instead of inventing a destination.
 - Capture live visual evidence for the IR reference-link appearance and anchor-scroll result.
+- Advance the app to the next patch release (currently `0.9.85` after published `v0.9.84`) and update release highlights because the repository's PR freshness policy classifies these source changes as release-relevant.
 
 ### Out of Scope
 - Replacing Vditor/Lute or modifying vendored Vditor source directly.
@@ -53,6 +54,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - [ ] The headless link harness fails before the fix and passes after the fix for both reported defects.
 - [ ] The shared `scripts/run-native-scenarios.sh` gate runs the expanded link harness and a reference-style round-trip fixture through its byte-for-byte `cmp`.
 - [ ] Live visual evidence shows the reference identifier absent and anchor navigation landing on the intended heading; the visual absurdity ledger is closed.
+- [ ] `scripts/bump-version.sh 0.9.85` updates release metadata and highlights, `scripts/verify-release-version.sh` passes, and PR freshness accepts the release-relevant diff.
 - [ ] 100% test coverage on all new code.
 - [ ] All tests pass.
 - [ ] No warnings.
@@ -66,7 +68,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - The real WebKit/Vditor surface is exercised by the headless harness in addition to pure Swift tests.
 
 ## Open Questions
-- None. The plan adopts parser-owned reference resolution, GitHub-style heading fragments with deterministic duplicate suffixes, and byte-preserving display-only handling.
+- None. The plan adopts parser-owned reference resolution, Ouro MD's existing slug mapping with heading-only NFC normalization and deterministic duplicate suffixes, and byte-preserving display-only handling.
 
 ## Decisions Made
 - Treat the reported reference-style rendering defect and the source-verified anchor-navigation defect as one link-boundary fix spanning Vditor DOM rendering, editor gesture routing, native target resolution, and post-open scrolling.
@@ -80,7 +82,9 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - Use `getElementById` for exact-ID lookup and escaped data handoff rather than constructing document-controlled CSS selectors or JavaScript source.
 - Intercept fragment gestures before WebKit navigation so only Ouro MD's exact-ID/heading-slug routing runs and the editor page URL never changes.
 - Define duplicate heading IDs with stable numeric suffixes at heading-collection/render time, not inside the generic slug normalizer used by footnote IDs, and use the same heading contract in the live editor and both export paths.
+- Define the heading base contract as the existing `HTMLVisitor.slug` character mapping (`_`, spaces, and hyphens become `-`; other punctuation is dropped), preceded by heading-only NFC normalization for deterministic Swift/JavaScript Unicode output. Keep the generic footnote slug path unchanged and pin decomposed Unicode in the shared contract fixture.
 - Restrict app-export ID reconciliation to heading elements so existing Vditor/Lute footnote and back-reference IDs remain untouched.
+- Treat the version bump, `README.md`, `distribution/apple-distribution.json`, and release-highlight change as required release-policy consequences, not unrelated diff.
 
 ## Context / References
 - `/Users/microsoft/personal-desk/ouro-md/_planning/reference-style-links/report.md`
@@ -114,3 +118,4 @@ The current bridge recognizes inline IR links (`data-type="a"`) but not referenc
 - 2026-08-21 12:28 Approved after two cold-review rounds converged with no blocking or major findings.
 - 2026-08-21 13:36 Updated after implementation scrutiny: split rich versus strict round-trip fixtures, documented pre-existing Lute normalizations, and bounded clipboard HTML out of scope.
 - 2026-08-21 13:57 Updated after mode scrutiny: scoped behavior to shipping IR and Source Code (`sv`) source/preview panes, made WYSIWYG out of scope, and limited exact-ID footnote navigation to rendered preview/export surfaces.
+- 2026-08-21 14:18 Updated after convergence review: added the required `0.9.85` release-policy work and fixed the heading contract to an explicit Ouro mapping with heading-only NFC normalization.
