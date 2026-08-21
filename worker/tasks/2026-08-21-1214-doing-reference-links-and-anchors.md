@@ -193,3 +193,4 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - 2026-08-21 14:42 Sixth tinfoil-hat scrutiny added App Store request-plan/package-readiness updates required by the manifest bump and made the shipped link-harness privacy contract explicit.
 - 2026-08-21 14:51 Sixth stranger-with-candy scrutiny covered all four live-manifest request-plan expectations and preserved the App Store `whatsNew` parser contract while adding release highlights.
 - 2026-08-21 15:01 Seventh tinfoil-hat scrutiny converged with no issues.
+- 2026-08-21 15:08 Seventh stranger-with-candy scrutiny aligned the approved planning contract with heading-first lookup and non-heading-only exact-ID fallback.
