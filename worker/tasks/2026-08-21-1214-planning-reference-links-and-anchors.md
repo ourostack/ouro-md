@@ -1,7 +1,7 @@
 # Planning: Reference-style link rendering and anchor navigation
 
 **Status**: drafting
-**Created**: 2026-08-21 12:15
+**Created**: 2026-08-21 12:16
 
 ## Goal
 Make valid CommonMark reference-style links read and behave like links in every Ouro MD editor mode, and make heading-fragment links navigate reliably within the current document or a linked Markdown document without rewriting the author's source.
@@ -80,4 +80,4 @@ Make valid CommonMark reference-style links read and behave like links in every 
 The current bridge recognizes inline IR links (`data-type="a"`) but not reference links (`data-type="link-ref"`). It classifies `#fragment` separately in Swift and then drops it, and local Markdown resolution strips fragments before opening a file. Vditor also gives headings mode-specific generated IDs, so browser-default hash navigation cannot satisfy authored GitHub-style fragments.
 
 ## Progress Log
-- 2026-08-21 12:15 Created.
+- 2026-08-21 12:16 Created.
