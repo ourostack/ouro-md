@@ -37,6 +37,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - [ ] The headless link harness fails before the fix and passes after the fix for both reported defects.
 - [ ] The shared `scripts/run-native-scenarios.sh` gate runs the expanded link harness and a reference-style round-trip fixture through its byte-for-byte `cmp`.
 - [ ] Live visual evidence shows the reference identifier absent and anchor navigation landing on the intended heading; the visual absurdity ledger is closed.
+- [ ] `scripts/bump-version.sh 0.9.85` updates release metadata and highlights, `scripts/verify-release-version.sh` passes, and PR freshness accepts the release-relevant diff.
 - [ ] 100% test coverage on all new code.
 - [ ] All tests pass.
 - [ ] No warnings.
@@ -89,9 +90,9 @@ Make valid CommonMark reference-style links read and behave like links in every 
 **Acceptance**: IR labels are visibly link-styled with no identifier under keyboard/mouse focus; SV source stays literal/inert; SV preview renders links; the purpose-built absurdity ledger closes; the unchanged visual QA suite remains green.
 
 ### ⬜ Unit 2a: Heading-anchor contract fixture
-**What**: Write the language-neutral heading contract before either implementation: base normalization, empty-slug fallback, duplicate suffix numbering, Unicode, inline formatting, punctuation-only, and digit-leading cases. Record the rationale and add machine-readable cases at `Sources/OuroMD/web/heading-anchor-contract.json`. Swift unit tests read the source fixture by a `#filePath`-relative repository path, avoiding a `Bundle.module` fatal path; `LinkTest.swift` separately loads the same file through `OuroResources.web("heading-anchor-contract", "json")`, proving packaged resource inclusion, and injects cases into JavaScript with JSON string escaping. Runtime `bridge.js` implements the algorithm and never fetches JSON from a `file://` page.
+**What**: Write the language-neutral heading contract before either implementation. Define base normalization as NFC followed by the existing `HTMLVisitor.slug` mapping: lowercase; preserve letters/numbers; map space, hyphen, and underscore to `-`; drop other punctuation; collapse/trim hyphens; then apply heading-only empty fallback and duplicate suffix numbering. Include precomposed and decomposed Unicode, inline formatting, punctuation-only, digit-leading, underscore, and duplicate cases. Add machine-readable cases at `Sources/OuroMD/web/heading-anchor-contract.json`; Swift tests read the source path, while LinkTest loads the bundled copy through `OuroResources.web` and injects cases into JavaScript.
 **Output**: `./2026-08-21-1214-doing-reference-links-and-anchors/anchor-contract.md` and `Sources/OuroMD/web/heading-anchor-contract.json`.
-**Acceptance**: Every heading case has one expected ID; duplicate numbering is explicit; footnote ID behavior is explicitly excluded from heading deduplication; both later test suites can load the same fixture.
+**Acceptance**: Every heading case has one expected ID; precomposed/decomposed equivalents converge under NFC; underscore-to-hyphen and duplicate numbering are explicit; the generic footnote slug path is excluded from both heading NFC and deduplication; both test suites load the same fixture.
 
 ### ⬜ Unit 2b-i: Same-document anchors — Tests
 **What**: Extend `EditorWebViewTests` with the pure escaped anchor-script seam, and extend `LinkTest` for inline/reference fragment destinations in IR and SV preview while asserting SV source links stay inert. Cover contract headings, encoded/digit-leading/punctuation fragments, duplicates, missing headings, one-shot handling, unchanged editor URL, and SV-preview footnote/back-reference exact IDs; do not expect IR footnote IDs that Vditor does not emit.
@@ -134,7 +135,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 **Acceptance**: WKWebView tests fail wherever app-export heading IDs are absent or disagree with the shared contract in any mode, while pure renderer tests characterize the standalone half; reference links already resolved by Lute remain resolved; tests prove a broad ID rewrite would regress footnotes.
 
 ### ⬜ Unit 3b: Export anchor parity — Implementation
-**What**: Run a narrow quote-aware scanner over the original `vditor.getHTML()` string and insert or replace only the `id` attribute inside generated `<h1>`-`<h6>` opening tags, using the same JavaScript heading contract as live navigation; do not parse/re-serialize the full document and never rewrite non-heading `id`/`href` attributes. Update `MarkdownRenderer` to apply duplicate suffixes at heading-render time while leaving the generic base slug used by footnotes unchanged.
+**What**: Run a narrow quote-aware scanner over the original `vditor.getHTML()` string and insert or replace only heading `id` attributes using the JavaScript contract. In `MarkdownRenderer`, add a heading-only NFC-normalizing slug wrapper around the existing character mapping and apply duplicate suffixes at heading-render time; leave the generic footnote slug path byte-for-byte unchanged.
 **Output**: Matching heading/reference contracts in app HTML/PDF input and standalone HTML/PDF rendering.
 **Acceptance**: Unit 3a is green; restoring each original heading opening tag in normalized app-export HTML yields the exact pre-change `vditor.getHTML()` bytes whether the tag originally lacked or carried a Lute ID; entities, void tags, quoting, whitespace, reference links, footnote IDs, and back-reference IDs are otherwise byte-identical; app and standalone exports emit identical heading IDs for every shared contract case.
 
@@ -153,10 +154,15 @@ Make valid CommonMark reference-style links read and behave like links in every 
 **Output**: Green shared harness policy and native scenario gate.
 **Acceptance**: Unit 4a is green; the same gate runs in local preflight, CI, and packaged-app verification; fixture source remains byte-identical.
 
-### ⬜ Unit 4c: Integrated regression and preflight
+### ⬜ Unit 4c: Release freshness metadata
+**What**: Run `scripts/bump-version.sh 0.9.85`, update the generated release metadata in `Sources/OuroMDCore/OuroMDRelease.swift`, `README.md`, and `distribution/apple-distribution.json`, replace the generated placeholder with concise reference-link/anchor release highlights, then run `scripts/verify-release-version.sh` and the PR freshness check.
+**Output**: Version `0.9.85` release metadata and `./2026-08-21-1214-doing-reference-links-and-anchors/unit4c/release-version.log`.
+**Acceptance**: All three version surfaces agree on `0.9.85`; release highlights describe both fixes without overclaiming out-of-scope Lute normalizations; release freshness passes against published `v0.9.84`.
+
+### ⬜ Unit 4d: Integrated regression and preflight
 **What**: Run targeted Swift tests, `swift build`, the complete shared native scenarios and visual QA, `./scripts/check-shell-boundary.sh --selftest`, `./scripts/check-shell-boundary.sh`, `./scripts/check-vditor-vendor.sh`, coverage, and `./scripts/pr-preflight.sh`. Inspect the full branch diff for vendor-file changes, unrelated files, and source-format churn.
 **Output**: Green local CI-parity evidence under `./2026-08-21-1214-doing-reference-links-and-anchors/final/`, with final screenshots and command logs.
-**Acceptance**: All completion criteria are evidenced; vendor integrity confirms no files under `Sources/OuroMD/web/vditor/` changed; the full preflight passes with no warnings; the diff contains only the planned integration, tests, harness updates, shared fixtures, and task artifacts.
+**Acceptance**: All completion criteria are evidenced; vendor integrity confirms no files under `Sources/OuroMD/web/vditor/` changed; the full preflight passes with no warnings; the diff contains only the planned integration, tests, harness updates, shared fixtures, task artifacts, and the required `0.9.85` changes in `Sources/OuroMDCore/OuroMDRelease.swift`, `README.md`, and `distribution/apple-distribution.json`.
 
 ## Execution
 - **TDD strictly enforced**: tests → red → implement → green → refactor.
@@ -182,3 +188,4 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - 2026-08-21 13:46 Third stranger-with-candy scrutiny pinned base64/UTF-8 label decoding and bilateral normalization, kept argument flags out of policy modes, made timeout defaulting `set -u` safe, and assigned snapshot/DOM artifact helpers explicitly.
 - 2026-08-21 13:57 Fourth tinfoil-hat scrutiny aligned all units with shipping IR and Source Code (`sv`) source/preview surfaces, made WYSIWYG out of scope, pinned strict definition placement, and scoped exact-ID footnotes to rendered preview/export.
 - 2026-08-21 14:08 Fourth stranger-with-candy scrutiny kept link/anchor visuals in the purpose-built LinkTest artifact path and left the dogfood-shaped `VisualQATester` fixture set unchanged.
+- 2026-08-21 14:18 Fifth tinfoil-hat scrutiny added the mandatory `0.9.85` release-freshness unit and made the heading contract explicit for underscore mapping, heading-only NFC normalization, and decomposed Unicode parity.
