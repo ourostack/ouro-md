@@ -38,12 +38,15 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - [ ] `other.md#fragment` opens or activates the target document window and scrolls after that editor is ready.
 - [ ] Heading anchors use the same normalization and duplicate suffixes in live-editor navigation and HTML/PDF output, including percent-encoded fragments.
 - [ ] App HTML/PDF export input from `bridge.getHTML()` contains heading IDs under the shared anchor contract; this is tested independently from the pure `MarkdownRenderer` export harness.
+- [ ] App-export heading-ID reconciliation changes only heading IDs and leaves Vditor/Lute footnote and back-reference IDs byte-unchanged.
 - [ ] Source Code mode shows the original reference syntax and a no-edit open/save round trip remains byte-identical.
 - [ ] Editing nearby prose does not rewrite or inline unrelated reference-style links.
 - [ ] Undefined or malformed reference labels remain source text and do not become clickable or lose syntax markers.
 - [ ] Existing inline external, bare autolink, and relative Markdown link behavior remains unchanged.
 - [ ] Fragment lookup is safe for digit-leading and punctuation-bearing anchors, and document-controlled fragments cross the Swift-to-JavaScript boundary only through the existing JSON-string escaping helper.
+- [ ] Fragment activation is handled exactly once, suppresses WebKit's default hash navigation, and leaves the bundled editor document URL unchanged.
 - [ ] The headless link harness fails before the fix and passes after the fix for both reported defects.
+- [ ] The shared `scripts/run-native-scenarios.sh` gate runs the expanded link harness and a reference-style round-trip fixture through its byte-for-byte `cmp`.
 - [ ] Live visual evidence shows the reference identifier absent and anchor navigation landing on the intended heading; the visual absurdity ledger is closed.
 - [ ] 100% test coverage on all new code.
 - [ ] All tests pass.
@@ -61,14 +64,16 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - None. The plan adopts parser-owned reference resolution, GitHub-style heading fragments with deterministic duplicate suffixes, and byte-preserving display-only handling.
 
 ## Decisions Made
-- Treat both reports as one link-boundary defect spanning Vditor DOM rendering, editor gesture routing, native target resolution, and post-open scrolling.
+- Treat the reported reference-style rendering defect and the source-verified anchor-navigation defect as one link-boundary fix spanning Vditor DOM rendering, editor gesture routing, native target resolution, and post-open scrolling.
 - Keep reference syntax untouched in the Markdown buffer; the IR appearance fix is render-only, and Source Code mode remains the place to edit reference identifiers.
 - Resolve reference destinations through the vendored parser's structured output so escaped labels, normalized labels, titles, collapsed references, and shortcut references follow CommonMark semantics.
 - Make fragments a first-class internal target rather than allowing WebKit to navigate against Vditor's mode-specific generated element IDs; try an exact rendered DOM ID first, then the shared heading-slug contract.
 - Preserve local-document fragments through native routing instead of silently discarding them as the current resolver does.
 - Change the public Markdown-file target shape to carry an optional fragment alongside the standardized file URL, then thread that value through existing-window and new-window open paths.
 - Use `getElementById` for exact-ID lookup and escaped data handoff rather than constructing document-controlled CSS selectors or JavaScript source.
+- Intercept fragment gestures before WebKit navigation so only Ouro MD's exact-ID/heading-slug routing runs and the editor page URL never changes.
 - Define duplicate heading IDs with stable numeric suffixes at heading-collection/render time, not inside the generic slug normalizer used by footnote IDs, and use the same heading contract in the live editor and both export paths.
+- Restrict app-export ID reconciliation to heading elements so existing Vditor/Lute footnote and back-reference IDs remain untouched.
 
 ## Context / References
 - `/Users/microsoft/personal-desk/ouro-md/_planning/reference-style-links/report.md`
@@ -98,3 +103,4 @@ The current bridge recognizes inline IR links (`data-type="a"`) but not referenc
 - 2026-08-21 12:16 Created.
 - 2026-08-21 12:18 Tinfoil-hat pass added unresolved-reference and exact-ID/footnote anchor protections.
 - 2026-08-21 12:22 Addressed cold-review findings for the actual app export path, safe fragment lookup, all editor modes, vendor provenance, heading-only deduplication, and native fragment propagation.
+- 2026-08-21 12:27 Addressed second-round findings for export footnote-ID safety, shared scenario-gate wiring, single-handled WebKit fragment navigation, and anchor-finding provenance.
