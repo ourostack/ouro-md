@@ -66,13 +66,13 @@ Make valid CommonMark reference-style links read and behave like links in every 
 
 ### ⬜ Unit 0: Baseline and fixture contract
 **What**: Reproduce both defects at HEAD with a compact fixture containing full, collapsed, shortcut, unresolved, external, local Markdown, same-document fragment, duplicate-heading, encoded-fragment, footnote, and back-reference cases. Record the current IR DOM, `window.ouro.getHTML()` output, clicked-target routing, editor page URL, scroll positions, and byte-for-byte round-trip result.
-**Output**: `./2026-08-21-1214-doing-reference-links-and-anchors/unit0-baseline.md` plus captured DOM/HTML snippets and screenshots.
+**Output**: `./2026-08-21-1214-doing-reference-links-and-anchors/unit0/baseline.md`, `ir-dom.json`, `app-export.html`, `standalone-export.html`, `reference-focused.png`, and `anchor-before.png`.
 **Acceptance**: The reference identifier is demonstrably exposed when its IR node is active; reference nodes have no direct `href`; fragment clicks fail to land on authored heading targets; app-export and standalone-render paths are distinguished; round-trip remains byte-identical.
 
 ### ⬜ Unit 1a: Reference-style links — Tests
-**What**: Extend `Sources/OuroMD/LinkTest.swift`, `Tests/OuroMDTests/MarkdownRendererTests.swift`, and the shared round-trip fixture to assert full/collapsed/shortcut resolution, IR marker hiding while focused, parser-normalized labels/titles, external Command-click, local Markdown normal-click, unresolved fail-closed behavior, all live editor modes, app `getHTML()` output, standalone rendering, and source preservation.
-**Output**: Failing reference-link regression coverage in the shipped harness and unit tests.
-**Acceptance**: New assertions fail for the current missing IR presentation and destination-routing behavior while existing inline-link and round-trip assertions remain green.
+**What**: Add `Tests/Fixtures/reference-links-and-anchors.md`; extend `Sources/OuroMD/LinkTest.swift` with expected-red assertions for full/collapsed/shortcut IR presentation and destination routing across live modes; add expected-green characterization tests in `Tests/OuroMDTests/MarkdownRendererTests.swift` for swift-markdown's already-correct standalone reference resolution; and run the new fixture through `--roundtrip` without wiring the shared gate yet.
+**Output**: Failing live reference-link regression coverage, green standalone-render characterization, the source-preservation fixture, and `./2026-08-21-1214-doing-reference-links-and-anchors/unit1a/red.log`.
+**Acceptance**: The named expected-red LinkTest assertions fail for missing marker hiding and destination routing; expected-green renderer/round-trip assertions pass; existing inline links remain green.
 
 ### ⬜ Unit 1b: Reference-style links — Implementation
 **What**: Update `Sources/OuroMD/web/index.html` and `Sources/OuroMD/web/bridge.js` so resolved `data-type="link-ref"` nodes keep reference syntax markers hidden in IR, and resolve their actual destinations from the checked-in Lute parser's structured output across IR/WYSIWYG/Split instead of parsing CommonMark reference definitions by regex. Feed the resolved target through the existing external/local/fragment gesture policy without mutating `state.value` or the Vditor document.
@@ -89,20 +89,40 @@ Make valid CommonMark reference-style links read and behave like links in every 
 **Output**: Screenshots and `./2026-08-21-1214-doing-reference-links-and-anchors/reference-links-visual-absurdity-ledger.md`.
 **Acceptance**: Only the rendered label is visible in IR even while focused; Source Code retains the original syntax; the absurdity ledger has no open ready or reviewer-gated items; automated visual metrics stay green.
 
-### ⬜ Unit 2a: Anchor routing — Tests
-**What**: Extend `Tests/OuroMDAppSupportTests/DocumentLinkTests.swift`, `Tests/OuroMDTests/EditorWebViewTests.swift`, `Tests/OuroMDTests/AppDelegateWindowRoutingTests.swift`, `Tests/OuroMDTests/MarkdownRendererTests.swift`, and `Sources/OuroMD/LinkTest.swift` for optional fragment preservation, safe Swift-to-JavaScript escaping, same-document scrolling in IR/WYSIWYG/Split, exact DOM IDs, footnotes/back-references, GitHub-style heading slugs, duplicate suffixes, encoded/digit-leading/punctuation fragments, missing headings, cross-document new/existing windows, editor-readiness ordering, one-shot gesture handling, and unchanged editor page URL.
-**Output**: Failing pure and live anchor-navigation tests.
-**Acceptance**: Tests fail on the current `.inDocumentAnchor` no-op, stripped file fragments, mode-specific heading IDs, missing app-export heading IDs, and WebKit default hash navigation without failing unrelated link routing.
+### ⬜ Unit 2a: Heading-anchor contract fixture
+**What**: Write the language-neutral heading contract before either implementation: base normalization, empty-slug fallback, duplicate suffix numbering, Unicode, inline formatting, punctuation-only, and digit-leading cases. Record the rationale and add machine-readable cases at `Sources/OuroMD/web/heading-anchor-contract.json` so both the live JavaScript harness and Swift renderer tests consume one expected-output table.
+**Output**: `./2026-08-21-1214-doing-reference-links-and-anchors/anchor-contract.md` and `Sources/OuroMD/web/heading-anchor-contract.json`.
+**Acceptance**: Every heading case has one expected ID; duplicate numbering is explicit; footnote ID behavior is explicitly excluded from heading deduplication; both later test suites can load the same fixture.
 
-### ⬜ Unit 2b: Anchor routing — Implementation
-**What**: Make fragments first-class in `DocumentLinkTarget`, `DocumentLinkResolver`, `EditorWebView.Coordinator`, `AppModel`, and `AppDelegate`; preserve an optional fragment beside the standardized Markdown file URL; queue cross-document scrolling until the target editor has loaded/rendered; and add a bridge-owned anchor scroller that tries `getElementById` before the shared heading-slug map. Intercept fragment gestures once, suppress WebKit hash navigation, decode fragments safely, and pass native fragment strings through `Coordinator.jsString`.
-**Output**: Same-document and cross-document anchor navigation with readiness-safe native/JavaScript handoff.
-**Acceptance**: Unit 2a is green; missing anchors are harmless no-ops; unsupported schemes remain blocked; activating a fragment never changes the editor page URL or executes unescaped script.
+### ⬜ Unit 2b-i: Same-document anchors — Tests
+**What**: Extend `Tests/OuroMDTests/EditorWebViewTests.swift` and `Sources/OuroMD/LinkTest.swift` for IR/WYSIWYG/Split same-document fragments, exact DOM IDs, footnotes/back-references, contract-fixture heading slugs, encoded/digit-leading/punctuation fragments, duplicates, missing headings, one-shot gesture handling, safe Swift-to-JavaScript escaping, and unchanged editor page URL. Keep app-export and standalone-render ID assertions in Unit 3a.
+**Output**: Failing same-document anchor tests and `./2026-08-21-1214-doing-reference-links-and-anchors/unit2b-i/red.log`.
+**Acceptance**: Tests fail on the current `.inDocumentAnchor` no-op, mode-specific generated heading IDs, and WebKit default hash navigation while unrelated link routing stays green.
 
-### ⬜ Unit 2c: Anchor routing — Coverage and refactor
-**What**: Centralize heading occurrence counting separately from base slug normalization, cover duplicate and empty-slug headings, and verify pending fragments are consumed once after open/reuse/recovery without contaminating subsequent document loads.
-**Output**: Complete anchor-routing branch coverage and isolated slug/deduplication helpers.
-**Acceptance**: 100% coverage on new Swift logic; headless coverage exercises JavaScript fallbacks; footnote IDs and back-reference targets remain unchanged.
+### ⬜ Unit 2b-ii: Same-document anchors — Implementation
+**What**: Add a bridge-owned anchor scroller that tries `getElementById` before the contract-fixture heading-slug map; intercept fragment gestures once; suppress WebKit hash navigation; decode fragments safely; and route native fragments through `Coordinator.jsString` without changing the editor URL.
+**Output**: Same-document anchor navigation in `Sources/OuroMD/web/bridge.js` and `Sources/OuroMD/EditorWebView.swift`.
+**Acceptance**: Unit 2b-i is green; missing anchors are harmless no-ops; exact-ID footnotes still work; no document-controlled fragment is interpolated as JavaScript source.
+
+### ⬜ Unit 2b-iii: Same-document anchors — Coverage and refactor
+**What**: Centralize JavaScript heading occurrence counting separately from base slug normalization, load all conformance cases from the shared fixture in the live harness, and cover empty-slug and fallback paths.
+**Output**: Complete same-document JavaScript branch coverage and isolated anchor helpers.
+**Acceptance**: Headless coverage exercises every lookup branch; footnote/back-reference IDs remain unchanged; the editor page URL remains stable after every fragment activation.
+
+### ⬜ Unit 2c-i: Cross-document fragments — Tests
+**What**: Extend `Tests/OuroMDAppSupportTests/DocumentLinkTests.swift`, `Tests/OuroMDTests/EditorWebViewTests.swift`, and `Tests/OuroMDTests/AppDelegateWindowRoutingTests.swift` for the fragment-carrying Markdown-file target, relative/absolute/file URLs, encoded fragments, existing-window reuse, new-window creation, sandbox-granted targets, readiness ordering, recovery, missing headings, and one-shot pending-fragment consumption.
+**Output**: Failing cross-document fragment tests and `./2026-08-21-1214-doing-reference-links-and-anchors/unit2c-i/red.log`.
+**Acceptance**: Tests fail because the current public target enum drops file fragments and window routing has no readiness-safe scroll handoff.
+
+### ⬜ Unit 2c-ii: Cross-document fragments — Implementation
+**What**: Change `DocumentLinkTarget`, `DocumentLinkResolver`, `EditorWebView.Coordinator`, `AppModel`, and `AppDelegate` to preserve an optional fragment beside the standardized Markdown file URL, pass it through sandbox/existing/new-window paths, and queue scrolling until the target editor has loaded and rendered.
+**Output**: Readiness-safe native fragment propagation across document windows.
+**Acceptance**: Unit 2c-i is green; unsupported schemes remain blocked; existing and new target windows consume the requested fragment exactly once.
+
+### ⬜ Unit 2c-iii: Cross-document fragments — Coverage and refactor
+**What**: Cover fragment consumption after open, reuse, web-content recovery, missing target, cancelled sandbox grant, and subsequent unrelated document loads; remove duplicate pending-state paths.
+**Output**: Complete cross-document Swift branch coverage and one pending-fragment mechanism.
+**Acceptance**: 100% coverage on new Swift routing; no stale fragment contaminates later opens; all same-document tests remain green.
 
 ### ⬜ Unit 2d: Anchor routing — Visual QA dogfood
 **What**: Run `visual-qa-dogfood` with distant headings, duplicate headings, encoded fragments, and exact-ID footnotes in each rendered editor mode, including a cross-document jump.
@@ -110,28 +130,38 @@ Make valid CommonMark reference-style links read and behave like links in every 
 **Acceptance**: Each jump lands with the intended heading visibly at the top of the reading region, no double-scroll or URL mutation occurs, and the absurdity ledger is closed with automated visual metrics green.
 
 ### ⬜ Unit 3a: Export anchor parity — Tests
-**What**: Extend `Sources/OuroMD/MarkdownParityTest.swift`, `Sources/OuroMD/EditorSurfaceTest.swift`, `Tests/OuroMDTests/MarkdownRendererTests.swift`, and the live link harness to compare heading/reference output from `window.ouro.getHTML()` and `MarkdownRenderer.renderHTMLBody`. Assert shared heading IDs and duplicate suffixes while snapshotting non-heading Vditor/Lute footnote and back-reference IDs before reconciliation.
+**What**: Extend `Sources/OuroMD/MarkdownParityTest.swift`, `Sources/OuroMD/EditorSurfaceTest.swift`, `Tests/OuroMDTests/MarkdownRendererTests.swift`, and the live link harness to load `heading-anchor-contract.json` and compare heading/reference output from `window.ouro.getHTML()` and `MarkdownRenderer.renderHTMLBody`. Assert shared heading IDs and duplicate suffixes while snapshotting non-heading Vditor/Lute footnote and back-reference IDs before reconciliation.
 **Output**: Failing app-export and standalone-render parity tests that distinguish the two production paths.
 **Acceptance**: Current app-export input fails the shared heading-ID contract; reference links already resolved by Lute remain resolved; tests prove a broad ID rewrite would regress footnotes.
 
 ### ⬜ Unit 3b: Export anchor parity — Implementation
 **What**: Reconcile heading IDs only in the HTML returned by `window.ouro.getHTML()` using the same JavaScript heading contract as live navigation, without touching other `id`/`href` attributes. Update `MarkdownRenderer` to apply duplicate suffixes at heading-render time while leaving the generic base slug used by footnotes unchanged.
 **Output**: Matching heading/reference contracts in app HTML/PDF input and standalone HTML/PDF rendering.
-**Acceptance**: Unit 3a is green; only heading IDs change; footnote/back-reference IDs are byte-identical; app and standalone exports navigate repeated headings consistently.
+**Acceptance**: Unit 3a is green; only heading IDs change; footnote/back-reference IDs are byte-identical; app and standalone exports emit identical IDs for every shared contract case.
 
 ### ⬜ Unit 3c: Export anchor parity — Coverage and refactor
 **What**: Add parity fixtures for inline formatting in headings, Unicode, punctuation-only headings, duplicates, exact-ID footnotes, and reference links targeting external/local/fragment destinations.
 **Output**: Complete export-path edge coverage without broad HTML rewriting.
 **Acceptance**: 100% coverage on new Swift renderer state; live scenario assertions cover JavaScript export reconciliation; HTML and PDF generation remain green.
 
-### ⬜ Unit 4: Integrated regression and preflight
-**What**: Wire the reference/anchor fixtures into `scripts/run-native-scenarios.sh`, including its byte-for-byte round-trip `cmp`; run targeted Swift tests, `swift build`, the complete shared native scenarios and visual QA, `./scripts/check-shell-boundary.sh --selftest`, `./scripts/check-shell-boundary.sh`, vendor integrity, coverage, and `./scripts/pr-preflight.sh`. Inspect the full branch diff for vendor-file changes, unrelated files, and source-format churn.
-**Output**: Green local CI-parity evidence under `./2026-08-21-1214-doing-reference-links-and-anchors/`, with final screenshots and command logs.
-**Acceptance**: All completion criteria are evidenced; `scripts/check-vditor-vendor.sh` confirms no vendored Vditor files changed; the full preflight passes with no warnings; the diff contains only the planned integration, tests, harness updates, and task artifacts.
+### ⬜ Unit 4a: Shared scenario gate — Tests
+**What**: Extend `scripts/check-shipped-harness-policy.sh` to require `scripts/run-native-scenarios.sh` to run `Tests/Fixtures/reference-links-and-anchors.md` through `--roundtrip` and `cmp`, then run the policy check before editing the scenario script.
+**Output**: Failing harness-policy assertion and `./2026-08-21-1214-doing-reference-links-and-anchors/unit4a/red.log`.
+**Acceptance**: The policy check fails only because the shared native scenario gate does not yet own the new byte-preservation fixture.
+
+### ⬜ Unit 4b: Shared scenario gate — Implementation
+**What**: Wire the reference/anchor fixture into `scripts/run-native-scenarios.sh`, retain the expanded `--linktest`, and add the required `--roundtrip`/`cmp` invocation without duplicating fixture content in shell.
+**Output**: Green shared harness policy and native scenario gate.
+**Acceptance**: Unit 4a is green; the same gate runs in local preflight, CI, and packaged-app verification; fixture source remains byte-identical.
+
+### ⬜ Unit 4c: Integrated regression and preflight
+**What**: Run targeted Swift tests, `swift build`, the complete shared native scenarios and visual QA, `./scripts/check-shell-boundary.sh --selftest`, `./scripts/check-shell-boundary.sh`, `./scripts/check-vditor-vendor.sh`, coverage, and `./scripts/pr-preflight.sh`. Inspect the full branch diff for vendor-file changes, unrelated files, and source-format churn.
+**Output**: Green local CI-parity evidence under `./2026-08-21-1214-doing-reference-links-and-anchors/final/`, with final screenshots and command logs.
+**Acceptance**: All completion criteria are evidenced; vendor integrity confirms no files under `Sources/OuroMD/web/vditor/` changed; the full preflight passes with no warnings; the diff contains only the planned integration, tests, harness updates, shared fixtures, and task artifacts.
 
 ## Execution
 - **TDD strictly enforced**: tests → red → implement → green → refactor.
-- Commit after each phase (1a, 1b, 1c).
+- Commit after Unit 0 and every lettered or roman-numeral phase in Units 1-4; each red test phase, implementation phase, coverage/refactor phase, visual QA phase, gate-wiring phase, and terminal preflight has its own commit.
 - Push after each unit complete.
 - Run full test suite before marking a unit done.
 - Run `visual-qa-dogfood` for Units 1d and 2d before declaring either behavior complete.
@@ -141,3 +171,4 @@ Make valid CommonMark reference-style links read and behave like links in every 
 
 ## Progress Log
 - 2026-08-21 12:30 Created from the approved planning doc.
+- 2026-08-21 12:36 Granularity pass split same-document and cross-document anchors, added the shared heading contract fixture, named exact artifacts, separated gate wiring from terminal preflight, and clarified red/green and commit boundaries.
