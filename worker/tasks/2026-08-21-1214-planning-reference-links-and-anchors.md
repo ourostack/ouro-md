@@ -13,10 +13,12 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - Resolve reference-style link destinations from Vditor/Lute parser output rather than a partial handwritten Markdown parser.
 - Preserve the established gesture contract: external web/mail links open on Command-click, while local Markdown and heading-fragment links navigate on a normal rendered-link click.
 - Support same-document heading fragments such as `#target-heading` in IR, WYSIWYG, and Split/preview surfaces.
+- Preserve exact-ID in-document navigation used by rendered footnotes and other app-owned anchors before falling back to heading-slug matching.
 - Preserve and honor fragments on local Markdown targets such as `other.md#target-heading`, including when the target document is already open and when a new window must wait for editor readiness.
 - Use one documented heading-slug and duplicate-heading contract across the live editor and standalone HTML/PDF rendering.
 - Keep Source Code mode and save/round-trip behavior byte-preserving; do not normalize reference links into inline links.
 - Extend unit and headless live-editor coverage for reference-style rendering, destination routing, anchor scrolling, duplicate headings, encoded fragments, and regressions in existing inline links.
+- Keep unresolved or malformed reference syntax visibly editable and non-clickable instead of inventing a destination.
 - Capture live visual evidence for the IR reference-link appearance and anchor-scroll result.
 
 ### Out of Scope
@@ -30,10 +32,12 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - [ ] Full, collapsed, and shortcut reference-style links show only their rendered label in IR mode, with no adjacent reference identifier or syntax markers while focused.
 - [ ] External reference-style links preserve Command-click browser opening, and relative Markdown reference-style links preserve normal-click in-app opening.
 - [ ] Same-document inline and reference-style fragment links scroll to the intended heading in IR, WYSIWYG, and Split/preview modes.
+- [ ] Existing exact-ID anchors, including live footnote references and back-references, continue to navigate.
 - [ ] `other.md#fragment` opens or activates the target document window and scrolls after that editor is ready.
 - [ ] Heading anchors use the same normalization and duplicate suffixes in live-editor navigation and HTML/PDF output, including percent-encoded fragments.
 - [ ] Source Code mode shows the original reference syntax and a no-edit open/save round trip remains byte-identical.
 - [ ] Editing nearby prose does not rewrite or inline unrelated reference-style links.
+- [ ] Undefined or malformed reference labels remain source text and do not become clickable or lose syntax markers.
 - [ ] Existing inline external, bare autolink, and relative Markdown link behavior remains unchanged.
 - [ ] The headless link harness fails before the fix and passes after the fix for both reported defects.
 - [ ] Live visual evidence shows the reference identifier absent and anchor navigation landing on the intended heading; the visual absurdity ledger is closed.
@@ -44,7 +48,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 ## Code Coverage Requirements
 **MANDATORY: 100% coverage on all new code.**
 - No `[ExcludeFromCodeCoverage]` or equivalent on new code.
-- All reference-link variants and destination categories are covered.
+- All reference-link variants, label-normalization cases, resolved titles, and destination categories are covered.
 - All anchor-routing branches are covered: same document, new document, existing document, missing heading, malformed/encoded fragment, and duplicate heading.
 - Error and unsupported-target paths remain fail-closed and are covered.
 - The real WebKit/Vditor surface is exercised by the headless harness in addition to pure Swift tests.
@@ -56,7 +60,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - Treat both reports as one link-boundary defect spanning Vditor DOM rendering, editor gesture routing, native target resolution, and post-open scrolling.
 - Keep reference syntax untouched in the Markdown buffer; the IR appearance fix is render-only, and Source Code mode remains the place to edit reference identifiers.
 - Resolve reference destinations through the vendored parser's structured output so escaped labels, normalized labels, titles, collapsed references, and shortcut references follow CommonMark semantics.
-- Make heading fragments a first-class internal target rather than allowing WebKit to navigate against Vditor's mode-specific generated element IDs.
+- Make fragments a first-class internal target rather than allowing WebKit to navigate against Vditor's mode-specific generated element IDs; try an exact rendered DOM ID first, then the shared heading-slug contract.
 - Preserve local-document fragments through native routing instead of silently discarding them as the current resolver does.
 - Define duplicate heading IDs with stable numeric suffixes and use the same contract in the live editor and exported HTML/PDF.
 
@@ -77,7 +81,8 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - Vditor 3.11.2 / bundled Lute `RenderJSON` output: reference links are `NodeLink` entries with resolved `NodeLinkDest`, while editor DOM nodes use `data-type="link-ref"` and expose no `href`.
 
 ## Notes
-The current bridge recognizes inline IR links (`data-type="a"`) but not reference links (`data-type="link-ref"`). It classifies `#fragment` separately in Swift and then drops it, and local Markdown resolution strips fragments before opening a file. Vditor also gives headings mode-specific generated IDs, so browser-default hash navigation cannot satisfy authored GitHub-style fragments.
+The current bridge recognizes inline IR links (`data-type="a"`) but not reference links (`data-type="link-ref"`). It classifies `#fragment` separately in Swift and then drops it, and local Markdown resolution strips fragments before opening a file. Vditor also gives headings mode-specific generated IDs, so browser-default hash navigation cannot satisfy authored GitHub-style fragments. The implementation must distinguish resolved reference nodes from unresolved source-like text and must not regress Vditor's separate exact-ID footnote anchors.
 
 ## Progress Log
 - 2026-08-21 12:16 Created.
+- 2026-08-21 12:18 Tinfoil-hat pass added unresolved-reference and exact-ID/footnote anchor protections.
