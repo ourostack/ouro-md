@@ -65,17 +65,17 @@ Make valid CommonMark reference-style links read and behave like links in every 
 ⬜ Not started · 🔄 In progress · ✅ Done · ❌ Blocked
 
 ### ⬜ Unit 0: Baseline and fixture contract
-**What**: Reproduce both defects at HEAD with a compact fixture containing full, collapsed, shortcut, unresolved, external, local Markdown, same-document fragment, duplicate-heading, encoded-fragment, footnote, and back-reference cases. Record the current IR DOM, `window.ouro.getHTML()` output, clicked-target routing, editor page URL, scroll positions, and byte-for-byte round-trip result.
+**What**: Reproduce both defects at HEAD with a compact fixture containing full, collapsed, shortcut, unresolved, external, local Markdown, same-document fragment, duplicate-heading, encoded-fragment, footnote, and back-reference cases. Record the current IR DOM, `window.ouro.getHTML()` output, clicked-target routing, editor page URL, scroll positions, and a newly measured byte-for-byte `--roundtrip` result from the source build rather than assuming the installed-app result still holds.
 **Output**: `./2026-08-21-1214-doing-reference-links-and-anchors/unit0/baseline.md`, `ir-dom.json`, `app-export.html`, `standalone-export.html`, `reference-focused.png`, and `anchor-before.png`.
-**Acceptance**: The reference identifier is demonstrably exposed when its IR node is active; reference nodes have no direct `href`; fragment clicks fail to land on authored heading targets; app-export and standalone-render paths are distinguished; round-trip remains byte-identical.
+**Acceptance**: The reference identifier is demonstrably exposed when its IR node is active; reference nodes have no direct `href`; fragment clicks fail to land on authored heading targets; app-export and standalone-render paths are distinguished; round-trip fidelity is measured. A round-trip failure becomes a required red test for Unit 1 and is fixed in scope; the fixture is never narrowed merely to make the shared gate green.
 
 ### ⬜ Unit 1a: Reference-style links — Tests
-**What**: Add `Tests/Fixtures/reference-links-and-anchors.md`; extend `Sources/OuroMD/LinkTest.swift` with expected-red assertions for full/collapsed/shortcut IR presentation and destination routing across live modes; add expected-green characterization tests in `Tests/OuroMDTests/MarkdownRendererTests.swift` for swift-markdown's already-correct standalone reference resolution; and run the new fixture through `--roundtrip` without wiring the shared gate yet.
+**What**: Add `Tests/Fixtures/reference-links-and-anchors.md`; extend `Sources/OuroMD/LinkTest.swift` with expected-red assertions for full/collapsed/shortcut IR presentation and destination routing across live modes; add expected-green characterization tests in `Tests/OuroMDTests/MarkdownRendererTests.swift` for swift-markdown's already-correct standalone reference resolution; and run the new fixture through `--roundtrip` without wiring the shared gate yet. Treat round-trip as expected-green only if Unit 0 measured it green; otherwise keep it as a required red driver.
 **Output**: Failing live reference-link regression coverage, green standalone-render characterization, the source-preservation fixture, and `./2026-08-21-1214-doing-reference-links-and-anchors/unit1a/red.log`.
 **Acceptance**: The named expected-red LinkTest assertions fail for missing marker hiding and destination routing; expected-green renderer/round-trip assertions pass; existing inline links remain green.
 
 ### ⬜ Unit 1b: Reference-style links — Implementation
-**What**: Update `Sources/OuroMD/web/index.html` and `Sources/OuroMD/web/bridge.js` so resolved `data-type="link-ref"` nodes keep reference syntax markers hidden in IR, and resolve their actual destinations from the checked-in Lute parser's structured output across IR/WYSIWYG/Split instead of parsing CommonMark reference definitions by regex. Feed the resolved target through the existing external/local/fragment gesture policy without mutating `state.value` or the Vditor document.
+**What**: Update `Sources/OuroMD/web/index.html` and `Sources/OuroMD/web/bridge.js` so resolved `data-type="link-ref"` nodes keep reference syntax markers hidden in IR through CSS-only presentation rules, following the existing `.ouro-alert-marker` display-only precedent, and resolve their actual destinations from the checked-in Lute parser's structured output across IR/WYSIWYG/Split instead of parsing CommonMark reference definitions by regex. Feed the resolved target through the existing external/local/fragment gesture policy without removing marker nodes, mutating `state.value`, or rewriting the Vditor document.
 **Output**: Render-only reference-marker handling and parser-owned destination routing.
 **Acceptance**: Unit 1a is green; unresolved references remain visibly editable and non-clickable; external/local gestures match inline-link behavior; `window.ouro.getValue()` remains byte-identical before and after clicks/focus changes.
 
@@ -90,12 +90,12 @@ Make valid CommonMark reference-style links read and behave like links in every 
 **Acceptance**: Only the rendered label is visible in IR even while focused; Source Code retains the original syntax; the absurdity ledger has no open ready or reviewer-gated items; automated visual metrics stay green.
 
 ### ⬜ Unit 2a: Heading-anchor contract fixture
-**What**: Write the language-neutral heading contract before either implementation: base normalization, empty-slug fallback, duplicate suffix numbering, Unicode, inline formatting, punctuation-only, and digit-leading cases. Record the rationale and add machine-readable cases at `Sources/OuroMD/web/heading-anchor-contract.json` so both the live JavaScript harness and Swift renderer tests consume one expected-output table.
+**What**: Write the language-neutral heading contract before either implementation: base normalization, empty-slug fallback, duplicate suffix numbering, Unicode, inline formatting, punctuation-only, and digit-leading cases. Record the rationale and add machine-readable cases at `Sources/OuroMD/web/heading-anchor-contract.json`. Swift tests load it through `OuroResources.web("heading-anchor-contract", "json")`; `LinkTest.swift` reads the same bundled file and injects the cases into its JavaScript test hook using JSON string escaping. Runtime `bridge.js` implements the algorithm and never fetches the JSON from a `file://` page.
 **Output**: `./2026-08-21-1214-doing-reference-links-and-anchors/anchor-contract.md` and `Sources/OuroMD/web/heading-anchor-contract.json`.
 **Acceptance**: Every heading case has one expected ID; duplicate numbering is explicit; footnote ID behavior is explicitly excluded from heading deduplication; both later test suites can load the same fixture.
 
 ### ⬜ Unit 2b-i: Same-document anchors — Tests
-**What**: Extend `Tests/OuroMDTests/EditorWebViewTests.swift` and `Sources/OuroMD/LinkTest.swift` for IR/WYSIWYG/Split same-document fragments, exact DOM IDs, footnotes/back-references, contract-fixture heading slugs, encoded/digit-leading/punctuation fragments, duplicates, missing headings, one-shot gesture handling, safe Swift-to-JavaScript escaping, and unchanged editor page URL. Keep app-export and standalone-render ID assertions in Unit 3a.
+**What**: Extend `Tests/OuroMDTests/EditorWebViewTests.swift` with a pure `EditorWebView.Coordinator.anchorScript(fragment:)` escaping seam, and extend `Sources/OuroMD/LinkTest.swift` for IR/WYSIWYG/Split same-document fragments, exact DOM IDs, footnotes/back-references, injected contract-fixture heading cases, encoded/digit-leading/punctuation fragments, duplicates, missing headings, one-shot gesture handling, and unchanged editor page URL. Keep live URL stability out of the nil-web-view unit test and keep app-export/standalone-render ID assertions in Unit 3a.
 **Output**: Failing same-document anchor tests and `./2026-08-21-1214-doing-reference-links-and-anchors/unit2b-i/red.log`.
 **Acceptance**: Tests fail on the current `.inDocumentAnchor` no-op, mode-specific generated heading IDs, and WebKit default hash navigation while unrelated link routing stays green.
 
@@ -105,7 +105,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 **Acceptance**: Unit 2b-i is green; missing anchors are harmless no-ops; exact-ID footnotes still work; no document-controlled fragment is interpolated as JavaScript source.
 
 ### ⬜ Unit 2b-iii: Same-document anchors — Coverage and refactor
-**What**: Centralize JavaScript heading occurrence counting separately from base slug normalization, load all conformance cases from the shared fixture in the live harness, and cover empty-slug and fallback paths.
+**What**: Centralize JavaScript heading occurrence counting separately from base slug normalization, expose a deterministic test hook, inject all conformance cases from the bundled shared fixture through `LinkTest.swift`, and cover empty-slug and fallback paths without runtime fetch/XHR.
 **Output**: Complete same-document JavaScript branch coverage and isolated anchor helpers.
 **Acceptance**: Headless coverage exercises every lookup branch; footnote/back-reference IDs remain unchanged; the editor page URL remains stable after every fragment activation.
 
@@ -145,7 +145,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 **Acceptance**: 100% coverage on new Swift renderer state; live scenario assertions cover JavaScript export reconciliation; HTML and PDF generation remain green.
 
 ### ⬜ Unit 4a: Shared scenario gate — Tests
-**What**: Extend `scripts/check-shipped-harness-policy.sh` to require `scripts/run-native-scenarios.sh` to run `Tests/Fixtures/reference-links-and-anchors.md` through `--roundtrip` and `cmp`, then run the policy check before editing the scenario script.
+**What**: Add a data-driven required-fixture entry to `docs/shipped-cli-and-harness-policy.json`, extend `scripts/check-shipped-harness-policy.sh` to enforce that policy against `scripts/run-native-scenarios.sh`, and run the policy check before editing the scenario script.
 **Output**: Failing harness-policy assertion and `./2026-08-21-1214-doing-reference-links-and-anchors/unit4a/red.log`.
 **Acceptance**: The policy check fails only because the shared native scenario gate does not yet own the new byte-preservation fixture.
 
@@ -172,3 +172,4 @@ Make valid CommonMark reference-style links read and behave like links in every 
 ## Progress Log
 - 2026-08-21 12:30 Created from the approved planning doc.
 - 2026-08-21 12:36 Granularity pass split same-document and cross-document anchors, added the shared heading contract fixture, named exact artifacts, separated gate wiring from terminal preflight, and clarified red/green and commit boundaries.
+- 2026-08-21 12:42 Source-validation pass made reference round-trip a measured in-scope gate, defined non-fetch contract injection, corrected unit/live test seams, constrained marker hiding to CSS, and routed harness ownership through the policy JSON.
