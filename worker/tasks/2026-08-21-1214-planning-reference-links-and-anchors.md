@@ -1,6 +1,6 @@
 # Planning: Reference-style link rendering and anchor navigation
 
-**Status**: drafting
+**Status**: approved
 **Created**: 2026-08-21 12:16
 
 ## Goal
@@ -104,3 +104,4 @@ The current bridge recognizes inline IR links (`data-type="a"`) but not referenc
 - 2026-08-21 12:18 Tinfoil-hat pass added unresolved-reference and exact-ID/footnote anchor protections.
 - 2026-08-21 12:22 Addressed cold-review findings for the actual app export path, safe fragment lookup, all editor modes, vendor provenance, heading-only deduplication, and native fragment propagation.
 - 2026-08-21 12:27 Addressed second-round findings for export footnote-ID safety, shared scenario-gate wiring, single-handled WebKit fragment navigation, and anchor-finding provenance.
+- 2026-08-21 12:28 Approved after two cold-review rounds converged with no blocking or major findings.
