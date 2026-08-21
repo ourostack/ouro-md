@@ -23,7 +23,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - Extend unit and headless live-editor coverage for reference-style rendering, destination routing, anchor scrolling, duplicate headings, encoded fragments, and regressions in existing inline links.
 - Keep unresolved or malformed reference syntax visibly editable and non-clickable instead of inventing a destination.
 - Capture live visual evidence for the IR reference-link appearance and anchor-scroll result.
-- Advance the app to the next patch release (currently `0.9.85` after published `v0.9.84`) and update release highlights because the repository's PR freshness policy classifies these source changes as release-relevant.
+- Advance the app to the next patch release (currently `0.9.85` after published `v0.9.84`), amend release highlights, and update App Store request-plan expectations derived from the distribution manifest because PR freshness classifies these source changes as release-relevant.
 
 ### Out of Scope
 - Replacing Vditor/Lute or modifying vendored Vditor source directly.
@@ -84,7 +84,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - Define duplicate heading IDs with stable numeric suffixes at heading-collection/render time, not inside the generic slug normalizer used by footnote IDs, and use the same heading contract in the live editor and both export paths.
 - Define the heading base contract independently from the generic footnote slug: NFC-normalize, lowercase, NFC-normalize again, iterate Unicode scalars, retain alphabetic/numeric scalars, map space/hyphen/underscore to `-`, drop other scalars (including combining marks that remain after normalization), collapse/trim hyphens, then apply heading-only empty fallback and duplicate suffixes. Implement the same scalar predicate as Swift `Unicode.Scalar.Properties` and JavaScript Unicode-property escapes, and pin `İstanbul`, `a̱bc`, and `Mā́n` in the shared fixture.
 - Restrict app-export ID reconciliation to heading elements so existing Vditor/Lute footnote and back-reference IDs remain untouched.
-- Treat the version bump, `README.md`, `distribution/apple-distribution.json`, and release-highlight change as required release-policy consequences, not unrelated diff.
+- Treat the version bump, `README.md`, `distribution/apple-distribution.json`, release-highlight change, and `OuroMDAppStoreRequestPlanTests` expectation updates as required release-policy consequences, not unrelated diff.
 - Amend rather than replace `OuroMDRelease.releaseHighlights`: preserve every App Store positioning token pinned by `OuroMDPositioningTests` and avoid the forbidden phrase `Markdown editor` while adding concise link/anchor release context.
 
 ## Context / References
@@ -121,3 +121,4 @@ The current bridge recognizes inline IR links (`data-type="a"`) but not referenc
 - 2026-08-21 13:57 Updated after mode scrutiny: scoped behavior to shipping IR and Source Code (`sv`) source/preview panes, made WYSIWYG out of scope, and limited exact-ID footnote navigation to rendered preview/export surfaces.
 - 2026-08-21 14:18 Updated after convergence review: added the required `0.9.85` release-policy work and fixed the heading contract to an explicit Ouro mapping with heading-only NFC normalization.
 - 2026-08-21 14:33 Updated after final deception review: made heading slugs scalar-based across Swift/JavaScript and protected the App Store positioning contract while amending `0.9.85` release highlights.
+- 2026-08-21 14:42 Updated after release-gate review: added App Store request-plan expectation updates required by the `0.9.85` manifest bump.
