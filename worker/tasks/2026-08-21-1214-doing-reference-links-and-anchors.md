@@ -145,7 +145,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 **Acceptance**: 100% coverage on new Swift renderer state; live scenario assertions cover JavaScript export reconciliation; HTML and PDF generation remain green.
 
 ### ⬜ Unit 4a: Shared scenario gate — Tests
-**What**: Add two top-level `fixtures` entries to `docs/shipped-cli-and-harness-policy.json`, leaving all three argument-only flags out of `modes`. The rich fixture entry requires `export OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS="${OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS:-90}"` and `run_with_timeout "$OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS" --linktest --linktest-file "$link_fixture"`. The strict fixture entry requires `run --roundtrip "$roundtrip_fixture" --roundtrip-strict raw --out "$reference_roundtrip_out"` and `cmp "$roundtrip_fixture" "$reference_roundtrip_out"`. Extend the policy checker to validate each fixture path and exact declared line, then run it before editing the scenario script.
+**What**: Add two top-level `fixtures` entries to `docs/shipped-cli-and-harness-policy.json`, leaving all three argument-only flags out of `modes`. Update the existing `--linktest` mode's privacy text to cover synthetic/checked-in/caller-provided Markdown input plus caller-specified artifact output. Declare the exported timeout and rich-link line for the rich fixture, the strict round-trip/cmp lines for the strict fixture, extend the checker to validate each path/line, then run it before editing the scenario script.
 **Output**: Failing harness-policy assertion and `./2026-08-21-1214-doing-reference-links-and-anchors/unit4a/red.log`.
 **Acceptance**: The policy check fails only because the shared native scenario gate does not yet own the new byte-preservation fixture.
 
@@ -155,14 +155,14 @@ Make valid CommonMark reference-style links read and behave like links in every 
 **Acceptance**: Unit 4a is green; the same gate runs in local preflight, CI, and packaged-app verification; fixture source remains byte-identical.
 
 ### ⬜ Unit 4c: Release freshness metadata
-**What**: Run `scripts/bump-version.sh 0.9.85`, which updates `Sources/OuroMDCore/OuroMDRelease.swift`, `README.md`, and `distribution/apple-distribution.json` while leaving highlights untouched. Amend the existing `OuroMDRelease.releaseHighlights` copy with concise reference-link/anchor context while preserving every positioning token asserted by `OuroMDPositioningTests` and avoiding its forbidden phrase `Markdown editor`, then run the positioning tests, `scripts/verify-release-version.sh`, and PR freshness.
+**What**: Run `scripts/bump-version.sh 0.9.85`, which updates `Sources/OuroMDCore/OuroMDRelease.swift`, `README.md`, and `distribution/apple-distribution.json` while leaving highlights untouched. Amend existing highlights while preserving every `OuroMDPositioningTests` token and avoiding `Markdown editor`. Update the three live-manifest-derived `0.9.84` expectations in `Tests/OuroMDTests/OuroMDAppStoreRequestPlanTests.swift` to `0.9.85` (or derive them from the manifest without weakening the assertions), then run positioning, request-plan, package-readiness, release-version, and freshness checks.
 **Output**: Version `0.9.85` release metadata and `./2026-08-21-1214-doing-reference-links-and-anchors/unit4c/release-version.log`.
-**Acceptance**: All three version surfaces agree on `0.9.85`; all `OuroMDPositioningTests` highlight/positioning assertions remain green; highlights describe both fixes without overclaiming; release verification and freshness pass against `v0.9.84`.
+**Acceptance**: All three version surfaces agree on `0.9.85`; `OuroMDPositioningTests`, `OuroMDAppStoreRequestPlanTests`, and `OuroMDAppStorePackageReadinessTests` are green; highlights describe both fixes without overclaiming; release verification and freshness pass against `v0.9.84`.
 
 ### ⬜ Unit 4d: Integrated regression and preflight
 **What**: Run targeted Swift tests, `swift build`, the complete shared native scenarios and visual QA, `./scripts/check-shell-boundary.sh --selftest`, `./scripts/check-shell-boundary.sh`, `./scripts/check-vditor-vendor.sh`, coverage, and `./scripts/pr-preflight.sh`. Inspect the full branch diff for vendor-file changes, unrelated files, and source-format churn.
 **Output**: Green local CI-parity evidence under `./2026-08-21-1214-doing-reference-links-and-anchors/final/`, with final screenshots and command logs.
-**Acceptance**: All completion criteria are evidenced; vendor integrity confirms no files under `Sources/OuroMD/web/vditor/` changed; the full preflight passes with no warnings; the diff contains only the planned integration, tests, harness updates, shared fixtures, task artifacts, and the required `0.9.85` changes in `Sources/OuroMDCore/OuroMDRelease.swift`, `README.md`, and `distribution/apple-distribution.json`.
+**Acceptance**: All completion criteria are evidenced; vendor integrity confirms no files under `Sources/OuroMD/web/vditor/` changed; the full preflight passes with no warnings; the diff contains only the planned integration, tests, harness updates, shared fixtures, task artifacts, and required `0.9.85` changes in `Sources/OuroMDCore/OuroMDRelease.swift`, `README.md`, `distribution/apple-distribution.json`, and `Tests/OuroMDTests/OuroMDAppStoreRequestPlanTests.swift`.
 
 ## Execution
 - **TDD strictly enforced**: tests → red → implement → green → refactor.
@@ -190,3 +190,4 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - 2026-08-21 14:08 Fourth stranger-with-candy scrutiny kept link/anchor visuals in the purpose-built LinkTest artifact path and left the dogfood-shaped `VisualQATester` fixture set unchanged.
 - 2026-08-21 14:18 Fifth tinfoil-hat scrutiny added the mandatory `0.9.85` release-freshness unit and made the heading contract explicit for underscore mapping, heading-only NFC normalization, and decomposed Unicode parity.
 - 2026-08-21 14:33 Fifth stranger-with-candy scrutiny preserved App Store positioning highlights during the version bump and finalized a scalar-based Swift/JavaScript Unicode contract with adversarial combining-mark cases.
+- 2026-08-21 14:42 Sixth tinfoil-hat scrutiny added App Store request-plan/package-readiness updates required by the manifest bump and made the shipped link-harness privacy contract explicit.
