@@ -14,7 +14,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - Resolve reference-style link destinations from Vditor/Lute parser output rather than a partial handwritten Markdown parser.
 - Preserve the established gesture contract: external web/mail links open on Command-click, while local Markdown and heading-fragment links navigate on a normal rendered-link click.
 - Support same-document heading fragments such as `#target-heading` in IR and the SV rendered preview pane.
-- Preserve exact-ID in-document navigation used by rendered footnotes and other app-owned anchors in SV preview/app exports before falling back to heading-slug matching; IR has no footnote IDs to navigate.
+- Resolve shared-contract headings first, then preserve exact-ID navigation as a fallback for non-heading rendered elements such as SV-preview/export footnote references and back-references; IR has no footnote IDs to navigate.
 - Preserve and honor fragments on local Markdown targets such as `other.md#target-heading`, including when the target document is already open and when a new window must wait for editor readiness.
 - Preserve the fragment explicitly in the native link-target model instead of encoding it into or discarding it from the file URL.
 - Use one documented heading-slug and duplicate-heading contract across live-editor navigation, `window.ouro.getHTML()` app exports, and the standalone `MarkdownRenderer` used by `--render` and parity harnesses.
@@ -76,7 +76,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - Separate the rich navigation/rendering fixture from a strict raw round-trip fixture because the checked-in Lute normalizes collapsed references, definition titles/angle brackets, and some definition-block spacing; this fix must not hide those pre-existing behaviors behind `MarkdownTidy`.
 - Resolve reference destinations through the vendored parser's structured output so escaped labels, normalized labels, titles, collapsed references, and shortcut references follow CommonMark semantics.
 - Treat IR and SV as the only shipping modes: parser-derived reference resolution is needed for IR, while SV preview uses rendered anchors and SV source remains inert.
-- Make fragments a first-class internal target rather than allowing WebKit to navigate against Vditor's mode-specific generated element IDs; try an exact rendered DOM ID first, then the shared heading-slug contract.
+- Make fragments a first-class internal target rather than allowing WebKit to navigate against Vditor's mode-specific generated heading IDs; resolve the shared heading contract first, then fall back to an exact rendered DOM ID for non-heading elements only.
 - Preserve local-document fragments through native routing instead of silently discarding them as the current resolver does.
 - Change the public Markdown-file target shape to carry an optional fragment alongside the standardized file URL, then thread that value through existing-window and new-window open paths.
 - Use `getElementById` for exact-ID lookup and escaped data handoff rather than constructing document-controlled CSS selectors or JavaScript source.
@@ -123,3 +123,4 @@ The current bridge recognizes inline IR links (`data-type="a"`) but not referenc
 - 2026-08-21 14:33 Updated after final deception review: made heading slugs scalar-based across Swift/JavaScript and protected the App Store positioning contract while amending `0.9.85` release highlights.
 - 2026-08-21 14:42 Updated after release-gate review: added App Store request-plan expectation updates required by the `0.9.85` manifest bump.
 - 2026-08-21 14:51 Updated after App Store copy review: preserved `whatsNew` parser tokens and constrained release-highlight syntax.
+- 2026-08-21 15:08 Updated after cross-doc review: aligned planning with contract-first heading lookup and non-heading-only exact-ID fallback.
