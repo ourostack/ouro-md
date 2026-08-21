@@ -84,9 +84,9 @@ Make valid CommonMark reference-style links read and behave like links in every 
 **Acceptance**: 100% coverage on new Swift seams and explicit headless assertions for each JavaScript branch; no handwritten reference-definition parser; all link and round-trip tests remain green.
 
 ### ⬜ Unit 1d: Reference-style links — Visual QA dogfood
-**What**: Run the extended link harness with the rich fixture and artifact directory so snapshots capture focused/unfocused IR plus SV source and SV preview states. Add the rich fixture as a static visual-metrics case and run `visual-qa-dogfood`.
+**What**: Run the extended link harness with the rich fixture and artifact directory so purpose-built snapshots capture focused/unfocused IR plus SV source and SV preview states. Run the existing `scripts/run-visual-qa.sh` suite unchanged as a global visual-regression gate; do not add the link fixture as a `VisualQATester` metrics case because that harness requires unrelated dogfood images, nested lists, callouts, and tables.
 **Output**: `./2026-08-21-1214-doing-reference-links-and-anchors/visual/reference-ir-focused.png`, `reference-ir-unfocused.png`, `reference-sv-source.png`, `reference-sv-preview.png`, and `reference-links-visual-absurdity-ledger.md`.
-**Acceptance**: IR labels are visibly link-styled with no identifier under keyboard/mouse focus; SV source stays literal/inert; SV preview renders links; the absurdity ledger closes; visual QA is green.
+**Acceptance**: IR labels are visibly link-styled with no identifier under keyboard/mouse focus; SV source stays literal/inert; SV preview renders links; the purpose-built absurdity ledger closes; the unchanged visual QA suite remains green.
 
 ### ⬜ Unit 2a: Heading-anchor contract fixture
 **What**: Write the language-neutral heading contract before either implementation: base normalization, empty-slug fallback, duplicate suffix numbering, Unicode, inline formatting, punctuation-only, and digit-leading cases. Record the rationale and add machine-readable cases at `Sources/OuroMD/web/heading-anchor-contract.json`. Swift unit tests read the source fixture by a `#filePath`-relative repository path, avoiding a `Bundle.module` fatal path; `LinkTest.swift` separately loads the same file through `OuroResources.web("heading-anchor-contract", "json")`, proving packaged resource inclusion, and injects cases into JavaScript with JSON string escaping. Runtime `bridge.js` implements the algorithm and never fetches JSON from a `file://` page.
@@ -124,7 +124,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 **Acceptance**: 100% coverage on new Swift routing; no stale fragment contaminates later opens; all same-document tests remain green.
 
 ### ⬜ Unit 2d: Anchor routing — Visual QA dogfood
-**What**: Capture immediately before/after IR heading activation and SV-preview heading/footnote activation, with SV source remaining inert, then run visual QA for static metrics.
+**What**: Capture immediately before/after IR heading activation and SV-preview heading/footnote activation, with SV source remaining inert, then run the existing visual QA suite unchanged as a regression gate rather than forcing the link fixture through its dogfood-specific metrics floor.
 **Output**: `./2026-08-21-1214-doing-reference-links-and-anchors/visual/anchor-ir-before.png`, `anchor-ir-after.png`, `anchor-sv-preview-after.png`, `anchors-visual-absurdity-ledger.md`, plus cross-document routing evidence from window-owning Swift tests under `./2026-08-21-1214-doing-reference-links-and-anchors/unit2c-i/`.
 **Acceptance**: Each same-document jump lands with the intended heading visibly at the top of the reading region, no double-scroll or URL mutation occurs, cross-document handoff is evidenced by the window-owning Swift tests rather than a one-WebView screenshot, the absurdity ledger is closed, and `OURO_VISUAL_ARTIFACT_DIR=worker/tasks/2026-08-21-1214-doing-reference-links-and-anchors/visual ./scripts/run-visual-qa.sh` remains green.
 
@@ -181,3 +181,4 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - 2026-08-21 13:36 Third tinfoil-hat scrutiny split rich and strict fixtures around verified Lute normalizations, scoped strict raw checks without breaking ordinary round-trip, added reference-link affordances, and kept copy-as-rendered-HTML anchor IDs out of scope.
 - 2026-08-21 13:46 Third stranger-with-candy scrutiny pinned base64/UTF-8 label decoding and bilateral normalization, kept argument flags out of policy modes, made timeout defaulting `set -u` safe, and assigned snapshot/DOM artifact helpers explicitly.
 - 2026-08-21 13:57 Fourth tinfoil-hat scrutiny aligned all units with shipping IR and Source Code (`sv`) source/preview surfaces, made WYSIWYG out of scope, pinned strict definition placement, and scoped exact-ID footnotes to rendered preview/export.
+- 2026-08-21 14:08 Fourth stranger-with-candy scrutiny kept link/anchor visuals in the purpose-built LinkTest artifact path and left the dogfood-shaped `VisualQATester` fixture set unchanged.
