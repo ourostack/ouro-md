@@ -8,6 +8,7 @@
   var ready = false;
   var dirty = false;
   var qolInstalled = false;
+  var referenceLinkCache = null;
   var resetTableScrollPending = false;
   var resetTablesSeen = (typeof WeakSet === "function") ? new WeakSet() : null;
   var initialTheme = window.__ouroInitialTheme || {};
@@ -306,6 +307,8 @@
       // bundled editor HTML, which would point native code at the app resources
       // instead of beside the open Markdown document.
       if (a) { return a.getAttribute("href") || a.href || ""; }
+      var reference = target.closest('span[data-type="link-ref"]');
+      if (reference) { return resolveReferenceLinkURL(reference); }
       // IR (live-preview) mode renders a [text](url) / <url> link as a
       // <span data-type="a"> with no href — the URL is the text of its
       // .vditor-ir__marker--link child.
@@ -352,6 +355,94 @@
     document.addEventListener("click", maybeOpenEditorLink, true);
   }
 
+  function invalidateReferenceLinkCache() {
+    referenceLinkCache = null;
+  }
+
+  function normalizeReferenceLabel(label) {
+    return (label || "").trim().replace(/\s+/g, " ").toLowerCase();
+  }
+
+  function decodeReferenceLabel(encoded) {
+    if (!encoded) { return ""; }
+    try {
+      var binary = atob(encoded);
+      var bytes = new Uint8Array(binary.length);
+      for (var i = 0; i < binary.length; i++) { bytes[i] = binary.charCodeAt(i); }
+      return new TextDecoder("utf-8").decode(bytes);
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function referenceLabelFromDOM(node) {
+    var marker = node.querySelector(".vditor-ir__marker--link");
+    if (marker) {
+      return normalizeReferenceLabel((marker.textContent || "").replace(/^\[/, "").replace(/\]$/, ""));
+    }
+    var walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (textNode) {
+        var parent = textNode.parentElement;
+        return parent && parent.closest(".vditor-ir__marker")
+          ? NodeFilter.FILTER_REJECT
+          : NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var label = "";
+    while (walker.nextNode()) { label += walker.currentNode.nodeValue || ""; }
+    return normalizeReferenceLabel(label);
+  }
+
+  function referenceLinkMap() {
+    var markdown = currentMarkdown();
+    var mode = vditor && vditor.vditor ? vditor.vditor.currentMode : state.mode;
+    if (referenceLinkCache &&
+        referenceLinkCache.markdown === markdown &&
+        referenceLinkCache.mode === mode) {
+      return referenceLinkCache.destinations;
+    }
+
+    var destinations = Object.create(null);
+    var ambiguous = Object.create(null);
+    try {
+      var root = JSON.parse(vditor.vditor.lute.RenderJSON(markdown));
+      var visit = function (node) {
+        if (!node || typeof node !== "object") { return; }
+        if (node.Type === "NodeLink" && node.LinkType === 3) {
+          var label = normalizeReferenceLabel(decodeReferenceLabel(node.LinkRefLabel));
+          var destination = "";
+          var children = node.Children || [];
+          for (var i = 0; i < children.length; i++) {
+            if (children[i].Type === "NodeLinkDest") {
+              destination = children[i].Data || "";
+              break;
+            }
+          }
+          if (label && destination) {
+            if (destinations[label] && destinations[label] !== destination) {
+              ambiguous[label] = true;
+            } else {
+              destinations[label] = destination;
+            }
+          }
+        }
+        var nested = node.Children || [];
+        for (var j = 0; j < nested.length; j++) { visit(nested[j]); }
+      };
+      visit(root);
+      Object.keys(ambiguous).forEach(function (label) { delete destinations[label]; });
+    } catch (error) {
+      destinations = Object.create(null);
+    }
+    referenceLinkCache = { markdown: markdown, mode: mode, destinations: destinations };
+    return destinations;
+  }
+
+  function resolveReferenceLinkURL(node) {
+    var label = referenceLabelFromDOM(node);
+    return label ? (referenceLinkMap()[label] || "") : "";
+  }
+
   function create() {
     ready = false;
     vditor = new Vditor("editor", {
@@ -381,6 +472,7 @@
       },
       input: function (value) {
         state.value = value;
+        invalidateReferenceLinkCache();
         setDirty(true);
         postCount(value);
         schedulePostRender();
@@ -405,6 +497,7 @@
     }
     var el = document.getElementById("editor");
     if (el) { el.innerHTML = ""; }
+    invalidateReferenceLinkCache();
     create();
   }
 
@@ -1142,6 +1235,7 @@
   window.ouro = {
     setValue: function (md) {
       state.value = (md == null) ? "" : md;
+      invalidateReferenceLinkCache();
       if (vditor && ready) { vditor.setValue(state.value, true); }
       queueTableScrollReset();
       schedulePostRender();
@@ -1160,6 +1254,7 @@
       var scroller = document.scrollingElement || document.documentElement;
       var prevY = scroller ? scroller.scrollTop : window.scrollY;
       state.value = (md == null) ? "" : md;
+      invalidateReferenceLinkCache();
       if (vditor && ready) { vditor.setValue(state.value, true); }
       queueTableScrollReset();
       schedulePostRender();

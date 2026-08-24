@@ -61,6 +61,19 @@
     --ouro-alert-color: #cf222e;
     border-left-color: #cf222e !important;
   }
+  .vditor-ir .vditor-ir__node[data-type="link-ref"] {
+    color: #4285f4;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 0.12em;
+  }
+  .vditor-ir .vditor-ir__node--expand[data-type="link-ref"] .vditor-ir__marker {
+    display: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    width: 0 !important;
+  }
   /* The [!WARNING] marker sits on its own source line; in the reading view
      collapse that newline so the label sits directly above the body instead of
      leaving an empty line. Editing state keeps pre-wrap for source fidelity. */

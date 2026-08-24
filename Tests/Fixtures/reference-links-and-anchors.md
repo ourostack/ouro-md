@@ -8,6 +8,10 @@
 
 [Shortcut]
 
+[External again][external]
+
+[Normalized label][mixed label]
+
 [Missing][not-defined]
 
 [Jump inline](#target-heading)
@@ -34,4 +38,5 @@ Second duplicate.
 [local]: other.md#target-heading
 [Collapsed]: https://example.com/collapsed
 [Shortcut]: https://example.com/shortcut
+[MIXED LABEL]: https://example.com/normalized
 [target-anchor]: #target-heading

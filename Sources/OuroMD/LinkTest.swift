@@ -154,12 +154,15 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         } else {
             checks = [
                 ("linktest script completed", scriptError ?? "ok", scriptError == nil),
-                ("IR resolved reference nodes rendered", "\(body["irReferenceCount"] ?? "nil")", (body["irReferenceCount"] as? Int ?? 0) >= 5),
+                ("IR resolved reference nodes rendered", "\(body["irReferenceCount"] ?? "nil")", (body["irReferenceCount"] as? Int ?? 0) >= 7),
                 ("IR unresolved reference stays source text", "\(body["irUnresolvedPlain"] ?? "nil")", body["irUnresolvedPlain"] as? Bool ?? false),
                 ("IR focused reference markers hidden", "\(body["irMarkersHidden"] ?? "nil")", body["irMarkersHidden"] as? Bool ?? false),
                 ("IR reference has link affordance", "\(body["irLinkAffordance"] ?? "nil")", body["irLinkAffordance"] as? Bool ?? false),
                 ("external reference opens on Command-mousedown", "opened=\(openedURLs)", openedURLs.contains("https://example.com/external")),
                 ("local reference opens in app", "opened=\(openedURLs)", openedURLs.contains("other.md#target-heading")),
+                ("collapsed reference resolves", "opened=\(openedURLs)", openedURLs.contains("https://example.com/collapsed")),
+                ("shortcut reference resolves", "opened=\(openedURLs)", openedURLs.contains("https://example.com/shortcut")),
+                ("normalized label resolves", "opened=\(openedURLs)", openedURLs.contains("https://example.com/normalized")),
                 ("IR fragment scrolls", "\(body["irAnchorScrolled"] ?? "nil")", body["irAnchorScrolled"] as? Bool ?? false),
                 ("SV source remains literal", "\(body["svSourceLiteral"] ?? "nil")", body["svSourceLiteral"] as? Bool ?? false),
                 ("SV preview resolves reference", "\(body["svReferenceRendered"] ?? "nil")", body["svReferenceRendered"] as? Bool ?? false),
@@ -264,8 +267,21 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
             if (refs[0]) {
               targetFor(refs[0]).dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, metaKey: true }));
             }
+            await sleep(800);
             if (refs[1]) {
               targetFor(refs[1]).dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+            }
+            await sleep(800);
+            if (refs[2]) {
+              targetFor(refs[2]).dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, metaKey: true }));
+            }
+            await sleep(800);
+            if (refs[3]) {
+              targetFor(refs[3]).dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, metaKey: true }));
+            }
+            await sleep(800);
+            if (refs[5]) {
+              targetFor(refs[5]).dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, metaKey: true }));
             }
             await sleep(300);
 
