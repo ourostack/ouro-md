@@ -550,6 +550,35 @@
     try { return decodeURIComponent(fragment || ""); } catch (error) { return fragment || ""; }
   }
 
+  function scrollElementWithinRoot(target, root) {
+    var container = target.parentElement;
+    while (container && container !== document.body && container !== document.documentElement) {
+      var style = getComputedStyle(container);
+      var scrollable = (style.overflowY === "auto" || style.overflowY === "scroll") &&
+        container.scrollHeight > container.clientHeight + 1;
+      if (scrollable) {
+        var toolbar = container.matches(".vditor-preview")
+          ? container.querySelector(".vditor-preview__action")
+          : null;
+        var offset = toolbar ? toolbar.getBoundingClientRect().height : 0;
+        container.scrollTop += target.getBoundingClientRect().top -
+          container.getBoundingClientRect().top - offset;
+        return;
+      }
+      if (container === root) { break; }
+      container = container.parentElement;
+    }
+
+    var page = document.scrollingElement || document.documentElement;
+    var before = page.scrollTop;
+    target.scrollIntoView({ behavior: "auto", block: "start", inline: "nearest" });
+    if (state.mode === "sv" && page.scrollTop !== before) {
+      var preview = target.closest(".vditor-preview");
+      var action = preview && preview.querySelector(".vditor-preview__action");
+      if (action) { page.scrollTop = Math.max(0, page.scrollTop - action.getBoundingClientRect().height); }
+    }
+  }
+
   function scrollToAnchorTarget(fragment, root) {
     if (!root) { return false; }
     var targetID = decodedFragment(fragment);
@@ -557,13 +586,13 @@
 
     var heading = headingAnchorMap(root)[targetID];
     if (heading) {
-      heading.scrollIntoView({ behavior: "auto", block: "start", inline: "nearest" });
+      scrollElementWithinRoot(heading, root);
       return true;
     }
 
     var exact = document.getElementById(targetID);
     if (exact && root.contains(exact) && !/^H[1-6]$/.test(exact.tagName || "")) {
-      exact.scrollIntoView({ behavior: "auto", block: "start", inline: "nearest" });
+      scrollElementWithinRoot(exact, root);
       return true;
     }
     return false;
@@ -595,6 +624,7 @@
 
   function create() {
     ready = false;
+    document.body.classList.toggle("ouro-source-mode", state.mode === "sv");
     vditor = new Vditor("editor", {
       cdn: "vditor",
       mode: state.mode,

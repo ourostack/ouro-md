@@ -1,0 +1,20 @@
+{
+  "irAnchorScrolled" : true,
+  "irHTML" : "<h1>Link Contract Fixture<\/h1>\n<p><a href=\"https:\/\/example.com\/external\">External full<\/a><\/p>\n<p><a href=\"other.md#target-heading\">Local full<\/a><\/p>\n<p><a href=\"https:\/\/example.com\/collapsed\">Collapsed<\/a><\/p>\n<p><a href=\"https:\/\/example.com\/shortcut\">Shortcut<\/a><\/p>\n<p><a href=\"https:\/\/example.com\/external\">External again<\/a><\/p>\n<p><a href=\"https:\/\/example.com\/normalized\">Normalized label<\/a><\/p>\n<p>[Missing][not-defined]<\/p>\n<p><a href=\"#target-heading\">Jump inline<\/a><\/p>\n<p><a href=\"#target-heading\">Jump reference<\/a><\/p>\n<p>Body with a footnote.<sup class=\"footnotes-ref\" id=\"footnotes-ref-1\"><a href=\"#footnotes-def-1\">1<\/a><\/sup><\/p>\n<h2>Target Heading<\/h2>\n<p>Target body.<\/p>\n<h2>Duplicate Heading<\/h2>\n<p>First duplicate.<\/p>\n<h2>Duplicate Heading<\/h2>\n<p>Second duplicate.<\/p>\n<div class=\"footnotes-defs-div\"><hr class=\"footnotes-defs-hr\" \/>\n<ol class=\"footnotes-defs-ol\"><li id=\"footnotes-def-1\"><p>Footnote body. <a href=\"#footnotes-ref-1\" class=\"vditor-footnotes__goto-ref\">↩<\/a><\/p>\n<\/li>\n<\/ol><\/div>",
+  "irLinkAffordance" : true,
+  "irMarkersHidden" : true,
+  "irReferenceCount" : 7,
+  "irUnresolvedPlain" : true,
+  "pageURLStable" : true,
+  "rawEqualsBridge" : true,
+  "svAfter" : 231.71875,
+  "svAnchorScrolled" : true,
+  "svBefore" : 1569.71875,
+  "svHTML" : "<h1>Link Contract Fixture<\/h1>\n<p><a href=\"https:\/\/example.com\/external\">External full<\/a><\/p>\n<p><a href=\"other.md#target-heading\">Local full<\/a><\/p>\n<p><a href=\"https:\/\/example.com\/collapsed\">Collapsed<\/a><\/p>\n<p><a href=\"https:\/\/example.com\/shortcut\">Shortcut<\/a><\/p>\n<p><a href=\"https:\/\/example.com\/external\">External again<\/a><\/p>\n<p><a href=\"https:\/\/example.com\/normalized\">Normalized label<\/a><\/p>\n<p>[Missing][not-defined]<\/p>\n<p><a href=\"#target-heading\">Jump inline<\/a><\/p>\n<p><a href=\"#target-heading\">Jump reference<\/a><\/p>\n<p>Body with a footnote.<sup class=\"footnotes-ref\" id=\"footnotes-ref-1\"><a href=\"#footnotes-def-1\">1<\/a><\/sup><\/p>\n<h2>Target Heading<\/h2>\n<p>Target body.<\/p>\n<h2>Duplicate Heading<\/h2>\n<p>First duplicate.<\/p>\n<h2>Duplicate Heading<\/h2>\n<p>Second duplicate.<\/p>\n<div class=\"footnotes-defs-div\"><hr class=\"footnotes-defs-hr\" \/>\n<ol class=\"footnotes-defs-ol\"><li id=\"footnotes-def-1\"><p>Footnote body. <a href=\"#footnotes-ref-1\" class=\"vditor-footnotes__goto-ref\">↩<\/a><\/p>\n<\/li>\n<\/ol><\/div>",
+  "svPreviewHeadingFound" : true,
+  "svPreviewJumpFound" : true,
+  "svPreviewScrollTop" : 0,
+  "svReferenceRendered" : true,
+  "svSourceLiteral" : true,
+  "type" : "linkprobe"
+}

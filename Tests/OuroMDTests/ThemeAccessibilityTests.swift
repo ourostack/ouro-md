@@ -29,6 +29,16 @@ final class ThemeAccessibilityTests: XCTestCase {
         }
     }
 
+    func testEditorThemesApplyAccessibleAccentToInlineAndReferenceLinks() {
+        for id in ["quartz", "graphite", "manuscript", "newsprint"] {
+            let theme = ThemeStore.shared.theme(id: id)
+            let css = theme.editorCSS
+            XCTAssertTrue(css.contains(".vditor-ir__link"), "\(id) missing inline-link theme selector")
+            XCTAssertTrue(css.contains(".vditor-ir__node[data-type=\"link-ref\"]"), "\(id) missing reference-link theme selector")
+            XCTAssertTrue(css.contains("text-decoration:underline"), "\(id) links must retain an affordance")
+        }
+    }
+
     private func hex(after needle: String, in text: String) throws -> String {
         guard let range = text.range(of: needle) else {
             throw XCTSkip("missing color token after \(needle)")
