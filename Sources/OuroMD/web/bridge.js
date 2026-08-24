@@ -487,6 +487,65 @@
     return anchors;
   }
 
+  function headingIDsForHTML(html) {
+    var parsed = new DOMParser().parseFromString(html || "", "text/html");
+    var counts = Object.create(null);
+    return Array.from(parsed.querySelectorAll("h1,h2,h3,h4,h5,h6")).map(function (heading) {
+      var base = headingBaseSlug(heading.textContent || "");
+      var occurrence = counts[base] || 0;
+      counts[base] = occurrence + 1;
+      return occurrence === 0 ? base : base + "-" + occurrence;
+    });
+  }
+
+  function headingOpeningTagEnd(html, start) {
+    var quote = "";
+    for (var i = start; i < html.length; i++) {
+      var ch = html.charAt(i);
+      if (quote) {
+        if (ch === quote) { quote = ""; }
+      } else if (ch === '"' || ch === "'") {
+        quote = ch;
+      } else if (ch === ">") {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  function escapeHeadingID(id) {
+    return (id || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  }
+
+  function normalizeHeadingIDsInHTML(html) {
+    var ids = headingIDsForHTML(html);
+    if (ids.length === 0) { return html; }
+
+    var output = "";
+    var cursor = 0;
+    var search = 0;
+    var headingIndex = 0;
+    var opening = /<h[1-6](?=\s|>)/ig;
+    while (headingIndex < ids.length) {
+      opening.lastIndex = search;
+      var match = opening.exec(html);
+      if (!match) { return html; }
+      var end = headingOpeningTagEnd(html, match.index);
+      if (end < 0) { return html; }
+      var tag = html.slice(match.index, end + 1);
+      var idAttribute = /\s+id\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/i;
+      var desired = ' id="' + escapeHeadingID(ids[headingIndex]) + '"';
+      var normalized = idAttribute.test(tag)
+        ? tag.replace(idAttribute, desired)
+        : tag.slice(0, -1) + desired + ">";
+      output += html.slice(cursor, match.index) + normalized;
+      cursor = end + 1;
+      search = end + 1;
+      headingIndex += 1;
+    }
+    return output + html.slice(cursor);
+  }
+
   function decodedFragment(fragment) {
     try { return decodeURIComponent(fragment || ""); } catch (error) { return fragment || ""; }
   }
@@ -1323,6 +1382,18 @@
     }
   }
 
+  window.__ouroAnchorTest = {
+    slugs: function (texts) {
+      var counts = Object.create(null);
+      return (texts || []).map(function (text) {
+        var base = headingBaseSlug(text);
+        var occurrence = counts[base] || 0;
+        counts[base] = occurrence + 1;
+        return occurrence === 0 ? base : base + "-" + occurrence;
+      });
+    }
+  };
+
   window.ouro = {
     setValue: function (md) {
       state.value = (md == null) ? "" : md;
@@ -1363,7 +1434,7 @@
       try { return vditor ? vditor.getValue() : state.value; } catch (e) { return state.value; }
     },
     getHTML: function () {
-      try { return vditor ? vditor.getHTML() : ""; } catch (e) { return ""; }
+      try { return vditor ? normalizeHeadingIDsInHTML(vditor.getHTML()) : ""; } catch (e) { return ""; }
     },
     setTheme: function (uiMode, css, codeTheme, background) {
       var prevMode = state.uiTheme;

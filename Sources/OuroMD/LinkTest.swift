@@ -7,6 +7,7 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     private let markdown: String?
     private let inputError: Error?
     private let artifactDirectory: URL?
+    private let anchorContractJSON: String?
     private var webView: WKWebView!
     private var window: NSWindow!
     private var openedURLs: [String] = []
@@ -30,6 +31,11 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         }
         artifactDirectory = artifactDirectoryPath.map {
             URL(fileURLWithPath: $0, isDirectory: true).standardizedFileURL
+        }
+        if let contractURL = OuroResources.web("heading-anchor-contract", "json") {
+            anchorContractJSON = try? String(contentsOf: contractURL, encoding: .utf8)
+        } else {
+            anchorContractJSON = nil
         }
     }
 
@@ -118,7 +124,7 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         let source: String
         if let markdown {
             lastPhase = "running extended link contract"
-            source = Self.extendedScript(markdown)
+            source = Self.extendedScript(markdown, anchorContractJSON: anchorContractJSON)
         } else {
             lastPhase = "running legacy link contract"
             source = Self.legacyScript
@@ -171,6 +177,7 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
                 ("IR app export uses shared heading IDs", "\(body["irExportAnchors"] ?? "nil")", body["irExportAnchors"] as? Bool ?? false),
                 ("SV app export uses shared heading IDs", "\(body["svExportAnchors"] ?? "nil")", body["svExportAnchors"] as? Bool ?? false),
                 ("app export preserves non-heading IDs", "\(body["nonHeadingIDsStable"] ?? "nil")", body["nonHeadingIDsStable"] as? Bool ?? false),
+                ("JavaScript heading slugger matches shared contract", "\(body["anchorContractMatches"] ?? "nil")", body["anchorContractMatches"] as? Bool ?? false),
             ]
         }
 
@@ -213,7 +220,7 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         }
     }
 
-    private static func extendedScript(_ markdown: String) -> String {
+    private static func extendedScript(_ markdown: String, anchorContractJSON: String?) -> String {
         """
         (async function () {
           function post(payload) {
@@ -262,6 +269,7 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
           }
           try {
             var markdown = \(js(markdown));
+            var anchorContract = JSON.parse(\(js(anchorContractJSON ?? "{\"cases\":[]}")));
             var originalURL = location.href;
             await loadMode("ir", markdown);
 
@@ -367,6 +375,9 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
               irExportAnchors: hasSharedHeadingIDs(irHTML),
               svExportAnchors: hasSharedHeadingIDs(svHTML),
               nonHeadingIDsStable: JSON.stringify(nonHeadingIDs(irHTML)) === JSON.stringify(nonHeadingIDs(svHTML)),
+              anchorContractMatches: !!window.__ouroAnchorTest &&
+                JSON.stringify(window.__ouroAnchorTest.slugs(anchorContract.cases.map(function (item) { return item.text; }))) ===
+                JSON.stringify(anchorContract.cases.map(function (item) { return item.expected; })),
               irHTML: irHTML,
               svHTML: svHTML
             });
