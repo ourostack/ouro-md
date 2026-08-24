@@ -39,7 +39,7 @@ public enum DocumentLinkResolver {
                 guard isMarkdown(fileURL) else { return .unsupported }
                 return .markdownFile(
                     fileURL.standardizedFileURL,
-                    fragment: parsed.fragment?.removingPercentEncoding ?? parsed.fragment
+                    fragment: parsed.fragment?.removingPercentEncoding
                 )
             }
             return .unsupported
