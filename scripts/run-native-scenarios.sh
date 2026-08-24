@@ -62,6 +62,13 @@ tmp="$(mktemp -d /tmp/ouro-md-native-scenarios.XXXXXX)"
 cleanup() { rm -rf "$tmp"; }
 trap cleanup EXIT
 
+link_fixture="Tests/Fixtures/reference-links-and-anchors.md"
+roundtrip_fixture="Tests/Fixtures/reference-links-roundtrip.md"
+reference_roundtrip_out="$tmp/reference-links-roundtrip.md"
+run_with_timeout "$OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS" --linktest --linktest-file "$link_fixture"
+run --roundtrip "$roundtrip_fixture" --roundtrip-strict raw --out "$reference_roundtrip_out"
+cmp "$roundtrip_fixture" "$reference_roundtrip_out"
+
 roundtrip_in="$tmp/roundtrip.md"
 roundtrip_out="$tmp/roundtrip-out.md"
 cat > "$roundtrip_in" <<'MD'
