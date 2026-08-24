@@ -68,7 +68,10 @@ if hasFlag("--wraptest") {
 }
 
 if hasFlag("--linktest") {
-    LinkTester().run()
+    LinkTester(
+        markdownPath: argValue("--linktest-file"),
+        artifactDirectoryPath: argValue("--linktest-artifact-dir")
+    ).run()
 }
 
 if hasFlag("--wrapgluetest") {
@@ -186,7 +189,11 @@ if hasFlag("--roundtrip") {
     }
     let out = argValue("--out").map { URL(fileURLWithPath: $0) }
     do {
-        try RoundTripper(fileURL: URL(fileURLWithPath: path), outURL: out).run()
+        try RoundTripper(
+            fileURL: URL(fileURLWithPath: path),
+            outURL: out,
+            strictRaw: argValue("--roundtrip-strict") == "raw"
+        ).run()
     } catch {
         FileHandle.standardError.write(Data("roundtrip: cannot read \(path): \(error.localizedDescription)\n".utf8))
         exit(1)

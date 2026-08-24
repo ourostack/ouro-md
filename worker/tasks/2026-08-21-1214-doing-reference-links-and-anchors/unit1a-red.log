@@ -1,0 +1,12 @@
+linktest script completed: ok   OK ✓
+IR resolved reference nodes rendered: 5   OK ✓
+IR unresolved reference stays source text: 1   OK ✓
+IR focused reference markers hidden: 0   FAIL ✗
+IR reference has link affordance: 0   FAIL ✗
+external reference opens on Command-mousedown: opened=[]   FAIL ✗
+local reference opens in app: opened=[]   FAIL ✗
+IR fragment scrolls: 0   FAIL ✗
+SV source remains literal: 1   OK ✓
+SV preview resolves reference: 1   OK ✓
+SV fragment scrolls: 0   FAIL ✗
+fragment navigation keeps editor URL stable: 1   OK ✓

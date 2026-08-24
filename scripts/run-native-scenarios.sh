@@ -10,6 +10,7 @@ cd "$ROOT"
 
 exe="${OURO_MD_EXE:-.build/debug/ouro-md}"
 timeout_seconds="${OURO_SCENARIO_TIMEOUT_SECONDS:-90}"
+export OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS="${OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS:-90}"
 mkdir -p .build/ouro-native-scenario-profiles
 export LLVM_PROFILE_FILE="${LLVM_PROFILE_FILE:-.build/ouro-native-scenario-profiles/default-%p.profraw}"
 
@@ -33,7 +34,7 @@ run() {
 
 run_with_timeout "${OURO_UNDO_SCENARIO_TIMEOUT_SECONDS:-180}" --undotest
 run --wraptest
-run --linktest
+run_with_timeout "$OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS" --linktest
 run --wrapgluetest
 run --renderprobe
 run --mermaidcliptest
