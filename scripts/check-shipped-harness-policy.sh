@@ -75,6 +75,33 @@ if missing:
 if extra:
     fail("policy flags not present in main.swift: " + ", ".join(extra))
 
+fixtures = policy.get("fixtures")
+if not isinstance(fixtures, list) or not fixtures:
+    fail("policy must contain a non-empty fixtures array")
+for index, fixture in enumerate(fixtures):
+    if not isinstance(fixture, dict):
+        fail(f"fixtures[{index}] must be an object")
+    fixture_path = fixture.get("path")
+    script_path = fixture.get("script")
+    required_lines = fixture.get("requiredLines")
+    if not isinstance(fixture_path, str) or not fixture_path:
+        fail(f"fixtures[{index}].path must be a non-empty string")
+    if not (root / fixture_path).is_file():
+        fail(f"fixtures[{index}] does not exist: {fixture_path}")
+    if not isinstance(script_path, str) or not script_path:
+        fail(f"fixtures[{index}].script must be a non-empty string")
+    script = root / script_path
+    if not script.is_file():
+        fail(f"fixtures[{index}] script does not exist: {script_path}")
+    if not isinstance(required_lines, list) or not required_lines:
+        fail(f"fixtures[{index}].requiredLines must be a non-empty array")
+    script_lines = set(script.read_text(encoding="utf-8").splitlines())
+    for required_line in required_lines:
+        if not isinstance(required_line, str) or not required_line:
+            fail(f"fixtures[{index}] contains an invalid required line")
+        if required_line not in script_lines:
+            fail(f"{fixture_path}: {script_path} missing exact line: {required_line}")
+
 release_policy = Path("scripts/release-policy.sh").read_text(encoding="utf-8")
 for required in (
     "Sources/OuroMD/*Test.swift|Sources/OuroMD/*Probe.swift",

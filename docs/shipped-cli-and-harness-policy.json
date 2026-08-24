@@ -8,6 +8,24 @@
     "Hidden diagnostic harness modes must not upload private document contents or run during normal app launch.",
     "Adding, removing, or reclassifying a mode requires updating this manifest and the policy check."
   ],
+  "fixtures": [
+    {
+      "path": "Tests/Fixtures/reference-links-and-anchors.md",
+      "script": "scripts/run-native-scenarios.sh",
+      "requiredLines": [
+        "export OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS=\"${OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS:-90}\"",
+        "run_with_timeout \"$OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS\" --linktest --linktest-file \"$link_fixture\""
+      ]
+    },
+    {
+      "path": "Tests/Fixtures/reference-links-roundtrip.md",
+      "script": "scripts/run-native-scenarios.sh",
+      "requiredLines": [
+        "run --roundtrip \"$roundtrip_fixture\" --roundtrip-strict raw --out \"$reference_roundtrip_out\"",
+        "cmp \"$roundtrip_fixture\" \"$reference_roundtrip_out\""
+      ]
+    }
+  ],
   "modes": [
     {
       "flag": "--help",
