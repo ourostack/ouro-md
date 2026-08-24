@@ -64,12 +64,12 @@ Make valid CommonMark reference-style links read and behave like links in every 
 ### Legend
 ⬜ Not started · 🔄 In progress · ✅ Done · ❌ Blocked
 
-### ⬜ Unit 0: Baseline and fixture contract
+### ✅ Unit 0: Baseline and fixture contract
 **What**: Land rich `Tests/Fixtures/reference-links-and-anchors.md` for rendering/navigation and strict `Tests/Fixtures/reference-links-roundtrip.md` whose link-reference definition block is the final block with one trailing newline, canonical full/shortcut refs, bare destinations, no titles/angle brackets, no collapsed refs, and no adjacent footnote definition. Add argument-only fixture/artifact seams, keep them out of policy modes, update privacy, and refactor LinkTest into a rebuild-safe IR/SV phase queue with legacy coverage and unconditional snapshot/DOM/HTML artifacts. Align timeout budgets, reproduce both defects, capture raw values, and record the verified normalization matrix for rich-only variants.
 **Output**: `./2026-08-21-1214-doing-reference-links-and-anchors/unit0/baseline.md`, `ir-dom.json`, `app-export.html`, `standalone-export.html`, `reference-focused.png`, and `anchor-before.png`.
 **Acceptance**: Optional arguments use `argValue`; privacy text covers caller input/artifacts; legacy and rich-fixture IR/SV phases complete within one timeout budget; diagnostics are produced on green exit. Rich-fixture normalizations are documented, not treated as regressions; raw Vditor and bridge values both match the dedicated final-def-block strict fixture before `MarkdownTidy`. If that strict fixture fails, stop and redesign source preservation; do not echo cached source, narrow the strict fixture, edit vendored Vditor, or land a partial fix.
 
-### ⬜ Unit 1a: Reference-style links — Tests
+### ✅ Unit 1a: Reference-style links — Tests
 **What**: Extend the Unit 0 queue with expected-red full/collapsed/shortcut presentation/routing assertions in IR and SV preview, plus an assertion that SV source stays literal/inert, while retaining expected-green standalone rendering. Pin parser label encoding/normalization. Add argument-only strict round-trip mode comparing raw/bridge values with the strict final-def-block fixture before tidy, keep ordinary round-trip unchanged, unit-test normalization-maskable mismatches, and add IR keyboard/mouse/edit fidelity phases.
 **Output**: Failing live reference-link regression coverage, green standalone-render characterization, the source-preservation fixture, and `./2026-08-21-1214-doing-reference-links-and-anchors/unit1a/red.log`.
 **Acceptance**: The named expected-red LinkTest assertions fail for missing marker hiding and destination routing; expected-green renderer/round-trip assertions pass; existing inline links remain green.
@@ -198,4 +198,5 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - 2026-08-21 15:17 Eighth stranger-with-candy scrutiny added the one live-manifest apply-plan `targetVersion` assertion affected by the `0.9.85` bump.
 - 2026-08-21 15:22 Ninth tinfoil-hat scrutiny added `livePreflight()` target/uploaded-build versions so negative apply-plan tests still reach their intended post-version validation layers.
 - 2026-08-21 15:30 Ninth stranger-with-candy scrutiny converged with no issues.
+- 2026-08-24 11:36 Units 0 and 1a complete: captured baseline artifacts, split rich/strict fixtures, preserved ordinary round-trip behavior, and landed a real WebKit harness that fails on the missing reference/anchor contracts while legacy inline links stay green.
 - 2026-08-21 15:38 Tenth tinfoil-hat scrutiny converged with no issues; two consecutive adversarial framings are clean and the doing doc is ready for execution.
