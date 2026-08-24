@@ -2,7 +2,7 @@ import Foundation
 
 public enum DocumentLinkTarget: Equatable {
     case external(URL)
-    case markdownFile(URL)
+    case markdownFile(URL, fragment: String?)
     case inDocumentAnchor(String)
     case unsupported
 }
@@ -26,7 +26,8 @@ public enum DocumentLinkResolver {
         guard !target.isEmpty else { return .unsupported }
 
         if target.hasPrefix("#") {
-            return .inDocumentAnchor(String(target.dropFirst()))
+            let fragment = String(target.dropFirst())
+            return .inDocumentAnchor(fragment.removingPercentEncoding ?? fragment)
         }
 
         if let parsed = URL(string: target), let scheme = parsed.scheme?.lowercased() {
@@ -36,7 +37,10 @@ public enum DocumentLinkResolver {
             if scheme == "file" {
                 let fileURL = URL(fileURLWithPath: parsed.path)
                 guard isMarkdown(fileURL) else { return .unsupported }
-                return .markdownFile(fileURL.standardizedFileURL)
+                return .markdownFile(
+                    fileURL.standardizedFileURL,
+                    fragment: parsed.fragment?.removingPercentEncoding ?? parsed.fragment
+                )
             }
             return .unsupported
         }
@@ -47,10 +51,12 @@ public enum DocumentLinkResolver {
             return .unsupported
         }
 
-        let rawPath = target
-            .split(separator: "#", maxSplits: 1, omittingEmptySubsequences: false)[0]
+        let fragmentParts = target.split(separator: "#", maxSplits: 1, omittingEmptySubsequences: false)
+        let rawPath = fragmentParts[0]
             .split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false)[0]
         guard !rawPath.isEmpty else { return .unsupported }
+        let rawFragment = fragmentParts.count > 1 ? String(fragmentParts[1]) : nil
+        let fragment = rawFragment.flatMap { $0.removingPercentEncoding ?? $0 }
 
         let path = String(rawPath).removingPercentEncoding ?? String(rawPath)
         let resolved: URL
@@ -60,7 +66,7 @@ public enum DocumentLinkResolver {
             resolved = documentURL.deletingLastPathComponent().appendingPathComponent(path)
         }
         let standardized = resolved.standardizedFileURL
-        return isMarkdown(standardized) ? .markdownFile(standardized) : .unsupported
+        return isMarkdown(standardized) ? .markdownFile(standardized, fragment: fragment) : .unsupported
     }
 
     private static func isMarkdown(_ url: URL) -> Bool {

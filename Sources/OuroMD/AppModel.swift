@@ -18,6 +18,7 @@ protocol EditorBridge: AnyObject {
     func setTypewriter(_ on: Bool)
     func setAutoPair(_ on: Bool)
     func scrollToHeading(_ index: Int)
+    func scrollToAnchor(_ fragment: String)
     func find(_ query: String, backward: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool)
     func revealSearchMatch(
         lineNumber: Int,
@@ -48,6 +49,7 @@ extension EditorBridge {
     // Default no-op so existing conformers (test mocks) need no change; the real
     // WKWebView coordinator provides the actual implementation.
     func copyAs(_ mode: String) {}
+    func scrollToAnchor(_ fragment: String) {}
 }
 
 /// Owns document state (current file, dirty flag, theme/mode) and orchestrates
@@ -125,7 +127,7 @@ final class AppModel: ObservableObject {
     var onChromeUpdate: (() -> Void)?
     var presentErrorHandler: ((String, Error) -> Void)?
     var telemetryHandler: ((String, [String: OuroMDTelemetryValue]) -> Void)?
-    var openLinkedDocumentHandler: ((URL) -> Void)?
+    var openLinkedDocumentHandler: ((URL, String?) -> Void)?
     var documentTruthProvider = DocumentTruthProvider(gitRunner: ProcessDocumentTruthGitRunner()) {
         didSet { refreshDocumentTruth() }
     }
@@ -139,6 +141,7 @@ final class AppModel: ObservableObject {
 
     private let defaults = UserDefaults.standard
     private var pendingMarkdown: String?
+    private var pendingAnchorFragment: String?
     private var autosaveItem: DispatchWorkItem?
     /// The content currently on disk (last loaded or saved). Lets the file
     /// watcher distinguish a genuine external edit from our own save echo.
@@ -247,6 +250,7 @@ final class AppModel: ObservableObject {
         // A newly opened document window should be ready to type into
         // immediately, without a stray click to place the caret first.
         bridge?.focusEditor()
+        consumePendingAnchor()
         onChromeUpdate?()
     }
 
@@ -338,7 +342,7 @@ final class AppModel: ObservableObject {
     /// `DocumentLinkResolver`; the app delegate owns sandbox access because a
     /// sibling file may require a Powerbox grant in the App Store build.
     @discardableResult
-    func openLinkedDocument(_ url: URL) -> Bool {
+    func openLinkedDocument(_ url: URL, fragment: String? = nil) -> Bool {
         let target = url.standardizedFileURL
         guard Self.isMarkdownURL(target) else {
             presentError(
@@ -370,9 +374,21 @@ final class AppModel: ObservableObject {
             )
             return false
         }
-        openLinkedDocumentHandler(target)
+        openLinkedDocumentHandler(target, fragment)
         captureTelemetry("ouro_md_linked_document_opened")
         return true
+    }
+
+    func requestAnchorScroll(_ fragment: String?) {
+        guard let fragment, !fragment.isEmpty else { return }
+        pendingAnchorFragment = fragment
+        consumePendingAnchor()
+    }
+
+    private func consumePendingAnchor() {
+        guard isReady, let fragment = pendingAnchorFragment else { return }
+        pendingAnchorFragment = nil
+        bridge?.scrollToAnchor(fragment)
     }
 
     func reportLinkedDocumentOpenFailure(_ url: URL) {

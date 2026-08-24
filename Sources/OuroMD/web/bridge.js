@@ -335,6 +335,14 @@
     function maybeOpenEditorLink(e) {
       var url = resolveEditorLinkURL(e.target, e);
       if (!url) { return; }
+      if (url.charAt(0) === "#") {
+        if (e.type !== "click") { return; }
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        var root = e.target.closest(".vditor-reset") || renderedAnchorRoot();
+        scrollToAnchorTarget(url.slice(1), root);
+        return;
+      }
       var localMarkdown = isLocalMarkdownTarget(url);
       // External links keep the established ⌘-click gesture so ordinary clicks
       // remain available for editing. A rendered local Markdown link opens on a
@@ -441,6 +449,89 @@
   function resolveReferenceLinkURL(node) {
     var label = referenceLabelFromDOM(node);
     return label ? (referenceLinkMap()[label] || "") : "";
+  }
+
+  function headingBaseSlug(text) {
+    var normalized = (text || "").normalize("NFC").toLowerCase().normalize("NFC");
+    var out = "";
+    for (var ch of normalized) {
+      if (/[\p{L}\p{N}]/u.test(ch)) {
+        out += ch;
+      } else if (ch === " " || ch === "-" || ch === "_") {
+        out += "-";
+      }
+    }
+    while (out.indexOf("--") !== -1) { out = out.replace(/--/g, "-"); }
+    out = out.replace(/^-+|-+$/g, "");
+    return out || "section";
+  }
+
+  function headingText(heading) {
+    var clone = heading.cloneNode(true);
+    var markers = clone.querySelectorAll(".vditor-ir__marker--heading");
+    for (var i = 0; i < markers.length; i++) { markers[i].remove(); }
+    return (clone.textContent || "").trim();
+  }
+
+  function headingAnchorMap(root) {
+    var counts = Object.create(null);
+    var anchors = Object.create(null);
+    var headings = root.querySelectorAll("h1,h2,h3,h4,h5,h6");
+    for (var i = 0; i < headings.length; i++) {
+      var base = headingBaseSlug(headingText(headings[i]));
+      var occurrence = counts[base] || 0;
+      counts[base] = occurrence + 1;
+      var slug = occurrence === 0 ? base : base + "-" + occurrence;
+      anchors[slug] = headings[i];
+    }
+    return anchors;
+  }
+
+  function decodedFragment(fragment) {
+    try { return decodeURIComponent(fragment || ""); } catch (error) { return fragment || ""; }
+  }
+
+  function scrollToAnchorTarget(fragment, root) {
+    if (!root) { return false; }
+    var targetID = decodedFragment(fragment);
+    if (!targetID) { return false; }
+
+    var heading = headingAnchorMap(root)[targetID];
+    if (heading) {
+      heading.scrollIntoView({ behavior: "auto", block: "start", inline: "nearest" });
+      return true;
+    }
+
+    var exact = document.getElementById(targetID);
+    if (exact && root.contains(exact) && !/^H[1-6]$/.test(exact.tagName || "")) {
+      exact.scrollIntoView({ behavior: "auto", block: "start", inline: "nearest" });
+      return true;
+    }
+    return false;
+  }
+
+  function renderedAnchorRoot() {
+    if (state.mode === "sv") {
+      return document.querySelector("#editor .vditor-preview .vditor-reset") ||
+        document.querySelector("#editor .vditor-preview.vditor-reset");
+    }
+    return activeEditorRoot();
+  }
+
+  function scrollToAnchorWhenReady(fragment) {
+    var attempts = 0;
+    var finished = false;
+    var attempt = function () {
+      if (finished) { return; }
+      if (scrollToAnchorTarget(fragment, renderedAnchorRoot())) {
+        finished = true;
+        return;
+      }
+      attempts += 1;
+      if (attempts >= 24) { return; }
+      requestAnimationFrame(function () { setTimeout(attempt, 20); });
+    };
+    attempt();
   }
 
   function create() {
@@ -1399,6 +1490,12 @@
     scrollToHeading: function (index) {
       var hs = document.querySelectorAll(".vditor-reset h1, .vditor-reset h2, .vditor-reset h3, .vditor-reset h4, .vditor-reset h5, .vditor-reset h6");
       if (hs[index]) { hs[index].scrollIntoView({ behavior: "smooth", block: "start" }); }
+    },
+    scrollToAnchor: function (fragment) {
+      return scrollToAnchorTarget(fragment, renderedAnchorRoot());
+    },
+    scrollToAnchorWhenReady: function (fragment) {
+      scrollToAnchorWhenReady(fragment);
     },
     find: function (query, opts) {
       if (!query) { return; }

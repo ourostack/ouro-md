@@ -106,14 +106,17 @@ struct EditorWebView: NSViewRepresentable {
     final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate, EditorBridge {
         let model: AppModel
         let externalURLOpener: (URL) -> Void
+        let anchorScroller: ((String) -> Void)?
         weak var webView: WKWebView?
 
         init(
             model: AppModel,
-            externalURLOpener: @escaping (URL) -> Void = { _ = NSWorkspace.shared.open($0) }
+            externalURLOpener: @escaping (URL) -> Void = { _ = NSWorkspace.shared.open($0) },
+            anchorScroller: ((String) -> Void)? = nil
         ) {
             self.model = model
             self.externalURLOpener = externalURLOpener
+            self.anchorScroller = anchorScroller
         }
 
         // MARK: JS -> native
@@ -153,9 +156,15 @@ struct EditorWebView: NSViewRepresentable {
             switch DocumentLinkResolver.resolve(rawTarget, relativeTo: model.currentURL) {
             case .external(let url):
                 externalURLOpener(url)
-            case .markdownFile(let url):
-                model.openLinkedDocument(url)
-            case .inDocumentAnchor, .unsupported:
+            case .markdownFile(let url, let fragment):
+                model.openLinkedDocument(url, fragment: fragment)
+            case .inDocumentAnchor(let fragment):
+                if let anchorScroller {
+                    anchorScroller(fragment)
+                } else {
+                    scrollToAnchor(fragment)
+                }
+            case .unsupported:
                 break
             }
         }
@@ -238,6 +247,14 @@ struct EditorWebView: NSViewRepresentable {
 
         func scrollToHeading(_ index: Int) {
             eval("window.ouro && window.ouro.scrollToHeading(\(index))")
+        }
+
+        func scrollToAnchor(_ fragment: String) {
+            eval(Self.anchorScript(fragment: fragment))
+        }
+
+        static func anchorScript(fragment: String) -> String {
+            "window.ouro && window.ouro.scrollToAnchorWhenReady(\(jsString(fragment)))"
         }
 
         func find(_ query: String, backward: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool) {

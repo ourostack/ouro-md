@@ -292,9 +292,10 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
             var heading = Array.from(document.querySelectorAll("#editor h2")).find(function (node) {
               return (node.textContent || "").indexOf("Target Heading") !== -1;
             });
-            var irBefore = heading ? heading.getBoundingClientRect().top : 0;
             if (heading) { heading.style.marginTop = "1600px"; }
             window.scrollTo(0, 0);
+            await sleep(50);
+            var irBefore = heading ? heading.getBoundingClientRect().top : 0;
             if (jump) {
               targetFor(jump).dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
             }
@@ -313,9 +314,10 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
             var previewHeading = previewPane && Array.from(previewPane.querySelectorAll("h2")).find(function (node) {
               return (node.textContent || "").indexOf("Target Heading") !== -1;
             });
-            var svBefore = previewHeading ? previewHeading.getBoundingClientRect().top : 0;
             if (previewHeading) { previewHeading.style.marginTop = "1600px"; }
             if (previewPane) { previewPane.scrollTop = 0; }
+            await sleep(50);
+            var svBefore = previewHeading ? previewHeading.getBoundingClientRect().top : 0;
             if (previewJump) {
               previewJump.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
             }
@@ -332,6 +334,11 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
               svSourceLiteral: !!sourcePane && (sourcePane.innerText || "").indexOf("[External full][external]") !== -1,
               svReferenceRendered: !!previewReference,
               svAnchorScrolled: !!previewHeading && svAfter < svBefore - 100,
+              svPreviewJumpFound: !!previewJump,
+              svPreviewHeadingFound: !!previewHeading,
+              svBefore: svBefore,
+              svAfter: svAfter,
+              svPreviewScrollTop: previewPane ? previewPane.scrollTop : -1,
               pageURLStable: location.href === originalURL,
               rawEqualsBridge: rawValue === bridgeValue,
               irHTML: irHTML,

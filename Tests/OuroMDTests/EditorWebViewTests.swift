@@ -52,7 +52,7 @@ final class EditorWebViewTests: XCTestCase {
         var local: URL?
         var anchor: String?
         var errors: [(String, String)] = []
-        model.openLinkedDocumentHandler = { local = $0 }
+        model.openLinkedDocumentHandler = { url, _ in local = url }
         model.presentErrorHandler = { message, error in
             errors.append((message, error.localizedDescription))
         }

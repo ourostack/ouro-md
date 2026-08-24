@@ -303,6 +303,11 @@ private struct HTMLVisitor: MarkupVisitor {
 
     let baseDirectory: URL?
     private let inlineImageByteCap = 12 * 1024 * 1024
+    private var headingSlugger = HeadingAnchorSlugger()
+
+    init(baseDirectory: URL?) {
+        self.baseDirectory = baseDirectory
+    }
 
     mutating func defaultVisit(_ markup: Markup) -> String {
         renderChildren(markup)
@@ -334,7 +339,7 @@ private struct HTMLVisitor: MarkupVisitor {
 
     mutating func visitHeading(_ heading: Heading) -> String {
         let inner = renderChildren(heading)
-        let id = HTMLVisitor.slug(plainText(of: heading))
+        let id = headingSlugger.slug(plainText(of: heading))
         return "<h\(heading.level) id=\"\(id)\">\(inner)</h\(heading.level)>\n"
     }
 

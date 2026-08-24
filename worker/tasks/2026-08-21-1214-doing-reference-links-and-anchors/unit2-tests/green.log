@@ -1,0 +1,15 @@
+linktest script completed: ok   OK ✓
+IR resolved reference nodes rendered: 7   OK ✓
+IR unresolved reference stays source text: 1   OK ✓
+IR focused reference markers hidden: 1   OK ✓
+IR reference has link affordance: 1   OK ✓
+external reference opens on Command-mousedown: opened=["https://example.com/external", "other.md#target-heading", "https://example.com/collapsed", "https://example.com/shortcut", "https://example.com/normalized"]   OK ✓
+local reference opens in app: opened=["https://example.com/external", "other.md#target-heading", "https://example.com/collapsed", "https://example.com/shortcut", "https://example.com/normalized"]   OK ✓
+collapsed reference resolves: opened=["https://example.com/external", "other.md#target-heading", "https://example.com/collapsed", "https://example.com/shortcut", "https://example.com/normalized"]   OK ✓
+shortcut reference resolves: opened=["https://example.com/external", "other.md#target-heading", "https://example.com/collapsed", "https://example.com/shortcut", "https://example.com/normalized"]   OK ✓
+normalized label resolves: opened=["https://example.com/external", "other.md#target-heading", "https://example.com/collapsed", "https://example.com/shortcut", "https://example.com/normalized"]   OK ✓
+IR fragment scrolls: 1   OK ✓
+SV source remains literal: 1   OK ✓
+SV preview resolves reference: 1   OK ✓
+SV fragment scrolls: 1   OK ✓
+fragment navigation keeps editor URL stable: 1   OK ✓
