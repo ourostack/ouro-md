@@ -17,30 +17,30 @@ final class DocumentLinkTests: XCTestCase {
     func testRelativeMarkdownResolvesBesideCurrentDocument() {
         XCTAssertEqual(
             DocumentLinkResolver.resolve("next.md", relativeTo: current),
-            .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/notes/next.md"))
+            .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/notes/next.md"), fragment: nil)
         )
         XCTAssertEqual(
             DocumentLinkResolver.resolve("../plans/launch%20notes.MARKDOWN?mode=read#today", relativeTo: current),
-            .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/plans/launch notes.MARKDOWN"))
+            .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/plans/launch notes.MARKDOWN"), fragment: "today")
         )
         XCTAssertEqual(
             DocumentLinkResolver.resolve("%ZZ.md", relativeTo: current),
-            .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/notes/%ZZ.md"))
+            .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/notes/%ZZ.md"), fragment: nil)
         )
     }
 
     func testAbsoluteAndFileMarkdownTargetsAreSupported() {
         XCTAssertEqual(
             DocumentLinkResolver.resolve("/Users/ari/Documents/readme.mdown#top", relativeTo: current),
-            .markdownFile(URL(fileURLWithPath: "/Users/ari/Documents/readme.mdown"))
+            .markdownFile(URL(fileURLWithPath: "/Users/ari/Documents/readme.mdown"), fragment: "top")
         )
         XCTAssertEqual(
             DocumentLinkResolver.resolve("file:///Users/ari/Documents/readme.mkd?x=1#top", relativeTo: nil),
-            .markdownFile(URL(fileURLWithPath: "/Users/ari/Documents/readme.mkd"))
+            .markdownFile(URL(fileURLWithPath: "/Users/ari/Documents/readme.mkd"), fragment: "top")
         )
         XCTAssertEqual(
             DocumentLinkResolver.resolve(" <../brief.md> ", relativeTo: current),
-            .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/brief.md"))
+            .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/brief.md"), fragment: nil)
         )
     }
 

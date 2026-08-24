@@ -3,6 +3,14 @@ import XCTest
 import OuroMDCore
 
 final class MarkdownRendererTests: XCTestCase {
+    private struct AnchorContract: Decodable {
+        struct Case: Decodable {
+            let text: String
+            let expected: String
+        }
+        let cases: [Case]
+    }
+
     private func render(_ markdown: String) -> String {
         MarkdownRenderer.renderHTMLBody(markdown)
     }
@@ -21,6 +29,20 @@ final class MarkdownRendererTests: XCTestCase {
         XCTAssertTrue(render("## My  Section__Again").contains("id=\"my-section-again\""))
     }
 
+    func testHeadingAnchorContractMatchesSharedFixture() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let fixture = root.appendingPathComponent("Sources/OuroMD/web/heading-anchor-contract.json")
+        let contract = try JSONDecoder().decode(AnchorContract.self, from: Data(contentsOf: fixture))
+        let html = render(contract.cases.map { "# \($0.text)" }.joined(separator: "\n\n"))
+
+        for item in contract.cases {
+            XCTAssertTrue(html.contains("id=\"\(item.expected)\""), "missing heading id \(item.expected)")
+        }
+    }
+
     func testBoldAndItalic() {
         let html = render("**bold** and *italic*")
         XCTAssertTrue(html.contains("<strong>bold</strong>"))
@@ -33,6 +55,27 @@ final class MarkdownRendererTests: XCTestCase {
 
     func testLink() {
         XCTAssertTrue(render("[text](https://example.com)").contains("<a href=\"https://example.com\">text</a>"))
+    }
+
+    func testReferenceStyleLinksResolveWithoutChangingUnresolvedSource() {
+        let html = render("""
+        [Full][full]
+
+        [Collapsed][]
+
+        [Shortcut]
+
+        [Missing][absent]
+
+        [full]: https://example.com/full
+        [Collapsed]: https://example.com/collapsed
+        [Shortcut]: https://example.com/shortcut
+        """)
+
+        XCTAssertTrue(html.contains("<a href=\"https://example.com/full\">Full</a>"))
+        XCTAssertTrue(html.contains("<a href=\"https://example.com/collapsed\">Collapsed</a>"))
+        XCTAssertTrue(html.contains("<a href=\"https://example.com/shortcut\">Shortcut</a>"))
+        XCTAssertTrue(html.contains("[Missing][absent]"))
     }
 
     func testUnorderedList() {
