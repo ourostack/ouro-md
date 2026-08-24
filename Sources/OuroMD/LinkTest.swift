@@ -168,6 +168,9 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
                 ("SV preview resolves reference", "\(body["svReferenceRendered"] ?? "nil")", body["svReferenceRendered"] as? Bool ?? false),
                 ("SV fragment scrolls", "\(body["svAnchorScrolled"] ?? "nil")", body["svAnchorScrolled"] as? Bool ?? false),
                 ("fragment navigation keeps editor URL stable", "\(body["pageURLStable"] ?? "nil")", body["pageURLStable"] as? Bool ?? false),
+                ("IR app export uses shared heading IDs", "\(body["irExportAnchors"] ?? "nil")", body["irExportAnchors"] as? Bool ?? false),
+                ("SV app export uses shared heading IDs", "\(body["svExportAnchors"] ?? "nil")", body["svExportAnchors"] as? Bool ?? false),
+                ("app export preserves non-heading IDs", "\(body["nonHeadingIDsStable"] ?? "nil")", body["nonHeadingIDsStable"] as? Bool ?? false),
             ]
         }
 
@@ -236,6 +239,26 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
           }
           function targetFor(node) {
             return node && (node.querySelector(".vditor-ir__link") || node.querySelector("span:not(.vditor-ir__marker)") || node);
+          }
+          function exportHeadingIDs(html) {
+            var parsed = new DOMParser().parseFromString(html || "", "text/html");
+            return Array.from(parsed.querySelectorAll("h1,h2,h3,h4,h5,h6")).map(function (heading) {
+              return heading.id || "";
+            });
+          }
+          function hasSharedHeadingIDs(html) {
+            var ids = exportHeadingIDs(html);
+            return ids.indexOf("link-contract-fixture") !== -1 &&
+              ids.indexOf("target-heading") !== -1 &&
+              ids.indexOf("duplicate-heading") !== -1 &&
+              ids.indexOf("duplicate-heading-1") !== -1;
+          }
+          function nonHeadingIDs(html) {
+            var parsed = new DOMParser().parseFromString(html || "", "text/html");
+            return Array.from(parsed.querySelectorAll("[id]"))
+              .filter(function (node) { return !/^H[1-6]$/.test(node.tagName || ""); })
+              .map(function (node) { return node.id; })
+              .sort();
           }
           try {
             var markdown = \(js(markdown));
@@ -341,6 +364,9 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
               svPreviewScrollTop: previewPane ? previewPane.scrollTop : -1,
               pageURLStable: location.href === originalURL,
               rawEqualsBridge: rawValue === bridgeValue,
+              irExportAnchors: hasSharedHeadingIDs(irHTML),
+              svExportAnchors: hasSharedHeadingIDs(svHTML),
+              nonHeadingIDsStable: JSON.stringify(nonHeadingIDs(irHTML)) === JSON.stringify(nonHeadingIDs(svHTML)),
               irHTML: irHTML,
               svHTML: svHTML
             });
