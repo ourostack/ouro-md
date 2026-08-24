@@ -253,12 +253,13 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
               return heading.id || "";
             });
           }
-          function hasSharedHeadingIDs(html) {
+          function hasSharedHeadingIDs(html, expectedIDs) {
             var ids = exportHeadingIDs(html);
             return ids.indexOf("link-contract-fixture") !== -1 &&
               ids.indexOf("target-heading") !== -1 &&
               ids.indexOf("duplicate-heading") !== -1 &&
-              ids.indexOf("duplicate-heading-1") !== -1;
+              ids.indexOf("duplicate-heading-1") !== -1 &&
+              expectedIDs.every(function (id) { return ids.indexOf(id) !== -1; });
           }
           function nonHeadingIDs(html) {
             var parsed = new DOMParser().parseFromString(html || "", "text/html");
@@ -270,6 +271,7 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
           try {
             var markdown = \(js(markdown));
             var anchorContract = JSON.parse(\(js(anchorContractJSON ?? "{\"cases\":[]}")));
+            var expectedAnchorIDs = anchorContract.cases.map(function (item) { return item.expected; });
             var originalURL = location.href;
             await loadMode("ir", markdown);
 
@@ -372,8 +374,8 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
               svPreviewScrollTop: previewPane ? previewPane.scrollTop : -1,
               pageURLStable: location.href === originalURL,
               rawEqualsBridge: rawValue === bridgeValue,
-              irExportAnchors: hasSharedHeadingIDs(irHTML),
-              svExportAnchors: hasSharedHeadingIDs(svHTML),
+              irExportAnchors: hasSharedHeadingIDs(irHTML, expectedAnchorIDs),
+              svExportAnchors: hasSharedHeadingIDs(svHTML, expectedAnchorIDs),
               nonHeadingIDsStable: JSON.stringify(nonHeadingIDs(irHTML)) === JSON.stringify(nonHeadingIDs(svHTML)),
               anchorContractMatches: !!window.__ouroAnchorTest &&
                 JSON.stringify(window.__ouroAnchorTest.slugs(anchorContract.cases.map(function (item) { return item.text; }))) ===
