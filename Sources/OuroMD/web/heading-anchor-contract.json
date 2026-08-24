@@ -3,12 +3,17 @@
   "cases": [
     { "text": "My Section!", "expected": "my-section" },
     { "text": "My Section!", "expected": "my-section-1" },
+    { "text": "Foo", "expected": "foo" },
+    { "text": "Foo", "expected": "foo-1" },
+    { "text": "Foo-1", "expected": "foo-1-1" },
+    { "text": "Docs heading", "expected": "docs-heading" },
     { "text": "snake_case name", "expected": "snake-case-name" },
     { "text": "Café", "expected": "café" },
     { "text": "Café", "expected": "café-1" },
     { "text": "İstanbul", "expected": "istanbul" },
     { "text": "a̱bc", "expected": "abc" },
     { "text": "Mā́n", "expected": "mān" },
+    { "text": "xͅ", "expected": "x" },
     { "text": "123 Start", "expected": "123-start" },
     { "text": "!!!", "expected": "section" },
     { "text": "!!!", "expected": "section-1" }

@@ -368,7 +368,10 @@
   }
 
   function normalizeReferenceLabel(label) {
-    return (label || "").trim().replace(/\s+/g, " ").toLowerCase();
+    return (label || "")
+      .replace(/^[ \t\r\n]+|[ \t\r\n]+$/g, "")
+      .replace(/[ \t\r\n]+/g, " ")
+      .toLowerCase();
   }
 
   function decodeReferenceLabel(encoded) {
@@ -466,22 +469,33 @@
     return out || "section";
   }
 
+  function nextUniqueHeadingSlug(base, counts, used) {
+    var occurrence = counts[base] || 0;
+    var candidate = occurrence === 0 ? base : base + "-" + occurrence;
+    while (used[candidate]) {
+      occurrence += 1;
+      candidate = base + "-" + occurrence;
+    }
+    counts[base] = occurrence + 1;
+    used[candidate] = true;
+    return candidate;
+  }
+
   function headingText(heading) {
     var clone = heading.cloneNode(true);
-    var markers = clone.querySelectorAll(".vditor-ir__marker--heading");
+    var markers = clone.querySelectorAll(".vditor-ir__marker");
     for (var i = 0; i < markers.length; i++) { markers[i].remove(); }
     return (clone.textContent || "").trim();
   }
 
   function headingAnchorMap(root) {
     var counts = Object.create(null);
+    var used = Object.create(null);
     var anchors = Object.create(null);
     var headings = root.querySelectorAll("h1,h2,h3,h4,h5,h6");
     for (var i = 0; i < headings.length; i++) {
       var base = headingBaseSlug(headingText(headings[i]));
-      var occurrence = counts[base] || 0;
-      counts[base] = occurrence + 1;
-      var slug = occurrence === 0 ? base : base + "-" + occurrence;
+      var slug = nextUniqueHeadingSlug(base, counts, used);
       anchors[slug] = headings[i];
     }
     return anchors;
@@ -490,11 +504,10 @@
   function headingIDsForHTML(html) {
     var parsed = new DOMParser().parseFromString(html || "", "text/html");
     var counts = Object.create(null);
+    var used = Object.create(null);
     return Array.from(parsed.querySelectorAll("h1,h2,h3,h4,h5,h6")).map(function (heading) {
       var base = headingBaseSlug(heading.textContent || "");
-      var occurrence = counts[base] || 0;
-      counts[base] = occurrence + 1;
-      return occurrence === 0 ? base : base + "-" + occurrence;
+      return nextUniqueHeadingSlug(base, counts, used);
     });
   }
 
@@ -517,6 +530,48 @@
     return (id || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;");
   }
 
+  function replaceHeadingIDInTag(tag, id) {
+    var desired = escapeHeadingID(id);
+    var nameEnd = 1;
+    while (nameEnd < tag.length && /[A-Za-z0-9]/.test(tag.charAt(nameEnd))) { nameEnd += 1; }
+    var i = nameEnd;
+    while (i < tag.length - 1) {
+      while (i < tag.length - 1 && /\s/.test(tag.charAt(i))) { i += 1; }
+      if (tag.charAt(i) === ">" || tag.charAt(i) === "/") { break; }
+      var attributeStart = i;
+      while (i < tag.length - 1 && !/[\s=/>]/.test(tag.charAt(i))) { i += 1; }
+      var attributeName = tag.slice(attributeStart, i).toLowerCase();
+      while (i < tag.length - 1 && /\s/.test(tag.charAt(i))) { i += 1; }
+      if (tag.charAt(i) !== "=") {
+        if (attributeName === "id") {
+          return tag.slice(0, i) + '="' + desired + '"' + tag.slice(i);
+        }
+        continue;
+      }
+      i += 1;
+      while (i < tag.length - 1 && /\s/.test(tag.charAt(i))) { i += 1; }
+      var quote = tag.charAt(i);
+      if (quote === '"' || quote === "'") {
+        var valueStart = i + 1;
+        var valueEnd = tag.indexOf(quote, valueStart);
+        if (valueEnd < 0) { return tag; }
+        if (attributeName === "id") {
+          return tag.slice(0, valueStart) + desired + tag.slice(valueEnd);
+        }
+        i = valueEnd + 1;
+      } else {
+        var unquotedStart = i;
+        while (i < tag.length - 1 && !/[\s>]/.test(tag.charAt(i))) { i += 1; }
+        if (attributeName === "id") {
+          return tag.slice(0, unquotedStart) + desired + tag.slice(i);
+        }
+      }
+    }
+    var insertion = tag.length - 1;
+    if (tag.charAt(insertion - 1) === "/") { insertion -= 1; }
+    return tag.slice(0, insertion) + ' id="' + desired + '"' + tag.slice(insertion);
+  }
+
   function normalizeHeadingIDsInHTML(html) {
     var ids = headingIDsForHTML(html);
     if (ids.length === 0) { return html; }
@@ -525,24 +580,64 @@
     var cursor = 0;
     var search = 0;
     var headingIndex = 0;
-    var opening = /<h[1-6](?=\s|>)/ig;
-    while (headingIndex < ids.length) {
-      opening.lastIndex = search;
-      var match = opening.exec(html);
-      if (!match) { return html; }
-      var end = headingOpeningTagEnd(html, match.index);
+    var rawText = "";
+    while (search < html.length && headingIndex < ids.length) {
+      if (rawText) {
+        var rawClosing = new RegExp("</" + rawText + "(?=\\s|>)", "ig");
+        rawClosing.lastIndex = search;
+        var close = rawClosing.exec(html);
+        if (!close) { return html; }
+        var rawEnd = headingOpeningTagEnd(html, close.index);
+        if (rawEnd < 0) { return html; }
+        search = rawEnd + 1;
+        rawText = "";
+        continue;
+      }
+
+      var start = html.indexOf("<", search);
+      if (start < 0) { break; }
+      if (html.slice(start, start + 4) === "<!--") {
+        var commentEnd = html.indexOf("-->", start + 4);
+        if (commentEnd < 0) { return html; }
+        search = commentEnd + 3;
+        continue;
+      }
+      if (html.charAt(start + 1) === "!" || html.charAt(start + 1) === "?") {
+        var declarationEnd = headingOpeningTagEnd(html, start);
+        if (declarationEnd < 0) { return html; }
+        search = declarationEnd + 1;
+        continue;
+      }
+      if (html.charAt(start + 1) === "/") {
+        var closingEnd = headingOpeningTagEnd(html, start);
+        if (closingEnd < 0) { return html; }
+        search = closingEnd + 1;
+        continue;
+      }
+
+      var nameStart = start + 1;
+      var nameEnd = nameStart;
+      while (nameEnd < html.length && /[A-Za-z0-9]/.test(html.charAt(nameEnd))) { nameEnd += 1; }
+      if (nameEnd === nameStart) {
+        search = start + 1;
+        continue;
+      }
+      var tagName = html.slice(nameStart, nameEnd).toLowerCase();
+      var end = headingOpeningTagEnd(html, start);
       if (end < 0) { return html; }
-      var tag = html.slice(match.index, end + 1);
-      var idAttribute = /\s+id\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/i;
-      var desired = ' id="' + escapeHeadingID(ids[headingIndex]) + '"';
-      var normalized = idAttribute.test(tag)
-        ? tag.replace(idAttribute, desired)
-        : tag.slice(0, -1) + desired + ">";
-      output += html.slice(cursor, match.index) + normalized;
-      cursor = end + 1;
+      var tag = html.slice(start, end + 1);
+      if ((tagName === "script" || tagName === "style" || tagName === "textarea" || tagName === "title") &&
+          !/\/\s*>$/.test(tag)) {
+        rawText = tagName;
+      }
+      if (/^h[1-6]$/.test(tagName)) {
+        output += html.slice(cursor, start) + replaceHeadingIDInTag(tag, ids[headingIndex]);
+        cursor = end + 1;
+        headingIndex += 1;
+      }
       search = end + 1;
-      headingIndex += 1;
     }
+    if (headingIndex !== ids.length) { return html; }
     return output + html.slice(cursor);
   }
 
@@ -580,13 +675,17 @@
   }
 
   function scrollToAnchorTarget(fragment, root) {
+    if (window.__ouroCaptureAnchorDiagnostics) { post("linkphase", { name: "anchor: lookup start " + fragment }); }
     if (!root) { return false; }
     var targetID = decodedFragment(fragment);
     if (!targetID) { return false; }
 
-    var heading = headingAnchorMap(root)[targetID];
+    var anchors = headingAnchorMap(root);
+    if (window.__ouroCaptureAnchorDiagnostics) { post("linkphase", { name: "anchor: map complete " + fragment }); }
+    var heading = anchors[targetID];
     if (heading) {
       scrollElementWithinRoot(heading, root);
+      if (window.__ouroCaptureAnchorDiagnostics) { post("linkphase", { name: "anchor: heading scrolled " + fragment }); }
       return true;
     }
 
@@ -1415,13 +1514,13 @@
   window.__ouroAnchorTest = {
     slugs: function (texts) {
       var counts = Object.create(null);
+      var used = Object.create(null);
       return (texts || []).map(function (text) {
         var base = headingBaseSlug(text);
-        var occurrence = counts[base] || 0;
-        counts[base] = occurrence + 1;
-        return occurrence === 0 ? base : base + "-" + occurrence;
+        return nextUniqueHeadingSlug(base, counts, used);
       });
-    }
+    },
+    normalizeHTML: normalizeHeadingIDsInHTML
   };
 
   window.ouro = {

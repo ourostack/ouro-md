@@ -301,6 +301,7 @@ final class AppModel: ObservableObject {
     // MARK: - File operations
 
     func loadWelcome() {
+        pendingAnchorFragment = nil
         currentURL = nil
         lastLoadedContent = nil
         deletedOnDisk = false
@@ -314,6 +315,7 @@ final class AppModel: ObservableObject {
     func newDocument() {
         confirmDiscard { [weak self] in
             guard let self else { return }
+            self.pendingAnchorFragment = nil
             self.currentURL = nil
             self.lastLoadedContent = nil
             self.stopWatching()
@@ -422,6 +424,7 @@ final class AppModel: ObservableObject {
                 )
                 return
             }
+            self.pendingAnchorFragment = nil
             self.currentURL = url
             self.lastLoadedContent = text
             self.pushMarkdown(text)
@@ -456,6 +459,7 @@ final class AppModel: ObservableObject {
             )
             return false
         }
+        pendingAnchorFragment = nil
         currentURL = url
         lastLoadedContent = text
         pushMarkdown(text)

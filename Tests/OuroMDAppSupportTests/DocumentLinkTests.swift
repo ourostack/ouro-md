@@ -31,6 +31,10 @@ final class DocumentLinkTests: XCTestCase {
             DocumentLinkResolver.resolve("next.md#%ZZ", relativeTo: current),
             .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/notes/next.md"), fragment: "%ZZ")
         )
+        XCTAssertEqual(
+            DocumentLinkResolver.resolve("next.md#target%252Dheading", relativeTo: current),
+            .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/notes/next.md"), fragment: "target%252Dheading")
+        )
     }
 
     func testAbsoluteAndFileMarkdownTargetsAreSupported() {
@@ -51,6 +55,10 @@ final class DocumentLinkTests: XCTestCase {
     func testAnchorsAndUnsupportedTargetsDoNotBecomeFiles() {
         XCTAssertEqual(DocumentLinkResolver.resolve("#decisions", relativeTo: current), .inDocumentAnchor("decisions"))
         XCTAssertEqual(DocumentLinkResolver.resolve("#%ZZ", relativeTo: current), .inDocumentAnchor("%ZZ"))
+        XCTAssertEqual(
+            DocumentLinkResolver.resolve("#target%252Dheading", relativeTo: current),
+            .inDocumentAnchor("target%252Dheading")
+        )
         XCTAssertEqual(DocumentLinkResolver.resolve("", relativeTo: current), .unsupported)
         XCTAssertEqual(DocumentLinkResolver.resolve("  ", relativeTo: current), .unsupported)
         XCTAssertEqual(DocumentLinkResolver.resolve("<>", relativeTo: current), .unsupported)

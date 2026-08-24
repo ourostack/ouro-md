@@ -2,14 +2,21 @@ import Foundation
 
 public struct HeadingAnchorSlugger {
     private var occurrences: [String: Int] = [:]
+    private var used: Set<String> = []
 
     public init() {}
 
     public mutating func slug(_ text: String) -> String {
         let base = Self.baseSlug(text)
-        let occurrence = occurrences[base, default: 0]
+        var occurrence = occurrences[base, default: 0]
+        var candidate = occurrence == 0 ? base : "\(base)-\(occurrence)"
+        while used.contains(candidate) {
+            occurrence += 1
+            candidate = "\(base)-\(occurrence)"
+        }
         occurrences[base] = occurrence + 1
-        return occurrence == 0 ? base : "\(base)-\(occurrence)"
+        used.insert(candidate)
+        return candidate
     }
 
     public static func baseSlug(_ text: String) -> String {
@@ -19,10 +26,14 @@ public struct HeadingAnchorSlugger {
             .precomposedStringWithCanonicalMapping
         var out = ""
         for scalar in normalized.unicodeScalars {
-            if scalar.properties.isAlphabetic || scalar.properties.numericType != nil {
+            switch scalar.properties.generalCategory {
+            case .uppercaseLetter, .lowercaseLetter, .titlecaseLetter, .modifierLetter, .otherLetter,
+                 .decimalNumber, .letterNumber, .otherNumber:
                 out.unicodeScalars.append(scalar)
-            } else if scalar == " " || scalar == "-" || scalar == "_" {
-                out.append("-")
+            default:
+                if scalar == " " || scalar == "-" || scalar == "_" {
+                    out.append("-")
+                }
             }
         }
         while out.contains("--") {

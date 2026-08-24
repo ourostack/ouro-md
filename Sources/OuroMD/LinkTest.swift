@@ -88,6 +88,8 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
             startScriptIfReady()
         case "openURL":
             if let url = body["url"] as? String { openedURLs.append(url) }
+        case "linkphase":
+            lastPhase = body["name"] as? String ?? "unnamed link phase"
         case "linkprobe":
             handleProbe(body)
         default:
@@ -160,7 +162,7 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         } else {
             checks = [
                 ("linktest script completed", scriptError ?? "ok", scriptError == nil),
-                ("IR resolved reference nodes rendered", "\(body["irReferenceCount"] ?? "nil")", (body["irReferenceCount"] as? Int ?? 0) >= 7),
+                ("IR resolved reference nodes rendered", "\(body["irReferenceCount"] ?? "nil")", (body["irReferenceCount"] as? Int ?? 0) >= 9),
                 ("IR unresolved reference stays source text", "\(body["irUnresolvedPlain"] ?? "nil")", body["irUnresolvedPlain"] as? Bool ?? false),
                 ("IR focused reference markers hidden", "\(body["irMarkersHidden"] ?? "nil")", body["irMarkersHidden"] as? Bool ?? false),
                 ("IR reference has link affordance", "\(body["irLinkAffordance"] ?? "nil")", body["irLinkAffordance"] as? Bool ?? false),
@@ -169,7 +171,10 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
                 ("collapsed reference resolves", "opened=\(openedURLs)", openedURLs.contains("https://example.com/collapsed")),
                 ("shortcut reference resolves", "opened=\(openedURLs)", openedURLs.contains("https://example.com/shortcut")),
                 ("normalized label resolves", "opened=\(openedURLs)", openedURLs.contains("https://example.com/normalized")),
+                ("ASCII-space label resolves", "opened=\(openedURLs)", openedURLs.contains("https://example.com/ascii-space")),
+                ("NBSP label remains distinct", "opened=\(openedURLs)", openedURLs.contains("https://example.com/nbsp")),
                 ("IR fragment scrolls", "\(body["irAnchorScrolled"] ?? "nil")", body["irAnchorScrolled"] as? Bool ?? false),
+                ("IR linked heading uses semantic slug", "\(body["irLinkedHeadingAnchor"] ?? "nil")", body["irLinkedHeadingAnchor"] as? Bool ?? false),
                 ("SV source remains literal", "\(body["svSourceLiteral"] ?? "nil")", body["svSourceLiteral"] as? Bool ?? false),
                 ("SV preview resolves reference", "\(body["svReferenceRendered"] ?? "nil")", body["svReferenceRendered"] as? Bool ?? false),
                 ("SV fragment scrolls", "\(body["svAnchorScrolled"] ?? "nil")", body["svAnchorScrolled"] as? Bool ?? false),
@@ -178,6 +183,7 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
                 ("SV app export uses shared heading IDs", "\(body["svExportAnchors"] ?? "nil")", body["svExportAnchors"] as? Bool ?? false),
                 ("app export preserves non-heading IDs", "\(body["nonHeadingIDsStable"] ?? "nil")", body["nonHeadingIDsStable"] as? Bool ?? false),
                 ("JavaScript heading slugger matches shared contract", "\(body["anchorContractMatches"] ?? "nil")", body["anchorContractMatches"] as? Bool ?? false),
+                ("HTML heading scanner preserves raw text and quoted attributes", "\(body["htmlScannerSafe"] ?? "nil")", body["htmlScannerSafe"] as? Bool ?? false),
             ]
         }
 
@@ -226,6 +232,9 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
           function post(payload) {
             window.webkit.messageHandlers.ouro.postMessage(Object.assign({ type: "linkprobe" }, payload));
           }
+          function phase(name) {
+            window.webkit.messageHandlers.ouro.postMessage({ type: "linkphase", name: name });
+          }
           function sleep(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
           async function waitFor(predicate, label) {
             for (var i = 0; i < 120; i++) {
@@ -269,11 +278,16 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
               .sort();
           }
           try {
+            phase("extended: loading IR");
+            window.__ouroCaptureAnchorDiagnostics = true;
             var markdown = \(js(markdown));
             var anchorContract = JSON.parse(\(js(anchorContractJSON ?? "{\"cases\":[]}")));
             var expectedAnchorIDs = anchorContract.cases.map(function (item) { return item.expected; });
+            var scannerSample = '<script>const sample = "<h1>";</script><!-- <h2> --><h1 data-note=" id=\\'sentinel\\'">Raw Heading</h1>';
+            var scannerNormalized = window.__ouroAnchorTest.normalizeHTML(scannerSample);
             var originalURL = location.href;
             await loadMode("ir", markdown);
+            phase("extended: IR loaded");
 
             var refs = Array.from(document.querySelectorAll('#editor span[data-type="link-ref"]'));
             var unresolved = (document.querySelector("#editor")?.innerText || "").indexOf("[Missing][not-defined]") !== -1;
@@ -316,8 +330,18 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
             if (refs[5]) {
               targetFor(refs[5]).dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, metaKey: true }));
             }
+            await sleep(800);
+            if (refs[6]) {
+              targetFor(refs[6]).dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, metaKey: true }));
+            }
+            await sleep(800);
+            if (refs[7]) {
+              targetFor(refs[7]).dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, metaKey: true }));
+            }
             await sleep(300);
+            phase("extended: reference gestures complete");
 
+            phase("extended: locating IR anchor");
             var inlineAnchors = Array.from(document.querySelectorAll('#editor span[data-type="a"]'));
             var jump = inlineAnchors.find(function (node) {
               return (node.textContent || "").indexOf("#target-heading") !== -1;
@@ -325,21 +349,33 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
             var heading = Array.from(document.querySelectorAll("#editor h2")).find(function (node) {
               return (node.textContent || "").indexOf("Target Heading") !== -1;
             });
+            phase("extended: IR anchor located");
             if (heading) { heading.style.marginTop = "1600px"; }
             window.scrollTo(0, 0);
             await sleep(50);
+            phase("extended: IR anchor layout ready");
             var irBefore = heading ? heading.getBoundingClientRect().top : 0;
             if (jump) {
+              phase("extended: dispatching IR anchor click");
               targetFor(jump).dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
             }
             await sleep(350);
+            phase("extended: IR inline anchor complete");
             var irAfter = heading ? heading.getBoundingClientRect().top : 0;
+            phase("extended: IR linked anchor starting");
+            var irLinkedHeadingAnchor = window.ouro.scrollToAnchor("docs-heading");
+            phase("extended: IR linked anchor complete");
 
-            var irHTML = window.ouro.getHTML();
+            phase("extended: IR raw export starting");
+            var irRawHTML = window.__ouroEditor.getHTML();
+            phase("extended: IR raw export complete");
+            var irHTML = window.__ouroAnchorTest.normalizeHTML(irRawHTML);
+            phase("extended: IR normalization complete");
             var rawValue = window.__ouroEditor.getValue();
             var bridgeValue = window.ouro.getValue();
 
             await loadMode("sv", markdown);
+            phase("extended: SV loaded");
             var sourcePane = document.querySelector("#editor .vditor-sv");
             var previewPane = document.querySelector("#editor .vditor-preview");
             var previewReference = previewPane && previewPane.querySelector('a[href="https://example.com/external"]');
@@ -356,14 +392,20 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
             }
             await sleep(350);
             var svAfter = previewHeading ? previewHeading.getBoundingClientRect().top : 0;
-            var svHTML = window.ouro.getHTML();
+            phase("extended: SV raw export starting");
+            var svRawHTML = window.__ouroEditor.getHTML();
+            phase("extended: SV raw export complete");
+            var svHTML = window.__ouroAnchorTest.normalizeHTML(svRawHTML);
+            phase("extended: SV normalization complete");
 
+            phase("extended: posting result");
             post({
               irReferenceCount: refs.length,
               irUnresolvedPlain: unresolved,
               irMarkersHidden: markersHidden,
               irLinkAffordance: linkAffordance,
               irAnchorScrolled: !!heading && irAfter < irBefore - 100,
+              irLinkedHeadingAnchor: irLinkedHeadingAnchor,
               svSourceLiteral: !!sourcePane && (sourcePane.innerText || "").indexOf("[External full][external]") !== -1,
               svReferenceRendered: !!previewReference,
               svAnchorScrolled: !!previewHeading && svAfter < svBefore - 100,
@@ -380,6 +422,9 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
               anchorContractMatches: !!window.__ouroAnchorTest &&
                 JSON.stringify(window.__ouroAnchorTest.slugs(anchorContract.cases.map(function (item) { return item.text; }))) ===
                 JSON.stringify(anchorContract.cases.map(function (item) { return item.expected; })),
+              htmlScannerSafe: scannerNormalized.indexOf('<script>const sample = "<h1>";</script>') !== -1 &&
+                scannerNormalized.indexOf('<!-- <h2> -->') !== -1 &&
+                scannerNormalized.indexOf('<h1 data-note=" id=\\'sentinel\\'" id="raw-heading">') !== -1,
               irHTML: irHTML,
               svHTML: svHTML
             });

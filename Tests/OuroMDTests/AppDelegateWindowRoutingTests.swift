@@ -107,6 +107,18 @@ final class AppDelegateWindowRoutingTests: XCTestCase {
         XCTAssertEqual(linkedBridge.anchors, ["linked-section", "second-section"])
     }
 
+    func testPendingAnchorIsClearedWhenDocumentIdentityChanges() {
+        let model = AppModel()
+        model.requestAnchorScroll("stale-section")
+        model.loadWelcome()
+        let bridge = RecordingEditorBridge(markdown: "")
+        model.bridge = bridge
+
+        model.editorDidBecomeReady()
+
+        XCTAssertTrue(bridge.anchors.isEmpty)
+    }
+
     func testLinkedMarkdownRequestsSandboxAccessBeforeOpening() throws {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("ouro-linked-sandbox-\(UUID().uuidString)", isDirectory: true)

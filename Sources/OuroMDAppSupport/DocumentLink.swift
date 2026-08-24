@@ -26,8 +26,7 @@ public enum DocumentLinkResolver {
         guard !target.isEmpty else { return .unsupported }
 
         if target.hasPrefix("#") {
-            let fragment = String(target.dropFirst())
-            return .inDocumentAnchor(fragment.removingPercentEncoding ?? fragment)
+            return .inDocumentAnchor(String(target.dropFirst()))
         }
 
         if let parsed = URL(string: target), let scheme = parsed.scheme?.lowercased() {
@@ -39,7 +38,7 @@ public enum DocumentLinkResolver {
                 guard isMarkdown(fileURL) else { return .unsupported }
                 return .markdownFile(
                     fileURL.standardizedFileURL,
-                    fragment: parsed.fragment?.removingPercentEncoding
+                    fragment: parsed.fragment
                 )
             }
             return .unsupported
@@ -56,7 +55,7 @@ public enum DocumentLinkResolver {
             .split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false)[0]
         guard !rawPath.isEmpty else { return .unsupported }
         let rawFragment = fragmentParts.count > 1 ? String(fragmentParts[1]) : nil
-        let fragment = rawFragment.flatMap { $0.removingPercentEncoding ?? $0 }
+        let fragment = rawFragment
 
         let path = String(rawPath).removingPercentEncoding ?? String(rawPath)
         let resolved: URL
