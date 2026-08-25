@@ -17,7 +17,7 @@
 - The release contains ZIP, DMG, and manifest assets; the workflow verified the published release, hosted installer, and older-release-to-current live update path.
 - A fresh download of the public ZIP passed `scripts/verify-packaged-app.sh`. The packaged IR fixture resolved reference links and scrolled fragments; the Source Code fixture stayed literal, rendered references in preview, and scrolled heading and footnote fragments.
 - The public hosted installer downloaded, checksum-verified, installed, code-signature-verified, and policy-scanned Ouro MD 0.9.85 in an isolated destination.
-- The feature PR, remote branch, local branch, disposable worktree, browser artifacts, release-smoke directory, and hosted-installer directory were removed. The canonical checkout was clean before this state-only update.
+- The remote branch, local branch, disposable worktree, browser artifacts, release-smoke directory, and hosted-installer directory were removed. The canonical checkout was clean before this state-only update.
 
 ## Continuation Scan
 
@@ -30,4 +30,4 @@
 
 ## Stop Condition
 
-Hard no: no ready work remains in the reference-link and anchor mandate. Remaining non-terminal records belong to separate, explicitly out-of-scope mandates.
+No ready work remains in the reference-link and anchor mandate. Remaining non-terminal records belong to separate, explicitly out-of-scope mandates.
