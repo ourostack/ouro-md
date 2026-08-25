@@ -36,6 +36,10 @@ final class ThemeAccessibilityTests: XCTestCase {
             XCTAssertTrue(css.contains(".vditor-ir__link"), "\(id) missing inline-link theme selector")
             XCTAssertTrue(css.contains(".vditor-ir__node[data-type=\"link-ref\"]"), "\(id) missing reference-link theme selector")
             XCTAssertTrue(css.contains("text-decoration:underline"), "\(id) links must retain an affordance")
+            XCTAssertTrue(css.contains(".vditor-reset a{"), "\(id) missing ordinary-link theme selector")
+            XCTAssertTrue(css.contains(".vditor-reset a:hover{text-decoration:underline;}"), "\(id) missing ordinary-link hover affordance")
+            XCTAssertTrue(css.contains(".vditor-reset a{color:"), "\(id) missing ordinary-link accent color")
+            XCTAssertTrue(css.contains("text-decoration:none;"), "\(id) ordinary links should not be permanently underlined")
         }
     }
 

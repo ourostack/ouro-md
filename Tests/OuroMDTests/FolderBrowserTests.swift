@@ -157,12 +157,15 @@ final class FolderBrowserTests: XCTestCase {
             withDestinationURL: large
         )
 
+        let defaultSnapshot = FolderScanner.snapshot(at: large, sort: .name)
         let start = Date()
         let snapshot = FolderScanner.snapshot(at: large, sort: .name, fileLimit: 64)
         let elapsed = Date().timeIntervalSince(start)
         let names = Set(snapshot.flat.map(\.name))
 
         XCTAssertEqual(FolderScanner.maxFiles, 5_000)
+        XCTAssertEqual(defaultSnapshot.flat.count, 80)
+        XCTAssertFalse(defaultSnapshot.isTruncated)
         XCTAssertEqual(snapshot.flat.count, 64, "scanner should stop at its configured safety budget")
         XCTAssertTrue(snapshot.isTruncated, "scanner should report that additional openable files were omitted")
         XCTAssertLessThan(elapsed, 10, "budgeted scan should stay responsive in a large tree")

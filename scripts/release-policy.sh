@@ -233,6 +233,10 @@ def file_bytes(path):
                 stderr=subprocess.DEVNULL,
             )
         except (OSError, subprocess.CalledProcessError):
+            print(
+                f"app store waiver policy source unavailable: {policy_source_commit}:{path}",
+                file=sys.stderr,
+            )
             reject()
     return Path(path).read_bytes()
 
@@ -899,6 +903,17 @@ EOF
     GITHUB_REF="refs/pull/103/merge" \
     app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" "$selftest_now" >/dev/null \
     || fail "app store resubmission selftest did not accept the exact PR #103 waiver"
+
+  local unavailable_output
+  if unavailable_output="$(OURO_APP_STORE_WAIVER_SOURCE_COMMIT="missing-baseline" GITHUB_REPOSITORY="ourostack/ouro-md" \
+    GITHUB_EVENT_NAME="pull_request" \
+    GITHUB_HEAD_REF="worker/app-store-spam-rejection" \
+    GITHUB_REF="refs/pull/103/merge" \
+    app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" "$selftest_now" 2>&1)"; then
+    fail "app store resubmission selftest accepted an unavailable baseline"
+  fi
+  printf '%s' "$unavailable_output" | grep -q "app store waiver policy source unavailable: missing-baseline:" \
+    || fail "app store resubmission selftest did not distinguish an unavailable baseline"
 
   OURO_APP_STORE_WAIVER_SOURCE_COMMIT="$waiver_source_commit" GITHUB_REPOSITORY="ourostack/ouro-md" \
     GITHUB_EVENT_NAME="push" \
