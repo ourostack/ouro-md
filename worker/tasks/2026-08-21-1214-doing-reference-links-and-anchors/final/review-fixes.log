@@ -27,3 +27,6 @@ Convergence
 - Final cold review reported no significant issues in the amended surfaces.
 - Focused Swift regression tests passed.
 - Independent IR and SV WKWebView contracts passed.
+- Filesystem budget fixtures now exercise the same production limits through deterministic small-budget seams instead of thousands of endpoint-scanned writes.
+- The rich render probe now waits for all core renderer features rather than sampling math at a fixed delay.
+- The terminal `scripts/pr-preflight.sh` run passed and is recorded in `pr-preflight.log`.

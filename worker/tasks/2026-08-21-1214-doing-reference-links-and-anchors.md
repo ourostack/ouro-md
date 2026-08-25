@@ -1,6 +1,6 @@
 # Doing: Reference-style link rendering and anchor navigation
 
-**Status**: READY_FOR_EXECUTION
+**Status**: done
 **Execution Mode**: direct
 **Created**: 2026-08-21 12:30
 **Planning**: ./2026-08-21-1214-planning-reference-links-and-anchors.md
@@ -19,28 +19,28 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - None.
 
 ## Completion Criteria
-- [ ] Full, collapsed, and shortcut reference-style links show only their rendered label in IR mode, with no adjacent reference identifier or syntax markers while focused.
-- [ ] External reference-style links preserve Command-click browser opening, and relative Markdown reference-style links preserve normal-click in-app opening.
-- [ ] Full, collapsed, and shortcut reference-style links resolve consistently in IR, SV rendered preview, `window.ouro.getHTML()` HTML/PDF export input, and standalone `--render` output, while the SV source pane stays literal and inert.
-- [ ] Same-document inline and reference-style fragment links scroll to the intended heading in IR and SV rendered preview.
-- [ ] Existing exact-ID anchors, including SV-preview/export footnote references and back-references, continue to navigate; IR's source-like footnote spans remain unchanged.
-- [ ] `other.md#fragment` opens or activates the target document window and scrolls after that editor is ready.
-- [ ] Heading anchors use the same normalization and duplicate suffixes in live-editor navigation and HTML/PDF output, including percent-encoded fragments.
-- [ ] App HTML/PDF export input from `bridge.getHTML()` contains heading IDs under the shared anchor contract; this is tested independently from the pure `MarkdownRenderer` export harness.
-- [ ] App-export heading-ID reconciliation changes only heading IDs and leaves Vditor/Lute footnote and back-reference IDs byte-unchanged.
-- [ ] Source Code mode shows the original reference syntax, and the report's canonical full-reference form passes a strict raw no-edit round trip byte-for-byte.
-- [ ] Editing nearby prose does not convert unrelated reference-style links to inline syntax or change their destinations; known Lute normalization of noncanonical reference variants is documented rather than silently attributed to this fix.
-- [ ] Undefined or malformed reference labels remain source text and do not become clickable or lose syntax markers.
-- [ ] Existing inline external, bare autolink, and relative Markdown link behavior remains unchanged.
-- [ ] Fragment lookup is safe for digit-leading and punctuation-bearing anchors, and document-controlled fragments cross the Swift-to-JavaScript boundary only through the existing JSON-string escaping helper.
-- [ ] Fragment activation is handled exactly once, suppresses WebKit's default hash navigation, and leaves the bundled editor document URL unchanged.
-- [ ] The headless link harness fails before the fix and passes after the fix for both reported defects.
-- [ ] The shared `scripts/run-native-scenarios.sh` gate runs the expanded link harness and a reference-style round-trip fixture through its byte-for-byte `cmp`.
-- [ ] Live visual evidence shows the reference identifier absent and anchor navigation landing on the intended heading; the visual absurdity ledger is closed.
-- [ ] `scripts/bump-version.sh 0.9.85` updates release metadata and highlights, `scripts/verify-release-version.sh` passes, and PR freshness accepts the release-relevant diff.
-- [ ] 100% test coverage on all new code.
-- [ ] All tests pass.
-- [ ] No warnings.
+- [x] Full, collapsed, and shortcut reference-style links show only their rendered label in IR mode, with no adjacent reference identifier or syntax markers while focused.
+- [x] External reference-style links preserve Command-click browser opening, and relative Markdown reference-style links preserve normal-click in-app opening.
+- [x] Full, collapsed, and shortcut reference-style links resolve consistently in IR, SV rendered preview, `window.ouro.getHTML()` HTML/PDF export input, and standalone `--render` output, while the SV source pane stays literal and inert.
+- [x] Same-document inline and reference-style fragment links scroll to the intended heading in IR and SV rendered preview.
+- [x] Existing exact-ID anchors, including SV-preview/export footnote references and back-references, continue to navigate; IR's source-like footnote spans remain unchanged.
+- [x] `other.md#fragment` opens or activates the target document window and scrolls after that editor is ready.
+- [x] Heading anchors use the same normalization and duplicate suffixes in live-editor navigation and HTML/PDF output, including percent-encoded fragments.
+- [x] App HTML/PDF export input from `bridge.getHTML()` contains heading IDs under the shared anchor contract; this is tested independently from the pure `MarkdownRenderer` export harness.
+- [x] App-export heading-ID reconciliation changes only heading IDs and leaves Vditor/Lute footnote and back-reference IDs byte-unchanged.
+- [x] Source Code mode shows the original reference syntax, and the report's canonical full-reference form passes a strict raw no-edit round trip byte-for-byte.
+- [x] Editing nearby prose does not convert unrelated reference-style links to inline syntax or change their destinations; known Lute normalization of noncanonical reference variants is documented rather than silently attributed to this fix.
+- [x] Undefined or malformed reference labels remain source text and do not become clickable or lose syntax markers.
+- [x] Existing inline external, bare autolink, and relative Markdown link behavior remains unchanged.
+- [x] Fragment lookup is safe for digit-leading and punctuation-bearing anchors, and document-controlled fragments cross the Swift-to-JavaScript boundary only through the existing JSON-string escaping helper.
+- [x] Fragment activation is handled exactly once, suppresses WebKit's default hash navigation, and leaves the bundled editor document URL unchanged.
+- [x] The headless link harness fails before the fix and passes after the fix for both reported defects.
+- [x] The shared `scripts/run-native-scenarios.sh` gate runs the expanded link harness and a reference-style round-trip fixture through its byte-for-byte `cmp`.
+- [x] Live visual evidence shows the reference identifier absent and anchor navigation landing on the intended heading; the visual absurdity ledger is closed.
+- [x] `scripts/bump-version.sh 0.9.85` updates release metadata and highlights, `scripts/verify-release-version.sh` passes, and PR freshness accepts the release-relevant diff.
+- [x] 100% test coverage on all new code.
+- [x] All tests pass.
+- [x] No warnings.
 
 ## Code Coverage Requirements
 **MANDATORY: 100% coverage on all new code.**
@@ -159,7 +159,7 @@ Make valid CommonMark reference-style links read and behave like links in every 
 **Output**: Version `0.9.85` release metadata and `./2026-08-21-1214-doing-reference-links-and-anchors/unit4c/release-version.log`.
 **Acceptance**: All three version surfaces agree on `0.9.85`; positioning, request-plan, apply-plan, and package-readiness tests are green; every value cross-validated against a live plan uses `0.9.85`, genuinely isolated synthetic manifests stay at `0.9.84`, and downstream negative apply-plan assertions still reach their intended validation layer; highlights and release checks pass.
 
-### ⬜ Unit 4d: Integrated regression and preflight
+### ✅ Unit 4d: Integrated regression and preflight
 **What**: Run targeted Swift tests, `swift build`, the complete shared native scenarios and visual QA, `./scripts/check-shell-boundary.sh --selftest`, `./scripts/check-shell-boundary.sh`, `./scripts/check-vditor-vendor.sh`, coverage, and `./scripts/pr-preflight.sh`. Inspect the full branch diff for vendor-file changes, unrelated files, and source-format churn.
 **Output**: Green local CI-parity evidence under `./2026-08-21-1214-doing-reference-links-and-anchors/final/`, with final screenshots and command logs.
 **Acceptance**: All completion criteria are evidenced; vendor integrity confirms no files under `Sources/OuroMD/web/vditor/` changed; the full preflight passes with no warnings; the diff contains only the planned integration, tests, harness updates, shared fixtures, task artifacts, and required `0.9.85` changes in `Sources/OuroMDCore/OuroMDRelease.swift`, `README.md`, `distribution/apple-distribution.json`, `Tests/OuroMDTests/OuroMDAppStoreRequestPlanTests.swift`, and `Tests/OuroMDTests/OuroMDAppStoreApplyPlanTests.swift`.
@@ -200,4 +200,5 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - 2026-08-21 15:30 Ninth stranger-with-candy scrutiny converged with no issues.
 - 2026-08-24 11:36 Units 0 and 1a complete: captured baseline artifacts, split rich/strict fixtures, preserved ordinary round-trip behavior, and landed a real WebKit harness that fails on the missing reference/anchor contracts while legacy inline links stay green.
 - 2026-08-24 12:27 Units 1b-4c complete: reference links resolve without source rewriting, same/cross-document anchors and export IDs share one contract, fixture and release gates are wired, and visual QA passed after fixing source-preview scrolling and themed link affordances.
+- 2026-08-24 21:09 Unit 4d complete: cold review converged with no findings; the terminal preflight passed 354 tests, the 20-second XCTest budget, 100% support-target line/region coverage, all native scenarios, IR/SV reference and anchor contracts, visual QA, release policy, shell boundaries, and Vditor vendor integrity.
 - 2026-08-21 15:38 Tenth tinfoil-hat scrutiny converged with no issues; two consecutive adversarial framings are clean and the doing doc is ready for execution.

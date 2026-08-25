@@ -1,6 +1,6 @@
 # Planning: Reference-style link rendering and anchor navigation
 
-**Status**: approved
+**Status**: done
 **Created**: 2026-08-21 12:16
 
 ## Goal
@@ -36,28 +36,28 @@ Make valid CommonMark reference-style links read and behave like links in every 
 - Adding or exposing Vditor's internal WYSIWYG mode; Ouro MD ships IR and Source Code (`sv`) only.
 
 ## Completion Criteria
-- [ ] Full, collapsed, and shortcut reference-style links show only their rendered label in IR mode, with no adjacent reference identifier or syntax markers while focused.
-- [ ] External reference-style links preserve Command-click browser opening, and relative Markdown reference-style links preserve normal-click in-app opening.
-- [ ] Full, collapsed, and shortcut reference-style links resolve consistently in IR, SV rendered preview, `window.ouro.getHTML()` HTML/PDF export input, and standalone `--render` output, while the SV source pane stays literal and inert.
-- [ ] Same-document inline and reference-style fragment links scroll to the intended heading in IR and SV rendered preview.
-- [ ] Existing exact-ID anchors, including SV-preview/export footnote references and back-references, continue to navigate; IR's source-like footnote spans remain unchanged.
-- [ ] `other.md#fragment` opens or activates the target document window and scrolls after that editor is ready.
-- [ ] Heading anchors use the same normalization and duplicate suffixes in live-editor navigation and HTML/PDF output, including percent-encoded fragments.
-- [ ] App HTML/PDF export input from `bridge.getHTML()` contains heading IDs under the shared anchor contract; this is tested independently from the pure `MarkdownRenderer` export harness.
-- [ ] App-export heading-ID reconciliation changes only heading IDs and leaves Vditor/Lute footnote and back-reference IDs byte-unchanged.
-- [ ] Source Code mode shows the original reference syntax, and the report's canonical full-reference form passes a strict raw no-edit round trip byte-for-byte.
-- [ ] Editing nearby prose does not convert unrelated reference-style links to inline syntax or change their destinations; known Lute normalization of noncanonical reference variants is documented rather than silently attributed to this fix.
-- [ ] Undefined or malformed reference labels remain source text and do not become clickable or lose syntax markers.
-- [ ] Existing inline external, bare autolink, and relative Markdown link behavior remains unchanged.
-- [ ] Fragment lookup is safe for digit-leading and punctuation-bearing anchors, and document-controlled fragments cross the Swift-to-JavaScript boundary only through the existing JSON-string escaping helper.
-- [ ] Fragment activation is handled exactly once, suppresses WebKit's default hash navigation, and leaves the bundled editor document URL unchanged.
-- [ ] The headless link harness fails before the fix and passes after the fix for both reported defects.
-- [ ] The shared `scripts/run-native-scenarios.sh` gate runs the expanded link harness and a reference-style round-trip fixture through its byte-for-byte `cmp`.
-- [ ] Live visual evidence shows the reference identifier absent and anchor navigation landing on the intended heading; the visual absurdity ledger is closed.
-- [ ] `scripts/bump-version.sh 0.9.85` updates release metadata and highlights, `scripts/verify-release-version.sh` passes, and PR freshness accepts the release-relevant diff.
-- [ ] 100% test coverage on all new code.
-- [ ] All tests pass.
-- [ ] No warnings.
+- [x] Full, collapsed, and shortcut reference-style links show only their rendered label in IR mode, with no adjacent reference identifier or syntax markers while focused.
+- [x] External reference-style links preserve Command-click browser opening, and relative Markdown reference-style links preserve normal-click in-app opening.
+- [x] Full, collapsed, and shortcut reference-style links resolve consistently in IR, SV rendered preview, `window.ouro.getHTML()` HTML/PDF export input, and standalone `--render` output, while the SV source pane stays literal and inert.
+- [x] Same-document inline and reference-style fragment links scroll to the intended heading in IR and SV rendered preview.
+- [x] Existing exact-ID anchors, including SV-preview/export footnote references and back-references, continue to navigate; IR's source-like footnote spans remain unchanged.
+- [x] `other.md#fragment` opens or activates the target document window and scrolls after that editor is ready.
+- [x] Heading anchors use the same normalization and duplicate suffixes in live-editor navigation and HTML/PDF output, including percent-encoded fragments.
+- [x] App HTML/PDF export input from `bridge.getHTML()` contains heading IDs under the shared anchor contract; this is tested independently from the pure `MarkdownRenderer` export harness.
+- [x] App-export heading-ID reconciliation changes only heading IDs and leaves Vditor/Lute footnote and back-reference IDs byte-unchanged.
+- [x] Source Code mode shows the original reference syntax, and the report's canonical full-reference form passes a strict raw no-edit round trip byte-for-byte.
+- [x] Editing nearby prose does not convert unrelated reference-style links to inline syntax or change their destinations; known Lute normalization of noncanonical reference variants is documented rather than silently attributed to this fix.
+- [x] Undefined or malformed reference labels remain source text and do not become clickable or lose syntax markers.
+- [x] Existing inline external, bare autolink, and relative Markdown link behavior remains unchanged.
+- [x] Fragment lookup is safe for digit-leading and punctuation-bearing anchors, and document-controlled fragments cross the Swift-to-JavaScript boundary only through the existing JSON-string escaping helper.
+- [x] Fragment activation is handled exactly once, suppresses WebKit's default hash navigation, and leaves the bundled editor document URL unchanged.
+- [x] The headless link harness fails before the fix and passes after the fix for both reported defects.
+- [x] The shared `scripts/run-native-scenarios.sh` gate runs the expanded link harness and a reference-style round-trip fixture through its byte-for-byte `cmp`.
+- [x] Live visual evidence shows the reference identifier absent and anchor navigation landing on the intended heading; the visual absurdity ledger is closed.
+- [x] `scripts/bump-version.sh 0.9.85` updates release metadata and highlights, `scripts/verify-release-version.sh` passes, and PR freshness accepts the release-relevant diff.
+- [x] 100% test coverage on all new code.
+- [x] All tests pass.
+- [x] No warnings.
 
 ## Code Coverage Requirements
 **MANDATORY: 100% coverage on all new code.**
@@ -126,3 +126,4 @@ The current bridge recognizes inline IR links (`data-type="a"`) but not referenc
 - 2026-08-21 15:08 Updated after cross-doc review: aligned planning with contract-first heading lookup and non-heading-only exact-ID fallback.
 - 2026-08-21 15:17 Updated after apply-plan review: included the live-manifest `targetVersion` assertion affected by the `0.9.85` bump.
 - 2026-08-21 15:22 Updated after preflight-helper review: included `livePreflight()` version fields because they are validated against a live-manifest-derived plan.
+- 2026-08-24 21:09 Completed after cold-review convergence and a fully green `scripts/pr-preflight.sh`, including 354 tests, 100% support-target line/region coverage, native IR/SV link contracts, visual QA, release policy, shell boundaries, and vendor integrity.
