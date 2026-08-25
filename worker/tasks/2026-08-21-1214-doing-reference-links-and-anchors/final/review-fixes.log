@@ -31,3 +31,5 @@ Convergence
 - The rich render probe now waits for all core renderer features rather than sampling math at a fixed delay.
 - The terminal `scripts/pr-preflight.sh` run passed and is recorded in `pr-preflight.log`.
 - GitHub's clean runner exposed a Swift type-check timeout in the expanded link-check arrays; the checks now append incrementally, and the release build plus full preflight pass at PR head `896bb04`.
+- Pre-merge sanity restored the pre-existing ordinary-link theme behavior, moved permanent underlining back to reference links only, clarified known Lute and clipboard limitations, and hardened CI fixture/readiness diagnostics.
+- The complete preflight passes after the sanity-review changes.
