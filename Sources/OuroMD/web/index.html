@@ -13,6 +13,14 @@
   @font-face { font-family: "Open Sans"; font-style: italic; font-weight: 700; font-display: swap; src: url("fonts/open-sans-700i.woff2") format("woff2"); }
   html, body { margin: 0; padding: 0; background: transparent; }
   body { min-height: 100vh; }
+  body.ouro-source-mode {
+    height: 100vh;
+    overflow: hidden;
+  }
+  body.ouro-source-mode #editor,
+  body.ouro-source-mode #editor > .vditor {
+    height: 100% !important;
+  }
   /* The native window owns the chrome; keep the editor toolbar hidden for a
      distraction-free, content-first surface. */
   .vditor-toolbar { display: none !important; }
@@ -61,6 +69,32 @@
     --ouro-alert-color: #cf222e;
     border-left-color: #cf222e !important;
   }
+  .vditor-ir .vditor-ir__node[data-type="link-ref"] {
+    color: var(--ir-bracket-color);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 0.12em;
+  }
+  .vditor-ir .vditor-ir__node--expand[data-type="link-ref"] .vditor-ir__marker {
+    display: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    width: 0 !important;
+  }
+  .vditor-preview__action {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .vditor-preview .vditor-reset h1,
+  .vditor-preview .vditor-reset h2,
+  .vditor-preview .vditor-reset h3,
+  .vditor-preview .vditor-reset h4,
+  .vditor-preview .vditor-reset h5,
+  .vditor-preview .vditor-reset h6 {
+    scroll-margin-top: 44px;
+  }
   /* The [!WARNING] marker sits on its own source line; in the reading view
      collapse that newline so the label sits directly above the body instead of
      leaving an empty line. Editing state keeps pre-wrap for source fidelity. */
@@ -72,6 +106,7 @@
 <body>
   <div id="editor"></div>
   <script src="vditor/dist/index.min.js"></script>
+  <script src="unicode-case-fold.js"></script>
   <script src="bridge.js"></script>
 </body>
 </html>

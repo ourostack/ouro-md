@@ -8,6 +8,10 @@
   var ready = false;
   var dirty = false;
   var qolInstalled = false;
+  var referenceLinkCache = null;
+  var referenceLinkError = "";
+  var footnoteReservationCache = null;
+  var anchorRequestGeneration = 0;
   var resetTableScrollPending = false;
   var resetTablesSeen = (typeof WeakSet === "function") ? new WeakSet() : null;
   var initialTheme = window.__ouroInitialTheme || {};
@@ -306,6 +310,8 @@
       // bundled editor HTML, which would point native code at the app resources
       // instead of beside the open Markdown document.
       if (a) { return a.getAttribute("href") || a.href || ""; }
+      var reference = target.closest('span[data-type="link-ref"]');
+      if (reference) { return resolveReferenceLinkURL(reference); }
       // IR (live-preview) mode renders a [text](url) / <url> link as a
       // <span data-type="a"> with no href — the URL is the text of its
       // .vditor-ir__marker--link child.
@@ -330,8 +336,18 @@
 
     var lastLinkOpenAt = 0;
     function maybeOpenEditorLink(e) {
+      if (window.__ouroCaptureAnchorDiagnostics) { post("linkphase", { name: "link: resolving " + e.type }); }
       var url = resolveEditorLinkURL(e.target, e);
+      if (window.__ouroCaptureAnchorDiagnostics) { post("linkphase", { name: "link: resolved " + (url || "<empty>") }); }
       if (!url) { return; }
+      if (url.charAt(0) === "#") {
+        if (e.type !== "click") { return; }
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        var root = e.target.closest(".vditor-reset") || renderedAnchorRoot();
+        scrollToAnchorTarget(url.slice(1), root);
+        return;
+      }
       var localMarkdown = isLocalMarkdownTarget(url);
       // External links keep the established ⌘-click gesture so ordinary clicks
       // remain available for editing. A rendered local Markdown link opens on a
@@ -346,14 +362,838 @@
       var now = Date.now();
       if (now - lastLinkOpenAt < 700) { return; }
       lastLinkOpenAt = now;
+      if (window.__ouroCaptureAnchorDiagnostics) { post("linkphase", { name: "link: posting " + url }); }
       post("openURL", { url: url });
     }
     document.addEventListener("mousedown", maybeOpenEditorLink, true);
     document.addEventListener("click", maybeOpenEditorLink, true);
   }
 
+  function invalidateReferenceLinkCache() {
+    referenceLinkCache = null;
+    referenceLinkError = "";
+    footnoteReservationCache = null;
+  }
+
+  function cancelAnchorRequests() {
+    anchorRequestGeneration += 1;
+  }
+
+  function semanticNodeText(node) {
+    var clone = node.cloneNode(true);
+    Array.from(clone.querySelectorAll(".vditor-ir__marker")).forEach(function (child) { child.remove(); });
+    Array.from(clone.querySelectorAll("img")).forEach(function (image) {
+      image.replaceWith(document.createTextNode(image.getAttribute("alt") || ""));
+    });
+    Array.from(clone.querySelectorAll("br")).forEach(function (lineBreak) {
+      lineBreak.replaceWith(document.createTextNode(" "));
+    });
+    return (clone.textContent || "").replace(/[ \t\r\n]+/g, " ").trim();
+  }
+
+  function normalizeReferenceDefinitionLabel(label) {
+    var normalized = (label || "")
+      .replace(/\\([\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E])/g, "$1")
+      .replace(/^[ \t\r\n]+|[ \t\r\n]+$/g, "")
+      .replace(/[ \t\r\n]+/g, " ");
+    return window.__ouroUnicodeCaseFold(normalized);
+  }
+
+  function parseReferenceDefinitionLine(line) {
+    var index = 0;
+    while (line.charAt(index) === " " && index < 4) { index += 1; }
+    if (index > 3 || line.charAt(index) === "\t" || line.charAt(index) !== "[") { return null; }
+    index += 1;
+    var rawLabel = "";
+    var closed = false;
+    while (index < line.length) {
+      var ch = line.charAt(index);
+      if (ch === "\\" && index + 1 < line.length) {
+        rawLabel += ch + line.charAt(index + 1);
+        index += 2;
+        continue;
+      }
+      if (ch === "]" && line.charAt(index + 1) === ":") {
+        index += 2;
+        closed = true;
+        break;
+      }
+      rawLabel += ch;
+      index += 1;
+    }
+    if (!closed) { return null; }
+    while (/[ \t\r\n]/.test(line.charAt(index))) { index += 1; }
+
+    var destination = "";
+    if (line.charAt(index) === "<") {
+      index += 1;
+      while (index < line.length) {
+        var angle = line.charAt(index);
+        if (angle === "\\" && index + 1 < line.length) {
+          destination += angle + line.charAt(index + 1);
+          index += 2;
+          continue;
+        }
+        if (angle === ">") { break; }
+        destination += angle;
+        index += 1;
+      }
+      if (line.charAt(index) !== ">") { return null; }
+    } else {
+      while (index < line.length && !/[ \t\r\n]/.test(line.charAt(index))) {
+        if (line.charAt(index) === "\\" && index + 1 < line.length) {
+          destination += line.charAt(index) + line.charAt(index + 1);
+          index += 2;
+        } else {
+          destination += line.charAt(index);
+          index += 1;
+        }
+      }
+    }
+
+    var label = normalizeReferenceDefinitionLabel(rawLabel);
+    destination = destination.replace(/\\([\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E])/g, "$1");
+    return label && destination ? { label: label, destination: destination } : null;
+  }
+
+  function referenceLabelFromDOM(node) {
+    var marker = Array.from(node.children).find(function (child) {
+      return child.classList && child.classList.contains("vditor-ir__marker--link");
+    });
+    if (marker) {
+      return normalizeReferenceDefinitionLabel(
+        (marker.textContent || "").replace(/^\[/, "").replace(/\]$/, "")
+      );
+    }
+    return normalizeReferenceDefinitionLabel(semanticNodeText(node));
+  }
+
+  function referenceLinkDestinations(root) {
+    var markdown = state.value;
+    var mode = vditor && vditor.vditor ? vditor.vditor.currentMode : state.mode;
+    if (referenceLinkCache &&
+        referenceLinkCache.markdown === markdown &&
+        referenceLinkCache.mode === mode &&
+        referenceLinkCache.root === root) {
+      return referenceLinkCache.destinations;
+    }
+
+    var destinations = [];
+    try {
+      var references = Array.from(root.querySelectorAll('span[data-type="link-ref"]'));
+      var definitions = Object.create(null);
+      Array.from(root.querySelectorAll('[data-type="link-ref-defs-block"]')).forEach(function (block) {
+        (block.textContent || "").split(/\r?\n/).forEach(function (line) {
+          var definition = parseReferenceDefinitionLine(line);
+          if (definition &&
+              !Object.prototype.hasOwnProperty.call(definitions, definition.label)) {
+            definitions[definition.label] = definition.destination;
+          }
+        });
+      });
+      destinations = references.map(function (reference) {
+        var label = referenceLabelFromDOM(reference);
+        return label && Object.prototype.hasOwnProperty.call(definitions, label)
+          ? definitions[label]
+          : "";
+      });
+    } catch (error) {
+      referenceLinkError = error
+        ? "name=" + (error.name || "") + " message=" + (error.message || "") + " stack=" + (error.stack || "")
+        : "unknown reference-link error";
+      destinations = [];
+    }
+    referenceLinkCache = { markdown: markdown, mode: mode, root: root, destinations: destinations };
+    return destinations;
+  }
+
+  function resolveReferenceLinkURL(node) {
+    var root = node.closest(".vditor-reset");
+    if (!root) { return ""; }
+    var references = Array.from(root.querySelectorAll('span[data-type="link-ref"]'));
+    var index = references.indexOf(node);
+    return index >= 0 ? (referenceLinkDestinations(root)[index] || "") : "";
+  }
+
+  function headingBaseSlug(text) {
+    var normalized = (text || "").normalize("NFC").toLowerCase().normalize("NFC");
+    var out = "";
+    for (var ch of normalized) {
+      if (/[\p{L}\p{N}]/u.test(ch)) {
+        out += ch;
+      } else if (ch === " " || ch === "-" || ch === "_") {
+        out += "-";
+      }
+    }
+    while (out.indexOf("--") !== -1) { out = out.replace(/--/g, "-"); }
+    out = out.replace(/^-+|-+$/g, "");
+    return out || "section";
+  }
+
+  function nextUniqueHeadingSlug(base, counts, used) {
+    var occurrence = counts[base] || 0;
+    var candidate = occurrence === 0 ? base : base + "-" + occurrence;
+    while (used[candidate]) {
+      occurrence += 1;
+      candidate = base + "-" + occurrence;
+    }
+    counts[base] = occurrence + 1;
+    used[candidate] = true;
+    return candidate;
+  }
+
+  function headingText(heading) {
+    var clone = heading.cloneNode(true);
+    var markers = clone.querySelectorAll(".vditor-ir__marker");
+    for (var i = 0; i < markers.length; i++) { markers[i].remove(); }
+    var images = clone.querySelectorAll("img");
+    for (var j = 0; j < images.length; j++) {
+      images[j].replaceWith(document.createTextNode(images[j].getAttribute("alt") || ""));
+    }
+    var breaks = clone.querySelectorAll("br");
+    for (var k = 0; k < breaks.length; k++) {
+      breaks[k].replaceWith(document.createTextNode(" "));
+    }
+    return (clone.textContent || "").replace(/\r\n?|\n/g, " ").trim();
+  }
+
+  function isHTMLHeading(node) {
+    return !!node &&
+      node.namespaceURI === "http://www.w3.org/1999/xhtml" &&
+      /^H[1-6]$/.test(node.tagName || "");
+  }
+
+  function reserveNonHeadingIDs(root, used) {
+    Array.from(root.querySelectorAll("[id]")).forEach(function (node) {
+      if (!isHTMLHeading(node) && node.id) { used[node.id] = true; }
+    });
+  }
+
+  function legacyFootnoteSlug(label, index) {
+    var lower = (label || "").toLowerCase();
+    var segments = typeof Intl !== "undefined" && Intl.Segmenter
+      ? Array.from(new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(lower), function (item) {
+          return item.segment;
+        })
+      : Array.from(lower);
+    var out = "";
+    for (var i = 0; i < segments.length; i++) {
+      var segment = segments[i];
+      if (/[\p{L}\p{N}]/u.test(segment)) {
+        out += segment;
+      } else if (segment === " " || segment === "-" || segment === "_") {
+        out += "-";
+      }
+    }
+    while (out.indexOf("--") !== -1) { out = out.replace(/--/g, "-"); }
+    out = out.replace(/^-+|-+$/g, "");
+    return out || "footnote-" + index;
+  }
+
+  function footnoteIndentWidth(line) {
+    var width = 0;
+    for (var i = 0; i < line.length; i++) {
+      if (line.charAt(i) === " ") {
+        width += 1;
+      } else if (line.charAt(i) === "\t") {
+        width += 4;
+      } else {
+        break;
+      }
+    }
+    return width;
+  }
+
+  function footnoteFence(line) {
+    if (footnoteIndentWidth(line) > 3) { return null; }
+    var trimmed = line.trim();
+    var marker = trimmed.charAt(0);
+    if (marker !== "`" && marker !== "~") { return null; }
+    var length = 0;
+    while (trimmed.charAt(length) === marker) { length += 1; }
+    return length >= 3 ? { marker: marker, length: length } : null;
+  }
+
+  function footnoteDefinitionLabel(line) {
+    if (footnoteIndentWidth(line) > 3) { return ""; }
+    var trimmed = line.trim();
+    if (trimmed.slice(0, 2) !== "[^") { return ""; }
+    var close = trimmed.indexOf("]:", 2);
+    if (close < 0) { return ""; }
+    return trimmed.slice(2, close);
+  }
+
+  function footnoteSource(markdown) {
+    var lines = (markdown || "").split("\n");
+    var body = [];
+    var definitions = [];
+    var seen = Object.create(null);
+    var activeDefinition = -1;
+    var activeFence = null;
+
+    lines.forEach(function (line) {
+      var fence = footnoteFence(line);
+      if (fence) {
+        activeDefinition = -1;
+        if (activeFence) {
+          if (fence.marker === activeFence.marker && fence.length >= activeFence.length) {
+            activeFence = null;
+          }
+        } else {
+          activeFence = fence;
+        }
+        body.push(line);
+        return;
+      }
+      if (activeFence) {
+        body.push(line);
+        return;
+      }
+
+      var label = footnoteDefinitionLabel(line);
+      if (label) {
+        if (!Object.prototype.hasOwnProperty.call(seen, label)) {
+          seen[label] = true;
+          definitions.push(label);
+          activeDefinition = definitions.length - 1;
+        } else {
+          activeDefinition = -1;
+        }
+        return;
+      }
+      if (activeDefinition >= 0 && line.trim() === "") { return; }
+      if (activeDefinition >= 0 && (line.slice(0, 4) === "    " || line.charAt(0) === "\t")) {
+        return;
+      }
+      activeDefinition = -1;
+      body.push(line);
+    });
+
+    return { definitions: definitions, body: body.join("\n") };
+  }
+
+  function footnoteReferenceCounts(markdown, defined) {
+    var counts = Object.create(null);
+    var activeFence = null;
+    (markdown || "").split("\n").forEach(function (line) {
+      var fence = footnoteFence(line);
+      if (fence) {
+        if (activeFence) {
+          if (fence.marker === activeFence.marker && fence.length >= activeFence.length) {
+            activeFence = null;
+          }
+        } else {
+          activeFence = fence;
+        }
+        return;
+      }
+      if (activeFence || footnoteIndentWidth(line) >= 4) { return; }
+
+      var index = 0;
+      var backtickRun = 0;
+      while (index < line.length) {
+        var ch = line.charAt(index);
+        if (ch === "\\") {
+          index += 2;
+          continue;
+        }
+        if (ch === "`") {
+          var run = 1;
+          while (line.charAt(index + run) === "`") { run += 1; }
+          backtickRun = backtickRun === run ? 0 : (backtickRun === 0 ? run : backtickRun);
+          index += run;
+          continue;
+        }
+        if (backtickRun === 0 && line.slice(index, index + 2) === "[^") {
+          var close = line.indexOf("]", index + 2);
+          if (close >= 0) {
+            var label = line.slice(index + 2, close);
+            if (Object.prototype.hasOwnProperty.call(defined, label)) {
+              counts[label] = (counts[label] || 0) + 1;
+            }
+            index = close + 1;
+            continue;
+          }
+        }
+        index += 1;
+      }
+    });
+    return counts;
+  }
+
+  function footnoteReservationsForMarkdown(markdown) {
+    var source = footnoteSource(markdown);
+    var idsByLabel = Object.create(null);
+    var used = Object.create(null);
+    source.definitions.forEach(function (label, offset) {
+      var base = legacyFootnoteSlug(label, offset + 1);
+      var candidate = base;
+      var suffix = 1;
+      while (used[candidate]) {
+        candidate = base + "-" + suffix;
+        suffix += 1;
+      }
+      used[candidate] = true;
+      idsByLabel[label] = candidate;
+    });
+    var counts = footnoteReferenceCounts(source.body, idsByLabel);
+    var reservations = [];
+    source.definitions.forEach(function (label, offset) {
+      var number = offset + 1;
+      var custom = idsByLabel[label];
+      var referenceCount = Math.max(1, counts[label] || 0);
+      reservations.push("fn-" + custom, "footnotes-def-" + number);
+      for (var i = 1; i <= referenceCount; i++) {
+        reservations.push(i === 1 ? "fnref-" + custom : "fnref-" + custom + "-" + i);
+        reservations.push(i === 1 ? "footnotes-ref-" + number : "footnotes-ref-" + number + ":" + i);
+      }
+    });
+    return reservations;
+  }
+
+  function reserveCrossRendererFootnoteIDs(used) {
+    try {
+      var markdown = state.value;
+      var reservations;
+      if (footnoteReservationCache && footnoteReservationCache.markdown === markdown) {
+        reservations = footnoteReservationCache.ids;
+      } else {
+        reservations = markdown.indexOf("[^") === -1 ? [] : footnoteReservationsForMarkdown(markdown);
+        footnoteReservationCache = { markdown: markdown, ids: reservations };
+      }
+      reservations.forEach(function (id) { used[id] = true; });
+    } catch (error) {
+      // Existing rendered IDs are still reserved by reserveNonHeadingIDs.
+    }
+  }
+
+  function headingAnchorMap(root) {
+    var counts = Object.create(null);
+    var used = Object.create(null);
+    reserveNonHeadingIDs(root, used);
+    reserveCrossRendererFootnoteIDs(used);
+    var anchors = Object.create(null);
+    var headings = Array.from(root.querySelectorAll("h1,h2,h3,h4,h5,h6")).filter(isHTMLHeading);
+    for (var i = 0; i < headings.length; i++) {
+      var base = headingBaseSlug(headingText(headings[i]));
+      var slug = nextUniqueHeadingSlug(base, counts, used);
+      anchors[slug] = headings[i];
+    }
+    return anchors;
+  }
+
+  function headingIDsForHTML(html) {
+    var parsed = new DOMParser().parseFromString(html || "", "text/html");
+    var counts = Object.create(null);
+    var used = Object.create(null);
+    reserveNonHeadingIDs(parsed, used);
+    reserveCrossRendererFootnoteIDs(used);
+    return Array.from(parsed.querySelectorAll("h1,h2,h3,h4,h5,h6")).filter(isHTMLHeading).map(function (heading) {
+      var base = headingBaseSlug(headingText(heading));
+      return nextUniqueHeadingSlug(base, counts, used);
+    });
+  }
+
+  function headingOpeningTagEnd(html, start) {
+    var state = "tag-name";
+    var quote = "";
+    for (var i = start + 1; i < html.length; i++) {
+      var ch = html.charAt(i);
+      if (quote) {
+        if (ch === quote) { quote = ""; }
+      } else if (ch === ">") {
+        return i;
+      } else if (state === "tag-name") {
+        if (/\s/.test(ch)) { state = "before-attribute"; }
+      } else if (state === "before-attribute") {
+        if (/\s/.test(ch) || ch === "/") { continue; }
+        state = "attribute-name";
+      } else if (state === "attribute-name") {
+        if (ch === "=") {
+          state = "before-value";
+        } else if (/\s/.test(ch)) {
+          state = "after-attribute";
+        }
+      } else if (state === "after-attribute") {
+        if (ch === "=") {
+          state = "before-value";
+        } else if (!/\s/.test(ch)) {
+          state = ch === "/" ? "before-attribute" : "attribute-name";
+        }
+      } else if (state === "before-value") {
+        if (/\s/.test(ch)) { continue; }
+        if (ch === '"' || ch === "'") {
+          quote = ch;
+          state = "before-attribute";
+        } else {
+          state = "unquoted-value";
+        }
+      } else if (state === "unquoted-value" && /\s/.test(ch)) {
+        state = "before-attribute";
+      }
+    }
+    return -1;
+  }
+
+  function openingTagAttributes(tag) {
+    var attributes = Object.create(null);
+    var nameEnd = 1;
+    while (nameEnd < tag.length && /[A-Za-z0-9:-]/.test(tag.charAt(nameEnd))) { nameEnd += 1; }
+    var i = nameEnd;
+    while (i < tag.length - 1) {
+      while (i < tag.length - 1 && /\s/.test(tag.charAt(i))) { i += 1; }
+      if (tag.charAt(i) === ">" || tag.charAt(i) === "/") { break; }
+      var attributeStart = i;
+      while (i < tag.length - 1 && !/[\s=/>]/.test(tag.charAt(i))) { i += 1; }
+      var attributeName = tag.slice(attributeStart, i).toLowerCase();
+      while (i < tag.length - 1 && /\s/.test(tag.charAt(i))) { i += 1; }
+      var value = "";
+      if (tag.charAt(i) === "=") {
+        i += 1;
+        while (i < tag.length - 1 && /\s/.test(tag.charAt(i))) { i += 1; }
+        var quote = tag.charAt(i);
+        if (quote === '"' || quote === "'") {
+          var valueStart = i + 1;
+          var valueEnd = tag.indexOf(quote, valueStart);
+          if (valueEnd < 0) { valueEnd = tag.length - 1; }
+          value = tag.slice(valueStart, valueEnd);
+          i = valueEnd + 1;
+        } else {
+          var unquotedStart = i;
+          while (i < tag.length - 1 && !/[\s>]/.test(tag.charAt(i))) { i += 1; }
+          value = tag.slice(unquotedStart, i);
+        }
+      }
+      if (attributeName && !Object.prototype.hasOwnProperty.call(attributes, attributeName)) {
+        attributes[attributeName] = value;
+      }
+    }
+    return attributes;
+  }
+
+  function decodedHTMLAttributeValue(value) {
+    var textarea = document.createElement("textarea");
+    textarea.innerHTML = value || "";
+    return textarea.value;
+  }
+
+  function escapeHeadingID(id) {
+    return (id || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  }
+
+  function replaceHeadingIDInTag(tag, id) {
+    var desired = escapeHeadingID(id);
+    var nameEnd = 1;
+    while (nameEnd < tag.length && /[A-Za-z0-9:-]/.test(tag.charAt(nameEnd))) { nameEnd += 1; }
+    var i = nameEnd;
+    while (i < tag.length - 1) {
+      while (i < tag.length - 1 && /\s/.test(tag.charAt(i))) { i += 1; }
+      if (tag.charAt(i) === ">" || tag.charAt(i) === "/") { break; }
+      var attributeStart = i;
+      while (i < tag.length - 1 && !/[\s=/>]/.test(tag.charAt(i))) { i += 1; }
+      var attributeName = tag.slice(attributeStart, i).toLowerCase();
+      while (i < tag.length - 1 && /\s/.test(tag.charAt(i))) { i += 1; }
+      if (tag.charAt(i) !== "=") {
+        if (attributeName === "id") {
+          return tag.slice(0, i) + '="' + desired + '"' + tag.slice(i);
+        }
+        continue;
+      }
+      i += 1;
+      while (i < tag.length - 1 && /\s/.test(tag.charAt(i))) { i += 1; }
+      var quote = tag.charAt(i);
+      if (quote === '"' || quote === "'") {
+        var valueStart = i + 1;
+        var valueEnd = tag.indexOf(quote, valueStart);
+        if (valueEnd < 0) { return tag; }
+        if (attributeName === "id") {
+          return tag.slice(0, valueStart) + desired + tag.slice(valueEnd);
+        }
+        i = valueEnd + 1;
+      } else {
+        var unquotedStart = i;
+        while (i < tag.length - 1 && !/[\s>]/.test(tag.charAt(i))) { i += 1; }
+        if (attributeName === "id") {
+          return tag.slice(0, unquotedStart) + desired + tag.slice(i);
+        }
+      }
+    }
+    var insertion = tag.length - 1;
+    if (tag.charAt(insertion - 1) === "/") { insertion -= 1; }
+    return tag.slice(0, insertion) + ' id="' + desired + '"' + tag.slice(insertion);
+  }
+
+  function normalizeHeadingIDsInHTML(html) {
+    var ids = headingIDsForHTML(html);
+    if (ids.length === 0) { return html; }
+
+    var output = "";
+    var cursor = 0;
+    var search = 0;
+    var headingIndex = 0;
+    var rawText = "";
+    var templateDepth = 0;
+    var foreignScopes = [];
+    var openHTMLHeading = false;
+    function inHTMLNamespace() {
+      return foreignScopes.length === 0 ||
+        foreignScopes[foreignScopes.length - 1].namespace === "html" ||
+        foreignScopes[foreignScopes.length - 1].integratesHTML;
+    }
+    function foreignNamespace() {
+      return foreignScopes.length === 0 ? "" : foreignScopes[foreignScopes.length - 1].namespace;
+    }
+    function closeForeignScope(tagName) {
+      for (var i = foreignScopes.length - 1; i >= 0; i--) {
+        if (foreignScopes[i].tagName === tagName) {
+          foreignScopes.length = i;
+          return;
+        }
+      }
+    }
+    var foreignBreakoutTags = {
+      b: true, big: true, blockquote: true, body: true, br: true, center: true,
+      code: true, dd: true, div: true, dl: true, dt: true, em: true, embed: true,
+      h1: true, h2: true, h3: true, h4: true, h5: true, h6: true, head: true,
+      hr: true, i: true, img: true, li: true, listing: true, menu: true, meta: true,
+      nobr: true, ol: true, p: true, pre: true, ruby: true, s: true, small: true,
+      span: true, strong: true, strike: true, sub: true, sup: true, table: true,
+      tt: true, u: true, ul: true, var: true
+    };
+    var svgHTMLIntegrationPoints = { desc: true, foreignobject: true, title: true };
+    var mathMLTextIntegrationPoints = { mi: true, mo: true, mn: true, ms: true, mtext: true };
+    var mathMLTextExceptions = { malignmark: true, mglyph: true };
+    var htmlVoidTags = {
+      area: true, base: true, br: true, col: true, embed: true, hr: true, img: true,
+      input: true, link: true, meta: true, param: true, source: true, track: true, wbr: true
+    };
+    while (search < html.length && headingIndex < ids.length) {
+      if (rawText) {
+        var rawClosing = new RegExp("</" + rawText + "(?=[\\s/>])", "ig");
+        rawClosing.lastIndex = search;
+        var close = rawClosing.exec(html);
+        if (!close) { return html; }
+        var rawEnd = headingOpeningTagEnd(html, close.index);
+        if (rawEnd < 0) { return html; }
+        closeForeignScope(rawText);
+        search = rawEnd + 1;
+        rawText = "";
+        continue;
+      }
+
+      var start = html.indexOf("<", search);
+      if (start < 0) { break; }
+      if (html.slice(start, start + 4) === "<!--") {
+        var commentEnd = html.indexOf("-->", start + 4);
+        if (commentEnd < 0) { return html; }
+        search = commentEnd + 3;
+        continue;
+      }
+      if (html.slice(start, start + 9) === "<![CDATA[") {
+        var cdataEnd = html.indexOf("]]>", start + 9);
+        if (cdataEnd < 0) { return html; }
+        search = cdataEnd + 3;
+        continue;
+      }
+      if (html.charAt(start + 1) === "!" || html.charAt(start + 1) === "?") {
+        var declarationEnd = headingOpeningTagEnd(html, start);
+        if (declarationEnd < 0) { return html; }
+        search = declarationEnd + 1;
+        continue;
+      }
+      if (html.charAt(start + 1) === "/") {
+        var closingNameStart = start + 2;
+        var closingNameEnd = closingNameStart;
+        while (closingNameEnd < html.length && /[A-Za-z0-9:-]/.test(html.charAt(closingNameEnd))) {
+          closingNameEnd += 1;
+        }
+        var closingName = html.slice(closingNameStart, closingNameEnd).toLowerCase();
+        var closingEnd = headingOpeningTagEnd(html, start);
+        if (closingEnd < 0) { return html; }
+        if (/^h[1-6]$/.test(closingName) && openHTMLHeading && !inHTMLNamespace()) {
+          while (foreignScopes.length > 0 && !foreignScopes[foreignScopes.length - 1].integratesHTML) {
+            foreignScopes.pop();
+          }
+        }
+        if (/^h[1-6]$/.test(closingName) && inHTMLNamespace()) {
+          openHTMLHeading = false;
+        }
+        if (closingName === "template" && inHTMLNamespace() && templateDepth > 0) {
+          templateDepth -= 1;
+        }
+        closeForeignScope(closingName);
+        search = closingEnd + 1;
+        continue;
+      }
+
+      var nameStart = start + 1;
+      var nameEnd = nameStart;
+      while (nameEnd < html.length && /[A-Za-z0-9:-]/.test(html.charAt(nameEnd))) { nameEnd += 1; }
+      if (nameEnd === nameStart) {
+        search = start + 1;
+        continue;
+      }
+      var tagName = html.slice(nameStart, nameEnd).toLowerCase();
+      var end = headingOpeningTagEnd(html, start);
+      if (end < 0) { return html; }
+      var tag = html.slice(start, end + 1);
+      var parsedAttributes = null;
+      var fontBreakout = false;
+      if (!inHTMLNamespace() && tagName === "font") {
+        parsedAttributes = openingTagAttributes(tag);
+        fontBreakout = Object.prototype.hasOwnProperty.call(parsedAttributes, "color") ||
+          Object.prototype.hasOwnProperty.call(parsedAttributes, "face") ||
+          Object.prototype.hasOwnProperty.call(parsedAttributes, "size");
+      }
+      if (!inHTMLNamespace() && (foreignBreakoutTags[tagName] || fontBreakout)) {
+        while (foreignScopes.length > 0 && !foreignScopes[foreignScopes.length - 1].integratesHTML) {
+          foreignScopes.pop();
+        }
+      }
+      var integrationParent = foreignScopes.length > 0 ? foreignScopes[foreignScopes.length - 1] : null;
+      var mathMLTextException = !!(integrationParent && integrationParent.integratesHTML &&
+        integrationParent.namespace === "math" &&
+        mathMLTextIntegrationPoints[integrationParent.tagName] && mathMLTextExceptions[tagName]);
+      var htmlNamespace = inHTMLNamespace() && !mathMLTextException;
+      var activeForeignNamespace = foreignNamespace();
+      var selfClosing = /\/\s*>$/.test(tag);
+      if (tagName === "template" && htmlNamespace) {
+        templateDepth += 1;
+      }
+      if (htmlNamespace &&
+          (tagName === "script" || tagName === "style" || tagName === "textarea" ||
+           tagName === "title" || tagName === "xmp" || tagName === "iframe" ||
+           tagName === "noembed" || tagName === "noframes")) {
+        rawText = tagName;
+      } else if (!htmlNamespace && !selfClosing && (tagName === "script" || tagName === "style")) {
+        rawText = tagName;
+      }
+      if (htmlNamespace && templateDepth === 0 && /^h[1-6]$/.test(tagName)) {
+        output += html.slice(cursor, start) + replaceHeadingIDInTag(tag, ids[headingIndex]);
+        cursor = end + 1;
+        headingIndex += 1;
+        openHTMLHeading = true;
+      }
+      if (htmlNamespace && (tagName === "svg" || tagName === "math")) {
+        if (!selfClosing) {
+          foreignScopes.push({ tagName: tagName, namespace: tagName, integratesHTML: false });
+        }
+      } else if (!htmlNamespace && activeForeignNamespace === "svg" &&
+                 svgHTMLIntegrationPoints[tagName]) {
+        if (!selfClosing) {
+          foreignScopes.push({ tagName: tagName, namespace: "svg", integratesHTML: true });
+        }
+      } else if (!htmlNamespace && activeForeignNamespace === "math" &&
+                 mathMLTextIntegrationPoints[tagName]) {
+        if (!selfClosing) {
+          foreignScopes.push({ tagName: tagName, namespace: "math", integratesHTML: true });
+        }
+      } else if (mathMLTextException) {
+        if (!selfClosing) {
+          foreignScopes.push({ tagName: tagName, namespace: "math", integratesHTML: false });
+        }
+      } else if (!htmlNamespace && activeForeignNamespace === "math" &&
+                 tagName === "annotation-xml") {
+        parsedAttributes = parsedAttributes || openingTagAttributes(tag);
+        var encoding = decodedHTMLAttributeValue(parsedAttributes.encoding || "").toLowerCase();
+        if (!selfClosing && (encoding === "text/html" || encoding === "application/xhtml+xml")) {
+            foreignScopes.push({ tagName: tagName, namespace: "math", integratesHTML: true });
+        }
+      } else if (htmlNamespace && foreignScopes.length > 0 && !htmlVoidTags[tagName]) {
+        // HTML self-closing syntax is ignored for non-void elements.
+        foreignScopes.push({ tagName: tagName, namespace: "html", integratesHTML: false });
+      }
+      search = end + 1;
+    }
+    if (headingIndex !== ids.length) { return html; }
+    return output + html.slice(cursor);
+  }
+
+  function decodedFragment(fragment) {
+    try { return decodeURIComponent(fragment || ""); } catch (error) { return fragment || ""; }
+  }
+
+  function scrollElementWithinRoot(target, root) {
+    var container = target.parentElement;
+    while (container && container !== document.body && container !== document.documentElement) {
+      var style = getComputedStyle(container);
+      var scrollable = (style.overflowY === "auto" || style.overflowY === "scroll") &&
+        container.scrollHeight > container.clientHeight + 1;
+      if (scrollable) {
+        var toolbar = container.matches(".vditor-preview")
+          ? container.querySelector(".vditor-preview__action")
+          : null;
+        var offset = toolbar ? toolbar.getBoundingClientRect().height : 0;
+        container.scrollTop += target.getBoundingClientRect().top -
+          container.getBoundingClientRect().top - offset;
+        return;
+      }
+      container = container.parentElement;
+    }
+
+    var page = document.scrollingElement || document.documentElement;
+    var before = page.scrollTop;
+    target.scrollIntoView({ behavior: "auto", block: "start", inline: "nearest" });
+    if (state.mode === "sv" && page.scrollTop !== before) {
+      var preview = target.closest(".vditor-preview");
+      var action = preview && preview.querySelector(".vditor-preview__action");
+      if (action) { page.scrollTop = Math.max(0, page.scrollTop - action.getBoundingClientRect().height); }
+    }
+  }
+
+  function scrollToAnchorTarget(fragment, root) {
+    if (window.__ouroCaptureAnchorDiagnostics) { post("linkphase", { name: "anchor: lookup start " + fragment }); }
+    if (!root) { return false; }
+    var targetID = decodedFragment(fragment);
+    if (!targetID) { return false; }
+
+    var anchors = headingAnchorMap(root);
+    if (window.__ouroCaptureAnchorDiagnostics) { post("linkphase", { name: "anchor: map complete " + fragment }); }
+    var heading = anchors[targetID];
+    if (heading) {
+      scrollElementWithinRoot(heading, root);
+      if (window.__ouroCaptureAnchorDiagnostics) { window.__ouroLastAnchor = targetID; }
+      if (window.__ouroCaptureAnchorDiagnostics) { post("linkphase", { name: "anchor: heading scrolled " + fragment }); }
+      return true;
+    }
+
+    var exact = document.getElementById(targetID);
+    if (exact && root.contains(exact) && !/^H[1-6]$/.test(exact.tagName || "")) {
+      scrollElementWithinRoot(exact, root);
+      if (window.__ouroCaptureAnchorDiagnostics) { window.__ouroLastAnchor = targetID; }
+      return true;
+    }
+    return false;
+  }
+
+  function renderedAnchorRoot() {
+    if (state.mode === "sv") {
+      return document.querySelector("#editor .vditor-preview .vditor-reset") ||
+        document.querySelector("#editor .vditor-preview.vditor-reset");
+    }
+    return activeEditorRoot();
+  }
+
+  function scrollToAnchorWhenReady(fragment) {
+    var requestGeneration = ++anchorRequestGeneration;
+    var attempts = 0;
+    var finished = false;
+    var attempt = function () {
+      if (finished || requestGeneration !== anchorRequestGeneration) { return; }
+      if (scrollToAnchorTarget(fragment, renderedAnchorRoot())) {
+        finished = true;
+        return;
+      }
+      attempts += 1;
+      if (attempts >= 24) { return; }
+      requestAnimationFrame(function () { setTimeout(attempt, 20); });
+    };
+    attempt();
+  }
+
   function create() {
     ready = false;
+    document.body.classList.toggle("ouro-source-mode", state.mode === "sv");
     vditor = new Vditor("editor", {
       cdn: "vditor",
       mode: state.mode,
@@ -381,6 +1221,8 @@
       },
       input: function (value) {
         state.value = value;
+        invalidateReferenceLinkCache();
+        cancelAnchorRequests();
         setDirty(true);
         postCount(value);
         schedulePostRender();
@@ -405,6 +1247,8 @@
     }
     var el = document.getElementById("editor");
     if (el) { el.innerHTML = ""; }
+    invalidateReferenceLinkCache();
+    cancelAnchorRequests();
     create();
   }
 
@@ -1139,9 +1983,29 @@
     }
   }
 
+  window.__ouroAnchorTest = {
+    slugs: function (texts) {
+      var counts = Object.create(null);
+      var used = Object.create(null);
+      return (texts || []).map(function (text) {
+        var base = headingBaseSlug((text || "").replace(/\r\n?|\n/g, " "));
+        return nextUniqueHeadingSlug(base, counts, used);
+      });
+    },
+    normalizeHTML: normalizeHeadingIDsInHTML,
+    footnoteReservations: footnoteReservationsForMarkdown,
+    anchorGeneration: function () { return anchorRequestGeneration; },
+    referenceDestinations: function () {
+      return referenceLinkDestinations(activeEditorRoot());
+    },
+    referenceError: function () { return referenceLinkError; }
+  };
+
   window.ouro = {
     setValue: function (md) {
       state.value = (md == null) ? "" : md;
+      invalidateReferenceLinkCache();
+      cancelAnchorRequests();
       if (vditor && ready) { vditor.setValue(state.value, true); }
       queueTableScrollReset();
       schedulePostRender();
@@ -1160,6 +2024,8 @@
       var scroller = document.scrollingElement || document.documentElement;
       var prevY = scroller ? scroller.scrollTop : window.scrollY;
       state.value = (md == null) ? "" : md;
+      invalidateReferenceLinkCache();
+      cancelAnchorRequests();
       if (vditor && ready) { vditor.setValue(state.value, true); }
       queueTableScrollReset();
       schedulePostRender();
@@ -1177,7 +2043,7 @@
       try { return vditor ? vditor.getValue() : state.value; } catch (e) { return state.value; }
     },
     getHTML: function () {
-      try { return vditor ? vditor.getHTML() : ""; } catch (e) { return ""; }
+      try { return vditor ? normalizeHeadingIDsInHTML(vditor.getHTML()) : ""; } catch (e) { return ""; }
     },
     setTheme: function (uiMode, css, codeTheme, background) {
       var prevMode = state.uiTheme;
@@ -1304,6 +2170,12 @@
     scrollToHeading: function (index) {
       var hs = document.querySelectorAll(".vditor-reset h1, .vditor-reset h2, .vditor-reset h3, .vditor-reset h4, .vditor-reset h5, .vditor-reset h6");
       if (hs[index]) { hs[index].scrollIntoView({ behavior: "smooth", block: "start" }); }
+    },
+    scrollToAnchor: function (fragment) {
+      return scrollToAnchorTarget(fragment, renderedAnchorRoot());
+    },
+    scrollToAnchorWhenReady: function (fragment) {
+      scrollToAnchorWhenReady(fragment);
     },
     find: function (query, opts) {
       if (!query) { return; }

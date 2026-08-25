@@ -1,0 +1,545 @@
+{
+  "ir": "<h1 data-block=\"0\" class=\"vditor-ir__node\" id=\"ir-Link-Contract-Fixture\" data-marker=\"#\"><span class=\"vditor-ir__marker vditor-ir__marker--heading\" data-type=\"heading-marker\"># </span>Link Contract Fixture</h1><p data-block=\"0\"><span data-type=\"link-ref\" class=\"vditor-ir__node\"><span class=\"vditor-ir__marker vditor-ir__marker--bracket\">[</span><span>External full</span><span class=\"vditor-ir__marker vditor-ir__marker--bracket\">]</span><span class=\"vditor-ir__marker vditor-ir__marker--link\">[external]</span></span></p><p data-block=\"0\"><span data-type=\"link-ref\" class=\"vditor-ir__node\"><span class=\"vditor-ir__marker vditor-ir__marker--bracket\">[</span><span>Local full</span><span class=\"vditor-ir__marker vditor-ir__marker--bracket\">]</span><span class=\"vditor-ir__marker vditor-ir__marker--link\">[local]</span></span></p><p data-block=\"0\"><span data-type=\"link-ref\" class=\"vditor-ir__node\"><span class=\"vditor-ir__marker vditor-ir__marker--bracket\">[</span><span>Collapsed</span><span class=\"vditor-ir__marker vditor-ir__marker--bracket\">]</span></span></p><p data-block=\"0\"><span data-type=\"link-ref\" class=\"vditor-ir__node\"><span class=\"vditor-ir__marker vditor-ir__marker--bracket\">[</span><span>Shortcut</span><span class=\"vditor-ir__marker vditor-ir__marker--bracket\">]</span></span></p><p data-block=\"0\">[Missing][not-defined]</p><p data-block=\"0\"><span data-type=\"a\" class=\"vditor-ir__node\"><span class=\"vditor-ir__marker vditor-ir__marker--bracket\">[</span><span class=\"vditor-ir__link\">Jump inline</span><span class=\"vditor-ir__marker vditor-ir__marker--bracket\">]</span><span class=\"vditor-ir__marker vditor-ir__marker--paren\">(</span><span class=\"vditor-ir__marker vditor-ir__marker--link\">#target-heading</span><span class=\"vditor-ir__marker vditor-ir__marker--paren\">)</span></span></p><p data-block=\"0\"><span data-type=\"link-ref\" class=\"vditor-ir__node\"><span class=\"vditor-ir__marker vditor-ir__marker--bracket\">[</span><span>Jump reference</span><span class=\"vditor-ir__marker vditor-ir__marker--bracket\">]</span><span class=\"vditor-ir__marker vditor-ir__marker--link\">[target-anchor]</span></span></p><p data-block=\"0\">Body with a footnote.<sup data-type=\"footnotes-ref\" class=\"vditor-ir__node vditor-tooltipped vditor-tooltipped__s\" aria-label=\"Footnote body.\" data-footnotes-label=\"^note\"><span class=\"vditor-ir__marker vditor-ir__marker--bracket\">[</span><span class=\"vditor-ir__marker vditor-ir__marker--link\">^note</span><span class=\"vditor-ir__marker--hide\" data-render=\"1\">1</span><span class=\"vditor-ir__marker vditor-ir__marker--bracket\">]</span></sup>​</p><h2 data-block=\"0\" class=\"vditor-ir__node\" id=\"ir-Target-Heading\" data-marker=\"#\"><span class=\"vditor-ir__marker vditor-ir__marker--heading\" data-type=\"heading-marker\">## </span>Target Heading</h2><p data-block=\"0\">Target body.</p><h2 data-block=\"0\" class=\"vditor-ir__node\" id=\"ir-Duplicate-Heading\" data-marker=\"#\"><span class=\"vditor-ir__marker vditor-ir__marker--heading\" data-type=\"heading-marker\">## </span>Duplicate Heading</h2><p data-block=\"0\">First duplicate.</p><h2 data-block=\"0\" class=\"vditor-ir__node\" id=\"ir-Duplicate-Heading-\" data-marker=\"#\"><span class=\"vditor-ir__marker vditor-ir__marker--heading\" data-type=\"heading-marker\">## </span>Duplicate Heading</h2><p data-block=\"0\">Second duplicate.</p><div data-block=\"0\" data-type=\"footnotes-block\"><div data-type=\"footnotes-def\">[^note]: <p data-block=\"0\">Footnote body.</p></div></div><div data-block=\"0\" data-type=\"link-ref-defs-block\">[external]: https://example.com/external\n</div><div data-block=\"0\" data-type=\"link-ref-defs-block\">[local]: other.md#target-heading\n</div><div data-block=\"0\" data-type=\"link-ref-defs-block\">[Collapsed]: https://example.com/collapsed\n</div><div data-block=\"0\" data-type=\"link-ref-defs-block\">[Shortcut]: https://example.com/shortcut\n</div><div data-block=\"0\" data-type=\"link-ref-defs-block\">[target-anchor]: #target-heading\n</div>",
+  "ast": {
+    "Type": "NodeDocument",
+    "Children": [
+      {
+        "Type": "NodeHeading",
+        "HeadingLevel": 1,
+        "Children": [
+          {
+            "Type": "NodeHeadingC8hMarker",
+            "Data": "# "
+          },
+          {
+            "Type": "NodeText",
+            "Data": "Link Contract Fixture"
+          }
+        ]
+      },
+      {
+        "Type": "NodeParagraph",
+        "Children": [
+          {
+            "Type": "NodeLink",
+            "LinkType": 3,
+            "LinkRefLabel": "ZXh0ZXJuYWw=",
+            "Children": [
+              {
+                "Type": "NodeOpenBracket",
+                "Data": "["
+              },
+              {
+                "Type": "NodeLinkText",
+                "Data": "External full"
+              },
+              {
+                "Type": "NodeCloseBracket",
+                "Data": "]"
+              },
+              {
+                "Type": "NodeOpenParen"
+              },
+              {
+                "Type": "NodeLinkDest",
+                "Data": "https://example.com/external"
+              },
+              {
+                "Type": "NodeLinkTitle",
+                "Data": "External title"
+              },
+              {
+                "Type": "NodeCloseParen"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "Type": "NodeParagraph",
+        "Children": [
+          {
+            "Type": "NodeLink",
+            "LinkType": 3,
+            "LinkRefLabel": "bG9jYWw=",
+            "Children": [
+              {
+                "Type": "NodeOpenBracket",
+                "Data": "["
+              },
+              {
+                "Type": "NodeLinkText",
+                "Data": "Local full"
+              },
+              {
+                "Type": "NodeCloseBracket",
+                "Data": "]"
+              },
+              {
+                "Type": "NodeOpenParen"
+              },
+              {
+                "Type": "NodeLinkDest",
+                "Data": "other.md#target-heading"
+              },
+              {
+                "Type": "NodeCloseParen"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "Type": "NodeParagraph",
+        "Children": [
+          {
+            "Type": "NodeLink",
+            "LinkType": 3,
+            "LinkRefLabel": "Q29sbGFwc2Vk",
+            "Children": [
+              {
+                "Type": "NodeOpenBracket",
+                "Data": "["
+              },
+              {
+                "Type": "NodeLinkText",
+                "Data": "Collapsed"
+              },
+              {
+                "Type": "NodeCloseBracket",
+                "Data": "]"
+              },
+              {
+                "Type": "NodeOpenParen"
+              },
+              {
+                "Type": "NodeLinkDest",
+                "Data": "https://example.com/collapsed"
+              },
+              {
+                "Type": "NodeCloseParen"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "Type": "NodeParagraph",
+        "Children": [
+          {
+            "Type": "NodeLink",
+            "LinkType": 3,
+            "LinkRefLabel": "U2hvcnRjdXQ=",
+            "Children": [
+              {
+                "Type": "NodeOpenBracket",
+                "Data": "["
+              },
+              {
+                "Type": "NodeLinkText",
+                "Data": "Shortcut"
+              },
+              {
+                "Type": "NodeCloseBracket",
+                "Data": "]"
+              },
+              {
+                "Type": "NodeOpenParen"
+              },
+              {
+                "Type": "NodeLinkDest",
+                "Data": "https://example.com/shortcut"
+              },
+              {
+                "Type": "NodeCloseParen"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "Type": "NodeParagraph",
+        "Children": [
+          {
+            "Type": "NodeText",
+            "Data": "[Missing][not-defined]"
+          }
+        ]
+      },
+      {
+        "Type": "NodeParagraph",
+        "Children": [
+          {
+            "Type": "NodeLink",
+            "Children": [
+              {
+                "Type": "NodeOpenBracket",
+                "Data": "["
+              },
+              {
+                "Type": "NodeLinkText",
+                "Data": "Jump inline"
+              },
+              {
+                "Type": "NodeCloseBracket",
+                "Data": "]"
+              },
+              {
+                "Type": "NodeOpenParen",
+                "Data": "("
+              },
+              {
+                "Type": "NodeLinkDest",
+                "Data": "#target-heading"
+              },
+              {
+                "Type": "NodeCloseParen",
+                "Data": ")"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "Type": "NodeParagraph",
+        "Children": [
+          {
+            "Type": "NodeLink",
+            "LinkType": 3,
+            "LinkRefLabel": "dGFyZ2V0LWFuY2hvcg==",
+            "Children": [
+              {
+                "Type": "NodeOpenBracket",
+                "Data": "["
+              },
+              {
+                "Type": "NodeLinkText",
+                "Data": "Jump reference"
+              },
+              {
+                "Type": "NodeCloseBracket",
+                "Data": "]"
+              },
+              {
+                "Type": "NodeOpenParen"
+              },
+              {
+                "Type": "NodeLinkDest",
+                "Data": "#target-heading"
+              },
+              {
+                "Type": "NodeCloseParen"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "Type": "NodeParagraph",
+        "Children": [
+          {
+            "Type": "NodeText",
+            "Data": "Body with a footnote."
+          },
+          {
+            "Type": "NodeFootnotesRef",
+            "Data": "^note",
+            "FootnotesRefLabel": "Xm5vdGU=",
+            "FootnotesRefId": "1"
+          }
+        ]
+      },
+      {
+        "Type": "NodeHeading",
+        "HeadingLevel": 2,
+        "Children": [
+          {
+            "Type": "NodeHeadingC8hMarker",
+            "Data": "## "
+          },
+          {
+            "Type": "NodeText",
+            "Data": "Target Heading"
+          }
+        ]
+      },
+      {
+        "Type": "NodeParagraph",
+        "Children": [
+          {
+            "Type": "NodeText",
+            "Data": "Target body."
+          }
+        ]
+      },
+      {
+        "Type": "NodeHeading",
+        "HeadingLevel": 2,
+        "Children": [
+          {
+            "Type": "NodeHeadingC8hMarker",
+            "Data": "## "
+          },
+          {
+            "Type": "NodeText",
+            "Data": "Duplicate Heading"
+          }
+        ]
+      },
+      {
+        "Type": "NodeParagraph",
+        "Children": [
+          {
+            "Type": "NodeText",
+            "Data": "First duplicate."
+          }
+        ]
+      },
+      {
+        "Type": "NodeHeading",
+        "HeadingLevel": 2,
+        "Children": [
+          {
+            "Type": "NodeHeadingC8hMarker",
+            "Data": "## "
+          },
+          {
+            "Type": "NodeText",
+            "Data": "Duplicate Heading"
+          }
+        ]
+      },
+      {
+        "Type": "NodeParagraph",
+        "Children": [
+          {
+            "Type": "NodeText",
+            "Data": "Second duplicate."
+          }
+        ]
+      },
+      {
+        "Type": "NodeFootnotesDefBlock",
+        "Children": [
+          {
+            "Type": "NodeFootnotesDef",
+            "Data": "^note",
+            "FootnotesRefs": [
+              {
+                "Type": "",
+                "FootnotesRefLabel": "Xm5vdGU=",
+                "FootnotesRefId": "1"
+              }
+            ],
+            "Children": [
+              {
+                "Type": "NodeParagraph",
+                "Children": [
+                  {
+                    "Type": "NodeText",
+                    "Data": "Footnote body."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "Type": "NodeLinkRefDefBlock",
+        "Children": [
+          {
+            "Type": "NodeLinkRefDef",
+            "Data": "external",
+            "Children": [
+              {
+                "Type": "NodeLink",
+                "LinkType": 1,
+                "LinkRefLabel": "ZXh0ZXJuYWw=",
+                "Children": [
+                  {
+                    "Type": "NodeOpenBracket"
+                  },
+                  {
+                    "Type": "NodeLinkText",
+                    "Data": "external"
+                  },
+                  {
+                    "Type": "NodeCloseBracket"
+                  },
+                  {
+                    "Type": "NodeOpenParen"
+                  },
+                  {
+                    "Type": "NodeLinkDest",
+                    "Data": "https://example.com/external"
+                  },
+                  {
+                    "Type": "NodeLinkTitle",
+                    "Data": "External title"
+                  },
+                  {
+                    "Type": "NodeCloseParen"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "Type": "NodeLinkRefDefBlock",
+        "Children": [
+          {
+            "Type": "NodeLinkRefDef",
+            "Data": "local",
+            "Children": [
+              {
+                "Type": "NodeLink",
+                "LinkType": 1,
+                "LinkRefLabel": "bG9jYWw=",
+                "Children": [
+                  {
+                    "Type": "NodeOpenBracket"
+                  },
+                  {
+                    "Type": "NodeLinkText",
+                    "Data": "local"
+                  },
+                  {
+                    "Type": "NodeCloseBracket"
+                  },
+                  {
+                    "Type": "NodeOpenParen"
+                  },
+                  {
+                    "Type": "NodeLinkDest",
+                    "Data": "other.md#target-heading"
+                  },
+                  {
+                    "Type": "NodeCloseParen"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "Type": "NodeLinkRefDefBlock",
+        "Children": [
+          {
+            "Type": "NodeLinkRefDef",
+            "Data": "Collapsed",
+            "Children": [
+              {
+                "Type": "NodeLink",
+                "LinkType": 1,
+                "LinkRefLabel": "Q29sbGFwc2Vk",
+                "Children": [
+                  {
+                    "Type": "NodeOpenBracket"
+                  },
+                  {
+                    "Type": "NodeLinkText",
+                    "Data": "Collapsed"
+                  },
+                  {
+                    "Type": "NodeCloseBracket"
+                  },
+                  {
+                    "Type": "NodeOpenParen"
+                  },
+                  {
+                    "Type": "NodeLinkDest",
+                    "Data": "https://example.com/collapsed"
+                  },
+                  {
+                    "Type": "NodeCloseParen"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "Type": "NodeLinkRefDefBlock",
+        "Children": [
+          {
+            "Type": "NodeLinkRefDef",
+            "Data": "Shortcut",
+            "Children": [
+              {
+                "Type": "NodeLink",
+                "LinkType": 1,
+                "LinkRefLabel": "U2hvcnRjdXQ=",
+                "Children": [
+                  {
+                    "Type": "NodeOpenBracket"
+                  },
+                  {
+                    "Type": "NodeLinkText",
+                    "Data": "Shortcut"
+                  },
+                  {
+                    "Type": "NodeCloseBracket"
+                  },
+                  {
+                    "Type": "NodeOpenParen"
+                  },
+                  {
+                    "Type": "NodeLinkDest",
+                    "Data": "https://example.com/shortcut"
+                  },
+                  {
+                    "Type": "NodeCloseParen"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "Type": "NodeLinkRefDefBlock",
+        "Children": [
+          {
+            "Type": "NodeLinkRefDef",
+            "Data": "target-anchor",
+            "Children": [
+              {
+                "Type": "NodeLink",
+                "LinkType": 1,
+                "LinkRefLabel": "dGFyZ2V0LWFuY2hvcg==",
+                "Children": [
+                  {
+                    "Type": "NodeOpenBracket"
+                  },
+                  {
+                    "Type": "NodeLinkText",
+                    "Data": "target-anchor"
+                  },
+                  {
+                    "Type": "NodeCloseBracket"
+                  },
+                  {
+                    "Type": "NodeOpenParen"
+                  },
+                  {
+                    "Type": "NodeLinkDest",
+                    "Data": "#target-heading"
+                  },
+                  {
+                    "Type": "NodeCloseParen"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "html": "<h1>Link Contract Fixture</h1>\n<p><a href=\"https://example.com/external\" title=\"External title\">External full</a></p>\n<p><a href=\"other.md#target-heading\">Local full</a></p>\n<p><a href=\"https://example.com/collapsed\">Collapsed</a></p>\n<p><a href=\"https://example.com/shortcut\">Shortcut</a></p>\n<p>[Missing][not-defined]</p>\n<p><a href=\"#target-heading\">Jump inline</a></p>\n<p><a href=\"#target-heading\">Jump reference</a></p>\n<p>Body with a footnote.<sup class=\"footnotes-ref\" id=\"footnotes-ref-1\"><a href=\"#footnotes-def-1\">1</a></sup></p>\n<h2>Target Heading</h2>\n<p>Target body.</p>\n<h2>Duplicate Heading</h2>\n<p>First duplicate.</p>\n<h2>Duplicate Heading</h2>\n<p>Second duplicate.</p>\n<div class=\"footnotes-defs-div\"><hr class=\"footnotes-defs-hr\" />\n<ol class=\"footnotes-defs-ol\"><li id=\"footnotes-def-1\"><p>Footnote body. <a href=\"#footnotes-ref-1\" class=\"vditor-footnotes__goto-ref\">↩</a></p>\n</li>\n</ol></div>"
+}

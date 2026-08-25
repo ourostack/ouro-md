@@ -1,0 +1,35 @@
+2026-08-24 cold-review hardening
+
+Review pass 1
+- Split the rich WKWebView fixture into independent IR and SV processes to avoid Vditor mode-rebuild serialization hangs.
+- Replaced DOM-dependent cross-renderer footnote reservations with a source parser that mirrors the Swift footnote preprocessor.
+- Fixed CommonMark reference projection for first-definition-wins, escaped labels, Unicode case folding, and distinct NBSP labels.
+- Added standalone export normalization for authored raw HTML IDs and headings.
+- Made app-export scanning resume after self-closing SVG script/style/title elements.
+
+Review pass 2
+- Added a generated Unicode 17 full case-fold table; pinned sigma, eszett-compatible folding, and distinct Latin/dotless i.
+- Modeled SVG and MathML integration points, conditional font breakout, foreign-content breakout, and raw-text behavior.
+- Added WHATWG-style semicolonless named and numeric character-reference decoding, including C1 replacements.
+- Made tag termination attribute-state-aware and heading closure tolerate mismatched heading end tags.
+- Reserved authored raw HTML IDs before allocating generated footnote and back-reference IDs.
+- Added the Unicode License V3 notice.
+
+Review pass 3
+- Scoped integration-point names to their actual SVG or MathML namespace.
+- Decoded entity-bearing annotation-xml encoding values.
+- Reprocessed foreign heading end tags against the underlying HTML heading.
+- Tracked HTML descendants of foreign integration points so mglyph/malignmark exceptions apply only to an immediate MathML parent.
+- Made semantic heading text namespace-aware for SVG title descendants.
+- Reserved IDs from de-indented footnote definition bodies before footnote allocation.
+
+Convergence
+- Final cold review reported no significant issues in the amended surfaces.
+- Focused Swift regression tests passed.
+- Independent IR and SV WKWebView contracts passed.
+- Filesystem budget fixtures now exercise the same production limits through deterministic small-budget seams instead of thousands of endpoint-scanned writes.
+- The rich render probe now waits for all core renderer features rather than sampling math at a fixed delay.
+- The terminal `scripts/pr-preflight.sh` run passed and is recorded in `pr-preflight.log`.
+- GitHub's clean runner exposed a Swift type-check timeout in the expanded link-check arrays; the checks now append incrementally, and the release build plus full preflight pass at PR head `896bb04`.
+- Pre-merge sanity restored the pre-existing ordinary-link theme behavior, moved permanent underlining back to reference links only, clarified known Lute and clipboard limitations, and hardened CI fixture/readiness diagnostics.
+- The complete preflight passes after the sanity-review changes.

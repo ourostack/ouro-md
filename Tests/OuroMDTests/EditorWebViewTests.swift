@@ -50,12 +50,17 @@ final class EditorWebViewTests: XCTestCase {
         XCTAssertTrue(model.loadInitialFile(current.path))
         var external: URL?
         var local: URL?
+        var anchor: String?
         var errors: [(String, String)] = []
-        model.openLinkedDocumentHandler = { local = $0 }
+        model.openLinkedDocumentHandler = { url, _ in local = url }
         model.presentErrorHandler = { message, error in
             errors.append((message, error.localizedDescription))
         }
-        let coordinator = EditorWebView.Coordinator(model: model) { external = $0 }
+        let coordinator = EditorWebView.Coordinator(
+            model: model,
+            externalURLOpener: { external = $0 },
+            anchorScroller: { anchor = $0 }
+        )
 
         coordinator.handleOpenURL("https://ouro.bot/docs")
         XCTAssertEqual(external, URL(string: "https://ouro.bot/docs"))
@@ -79,6 +84,7 @@ final class EditorWebViewTests: XCTestCase {
         XCTAssertTrue(errors[1].1.contains("not a supported Markdown"))
 
         coordinator.handleOpenURL("#local-heading")
+        XCTAssertEqual(anchor, "local-heading")
         coordinator.handleOpenURL("javascript:alert(1)")
         XCTAssertEqual(errors.count, 2)
     }

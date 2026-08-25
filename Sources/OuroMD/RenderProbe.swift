@@ -182,7 +182,7 @@ final class RenderProbe: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
         ""
       ].join("\n");
       window.ouro.setValue(doc);
-      setTimeout(function () {
+      function probe(attempt) {
         try {
         var root = document.querySelector("#editor");
         function has(sel) { return !!root.querySelector(sel); }
@@ -232,11 +232,19 @@ final class RenderProbe: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
           alertDetail: alert.detail,
           mermaid: has(".language-mermaid svg") || has('[data-type="mermaid"] svg') || has(".vditor-ir__preview svg")
         };
+        var coreReady = result.heading && result.bold && result.inlineCode &&
+          result.codeBlock && result.table && result.taskList && result.math &&
+          result.footnote && result.alert;
+        if (!coreReady && attempt < 60) {
+          setTimeout(function () { probe(attempt + 1); }, 250);
+          return;
+        }
         post(result);
         } catch (error) {
           post({ error: errorDetail(error) });
         }
-      }, 2500);
+      }
+      setTimeout(function () { probe(0); }, 500);
       } catch (error) {
         post({ error: errorDetail(error) });
       }

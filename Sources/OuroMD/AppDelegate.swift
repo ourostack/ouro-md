@@ -55,9 +55,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     /// closes, so closed windows (and their watchers) don't leak.
     private func track(_ controller: DocumentWindowController) {
         activeController = controller
-        controller.model.openLinkedDocumentHandler = { [weak self, weak controller] url in
+        controller.model.openLinkedDocumentHandler = { [weak self, weak controller] url, fragment in
             guard let self, let controller else { return }
-            self.openLinkedDocument(url, from: controller)
+            self.openLinkedDocument(url, fragment: fragment, from: controller)
         }
         controller.onBecomeKey = { [weak self] active in
             self?.activeController = active
@@ -311,8 +311,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         controller.show(cascadeFrom: prev)
     }
 
-    func openInNewWindow(_ url: URL) {
+    func openInNewWindow(_ url: URL, fragment: String? = nil) {
         if let existing = controllers.first(where: { $0.model.currentURL == url }) {
+            existing.model.requestAnchorScroll(fragment)
             existing.window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -320,13 +321,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         let prev = frontController?.window
         let controller = DocumentWindowController(filePath: url.path, selfTest: false, useAutosave: false)
         track(controller)
+        controller.model.requestAnchorScroll(fragment)
         controller.show(cascadeFrom: prev)
     }
 
-    private func openLinkedDocument(_ url: URL, from source: DocumentWindowController) {
+    private func openLinkedDocument(_ url: URL, fragment: String?, from source: DocumentWindowController) {
         let target = url.standardizedFileURL
         if linkedDocumentReadable(target) {
-            openInNewWindow(target)
+            openInNewWindow(target, fragment: fragment)
             return
         }
 
@@ -340,7 +342,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
                 source.model.reportLinkedDocumentOpenFailure(grantedURL)
                 return
             }
-            self.openInNewWindow(grantedURL)
+            self.openInNewWindow(grantedURL, fragment: fragment)
         }
     }
 

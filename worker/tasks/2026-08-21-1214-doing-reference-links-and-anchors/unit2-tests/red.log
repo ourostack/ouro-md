@@ -1,0 +1,82 @@
+[0/1] Planning build
+Building for debugging...
+[0/7] Write sources
+[2/7] Write swift-version--58304C5D6DBC2206.txt
+[3/9] Copying web
+[5/7] Emitting module OuroMDAppSupportTests
+[6/7] Compiling OuroMDAppSupportTests DocumentLinkTests.swift
+/private/tmp/ouro-md-reference-links-and-anchors-plan/Tests/OuroMDAppSupportTests/DocumentLinkTests.swift:20:94: error: extra argument 'fragment' in call
+18 |         XCTAssertEqual(
+19 |             DocumentLinkResolver.resolve("next.md", relativeTo: current),
+20 |             .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/notes/next.md"), fragment: nil)
+   |                                                                                              `- error: extra argument 'fragment' in call
+21 |         )
+22 |         XCTAssertEqual(
+
+/private/tmp/ouro-md-reference-links-and-anchors-plan/Tests/OuroMDAppSupportTests/DocumentLinkTests.swift:20:94: error: 'nil' requires a contextual type
+18 |         XCTAssertEqual(
+19 |             DocumentLinkResolver.resolve("next.md", relativeTo: current),
+20 |             .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/notes/next.md"), fragment: nil)
+   |                                                                                              `- error: 'nil' requires a contextual type
+21 |         )
+22 |         XCTAssertEqual(
+
+/private/tmp/ouro-md-reference-links-and-anchors-plan/Tests/OuroMDAppSupportTests/DocumentLinkTests.swift:24:108: error: extra argument 'fragment' in call
+22 |         XCTAssertEqual(
+23 |             DocumentLinkResolver.resolve("../plans/launch%20notes.MARKDOWN?mode=read#today", relativeTo: current),
+24 |             .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/plans/launch notes.MARKDOWN"), fragment: "today")
+   |                                                                                                            `- error: extra argument 'fragment' in call
+25 |         )
+26 |         XCTAssertEqual(
+
+/private/tmp/ouro-md-reference-links-and-anchors-plan/Tests/OuroMDAppSupportTests/DocumentLinkTests.swift:28:93: error: extra argument 'fragment' in call
+26 |         XCTAssertEqual(
+27 |             DocumentLinkResolver.resolve("%ZZ.md", relativeTo: current),
+28 |             .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/notes/%ZZ.md"), fragment: nil)
+   |                                                                                             `- error: extra argument 'fragment' in call
+29 |         )
+30 |     }
+
+/private/tmp/ouro-md-reference-links-and-anchors-plan/Tests/OuroMDAppSupportTests/DocumentLinkTests.swift:28:93: error: 'nil' requires a contextual type
+26 |         XCTAssertEqual(
+27 |             DocumentLinkResolver.resolve("%ZZ.md", relativeTo: current),
+28 |             .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/notes/%ZZ.md"), fragment: nil)
+   |                                                                                             `- error: 'nil' requires a contextual type
+29 |         )
+30 |     }
+
+/private/tmp/ouro-md-reference-links-and-anchors-plan/Tests/OuroMDAppSupportTests/DocumentLinkTests.swift:35:96: error: extra argument 'fragment' in call
+33 |         XCTAssertEqual(
+34 |             DocumentLinkResolver.resolve("/Users/ari/Documents/readme.mdown#top", relativeTo: current),
+35 |             .markdownFile(URL(fileURLWithPath: "/Users/ari/Documents/readme.mdown"), fragment: "top")
+   |                                                                                                `- error: extra argument 'fragment' in call
+36 |         )
+37 |         XCTAssertEqual(
+
+/private/tmp/ouro-md-reference-links-and-anchors-plan/Tests/OuroMDAppSupportTests/DocumentLinkTests.swift:39:94: error: extra argument 'fragment' in call
+37 |         XCTAssertEqual(
+38 |             DocumentLinkResolver.resolve("file:///Users/ari/Documents/readme.mkd?x=1#top", relativeTo: nil),
+39 |             .markdownFile(URL(fileURLWithPath: "/Users/ari/Documents/readme.mkd"), fragment: "top")
+   |                                                                                              `- error: extra argument 'fragment' in call
+40 |         )
+41 |         XCTAssertEqual(
+
+/private/tmp/ouro-md-reference-links-and-anchors-plan/Tests/OuroMDAppSupportTests/DocumentLinkTests.swift:43:89: error: extra argument 'fragment' in call
+41 |         XCTAssertEqual(
+42 |             DocumentLinkResolver.resolve(" <../brief.md> ", relativeTo: current),
+43 |             .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/brief.md"), fragment: nil)
+   |                                                                                         `- error: extra argument 'fragment' in call
+44 |         )
+45 |     }
+
+/private/tmp/ouro-md-reference-links-and-anchors-plan/Tests/OuroMDAppSupportTests/DocumentLinkTests.swift:43:89: error: 'nil' requires a contextual type
+41 |         XCTAssertEqual(
+42 |             DocumentLinkResolver.resolve(" <../brief.md> ", relativeTo: current),
+43 |             .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/brief.md"), fragment: nil)
+   |                                                                                         `- error: 'nil' requires a contextual type
+44 |         )
+45 |     }
+error: cancelled
+error: cancelled
+error: cancelled
+error: fatalError

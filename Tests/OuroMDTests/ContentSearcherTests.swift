@@ -143,17 +143,17 @@ final class ContentSearcherTests: XCTestCase {
         let searcher = ContentSearcher()
         let didComplete = expectation(description: "cancelled search completed")
         didComplete.isInverted = true
-
-        for i in 0..<1_200 {
-            let file = root.appendingPathComponent(String(format: "cancel-%04d.md", i))
-            try? "needle \(i)\n".write(to: file, atomically: true, encoding: .utf8)
-        }
+        let firstResult = expectation(description: "first search result")
+        try? Data("needle\n".utf8).write(to: root.appendingPathComponent("needle.md"))
 
         searcher.search("needle", in: root, caseSensitive: false, wholeWord: false, regexp: false,
-                        onResult: { _ in },
+                        onResult: { _ in
+                            searcher.cancel()
+                            firstResult.fulfill()
+                        },
                         onComplete: { _ in didComplete.fulfill() })
-        searcher.cancel()
 
+        wait(for: [firstResult], timeout: 5)
         wait(for: [didComplete], timeout: 0.5)
     }
 

@@ -64,9 +64,10 @@ enum FolderScanner {
     static func snapshot(
         at folder: URL,
         sort: FolderSort,
+        fileLimit: Int = maxFiles,
         shouldCancel: () -> Bool = { false }
     ) -> FolderScanSnapshot {
-        var budget = maxFiles
+        var budget = max(0, fileLimit)
         let raw = scan(folder, sort: sort, budget: &budget, shouldCancel: shouldCancel)
         return FolderScanSnapshot(
             tree: raw.tree,

@@ -8,7 +8,9 @@ import WebKit
 /// agent↔human loop, where reformatting would create diff noise.
 final class RoundTripper: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     private let input: String
+    private let inputBytes: Data
     private let outURL: URL?
+    private let strictRaw: Bool
     private var webView: WKWebView!
     private var timeoutSeconds: TimeInterval {
         min(360, max(180, 60 + Double(input.utf8.count) / 20_000))
@@ -17,9 +19,15 @@ final class RoundTripper: NSObject, WKScriptMessageHandler, WKNavigationDelegate
         min(12, max(1.5, Double(input.utf8.count) / 500_000))
     }
 
-    init(fileURL: URL, outURL: URL?) throws {
-        self.input = try Self.readInput(fileURL)
+    init(fileURL: URL, outURL: URL?, strictRaw: Bool = false) throws {
+        let inputBytes = try Data(contentsOf: fileURL)
+        guard let input = String(data: inputBytes, encoding: .utf8) else {
+            throw CocoaError(.fileReadInapplicableStringEncoding)
+        }
+        self.input = input
+        self.inputBytes = inputBytes
         self.outURL = outURL
+        self.strictRaw = strictRaw
     }
 
     static func readInput(_ fileURL: URL) throws -> String {
@@ -54,8 +62,26 @@ final class RoundTripper: NSObject, WKScriptMessageHandler, WKNavigationDelegate
         guard let body = message.body as? [String: Any], body["type"] as? String == "ready" else { return }
         webView.evaluateJavaScript("window.ouro.setValue(\(RoundTripper.js(input)))", completionHandler: nil)
         DispatchQueue.main.asyncAfter(deadline: .now() + settleSeconds) {
-            self.webView.evaluateJavaScript("window.ouro.getValue()") { result, _ in
-                let output = MarkdownTidy.roundTripProbeOutput((result as? String) ?? "", preserving: self.input)
+            self.webView.evaluateJavaScript(
+                "({raw:window.__ouroEditor.getValue(),bridge:window.ouro.getValue()})"
+            ) { result, _ in
+                let values = result as? [String: Any]
+                let raw = values?["raw"] as? String ?? ""
+                let bridge = values?["bridge"] as? String ?? ""
+                let output: String
+                if self.strictRaw {
+                    guard Self.strictRawRoundTripMatches(
+                        original: self.inputBytes,
+                        raw: raw,
+                        bridge: bridge
+                    ) else {
+                        FileHandle.standardError.write(Data("roundtrip: strict raw comparison failed\n".utf8))
+                        exit(1)
+                    }
+                    output = bridge
+                } else {
+                    output = MarkdownTidy.roundTripProbeOutput(bridge, preserving: self.input)
+                }
                 if let outURL = self.outURL {
                     try? output.write(to: outURL, atomically: true, encoding: .utf8)
                 } else {
@@ -64,6 +90,10 @@ final class RoundTripper: NSObject, WKScriptMessageHandler, WKNavigationDelegate
                 exit(0)
             }
         }
+    }
+
+    static func strictRawRoundTripMatches(original: Data, raw: String, bridge: String) -> Bool {
+        Data(raw.utf8) == original && Data(bridge.utf8) == original
     }
 
     private static func js(_ value: String) -> String {

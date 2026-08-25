@@ -8,6 +8,25 @@
     "Hidden diagnostic harness modes must not upload private document contents or run during normal app launch.",
     "Adding, removing, or reclassifying a mode requires updating this manifest and the policy check."
   ],
+  "fixtures": [
+    {
+      "path": "Tests/Fixtures/reference-links-and-anchors.md",
+      "script": "scripts/run-native-scenarios.sh",
+      "requiredLines": [
+        "export OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS=\"${OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS:-90}\"",
+        "run_with_timeout \"$OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS\" --linktest --linktest-file \"$link_fixture\" --linktest-mode ir",
+        "run_with_timeout \"$OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS\" --linktest --linktest-file \"$link_fixture\" --linktest-mode sv"
+      ]
+    },
+    {
+      "path": "Tests/Fixtures/reference-links-roundtrip.md",
+      "script": "scripts/run-native-scenarios.sh",
+      "requiredLines": [
+        "run --roundtrip \"$roundtrip_fixture\" --roundtrip-strict raw --out \"$reference_roundtrip_out\"",
+        "cmp \"$roundtrip_fixture\" \"$reference_roundtrip_out\""
+      ]
+    }
+  ],
   "modes": [
     {
       "flag": "--help",
@@ -73,7 +92,7 @@
       "source": "Sources/OuroMD/main.swift",
       "normalLaunchReachable": false,
       "coveredBy": ["scripts/run-native-scenarios.sh"],
-      "privacy": "Uses synthetic local editor content only."
+      "privacy": "Uses synthetic or checked-in Markdown by default; callers may provide a local --linktest-file and a local --linktest-artifact-dir for screenshots, DOM, and HTML diagnostics."
     },
     {
       "flag": "--wrapgluetest",

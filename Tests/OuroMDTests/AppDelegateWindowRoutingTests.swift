@@ -91,15 +91,32 @@ final class AppDelegateWindowRoutingTests: XCTestCase {
         XCTAssertTrue(current.model.loadInitialFile(currentURL.path))
         defer { current.window.close() }
 
-        XCTAssertTrue(current.model.openLinkedDocument(linkedURL))
+        XCTAssertTrue(current.model.openLinkedDocument(linkedURL, fragment: "linked-section"))
         let linked = try XCTUnwrap(delegate.frontController)
         defer { linked.window.close() }
         XCTAssertFalse(linked === current)
         XCTAssertEqual(current.model.currentURL, currentURL)
         XCTAssertEqual(linked.model.currentURL, linkedURL)
+        let linkedBridge = RecordingEditorBridge(markdown: "")
+        linked.model.bridge = linkedBridge
+        linked.model.editorDidBecomeReady()
+        XCTAssertEqual(linkedBridge.anchors, ["linked-section"])
 
-        XCTAssertTrue(current.model.openLinkedDocument(linkedURL))
+        XCTAssertTrue(current.model.openLinkedDocument(linkedURL, fragment: "second-section"))
         XCTAssertTrue(delegate.frontController === linked)
+        XCTAssertEqual(linkedBridge.anchors, ["linked-section", "second-section"])
+    }
+
+    func testPendingAnchorIsClearedWhenDocumentIdentityChanges() {
+        let model = AppModel()
+        model.requestAnchorScroll("stale-section")
+        model.loadWelcome()
+        let bridge = RecordingEditorBridge(markdown: "")
+        model.bridge = bridge
+
+        model.editorDidBecomeReady()
+
+        XCTAssertTrue(bridge.anchors.isEmpty)
     }
 
     func testLinkedMarkdownRequestsSandboxAccessBeforeOpening() throws {
@@ -235,6 +252,7 @@ private func menuItem(representedObject: Any?) -> NSMenuItem {
 
 private final class RecordingEditorBridge: EditorBridge {
     var markdown: String
+    var anchors: [String] = []
 
     init(markdown: String) {
         self.markdown = markdown
@@ -251,6 +269,7 @@ private final class RecordingEditorBridge: EditorBridge {
     func setTypewriter(_ on: Bool) {}
     func setAutoPair(_ on: Bool) {}
     func scrollToHeading(_ index: Int) {}
+    func scrollToAnchor(_ fragment: String) { anchors.append(fragment) }
     func find(_ query: String, backward: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool) {}
     func revealSearchMatch(lineNumber: Int, sourceColumn: Int, sourceLength: Int, matchOrdinal: Int, matchedText: String, query: String, caseSensitive: Bool, wholeWord: Bool, regexp: Bool) {}
     func replace(_ query: String, with replacement: String, all: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool, completion: @escaping (Int) -> Void) { completion(0) }

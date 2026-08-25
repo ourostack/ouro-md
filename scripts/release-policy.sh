@@ -154,6 +154,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 version, mode, base_ref, relevant_blob, policy_now_override = sys.argv[1:6]
+policy_source_commit = os.environ.get("OURO_APP_STORE_WAIVER_SOURCE_COMMIT", "")
 
 expected_version = "0.9.80"
 expected_branch = "worker/app-store-spam-rejection"
@@ -224,8 +225,24 @@ def git_text(*args):
         return ""
 
 
+def file_bytes(path):
+    if policy_source_commit:
+        try:
+            return subprocess.check_output(
+                ["git", "show", f"{policy_source_commit}:{path}"],
+                stderr=subprocess.DEVNULL,
+            )
+        except (OSError, subprocess.CalledProcessError):
+            print(
+                f"app store waiver policy source unavailable: {policy_source_commit}:{path}",
+                file=sys.stderr,
+            )
+            reject()
+    return Path(path).read_bytes()
+
+
 def release_policy_hash(path):
-    text = Path(path).read_text(encoding="utf-8")
+    text = file_bytes(path).decode("utf-8")
     pattern = re.compile(r'("scripts/release-policy\.sh":\s*")[0-9a-f]{64}(")')
     text = pattern.sub(lambda match: match.group(1) + "<release-policy-self-sha256>" + match.group(2), text, count=1)
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
@@ -234,7 +251,7 @@ def release_policy_hash(path):
 def file_hash(path):
     if path == "scripts/release-policy.sh":
         return release_policy_hash(path)
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    return hashlib.sha256(file_bytes(path)).hexdigest()
 
 
 if version != expected_version:
@@ -278,7 +295,7 @@ for path, expected_hash in expected_hashes.items():
         reject()
 
 try:
-    data = json.loads(expected_evidence_path.read_text(encoding="utf-8"))
+    data = json.loads(file_bytes(str(expected_evidence_path)).decode("utf-8"))
 except (OSError, json.JSONDecodeError):
     reject()
 
@@ -876,41 +893,55 @@ EOF
   missing_relevant="$(printf '%s\n' "$expected_relevant" | grep -v '^scripts/package-app-store.sh$')"
   extra_relevant="$(printf '%s\nResources/Fake.swift\n' "$expected_relevant")"
   selftest_now="2026-07-09T12:00:00Z"
+  # The waiver's hashes were pinned at the v0.9.84 baseline. Read that immutable
+  # tree so later legitimate release bumps do not invalidate the selftest.
+  waiver_source_commit="c6d3bca7e2e5bcde79d24dc4c229fe05e0cdd691"
 
-  GITHUB_REPOSITORY="ourostack/ouro-md" \
+  OURO_APP_STORE_WAIVER_SOURCE_COMMIT="$waiver_source_commit" GITHUB_REPOSITORY="ourostack/ouro-md" \
     GITHUB_EVENT_NAME="pull_request" \
     GITHUB_HEAD_REF="worker/app-store-spam-rejection" \
     GITHUB_REF="refs/pull/103/merge" \
     app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" "$selftest_now" >/dev/null \
     || fail "app store resubmission selftest did not accept the exact PR #103 waiver"
 
-  GITHUB_REPOSITORY="ourostack/ouro-md" \
+  local unavailable_output
+  if unavailable_output="$(OURO_APP_STORE_WAIVER_SOURCE_COMMIT="missing-baseline" GITHUB_REPOSITORY="ourostack/ouro-md" \
+    GITHUB_EVENT_NAME="pull_request" \
+    GITHUB_HEAD_REF="worker/app-store-spam-rejection" \
+    GITHUB_REF="refs/pull/103/merge" \
+    app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" "$selftest_now" 2>&1)"; then
+    fail "app store resubmission selftest accepted an unavailable baseline"
+  fi
+  printf '%s' "$unavailable_output" | grep -q "app store waiver policy source unavailable: missing-baseline:" \
+    || fail "app store resubmission selftest did not distinguish an unavailable baseline"
+
+  OURO_APP_STORE_WAIVER_SOURCE_COMMIT="$waiver_source_commit" GITHUB_REPOSITORY="ourostack/ouro-md" \
     GITHUB_EVENT_NAME="push" \
     GITHUB_REF_NAME="main" \
     app_store_resubmission_evidence_allows_same_version "0.9.80" "main" "main" "$expected_relevant" "$selftest_now" >/dev/null \
     || fail "app store resubmission selftest did not accept the exact main merge waiver"
 
-  if GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
+  if OURO_APP_STORE_WAIVER_SOURCE_COMMIT="$waiver_source_commit" GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
     app_store_resubmission_evidence_allows_same_version "0.9.81" "pr" "origin/main" "$expected_relevant" "$selftest_now" >/dev/null; then
     fail "app store resubmission selftest accepted the wrong version"
   fi
-  if GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
+  if OURO_APP_STORE_WAIVER_SOURCE_COMMIT="$waiver_source_commit" GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
     app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$missing_relevant" "$selftest_now" >/dev/null; then
     fail "app store resubmission selftest accepted a missing relevant path"
   fi
-  if GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
+  if OURO_APP_STORE_WAIVER_SOURCE_COMMIT="$waiver_source_commit" GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
     app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$extra_relevant" "$selftest_now" >/dev/null; then
     fail "app store resubmission selftest accepted an extra relevant path"
   fi
-  if GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/other" GITHUB_REF="refs/pull/103/merge" \
+  if OURO_APP_STORE_WAIVER_SOURCE_COMMIT="$waiver_source_commit" GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/other" GITHUB_REF="refs/pull/103/merge" \
     app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" "$selftest_now" >/dev/null; then
     fail "app store resubmission selftest accepted the wrong branch"
   fi
-  if GITHUB_REPOSITORY="someone/fork" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
+  if OURO_APP_STORE_WAIVER_SOURCE_COMMIT="$waiver_source_commit" GITHUB_REPOSITORY="someone/fork" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
     app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" "$selftest_now" >/dev/null; then
     fail "app store resubmission selftest accepted the wrong repository"
   fi
-  if GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
+  if OURO_APP_STORE_WAIVER_SOURCE_COMMIT="$waiver_source_commit" GITHUB_REPOSITORY="ourostack/ouro-md" GITHUB_EVENT_NAME="pull_request" GITHUB_HEAD_REF="worker/app-store-spam-rejection" GITHUB_REF="refs/pull/103/merge" \
     app_store_resubmission_evidence_allows_same_version "0.9.80" "pr" "origin/main" "$expected_relevant" "2026-07-24T12:00:00Z" >/dev/null; then
     fail "app store resubmission selftest accepted expired evidence"
   fi

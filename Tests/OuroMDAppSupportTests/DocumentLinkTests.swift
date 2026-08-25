@@ -17,35 +17,48 @@ final class DocumentLinkTests: XCTestCase {
     func testRelativeMarkdownResolvesBesideCurrentDocument() {
         XCTAssertEqual(
             DocumentLinkResolver.resolve("next.md", relativeTo: current),
-            .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/notes/next.md"))
+            .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/notes/next.md"), fragment: nil)
         )
         XCTAssertEqual(
             DocumentLinkResolver.resolve("../plans/launch%20notes.MARKDOWN?mode=read#today", relativeTo: current),
-            .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/plans/launch notes.MARKDOWN"))
+            .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/plans/launch notes.MARKDOWN"), fragment: "today")
         )
         XCTAssertEqual(
             DocumentLinkResolver.resolve("%ZZ.md", relativeTo: current),
-            .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/notes/%ZZ.md"))
+            .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/notes/%ZZ.md"), fragment: nil)
+        )
+        XCTAssertEqual(
+            DocumentLinkResolver.resolve("next.md#%ZZ", relativeTo: current),
+            .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/notes/next.md"), fragment: "%ZZ")
+        )
+        XCTAssertEqual(
+            DocumentLinkResolver.resolve("next.md#target%252Dheading", relativeTo: current),
+            .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/notes/next.md"), fragment: "target%252Dheading")
         )
     }
 
     func testAbsoluteAndFileMarkdownTargetsAreSupported() {
         XCTAssertEqual(
             DocumentLinkResolver.resolve("/Users/ari/Documents/readme.mdown#top", relativeTo: current),
-            .markdownFile(URL(fileURLWithPath: "/Users/ari/Documents/readme.mdown"))
+            .markdownFile(URL(fileURLWithPath: "/Users/ari/Documents/readme.mdown"), fragment: "top")
         )
         XCTAssertEqual(
             DocumentLinkResolver.resolve("file:///Users/ari/Documents/readme.mkd?x=1#top", relativeTo: nil),
-            .markdownFile(URL(fileURLWithPath: "/Users/ari/Documents/readme.mkd"))
+            .markdownFile(URL(fileURLWithPath: "/Users/ari/Documents/readme.mkd"), fragment: "top")
         )
         XCTAssertEqual(
             DocumentLinkResolver.resolve(" <../brief.md> ", relativeTo: current),
-            .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/brief.md"))
+            .markdownFile(URL(fileURLWithPath: "/tmp/ouro/project/brief.md"), fragment: nil)
         )
     }
 
     func testAnchorsAndUnsupportedTargetsDoNotBecomeFiles() {
         XCTAssertEqual(DocumentLinkResolver.resolve("#decisions", relativeTo: current), .inDocumentAnchor("decisions"))
+        XCTAssertEqual(DocumentLinkResolver.resolve("#%ZZ", relativeTo: current), .inDocumentAnchor("%ZZ"))
+        XCTAssertEqual(
+            DocumentLinkResolver.resolve("#target%252Dheading", relativeTo: current),
+            .inDocumentAnchor("target%252Dheading")
+        )
         XCTAssertEqual(DocumentLinkResolver.resolve("", relativeTo: current), .unsupported)
         XCTAssertEqual(DocumentLinkResolver.resolve("  ", relativeTo: current), .unsupported)
         XCTAssertEqual(DocumentLinkResolver.resolve("<>", relativeTo: current), .unsupported)

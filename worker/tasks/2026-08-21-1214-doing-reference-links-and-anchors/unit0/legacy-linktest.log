@@ -1,0 +1,5 @@
+linktest script completed: ok   OK ✓
+IR external link rendered: found=true   OK ✓
+IR local Markdown link rendered: found=true   OK ✓
+Command-mousedown forwards external URL: opened=["https://ouro.bot", "mendelow-me-build-corpus.md"]   OK ✓
+plain click forwards raw relative Markdown target: opened=["https://ouro.bot", "mendelow-me-build-corpus.md"]   OK ✓

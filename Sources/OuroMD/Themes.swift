@@ -266,6 +266,7 @@ private func editorCSS(_ p: Palette) -> String {
     .vditor-reset>:first-child{margin-top:0!important;}
     .vditor-reset a{color:\(p.accent)!important;text-decoration:none;}
     .vditor-reset a:hover{text-decoration:underline;}
+    .vditor-ir .vditor-ir__node[data-type="link-ref"],.vditor-ir .vditor-ir__node[data-type="link-ref"] .vditor-ir__link{color:\(p.accent)!important;text-decoration:underline;}
     .vditor-reset strong{font-weight:bold;}
     .vditor-reset del{color:\(p.faint)!important;}
 

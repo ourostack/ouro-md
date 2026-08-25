@@ -10,6 +10,7 @@ cd "$ROOT"
 
 exe="${OURO_MD_EXE:-.build/debug/ouro-md}"
 timeout_seconds="${OURO_SCENARIO_TIMEOUT_SECONDS:-90}"
+export OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS="${OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS:-90}"
 mkdir -p .build/ouro-native-scenario-profiles
 export LLVM_PROFILE_FILE="${LLVM_PROFILE_FILE:-.build/ouro-native-scenario-profiles/default-%p.profraw}"
 
@@ -33,7 +34,7 @@ run() {
 
 run_with_timeout "${OURO_UNDO_SCENARIO_TIMEOUT_SECONDS:-180}" --undotest
 run --wraptest
-run --linktest
+run_with_timeout "$OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS" --linktest
 run --wrapgluetest
 run --renderprobe
 run --mermaidcliptest
@@ -60,6 +61,14 @@ run --tablewraptest --tablewrap-width 1400 --tablewrap-height 5000 --tablewrap-f
 tmp="$(mktemp -d /tmp/ouro-md-native-scenarios.XXXXXX)"
 cleanup() { rm -rf "$tmp"; }
 trap cleanup EXIT
+
+link_fixture="Tests/Fixtures/reference-links-and-anchors.md"
+roundtrip_fixture="Tests/Fixtures/reference-links-roundtrip.md"
+reference_roundtrip_out="$tmp/reference-links-roundtrip.md"
+run_with_timeout "$OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS" --linktest --linktest-file "$link_fixture" --linktest-mode ir
+run_with_timeout "$OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS" --linktest --linktest-file "$link_fixture" --linktest-mode sv
+run --roundtrip "$roundtrip_fixture" --roundtrip-strict raw --out "$reference_roundtrip_out"
+cmp "$roundtrip_fixture" "$reference_roundtrip_out"
 
 roundtrip_in="$tmp/roundtrip.md"
 roundtrip_out="$tmp/roundtrip-out.md"

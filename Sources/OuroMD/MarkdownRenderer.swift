@@ -10,22 +10,60 @@ enum MarkdownRenderer {
     /// When `baseDirectory` is supplied, relative local images are inlined as
     /// base64 data URIs so they render without web-view file-access permissions.
     static func renderHTMLBody(_ markdown: String, baseDirectory: URL? = nil) -> String {
-        let footnoted = FootnotePreprocessor.process(markdown)
+        let authoredDocument = Document(parsing: markdown)
+        let authoredRawHTMLIDs = rawHTMLFragments(authoredDocument)
+            .reduce(into: Set<String>()) { ids, html in
+                ids.formUnion(RawHTMLHeadingNormalizer.nonHeadingIDs(in: html))
+            }
+        let footnoted = FootnotePreprocessor.process(markdown, reserving: authoredRawHTMLIDs)
         let document = Document(parsing: footnoted.markdown)
-        var visitor = HTMLVisitor(baseDirectory: baseDirectory)
+        let footnoteDocuments = footnoted.footnotes.map { Document(parsing: $0.markdown) }
+        let reservedFootnoteIDs = Set(footnoted.footnotes.enumerated().flatMap { offset, footnote in
+            let references = footnote.referenceIDs.isEmpty
+                ? ["fnref-\(footnote.id)"]
+                : footnote.referenceIDs
+            let number = offset + 1
+            let vditorReferences = (1...max(1, references.count)).map {
+                $0 == 1 ? "footnotes-ref-\(number)" : "footnotes-ref-\(number):\($0)"
+            }
+            return [
+                "fn-\(footnote.id)",
+                "footnotes-def-\(number)",
+            ] + references + vditorReferences
+        })
+        let rawHTMLIDs = ([document] + footnoteDocuments)
+            .flatMap(rawHTMLFragments)
+            .reduce(into: Set<String>()) { ids, html in
+                ids.formUnion(RawHTMLHeadingNormalizer.nonHeadingIDs(in: html))
+            }
+        var headingSlugger = HeadingAnchorSlugger(
+            reserving: reservedFootnoteIDs.union(rawHTMLIDs).union(authoredRawHTMLIDs)
+        )
+        var visitor = HTMLVisitor(baseDirectory: baseDirectory, headingSlugger: headingSlugger)
         var html = visitor.visit(document)
+        headingSlugger = visitor.headingSlugger
         if !footnoted.footnotes.isEmpty {
-            html += renderFootnotes(footnoted.footnotes, baseDirectory: baseDirectory)
+            html += renderFootnotes(
+                footnoted.footnotes,
+                documents: footnoteDocuments,
+                baseDirectory: baseDirectory,
+                headingSlugger: &headingSlugger
+            )
         }
         return html
     }
 
-    private static func renderFootnotes(_ footnotes: [RenderedFootnote], baseDirectory: URL?) -> String {
+    private static func renderFootnotes(
+        _ footnotes: [RenderedFootnote],
+        documents: [Document],
+        baseDirectory: URL?,
+        headingSlugger: inout HeadingAnchorSlugger
+    ) -> String {
         var html = "<section class=\"footnotes\">\n<hr>\n<ol>\n"
-        for footnote in footnotes {
-            let document = Document(parsing: footnote.markdown)
-            var visitor = HTMLVisitor(baseDirectory: baseDirectory)
+        for (footnote, document) in zip(footnotes, documents) {
+            var visitor = HTMLVisitor(baseDirectory: baseDirectory, headingSlugger: headingSlugger)
             let body = visitor.visit(document).trimmingCharacters(in: .whitespacesAndNewlines)
+            headingSlugger = visitor.headingSlugger
             html += "<li id=\"fn-\(HTMLDocument.escapeAttr(footnote.id))\">\(body) "
             let refs = footnote.referenceIDs.isEmpty ? ["fnref-\(footnote.id)"] : footnote.referenceIDs
             html += refs.map {
@@ -35,6 +73,19 @@ enum MarkdownRenderer {
         }
         html += "</ol>\n</section>\n"
         return html
+    }
+
+    fileprivate static func rawHTMLFragments(_ markup: Markup) -> [String] {
+        var fragments: [String] = []
+        if let block = markup as? HTMLBlock {
+            fragments.append(block.rawHTML)
+        } else if let inline = markup as? InlineHTML {
+            fragments.append(inline.rawHTML)
+        }
+        for child in markup.children {
+            fragments.append(contentsOf: rawHTMLFragments(child))
+        }
+        return fragments
     }
 }
 
@@ -61,16 +112,34 @@ private enum FootnotePreprocessor {
         var footnotes: [RenderedFootnote]
     }
 
-    static func process(_ markdown: String) -> Output {
+    static func process(_ markdown: String, reserving reservedHTMLIDs: Set<String> = []) -> Output {
         let extracted = extractDefinitions(markdown)
         guard !extracted.definitions.isEmpty else {
             return Output(markdown: markdown, footnotes: [])
         }
 
+        var allReservedHTMLIDs = reservedHTMLIDs
+        for definition in extracted.definitions {
+            let document = Document(parsing: definition.markdown)
+            for html in MarkdownRenderer.rawHTMLFragments(document) {
+                allReservedHTMLIDs.formUnion(RawHTMLHeadingNormalizer.nonHeadingIDs(in: html))
+            }
+        }
+
         var idsByLabel: [String: String] = [:]
         var numbersByLabel: [String: Int] = [:]
+        var usedIDs: Set<String> = []
         for (offset, definition) in extracted.definitions.enumerated() {
-            idsByLabel[definition.label] = footnoteID(label: definition.label, index: offset + 1)
+            let base = footnoteID(label: definition.label, index: offset + 1)
+            var candidate = base
+            var suffix = 1
+            while usedIDs.contains(candidate) ||
+                    collidesWithAuthoredHTML(candidate, reservedIDs: allReservedHTMLIDs) {
+                candidate = "\(base)-\(suffix)"
+                suffix += 1
+            }
+            usedIDs.insert(candidate)
+            idsByLabel[definition.label] = candidate
             numbersByLabel[definition.label] = offset + 1
         }
         let referenced = replaceReferences(
@@ -87,6 +156,21 @@ private enum FootnotePreprocessor {
             )
         }
         return Output(markdown: referenced.markdown, footnotes: footnotes)
+    }
+
+    private static func collidesWithAuthoredHTML(
+        _ candidate: String,
+        reservedIDs: Set<String>
+    ) -> Bool {
+        if reservedIDs.contains("fn-\(candidate)") || reservedIDs.contains("fnref-\(candidate)") {
+            return true
+        }
+        let repeatedReferencePrefix = "fnref-\(candidate)-"
+        return reservedIDs.contains { id in
+            guard id.hasPrefix(repeatedReferencePrefix) else { return false }
+            let suffix = id.dropFirst(repeatedReferencePrefix.count)
+            return !suffix.isEmpty && suffix.allSatisfy(\.isNumber)
+        }
     }
 
     private static func extractDefinitions(_ markdown: String) -> (markdownWithoutDefinitions: String, definitions: [Definition]) {
@@ -303,6 +387,12 @@ private struct HTMLVisitor: MarkupVisitor {
 
     let baseDirectory: URL?
     private let inlineImageByteCap = 12 * 1024 * 1024
+    var headingSlugger: HeadingAnchorSlugger
+
+    init(baseDirectory: URL?, headingSlugger: HeadingAnchorSlugger = HeadingAnchorSlugger()) {
+        self.baseDirectory = baseDirectory
+        self.headingSlugger = headingSlugger
+    }
 
     mutating func defaultVisit(_ markup: Markup) -> String {
         renderChildren(markup)
@@ -334,7 +424,7 @@ private struct HTMLVisitor: MarkupVisitor {
 
     mutating func visitHeading(_ heading: Heading) -> String {
         let inner = renderChildren(heading)
-        let id = HTMLVisitor.slug(plainText(of: heading))
+        let id = headingSlugger.slug(plainText(of: heading))
         return "<h\(heading.level) id=\"\(id)\">\(inner)</h\(heading.level)>\n"
     }
 
@@ -399,9 +489,13 @@ private struct HTMLVisitor: MarkupVisitor {
         return "<img src=\"\(src)\" alt=\"\(alt)\">"
     }
 
-    mutating func visitHTMLBlock(_ html: HTMLBlock) -> String { html.rawHTML }
+    mutating func visitHTMLBlock(_ html: HTMLBlock) -> String {
+        RawHTMLHeadingNormalizer.normalize(html.rawHTML, slugger: &headingSlugger)
+    }
 
-    mutating func visitInlineHTML(_ inlineHTML: InlineHTML) -> String { inlineHTML.rawHTML }
+    mutating func visitInlineHTML(_ inlineHTML: InlineHTML) -> String {
+        RawHTMLHeadingNormalizer.normalize(inlineHTML.rawHTML, slugger: &headingSlugger)
+    }
 
     mutating func visitTable(_ table: Table) -> String {
         let alignments = table.columnAlignments

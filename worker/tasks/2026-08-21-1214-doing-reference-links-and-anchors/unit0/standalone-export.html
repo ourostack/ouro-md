@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>reference-links-and-anchors.md</title>
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0}
+img{max-width:100%;height:auto}
+.markdown-body{margin:0 auto;overflow-wrap:break-word;word-wrap:break-word}
+:root{color-scheme:light;}
+html{font-size:16px;}
+body{background:#ffffff;color:#333333;font-family:"Open Sans", "Clear Sans", "Helvetica Neue", Helvetica, Arial, "Segoe UI Emoji", sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;margin:0;}
+::selection{background:#b5d6fc;}
+::selection:window-inactive{background:rgba(128,128,128,0.30);}
+.markdown-body{max-width:860px;margin:0 auto;padding:30px 30px 100px;--ouro-table-viewport:calc(100vw - 24px);}
+@media (min-width:1400px){.markdown-body{max-width:1024px;}}
+@media (min-width:1800px){.markdown-body{max-width:1200px;}}
+.markdown-body>:first-child{margin-top:0;}
+h1,h2,h3,h4,h5,h6{color:#333333;font-weight:bold;line-height:1.4;margin:1rem 0;}
+h1{font-size:2.25em;line-height:1.2;border-bottom:1px solid #eeeeee;}
+h2{font-size:1.75em;line-height:1.225;border-bottom:1px solid #eeeeee;}
+h3{font-size:1.5em;line-height:1.43;}
+h4{font-size:1.25em;}
+h5{font-size:1em;}
+h6{font-size:1em;color:#666666;}
+p,blockquote,ul,ol,dl{margin:0.8em 0;}
+a{color:#21659f;text-decoration:none;}
+a:hover{text-decoration:underline;}
+strong{font-weight:bold;}
+em{font-style:italic;}
+del{color:#666666;}
+code{font-family:"Lucida Console", Consolas, Menlo, Monaco, monospace;font-size:0.9em;background:#f3f4f4;border:1px solid #e7eaed;border-radius:3px;padding:0 2px;}
+pre{background:#f8f8f8;border:1px solid #e7eaed;border-radius:3px;padding:8px 10px;overflow-x:auto;max-width:100%;line-height:1.5;margin:15px 0;-webkit-overflow-scrolling:touch;}
+pre code{background:none;border:none;padding:0;font-size:0.9em;display:block;min-width:100%;width:max-content;box-sizing:border-box;white-space:pre;}
+blockquote{padding:0 15px;border-left:4px solid #dfe2e5;color:#666666;}
+hr{border:0;height:2px;background:#e7e7e7;margin:16px 0;padding:0;}
+ul,ol{padding-left:30px;}
+li{margin:0.25em 0;}
+.task-list-item{list-style:none;}
+.task-list-item input{margin:0 .5em 0 -1.3em;vertical-align:middle;}
+table{border-collapse:collapse;display:block;overflow-x:auto;width:max-content;max-width:100%;margin:0.8em 0;table-layout:auto;text-align:left;-webkit-overflow-scrolling:touch;box-sizing:border-box;}
+table tr{border:1px solid #dfe2e5;}
+table tr:nth-child(2n),thead{background:#f8f8f8;}
+th{font-weight:bold;border:1px solid #dfe2e5;border-bottom:0;padding:6px 13px;white-space:normal;overflow-wrap:normal;word-break:normal;vertical-align:top;max-width:42rem;}
+td{border:1px solid #dfe2e5;padding:6px 13px;white-space:normal;overflow-wrap:normal;word-break:normal;vertical-align:top;max-width:42rem;}
+th.ouro-code-only-cell,td.ouro-code-only-cell{min-width:max-content;max-width:none;}
+th.ouro-long-cell,td.ouro-long-cell{min-width:16rem;}
+.ouro-nowrap{white-space:nowrap;}
+td code,th code{white-space:nowrap;display:inline-block;max-width:100%;overflow-x:auto;vertical-align:bottom;}
+img{max-width:100%;}
+</style>
+</head>
+<body>
+<article class="markdown-body">
+<h1 id="link-contract-fixture">Link Contract Fixture</h1>
+<p><a href="https://example.com/external">External full</a></p>
+<p><a href="other.md#target-heading">Local full</a></p>
+<p><a href="https://example.com/collapsed">Collapsed</a></p>
+<p><a href="https://example.com/shortcut">Shortcut</a></p>
+<p>[Missing][not-defined]</p>
+<p><a href="#target-heading">Jump inline</a></p>
+<p><a href="#target-heading">Jump reference</a></p>
+<p>Body with a footnote.<sup id="fnref-note"><a href="#fn-note" class="footnote-ref">1</a></sup></p>
+<h2 id="target-heading">Target Heading</h2>
+<p>Target body.</p>
+<h2 id="duplicate-heading">Duplicate Heading</h2>
+<p>First duplicate.</p>
+<h2 id="duplicate-heading">Duplicate Heading</h2>
+<p>Second duplicate.</p>
+<section class="footnotes">
+<hr>
+<ol>
+<li id="fn-note"><p>Footnote body.</p> <a href="#fnref-note" class="footnote-backref">&#8617;</a></li>
+</ol>
+</section>
+
+</article>
+</body>
+</html>

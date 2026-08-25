@@ -1,0 +1,15 @@
+{
+  "irAnchorScrolled" : false,
+  "irHTML" : "<h1>Link Contract Fixture<\/h1>\n<p><a href=\"https:\/\/example.com\/external\">External full<\/a><\/p>\n<p><a href=\"other.md#target-heading\">Local full<\/a><\/p>\n<p><a href=\"https:\/\/example.com\/collapsed\">Collapsed<\/a><\/p>\n<p><a href=\"https:\/\/example.com\/shortcut\">Shortcut<\/a><\/p>\n<p>[Missing][not-defined]<\/p>\n<p><a href=\"#target-heading\">Jump inline<\/a><\/p>\n<p><a href=\"#target-heading\">Jump reference<\/a><\/p>\n<p>Body with a footnote.<sup class=\"footnotes-ref\" id=\"footnotes-ref-1\"><a href=\"#footnotes-def-1\">1<\/a><\/sup><\/p>\n<h2>Target Heading<\/h2>\n<p>Target body.<\/p>\n<h2>Duplicate Heading<\/h2>\n<p>First duplicate.<\/p>\n<h2>Duplicate Heading<\/h2>\n<p>Second duplicate.<\/p>\n<div class=\"footnotes-defs-div\"><hr class=\"footnotes-defs-hr\" \/>\n<ol class=\"footnotes-defs-ol\"><li id=\"footnotes-def-1\"><p>Footnote body. <a href=\"#footnotes-ref-1\" class=\"vditor-footnotes__goto-ref\">↩<\/a><\/p>\n<\/li>\n<\/ol><\/div>",
+  "irLinkAffordance" : false,
+  "irMarkersHidden" : false,
+  "irReferenceCount" : 5,
+  "irUnresolvedPlain" : true,
+  "pageURLStable" : true,
+  "rawEqualsBridge" : true,
+  "svAnchorScrolled" : false,
+  "svHTML" : "<h1>Link Contract Fixture<\/h1>\n<p><a href=\"https:\/\/example.com\/external\">External full<\/a><\/p>\n<p><a href=\"other.md#target-heading\">Local full<\/a><\/p>\n<p><a href=\"https:\/\/example.com\/collapsed\">Collapsed<\/a><\/p>\n<p><a href=\"https:\/\/example.com\/shortcut\">Shortcut<\/a><\/p>\n<p>[Missing][not-defined]<\/p>\n<p><a href=\"#target-heading\">Jump inline<\/a><\/p>\n<p><a href=\"#target-heading\">Jump reference<\/a><\/p>\n<p>Body with a footnote.<sup class=\"footnotes-ref\" id=\"footnotes-ref-1\"><a href=\"#footnotes-def-1\">1<\/a><\/sup><\/p>\n<h2>Target Heading<\/h2>\n<p>Target body.<\/p>\n<h2>Duplicate Heading<\/h2>\n<p>First duplicate.<\/p>\n<h2>Duplicate Heading<\/h2>\n<p>Second duplicate.<\/p>\n<div class=\"footnotes-defs-div\"><hr class=\"footnotes-defs-hr\" \/>\n<ol class=\"footnotes-defs-ol\"><li id=\"footnotes-def-1\"><p>Footnote body. <a href=\"#footnotes-ref-1\" class=\"vditor-footnotes__goto-ref\">↩<\/a><\/p>\n<\/li>\n<\/ol><\/div>",
+  "svReferenceRendered" : true,
+  "svSourceLiteral" : true,
+  "type" : "linkprobe"
+}
