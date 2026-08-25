@@ -149,72 +149,91 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     private func handleProbe(_ body: [String: Any]) {
         lastPhase = "results received"
         let scriptError = body["error"] as? String
-        var checks: [(String, String, Bool)]
+        var checks: [(String, String, Bool)] = []
+
+        func appendCheck(_ label: String, _ value: String, _ ok: Bool) {
+            checks.append((label, value, ok))
+        }
+
+        func appendBooleanCheck(_ label: String, key: String) {
+            let value = body[key]
+            appendCheck(label, "\(value ?? "nil")", value as? Bool ?? false)
+        }
 
         if markdown == nil {
             let foundExternal = body["foundExternal"] as? Bool ?? false
             let foundLocal = body["foundLocal"] as? Bool ?? false
-            checks = [
-                ("linktest script completed", scriptError ?? "ok", scriptError == nil),
-                ("IR external link rendered", "found=\(foundExternal)", foundExternal),
-                ("IR local Markdown link rendered", "found=\(foundLocal)", foundLocal),
-                ("Command-mousedown forwards external URL", "opened=\(openedURLs)", openedURLs.first == "https://ouro.bot"),
-                (
-                    "plain click forwards raw relative Markdown target",
-                    "opened=\(openedURLs)",
-                    openedURLs.count == 2 && openedURLs[1] == "mendelow-me-build-corpus.md"
-                ),
-            ]
+            appendCheck("linktest script completed", scriptError ?? "ok", scriptError == nil)
+            appendCheck("IR external link rendered", "found=\(foundExternal)", foundExternal)
+            appendCheck("IR local Markdown link rendered", "found=\(foundLocal)", foundLocal)
+            appendCheck(
+                "Command-mousedown forwards external URL",
+                "opened=\(openedURLs)",
+                openedURLs.first == "https://ouro.bot"
+            )
+            appendCheck(
+                "plain click forwards raw relative Markdown target",
+                "opened=\(openedURLs)",
+                openedURLs.count == 2 && openedURLs[1] == "mendelow-me-build-corpus.md"
+            )
         } else {
             let referenceDestinations = body["referenceDestinations"] as? [String] ?? []
-            checks = [("linktest script completed", scriptError ?? "ok", scriptError == nil)]
+            appendCheck("linktest script completed", scriptError ?? "ok", scriptError == nil)
             if requestedMode == "ir" {
-                checks += [
-                ("IR resolved reference nodes rendered", "\(body["irReferenceCount"] ?? "nil")", (body["irReferenceCount"] as? Int ?? 0) >= 16),
-                ("IR unresolved reference stays source text", "\(body["irUnresolvedPlain"] ?? "nil")", body["irUnresolvedPlain"] as? Bool ?? false),
-                ("IR focused reference markers hidden", "\(body["irMarkersHidden"] ?? "nil")", body["irMarkersHidden"] as? Bool ?? false),
-                ("IR reference has link affordance", "\(body["irLinkAffordance"] ?? "nil")", body["irLinkAffordance"] as? Bool ?? false),
-                ("external reference opens on Command-mousedown", "opened=\(openedURLs)", openedURLs.contains("https://example.com/external")),
-                ("local reference opens in app", "opened=\(openedURLs)", openedURLs.contains("other.md#target-heading")),
-                ("collapsed reference resolves", "opened=\(openedURLs)", openedURLs.contains("https://example.com/collapsed")),
-                ("shortcut reference resolves", "opened=\(openedURLs)", openedURLs.contains("https://example.com/shortcut")),
-                ("normalized label resolves", "opened=\(openedURLs)", openedURLs.contains("https://example.com/normalized")),
-                ("ASCII-space label resolves", "opened=\(openedURLs)", openedURLs.contains("https://example.com/ascii-space")),
-                ("NBSP label remains distinct", "opened=\(openedURLs)", openedURLs.contains("https://example.com/nbsp")),
-                ("duplicate reference definition uses first destination", "projected=\(referenceDestinations)", referenceDestinations.contains("https://example.com/duplicate-first") && !referenceDestinations.contains("https://example.com/duplicate-second")),
-                ("escaped reference label resolves", "projected=\(referenceDestinations)", referenceDestinations.contains("https://example.com/escaped-label")),
-                ("Unicode case-folded reference label resolves", "projected=\(referenceDestinations)", referenceDestinations.contains("https://example.com/unicode-fold")),
-                ("dotless i remains distinct under Unicode case folding", "projected=\(referenceDestinations)", referenceDestinations.contains("https://example.com/latin-i") && referenceDestinations.contains("https://example.com/dotless-i")),
-                ("image-labelled reference resolves", "\(body["imageReferenceProjected"] ?? "nil")", body["imageReferenceProjected"] as? Bool ?? false),
-                ("IR fragment scrolls", "\(body["irAnchorScrolled"] ?? "nil")", body["irAnchorScrolled"] as? Bool ?? false),
-                ("IR linked heading uses semantic slug", "\(body["irLinkedHeadingAnchor"] ?? "nil")", body["irLinkedHeadingAnchor"] as? Bool ?? false),
-                ]
+                appendCheck(
+                    "IR resolved reference nodes rendered",
+                    "\(body["irReferenceCount"] ?? "nil")",
+                    (body["irReferenceCount"] as? Int ?? 0) >= 16
+                )
+                appendBooleanCheck("IR unresolved reference stays source text", key: "irUnresolvedPlain")
+                appendBooleanCheck("IR focused reference markers hidden", key: "irMarkersHidden")
+                appendBooleanCheck("IR reference has link affordance", key: "irLinkAffordance")
+                appendCheck("external reference opens on Command-mousedown", "opened=\(openedURLs)", openedURLs.contains("https://example.com/external"))
+                appendCheck("local reference opens in app", "opened=\(openedURLs)", openedURLs.contains("other.md#target-heading"))
+                appendCheck("collapsed reference resolves", "opened=\(openedURLs)", openedURLs.contains("https://example.com/collapsed"))
+                appendCheck("shortcut reference resolves", "opened=\(openedURLs)", openedURLs.contains("https://example.com/shortcut"))
+                appendCheck("normalized label resolves", "opened=\(openedURLs)", openedURLs.contains("https://example.com/normalized"))
+                appendCheck("ASCII-space label resolves", "opened=\(openedURLs)", openedURLs.contains("https://example.com/ascii-space"))
+                appendCheck("NBSP label remains distinct", "opened=\(openedURLs)", openedURLs.contains("https://example.com/nbsp"))
+                appendCheck(
+                    "duplicate reference definition uses first destination",
+                    "projected=\(referenceDestinations)",
+                    referenceDestinations.contains("https://example.com/duplicate-first") &&
+                        !referenceDestinations.contains("https://example.com/duplicate-second")
+                )
+                appendCheck("escaped reference label resolves", "projected=\(referenceDestinations)", referenceDestinations.contains("https://example.com/escaped-label"))
+                appendCheck("Unicode case-folded reference label resolves", "projected=\(referenceDestinations)", referenceDestinations.contains("https://example.com/unicode-fold"))
+                appendCheck(
+                    "dotless i remains distinct under Unicode case folding",
+                    "projected=\(referenceDestinations)",
+                    referenceDestinations.contains("https://example.com/latin-i") &&
+                        referenceDestinations.contains("https://example.com/dotless-i")
+                )
+                appendBooleanCheck("image-labelled reference resolves", key: "imageReferenceProjected")
+                appendBooleanCheck("IR fragment scrolls", key: "irAnchorScrolled")
+                appendBooleanCheck("IR linked heading uses semantic slug", key: "irLinkedHeadingAnchor")
             } else {
-                checks += [
-                ("SV source remains literal", "\(body["svSourceLiteral"] ?? "nil")", body["svSourceLiteral"] as? Bool ?? false),
-                ("SV preview resolves reference", "\(body["svReferenceRendered"] ?? "nil")", body["svReferenceRendered"] as? Bool ?? false),
-                ("SV fragment scrolls", "\(body["svAnchorScrolled"] ?? "nil")", body["svAnchorScrolled"] as? Bool ?? false),
-                ("SV footnote anchor remains below sticky toolbar", "\(body["svFootnoteVisible"] ?? "nil")", body["svFootnoteVisible"] as? Bool ?? false),
-                ]
+                appendBooleanCheck("SV source remains literal", key: "svSourceLiteral")
+                appendBooleanCheck("SV preview resolves reference", key: "svReferenceRendered")
+                appendBooleanCheck("SV fragment scrolls", key: "svAnchorScrolled")
+                appendBooleanCheck("SV footnote anchor remains below sticky toolbar", key: "svFootnoteVisible")
             }
-            checks += [
-                ("fragment navigation keeps editor URL stable", "\(body["pageURLStable"] ?? "nil")", body["pageURLStable"] as? Bool ?? false),
-                ("app export uses shared heading IDs", "\(body["modeExportAnchors"] ?? "nil")", body["modeExportAnchors"] as? Bool ?? false),
-                ("app export preserves non-heading IDs", "\(body["nonHeadingIDsStable"] ?? "nil")", body["nonHeadingIDsStable"] as? Bool ?? false),
-                ("app export IDs remain globally unique", "\(body["appExportIDsUnique"] ?? "nil")", body["appExportIDsUnique"] as? Bool ?? false),
-                ("footnote collision namespace matches across exports", "\(body["footnoteCollisionParity"] ?? "nil")", body["footnoteCollisionParity"] as? Bool ?? false),
-                ("footnote reservation parser matches standalone export", "\(body["footnoteReservationContract"] ?? "nil")", body["footnoteReservationContract"] as? Bool ?? false),
-                ("JavaScript heading slugger matches shared contract", "\(body["anchorContractMatches"] ?? "nil")", body["anchorContractMatches"] as? Bool ?? false),
-                ("HTML heading scanner preserves raw text and quoted attributes", "\(body["htmlScannerSafe"] ?? "nil")", body["htmlScannerSafe"] as? Bool ?? false),
-                ("HTML heading scanner resumes after self-closing SVG script", "\(body["svgScriptScannerSafe"] ?? "nil")", body["svgScriptScannerSafe"] as? Bool ?? false),
-                ("HTML heading scanner resumes after self-closing SVG style", "\(body["svgStyleScannerSafe"] ?? "nil")", body["svgStyleScannerSafe"] as? Bool ?? false),
-                ("HTML heading scanner resumes after self-closing SVG title", "\(body["svgTitleScannerSafe"] ?? "nil")", body["svgTitleScannerSafe"] as? Bool ?? false),
-                ("HTML heading scanner reserves foreign element IDs", "\(body["svgHeadingScannerSafe"] ?? "nil")", body["svgHeadingScannerSafe"] as? Bool ?? false),
-                ("HTML heading scanner honors SVG and MathML integration points", "\(body["htmlIntegrationScannerSafe"] ?? "nil")", body["htmlIntegrationScannerSafe"] as? Bool ?? false),
-                ("HTML heading scanner matches foreign namespaces and malformed attributes", "\(body["htmlTokenizerEdgeCasesSafe"] ?? "nil")", body["htmlTokenizerEdgeCasesSafe"] as? Bool ?? false),
-                ("HTML heading scanner tracks integration-point descendants", "\(body["htmlCurrentNodeScannerSafe"] ?? "nil")", body["htmlCurrentNodeScannerSafe"] as? Bool ?? false),
-                ("anchor retries cancel when document content changes", "\(body["anchorRetryCancelled"] ?? "nil")", body["anchorRetryCancelled"] as? Bool ?? false),
-            ]
+            appendBooleanCheck("fragment navigation keeps editor URL stable", key: "pageURLStable")
+            appendBooleanCheck("app export uses shared heading IDs", key: "modeExportAnchors")
+            appendBooleanCheck("app export preserves non-heading IDs", key: "nonHeadingIDsStable")
+            appendBooleanCheck("app export IDs remain globally unique", key: "appExportIDsUnique")
+            appendBooleanCheck("footnote collision namespace matches across exports", key: "footnoteCollisionParity")
+            appendBooleanCheck("footnote reservation parser matches standalone export", key: "footnoteReservationContract")
+            appendBooleanCheck("JavaScript heading slugger matches shared contract", key: "anchorContractMatches")
+            appendBooleanCheck("HTML heading scanner preserves raw text and quoted attributes", key: "htmlScannerSafe")
+            appendBooleanCheck("HTML heading scanner resumes after self-closing SVG script", key: "svgScriptScannerSafe")
+            appendBooleanCheck("HTML heading scanner resumes after self-closing SVG style", key: "svgStyleScannerSafe")
+            appendBooleanCheck("HTML heading scanner resumes after self-closing SVG title", key: "svgTitleScannerSafe")
+            appendBooleanCheck("HTML heading scanner reserves foreign element IDs", key: "svgHeadingScannerSafe")
+            appendBooleanCheck("HTML heading scanner honors SVG and MathML integration points", key: "htmlIntegrationScannerSafe")
+            appendBooleanCheck("HTML heading scanner matches foreign namespaces and malformed attributes", key: "htmlTokenizerEdgeCasesSafe")
+            appendBooleanCheck("HTML heading scanner tracks integration-point descendants", key: "htmlCurrentNodeScannerSafe")
+            appendBooleanCheck("anchor retries cancel when document content changes", key: "anchorRetryCancelled")
         }
 
         var allOK = true
