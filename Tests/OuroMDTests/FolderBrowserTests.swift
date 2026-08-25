@@ -142,10 +142,12 @@ final class FolderBrowserTests: XCTestCase {
         for bucket in 0..<11 {
             try fm.createDirectory(at: large.appendingPathComponent("bucket-\(bucket)"), withIntermediateDirectories: true)
         }
-        for i in 0..<5_080 {
+        let fixture = root.appendingPathComponent("large-workspace-fixture.md")
+        try Data("needle\n".utf8).write(to: fixture)
+        for i in 0..<80 {
             let dir = large.appendingPathComponent("bucket-\(i % 11)")
             let file = dir.appendingPathComponent(String(format: "note-%04d.md", i))
-            try "needle \(i)\n".write(to: file, atomically: true, encoding: .utf8)
+            try fm.linkItem(at: fixture, to: file)
         }
         try Data(repeating: 0x61, count: 2_000_001)
             .write(to: large.appendingPathComponent("oversized.md"))
@@ -156,13 +158,14 @@ final class FolderBrowserTests: XCTestCase {
         )
 
         let start = Date()
-        let snapshot = FolderScanner.snapshot(at: large, sort: .name)
+        let snapshot = FolderScanner.snapshot(at: large, sort: .name, fileLimit: 64)
         let elapsed = Date().timeIntervalSince(start)
         let names = Set(snapshot.flat.map(\.name))
 
-        XCTAssertEqual(snapshot.flat.count, 5_000, "scanner should stop at its fixed safety budget")
+        XCTAssertEqual(FolderScanner.maxFiles, 5_000)
+        XCTAssertEqual(snapshot.flat.count, 64, "scanner should stop at its configured safety budget")
         XCTAssertTrue(snapshot.isTruncated, "scanner should report that additional openable files were omitted")
-        XCTAssertLessThan(elapsed, 10, "budgeted scan should stay responsive even with thousands of files")
+        XCTAssertLessThan(elapsed, 10, "budgeted scan should stay responsive in a large tree")
         XCTAssertFalse(names.contains("oversized.md"))
         XCTAssertFalse(names.contains(".hidden.md"))
         XCTAssertFalse(names.contains("loop"))

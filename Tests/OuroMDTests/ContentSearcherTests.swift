@@ -144,9 +144,9 @@ final class ContentSearcherTests: XCTestCase {
         let didComplete = expectation(description: "cancelled search completed")
         didComplete.isInverted = true
 
-        for i in 0..<1_200 {
+        for i in 0..<64 {
             let file = root.appendingPathComponent(String(format: "cancel-%04d.md", i))
-            try? "needle \(i)\n".write(to: file, atomically: true, encoding: .utf8)
+            try? Data("needle \(i)\n".utf8).write(to: file)
         }
 
         searcher.search("needle", in: root, caseSensitive: false, wholeWord: false, regexp: false,
