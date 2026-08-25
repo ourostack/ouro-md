@@ -14,7 +14,8 @@
       "script": "scripts/run-native-scenarios.sh",
       "requiredLines": [
         "export OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS=\"${OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS:-90}\"",
-        "run_with_timeout \"$OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS\" --linktest --linktest-file \"$link_fixture\""
+        "run_with_timeout \"$OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS\" --linktest --linktest-file \"$link_fixture\" --linktest-mode ir",
+        "run_with_timeout \"$OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS\" --linktest --linktest-file \"$link_fixture\" --linktest-mode sv"
       ]
     },
     {

@@ -1,23 +1,29 @@
-linktest script completed: ok   OK ✓
-IR resolved reference nodes rendered: 10   OK ✓
-IR unresolved reference stays source text: 1   OK ✓
-IR focused reference markers hidden: 1   OK ✓
-IR reference has link affordance: 1   OK ✓
-external reference opens on Command-mousedown: opened=["https://example.com/external", "other.md#target-heading", "https://example.com/collapsed", "https://example.com/shortcut", "https://example.com/normalized", "https://example.com/ascii-space", "https://example.com/nbsp"]   OK ✓
-local reference opens in app: opened=["https://example.com/external", "other.md#target-heading", "https://example.com/collapsed", "https://example.com/shortcut", "https://example.com/normalized", "https://example.com/ascii-space", "https://example.com/nbsp"]   OK ✓
-collapsed reference resolves: opened=["https://example.com/external", "other.md#target-heading", "https://example.com/collapsed", "https://example.com/shortcut", "https://example.com/normalized", "https://example.com/ascii-space", "https://example.com/nbsp"]   OK ✓
-shortcut reference resolves: opened=["https://example.com/external", "other.md#target-heading", "https://example.com/collapsed", "https://example.com/shortcut", "https://example.com/normalized", "https://example.com/ascii-space", "https://example.com/nbsp"]   OK ✓
-normalized label resolves: opened=["https://example.com/external", "other.md#target-heading", "https://example.com/collapsed", "https://example.com/shortcut", "https://example.com/normalized", "https://example.com/ascii-space", "https://example.com/nbsp"]   OK ✓
-ASCII-space label resolves: opened=["https://example.com/external", "other.md#target-heading", "https://example.com/collapsed", "https://example.com/shortcut", "https://example.com/normalized", "https://example.com/ascii-space", "https://example.com/nbsp"]   OK ✓
-NBSP label remains distinct: opened=["https://example.com/external", "other.md#target-heading", "https://example.com/collapsed", "https://example.com/shortcut", "https://example.com/normalized", "https://example.com/ascii-space", "https://example.com/nbsp"]   OK ✓
-IR fragment scrolls: 1   OK ✓
-IR linked heading uses semantic slug: 1   OK ✓
-SV source remains literal: 1   OK ✓
-SV preview resolves reference: 1   OK ✓
-SV fragment scrolls: 1   OK ✓
-fragment navigation keeps editor URL stable: 1   OK ✓
-IR app export uses shared heading IDs: 1   OK ✓
-SV app export uses shared heading IDs: 1   OK ✓
-app export preserves non-heading IDs: 1   OK ✓
-JavaScript heading slugger matches shared contract: 1   OK ✓
-HTML heading scanner preserves raw text and quoted attributes: 1   OK ✓
+2026-08-24 cold-review hardening
+
+Review pass 1
+- Split the rich WKWebView fixture into independent IR and SV processes to avoid Vditor mode-rebuild serialization hangs.
+- Replaced DOM-dependent cross-renderer footnote reservations with a source parser that mirrors the Swift footnote preprocessor.
+- Fixed CommonMark reference projection for first-definition-wins, escaped labels, Unicode case folding, and distinct NBSP labels.
+- Added standalone export normalization for authored raw HTML IDs and headings.
+- Made app-export scanning resume after self-closing SVG script/style/title elements.
+
+Review pass 2
+- Added a generated Unicode 17 full case-fold table; pinned sigma, eszett-compatible folding, and distinct Latin/dotless i.
+- Modeled SVG and MathML integration points, conditional font breakout, foreign-content breakout, and raw-text behavior.
+- Added WHATWG-style semicolonless named and numeric character-reference decoding, including C1 replacements.
+- Made tag termination attribute-state-aware and heading closure tolerate mismatched heading end tags.
+- Reserved authored raw HTML IDs before allocating generated footnote and back-reference IDs.
+- Added the Unicode License V3 notice.
+
+Review pass 3
+- Scoped integration-point names to their actual SVG or MathML namespace.
+- Decoded entity-bearing annotation-xml encoding values.
+- Reprocessed foreign heading end tags against the underlying HTML heading.
+- Tracked HTML descendants of foreign integration points so mglyph/malignmark exceptions apply only to an immediate MathML parent.
+- Made semantic heading text namespace-aware for SVG title descendants.
+- Reserved IDs from de-indented footnote definition bodies before footnote allocation.
+
+Convergence
+- Final cold review reported no significant issues in the amended surfaces.
+- Focused Swift regression tests passed.
+- Independent IR and SV WKWebView contracts passed.

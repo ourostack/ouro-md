@@ -4,7 +4,9 @@ public struct HeadingAnchorSlugger {
     private var occurrences: [String: Int] = [:]
     private var used: Set<String> = []
 
-    public init() {}
+    public init(reserving reserved: Set<String> = []) {
+        used = reserved
+    }
 
     public mutating func slug(_ text: String) -> String {
         let base = Self.baseSlug(text)

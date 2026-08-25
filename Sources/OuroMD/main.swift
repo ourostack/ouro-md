@@ -70,7 +70,8 @@ if hasFlag("--wraptest") {
 if hasFlag("--linktest") {
     LinkTester(
         markdownPath: argValue("--linktest-file"),
-        artifactDirectoryPath: argValue("--linktest-artifact-dir")
+        artifactDirectoryPath: argValue("--linktest-artifact-dir"),
+        requestedMode: argValue("--linktest-mode")
     ).run()
 }
 

@@ -8,6 +8,7 @@ import WebKit
 /// agent↔human loop, where reformatting would create diff noise.
 final class RoundTripper: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     private let input: String
+    private let inputBytes: Data
     private let outURL: URL?
     private let strictRaw: Bool
     private var webView: WKWebView!
@@ -19,7 +20,12 @@ final class RoundTripper: NSObject, WKScriptMessageHandler, WKNavigationDelegate
     }
 
     init(fileURL: URL, outURL: URL?, strictRaw: Bool = false) throws {
-        self.input = try Self.readInput(fileURL)
+        let inputBytes = try Data(contentsOf: fileURL)
+        guard let input = String(data: inputBytes, encoding: .utf8) else {
+            throw CocoaError(.fileReadInapplicableStringEncoding)
+        }
+        self.input = input
+        self.inputBytes = inputBytes
         self.outURL = outURL
         self.strictRaw = strictRaw
     }
@@ -64,11 +70,15 @@ final class RoundTripper: NSObject, WKScriptMessageHandler, WKNavigationDelegate
                 let bridge = values?["bridge"] as? String ?? ""
                 let output: String
                 if self.strictRaw {
-                    guard Self.strictRawRoundTripMatches(original: self.input, raw: raw, bridge: bridge) else {
+                    guard Self.strictRawRoundTripMatches(
+                        original: self.inputBytes,
+                        raw: raw,
+                        bridge: bridge
+                    ) else {
                         FileHandle.standardError.write(Data("roundtrip: strict raw comparison failed\n".utf8))
                         exit(1)
                     }
-                    output = self.input
+                    output = bridge
                 } else {
                     output = MarkdownTidy.roundTripProbeOutput(bridge, preserving: self.input)
                 }
@@ -82,8 +92,8 @@ final class RoundTripper: NSObject, WKScriptMessageHandler, WKNavigationDelegate
         }
     }
 
-    static func strictRawRoundTripMatches(original: String, raw: String, bridge: String) -> Bool {
-        raw == original && bridge == original
+    static func strictRawRoundTripMatches(original: Data, raw: String, bridge: String) -> Bool {
+        Data(raw.utf8) == original && Data(bridge.utf8) == original
     }
 
     private static func js(_ value: String) -> String {

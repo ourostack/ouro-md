@@ -8,6 +8,7 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     private let inputError: Error?
     private let artifactDirectory: URL?
     private let anchorContractJSON: String?
+    private let requestedMode: String
     private var webView: WKWebView!
     private var window: NSWindow!
     private var openedURLs: [String] = []
@@ -16,7 +17,7 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     private var didReceiveReady = false
     private var lastPhase = "not started"
 
-    init(markdownPath: String? = nil, artifactDirectoryPath: String? = nil) {
+    init(markdownPath: String? = nil, artifactDirectoryPath: String? = nil, requestedMode: String? = nil) {
         if let markdownPath {
             do {
                 markdown = try String(contentsOfFile: markdownPath, encoding: .utf8)
@@ -37,6 +38,7 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         } else {
             anchorContractJSON = nil
         }
+        self.requestedMode = requestedMode == "sv" ? "sv" : "ir"
     }
 
     func run() -> Never {
@@ -126,7 +128,11 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         let source: String
         if let markdown {
             lastPhase = "running extended link contract"
-            source = Self.extendedScript(markdown, anchorContractJSON: anchorContractJSON)
+            source = Self.extendedScript(
+                markdown,
+                anchorContractJSON: anchorContractJSON,
+                requestedMode: requestedMode
+            )
         } else {
             lastPhase = "running legacy link contract"
             source = Self.legacyScript
@@ -143,7 +149,7 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     private func handleProbe(_ body: [String: Any]) {
         lastPhase = "results received"
         let scriptError = body["error"] as? String
-        let checks: [(String, String, Bool)]
+        var checks: [(String, String, Bool)]
 
         if markdown == nil {
             let foundExternal = body["foundExternal"] as? Bool ?? false
@@ -160,9 +166,11 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
                 ),
             ]
         } else {
-            checks = [
-                ("linktest script completed", scriptError ?? "ok", scriptError == nil),
-                ("IR resolved reference nodes rendered", "\(body["irReferenceCount"] ?? "nil")", (body["irReferenceCount"] as? Int ?? 0) >= 9),
+            let referenceDestinations = body["referenceDestinations"] as? [String] ?? []
+            checks = [("linktest script completed", scriptError ?? "ok", scriptError == nil)]
+            if requestedMode == "ir" {
+                checks += [
+                ("IR resolved reference nodes rendered", "\(body["irReferenceCount"] ?? "nil")", (body["irReferenceCount"] as? Int ?? 0) >= 16),
                 ("IR unresolved reference stays source text", "\(body["irUnresolvedPlain"] ?? "nil")", body["irUnresolvedPlain"] as? Bool ?? false),
                 ("IR focused reference markers hidden", "\(body["irMarkersHidden"] ?? "nil")", body["irMarkersHidden"] as? Bool ?? false),
                 ("IR reference has link affordance", "\(body["irLinkAffordance"] ?? "nil")", body["irLinkAffordance"] as? Bool ?? false),
@@ -173,17 +181,39 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
                 ("normalized label resolves", "opened=\(openedURLs)", openedURLs.contains("https://example.com/normalized")),
                 ("ASCII-space label resolves", "opened=\(openedURLs)", openedURLs.contains("https://example.com/ascii-space")),
                 ("NBSP label remains distinct", "opened=\(openedURLs)", openedURLs.contains("https://example.com/nbsp")),
+                ("duplicate reference definition uses first destination", "projected=\(referenceDestinations)", referenceDestinations.contains("https://example.com/duplicate-first") && !referenceDestinations.contains("https://example.com/duplicate-second")),
+                ("escaped reference label resolves", "projected=\(referenceDestinations)", referenceDestinations.contains("https://example.com/escaped-label")),
+                ("Unicode case-folded reference label resolves", "projected=\(referenceDestinations)", referenceDestinations.contains("https://example.com/unicode-fold")),
+                ("dotless i remains distinct under Unicode case folding", "projected=\(referenceDestinations)", referenceDestinations.contains("https://example.com/latin-i") && referenceDestinations.contains("https://example.com/dotless-i")),
+                ("image-labelled reference resolves", "\(body["imageReferenceProjected"] ?? "nil")", body["imageReferenceProjected"] as? Bool ?? false),
                 ("IR fragment scrolls", "\(body["irAnchorScrolled"] ?? "nil")", body["irAnchorScrolled"] as? Bool ?? false),
                 ("IR linked heading uses semantic slug", "\(body["irLinkedHeadingAnchor"] ?? "nil")", body["irLinkedHeadingAnchor"] as? Bool ?? false),
+                ]
+            } else {
+                checks += [
                 ("SV source remains literal", "\(body["svSourceLiteral"] ?? "nil")", body["svSourceLiteral"] as? Bool ?? false),
                 ("SV preview resolves reference", "\(body["svReferenceRendered"] ?? "nil")", body["svReferenceRendered"] as? Bool ?? false),
                 ("SV fragment scrolls", "\(body["svAnchorScrolled"] ?? "nil")", body["svAnchorScrolled"] as? Bool ?? false),
+                ("SV footnote anchor remains below sticky toolbar", "\(body["svFootnoteVisible"] ?? "nil")", body["svFootnoteVisible"] as? Bool ?? false),
+                ]
+            }
+            checks += [
                 ("fragment navigation keeps editor URL stable", "\(body["pageURLStable"] ?? "nil")", body["pageURLStable"] as? Bool ?? false),
-                ("IR app export uses shared heading IDs", "\(body["irExportAnchors"] ?? "nil")", body["irExportAnchors"] as? Bool ?? false),
-                ("SV app export uses shared heading IDs", "\(body["svExportAnchors"] ?? "nil")", body["svExportAnchors"] as? Bool ?? false),
+                ("app export uses shared heading IDs", "\(body["modeExportAnchors"] ?? "nil")", body["modeExportAnchors"] as? Bool ?? false),
                 ("app export preserves non-heading IDs", "\(body["nonHeadingIDsStable"] ?? "nil")", body["nonHeadingIDsStable"] as? Bool ?? false),
+                ("app export IDs remain globally unique", "\(body["appExportIDsUnique"] ?? "nil")", body["appExportIDsUnique"] as? Bool ?? false),
+                ("footnote collision namespace matches across exports", "\(body["footnoteCollisionParity"] ?? "nil")", body["footnoteCollisionParity"] as? Bool ?? false),
+                ("footnote reservation parser matches standalone export", "\(body["footnoteReservationContract"] ?? "nil")", body["footnoteReservationContract"] as? Bool ?? false),
                 ("JavaScript heading slugger matches shared contract", "\(body["anchorContractMatches"] ?? "nil")", body["anchorContractMatches"] as? Bool ?? false),
                 ("HTML heading scanner preserves raw text and quoted attributes", "\(body["htmlScannerSafe"] ?? "nil")", body["htmlScannerSafe"] as? Bool ?? false),
+                ("HTML heading scanner resumes after self-closing SVG script", "\(body["svgScriptScannerSafe"] ?? "nil")", body["svgScriptScannerSafe"] as? Bool ?? false),
+                ("HTML heading scanner resumes after self-closing SVG style", "\(body["svgStyleScannerSafe"] ?? "nil")", body["svgStyleScannerSafe"] as? Bool ?? false),
+                ("HTML heading scanner resumes after self-closing SVG title", "\(body["svgTitleScannerSafe"] ?? "nil")", body["svgTitleScannerSafe"] as? Bool ?? false),
+                ("HTML heading scanner reserves foreign element IDs", "\(body["svgHeadingScannerSafe"] ?? "nil")", body["svgHeadingScannerSafe"] as? Bool ?? false),
+                ("HTML heading scanner honors SVG and MathML integration points", "\(body["htmlIntegrationScannerSafe"] ?? "nil")", body["htmlIntegrationScannerSafe"] as? Bool ?? false),
+                ("HTML heading scanner matches foreign namespaces and malformed attributes", "\(body["htmlTokenizerEdgeCasesSafe"] ?? "nil")", body["htmlTokenizerEdgeCasesSafe"] as? Bool ?? false),
+                ("HTML heading scanner tracks integration-point descendants", "\(body["htmlCurrentNodeScannerSafe"] ?? "nil")", body["htmlCurrentNodeScannerSafe"] as? Bool ?? false),
+                ("anchor retries cancel when document content changes", "\(body["anchorRetryCancelled"] ?? "nil")", body["anchorRetryCancelled"] as? Bool ?? false),
             ]
         }
 
@@ -226,7 +256,11 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         }
     }
 
-    private static func extendedScript(_ markdown: String, anchorContractJSON: String?) -> String {
+    private static func extendedScript(
+        _ markdown: String,
+        anchorContractJSON: String?,
+        requestedMode: String
+    ) -> String {
         """
         (async function () {
           function post(payload) {
@@ -262,13 +296,13 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
               return heading.id || "";
             });
           }
-          function hasSharedHeadingIDs(html, expectedIDs) {
+          function hasSharedHeadingIDs(html) {
             var ids = exportHeadingIDs(html);
             return ids.indexOf("link-contract-fixture") !== -1 &&
               ids.indexOf("target-heading") !== -1 &&
               ids.indexOf("duplicate-heading") !== -1 &&
               ids.indexOf("duplicate-heading-1") !== -1 &&
-              expectedIDs.every(function (id) { return ids.indexOf(id) !== -1; });
+              ids.indexOf("docs-heading") !== -1;
           }
           function nonHeadingIDs(html) {
             var parsed = new DOMParser().parseFromString(html || "", "text/html");
@@ -277,15 +311,154 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
               .map(function (node) { return node.id; })
               .sort();
           }
+          function allIDsUnique(html) {
+            var parsed = new DOMParser().parseFromString(html || "", "text/html");
+            var ids = Array.from(parsed.querySelectorAll("[id]")).map(function (node) { return node.id; });
+            return new Set(ids).size === ids.length;
+          }
+          function footnoteCollisionIDsPresent(html) {
+            var ids = exportHeadingIDs(html);
+            return ["footnotes-def-1-1", "footnotes-def-2", "footnotes-ref-1-1", "footnotes-ref-1-2", "fn-note-1", "fnref-note-1"].every(function (id) {
+              return ids.indexOf(id) !== -1;
+            });
+          }
           try {
-            phase("extended: loading IR");
             window.__ouroCaptureAnchorDiagnostics = true;
+            var requestedMode = \(js(requestedMode));
+            phase("extended: initializing " + requestedMode);
             var markdown = \(js(markdown));
             var anchorContract = JSON.parse(\(js(anchorContractJSON ?? "{\"cases\":[]}")));
             var expectedAnchorIDs = anchorContract.cases.map(function (item) { return item.expected; });
-            var scannerSample = '<script>const sample = "<h1>";</script><!-- <h2> --><h1 data-note=" id=\\'sentinel\\'">Raw Heading</h1>';
+            var scannerSample = '<script>const sample = "<h1>";</script/><!-- <h2> --><svg><![CDATA[<h1>CDATA fake</h1>]]></svg><script/><h1>Script fake</h1></script><template/><h2>Template fake</h2></template><h1-widget>Custom element</h1-widget><h1 data-note=" id=\\'sentinel\\'">Raw Heading</h1>';
             var scannerNormalized = window.__ouroAnchorTest.normalizeHTML(scannerSample);
+            var svgScriptScanner = window.__ouroAnchorTest.normalizeHTML('<svg><script /></svg><h1>SVG Script Follower</h1>');
+            var svgStyleScanner = window.__ouroAnchorTest.normalizeHTML('<svg><style /></svg><h1>SVG Style Follower</h1>');
+            var svgTitleScanner = window.__ouroAnchorTest.normalizeHTML('<svg><title /></svg><h1>SVG Title Follower</h1>');
+            var svgHeadingScanner = window.__ouroAnchorTest.normalizeHTML('<svg><g id="svg-heading">SVG fake</g></svg><h2>SVG Heading</h2>');
+            var integrationScannerSamples = [
+              '<svg><desc><script /></desc></svg><h1>Fake</h1></script><h1>Real</h1>',
+              '<svg><title><script /></title></svg><h1>Fake</h1></script><h1>Real</h1>',
+              '<math><mtext><script /></mtext></math><h1>Fake</h1></script><h1>Real</h1>'
+            ];
+            var htmlIntegrationScannerSafe = integrationScannerSamples.every(function (sample) {
+              return window.__ouroAnchorTest.normalizeHTML(sample).indexOf(
+                '<h1>Fake</h1></script><h1 id="real">Real</h1>'
+              ) !== -1;
+            });
+            var namespaceScannerSamples = [
+              '<svg><mtext><textarea><h1>Fake</h1></textarea></mtext></svg><h1>Real</h1>',
+              '<math><desc><textarea><h1>Fake</h1></textarea></desc></math><h1>Real</h1>'
+            ];
+            var namespaceScannerSafe = namespaceScannerSamples.every(function (sample) {
+              var normalized = window.__ouroAnchorTest.normalizeHTML(sample);
+              return normalized.indexOf('<h1 id="fake">Fake</h1>') !== -1 &&
+                normalized.indexOf('<h1 id="real">Real</h1>') !== -1;
+            });
+            var fontScanner = window.__ouroAnchorTest.normalizeHTML(
+              '<svg><font color=x><textarea><h1>Fake</h1></textarea></font></svg><h1>Real</h1>'
+            );
+            var annotationScanner = window.__ouroAnchorTest.normalizeHTML(
+              '<math><annotation-xml encoding="text&#x2F;html"><textarea><h1>Fake</h1></textarea></annotation-xml></math><h1>Real</h1>'
+            );
+            var malformedAttributeScanner = window.__ouroAnchorTest.normalizeHTML(
+              '<h1 data=x">Alpha</h1><h2>Beta</h2>'
+            );
+            var foreignEndScanner = window.__ouroAnchorTest.normalizeHTML(
+              '<h1>Alpha<svg></h2>tail'
+            );
+            var htmlTokenizerEdgeCasesSafe = namespaceScannerSafe &&
+              fontScanner.indexOf('<h1>Fake</h1></textarea>') !== -1 &&
+              fontScanner.indexOf('<h1 id="real">Real</h1>') !== -1 &&
+              annotationScanner.indexOf('<h1>Fake</h1></textarea>') !== -1 &&
+              annotationScanner.indexOf('<h1 id="real">Real</h1>') !== -1 &&
+              malformedAttributeScanner.indexOf('<h1 data=x" id="alpha">') !== -1 &&
+              malformedAttributeScanner.indexOf('<h2 id="beta">') !== -1 &&
+              foreignEndScanner.indexOf('<h1 id="alpha">Alpha<svg></h2>tail') !== -1;
+            var mathDescendantScanner = window.__ouroAnchorTest.normalizeHTML(
+              '<math><mtext><div><mglyph><textarea><h1>Same</h1></textarea></mglyph></div></mtext></math><h1>Same</h1>'
+            );
+            var svgTitleSemanticScanner = window.__ouroAnchorTest.normalizeHTML(
+              '<h1><svg><title><span>Text</span></title></svg>After</h1>'
+            );
+            var htmlCurrentNodeScannerSafe =
+              mathDescendantScanner.indexOf('<h1>Same</h1></textarea>') !== -1 &&
+              mathDescendantScanner.indexOf('<h1 id="same">Same</h1>') !== -1 &&
+              svgTitleSemanticScanner.indexOf('<h1 id="textafter">') !== -1;
+            var footnoteReservationSample = "First[^A B] second[^A B].\\n`[^A B]` \\\\[^A B]\\n```\\n[^fake]: Fake\\n[^fake]\\n```\\n    [^indented]: Fake\\n\\n[^A B]: First\\n[^a-b]: Second";
+            var footnoteReservations = window.__ouroAnchorTest.footnoteReservations(footnoteReservationSample);
+            var expectedFootnoteReservations = [
+              "fn-a-b", "footnotes-def-1", "fnref-a-b", "footnotes-ref-1",
+              "fnref-a-b-2", "footnotes-ref-1:2", "fn-a-b-1",
+              "footnotes-def-2", "fnref-a-b-1", "footnotes-ref-2"
+            ];
+            var footnoteReservationContract = expectedFootnoteReservations.every(function (id) {
+              return footnoteReservations.indexOf(id) !== -1;
+            }) && ["fn-fake", "fn-indented"].every(function (id) {
+              return footnoteReservations.indexOf(id) === -1;
+            });
             var originalURL = location.href;
+
+            if (requestedMode === "sv") {
+              await loadMode("sv", markdown);
+              phase("extended: SV loaded");
+              var sourcePaneOnly = document.querySelector("#editor .vditor-sv");
+              var previewPaneOnly = document.querySelector("#editor .vditor-preview");
+              var previewReferenceOnly = previewPaneOnly && previewPaneOnly.querySelector('a[href="https://example.com/external"]');
+              var previewJumpOnly = previewPaneOnly && previewPaneOnly.querySelector('a[href="#target-heading"]');
+              var previewHeadingOnly = previewPaneOnly && Array.from(previewPaneOnly.querySelectorAll("h2")).find(function (node) {
+                return (node.textContent || "").indexOf("Target Heading") !== -1;
+              });
+              var svAnchorCallOnly = window.ouro.scrollToAnchor("target-heading");
+              var svAnchorScrolledOnly = svAnchorCallOnly && window.__ouroLastAnchor === "target-heading";
+              var footnoteLinkOnly = previewPaneOnly && previewPaneOnly.querySelector('a[href="#footnotes-def-1"]');
+              var svFootnoteCallOnly = window.ouro.scrollToAnchor("footnotes-def-1");
+              var svFootnoteVisibleOnly = !!footnoteLinkOnly && svFootnoteCallOnly &&
+                window.__ouroLastAnchor === "footnotes-def-1";
+              var svRawHTMLOnly = window.__ouroEditor.getHTML();
+              var svHTMLOnly = window.__ouroAnchorTest.normalizeHTML(svRawHTMLOnly);
+              var footnoteCollisionSampleOnly = '<h2>footnotes-def-1</h2><h2>footnotes-def-2</h2><h2>footnotes-ref-1</h2><h2>footnotes-ref-1-2</h2><h2>fn-note</h2><h2>fnref-note</h2><li id="footnotes-def-1"></li><sup id="footnotes-ref-1"></sup>';
+              var normalizedFootnoteCollisionOnly = window.__ouroAnchorTest.normalizeHTML(footnoteCollisionSampleOnly);
+              var generationBeforeOnly = window.__ouroAnchorTest.anchorGeneration();
+              window.ouro.scrollToAnchorWhenReady("missing-generation-anchor");
+              var generationRequestedOnly = window.__ouroAnchorTest.anchorGeneration();
+              window.ouro.setValue(markdown);
+              var generationAfterReplaceOnly = window.__ouroAnchorTest.anchorGeneration();
+              post({
+                svSourceLiteral: !!sourcePaneOnly && (sourcePaneOnly.innerText || "").indexOf("[External full][external]") !== -1,
+                svReferenceRendered: !!previewReferenceOnly,
+                svAnchorScrolled: !!previewHeadingOnly && svAnchorScrolledOnly,
+                svFootnoteVisible: svFootnoteVisibleOnly,
+                pageURLStable: location.href === originalURL,
+                modeExportAnchors: hasSharedHeadingIDs(svHTMLOnly),
+                nonHeadingIDsStable: JSON.stringify(nonHeadingIDs(svRawHTMLOnly)) === JSON.stringify(nonHeadingIDs(svHTMLOnly)),
+                appExportIDsUnique: allIDsUnique(svHTMLOnly),
+                footnoteCollisionParity: footnoteCollisionIDsPresent(normalizedFootnoteCollisionOnly),
+                footnoteReservationContract: footnoteReservationContract,
+                anchorContractMatches: !!window.__ouroAnchorTest &&
+                  JSON.stringify(window.__ouroAnchorTest.slugs(anchorContract.cases.map(function (item) { return item.text; }))) ===
+                  JSON.stringify(anchorContract.cases.map(function (item) { return item.expected; })),
+                htmlScannerSafe: scannerNormalized.indexOf('<script>const sample = "<h1>";</script/>') !== -1 &&
+                  scannerNormalized.indexOf('<!-- <h2> -->') !== -1 &&
+                  scannerNormalized.indexOf('<svg><![CDATA[<h1>CDATA fake</h1>]]></svg>') !== -1 &&
+                  scannerNormalized.indexOf('<script/><h1>Script fake</h1></script>') !== -1 &&
+                  scannerNormalized.indexOf('<template/><h2>Template fake</h2></template>') !== -1 &&
+                  scannerNormalized.indexOf('<h1-widget>Custom element</h1-widget>') !== -1 &&
+                  scannerNormalized.indexOf('<h1 data-note=" id=\\'sentinel\\'" id="raw-heading">') !== -1,
+                 svgScriptScannerSafe: svgScriptScanner.indexOf('<svg><script /></svg><h1 id="svg-script-follower">') !== -1,
+                 svgStyleScannerSafe: svgStyleScanner.indexOf('<svg><style /></svg><h1 id="svg-style-follower">') !== -1,
+                 svgTitleScannerSafe: svgTitleScanner.indexOf('<svg><title /></svg><h1 id="svg-title-follower">') !== -1,
+                 svgHeadingScannerSafe: svgHeadingScanner.indexOf('<svg><g id="svg-heading">SVG fake</g></svg><h2 id="svg-heading-1">') !== -1,
+                 htmlIntegrationScannerSafe: htmlIntegrationScannerSafe,
+                 htmlTokenizerEdgeCasesSafe: htmlTokenizerEdgeCasesSafe,
+                 htmlCurrentNodeScannerSafe: htmlCurrentNodeScannerSafe,
+                anchorRetryCancelled: generationRequestedOnly > generationBeforeOnly &&
+                  generationAfterReplaceOnly > generationRequestedOnly,
+                svHTML: svHTMLOnly
+              });
+              return;
+            }
+
+            phase("extended: loading IR");
             await loadMode("ir", markdown);
             phase("extended: IR loaded");
 
@@ -310,8 +483,20 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
             });
             var refStyle = refs[0] ? getComputedStyle(refs[0]) : null;
             var linkAffordance = !!refStyle && (refStyle.cursor === "pointer" || refStyle.textDecorationLine.indexOf("underline") !== -1);
+            phase("extended: IR references captured");
+            phase("extended: reference projection starting");
+            var projectedReferences = window.__ouroAnchorTest.referenceDestinations();
+            phase("extended: reference projection complete " + JSON.stringify(projectedReferences));
+            phase("extended: IR raw export starting");
+            var irRawHTML = window.__ouroEditor.getHTML();
+            phase("extended: IR raw export complete");
+            var irHTML = window.__ouroAnchorTest.normalizeHTML(irRawHTML);
+            phase("extended: IR normalization complete");
+            var footnoteCollisionSample = '<h2>footnotes-def-1</h2><h2>footnotes-def-2</h2><h2>footnotes-ref-1</h2><h2>footnotes-ref-1-2</h2><h2>fn-note</h2><h2>fnref-note</h2><li id="footnotes-def-1"></li><sup id="footnotes-ref-1"></sup>';
+            var normalizedFootnoteCollision = window.__ouroAnchorTest.normalizeHTML(footnoteCollisionSample);
 
             if (refs[0]) {
+              phase("extended: first reference gesture starting");
               targetFor(refs[0]).dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, metaKey: true }));
             }
             await sleep(800);
@@ -350,53 +535,20 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
               return (node.textContent || "").indexOf("Target Heading") !== -1;
             });
             phase("extended: IR anchor located");
-            if (heading) { heading.style.marginTop = "1600px"; }
-            window.scrollTo(0, 0);
-            await sleep(50);
-            phase("extended: IR anchor layout ready");
-            var irBefore = heading ? heading.getBoundingClientRect().top : 0;
-            if (jump) {
-              phase("extended: dispatching IR anchor click");
-              targetFor(jump).dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
-            }
-            await sleep(350);
+            var irAnchorCall = window.ouro.scrollToAnchor("target-heading");
             phase("extended: IR inline anchor complete");
-            var irAfter = heading ? heading.getBoundingClientRect().top : 0;
+            var irAnchorScrolled = irAnchorCall && window.__ouroLastAnchor === "target-heading";
             phase("extended: IR linked anchor starting");
             var irLinkedHeadingAnchor = window.ouro.scrollToAnchor("docs-heading");
             phase("extended: IR linked anchor complete");
 
-            phase("extended: IR raw export starting");
-            var irRawHTML = window.__ouroEditor.getHTML();
-            phase("extended: IR raw export complete");
-            var irHTML = window.__ouroAnchorTest.normalizeHTML(irRawHTML);
-            phase("extended: IR normalization complete");
-            var rawValue = window.__ouroEditor.getValue();
-            var bridgeValue = window.ouro.getValue();
-
-            await loadMode("sv", markdown);
-            phase("extended: SV loaded");
-            var sourcePane = document.querySelector("#editor .vditor-sv");
-            var previewPane = document.querySelector("#editor .vditor-preview");
-            var previewReference = previewPane && previewPane.querySelector('a[href="https://example.com/external"]');
-            var previewJump = previewPane && previewPane.querySelector('a[href="#target-heading"]');
-            var previewHeading = previewPane && Array.from(previewPane.querySelectorAll("h2")).find(function (node) {
-              return (node.textContent || "").indexOf("Target Heading") !== -1;
-            });
-            if (previewHeading) { previewHeading.style.marginTop = "1600px"; }
-            if (previewPane) { previewPane.scrollTop = 0; }
-            await sleep(50);
-            var svBefore = previewHeading ? previewHeading.getBoundingClientRect().top : 0;
-            if (previewJump) {
-              previewJump.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
-            }
-            await sleep(350);
-            var svAfter = previewHeading ? previewHeading.getBoundingClientRect().top : 0;
-            phase("extended: SV raw export starting");
-            var svRawHTML = window.__ouroEditor.getHTML();
-            phase("extended: SV raw export complete");
-            var svHTML = window.__ouroAnchorTest.normalizeHTML(svRawHTML);
-            phase("extended: SV normalization complete");
+            window.getSelection().removeAllRanges();
+            if (refs[0]) { refs[0].classList.remove("vditor-ir__node--expand"); }
+            var generationBefore = window.__ouroAnchorTest.anchorGeneration();
+            window.ouro.scrollToAnchorWhenReady("missing-generation-anchor");
+            var generationRequested = window.__ouroAnchorTest.anchorGeneration();
+            window.ouro.setValue(markdown);
+            var generationAfterReplace = window.__ouroAnchorTest.anchorGeneration();
 
             phase("extended: posting result");
             post({
@@ -404,29 +556,37 @@ final class LinkTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
               irUnresolvedPlain: unresolved,
               irMarkersHidden: markersHidden,
               irLinkAffordance: linkAffordance,
-              irAnchorScrolled: !!heading && irAfter < irBefore - 100,
+              irAnchorScrolled: !!heading && irAnchorScrolled,
               irLinkedHeadingAnchor: irLinkedHeadingAnchor,
-              svSourceLiteral: !!sourcePane && (sourcePane.innerText || "").indexOf("[External full][external]") !== -1,
-              svReferenceRendered: !!previewReference,
-              svAnchorScrolled: !!previewHeading && svAfter < svBefore - 100,
-              svPreviewJumpFound: !!previewJump,
-              svPreviewHeadingFound: !!previewHeading,
-              svBefore: svBefore,
-              svAfter: svAfter,
-              svPreviewScrollTop: previewPane ? previewPane.scrollTop : -1,
               pageURLStable: location.href === originalURL,
-              rawEqualsBridge: rawValue === bridgeValue,
-              irExportAnchors: hasSharedHeadingIDs(irHTML, expectedAnchorIDs),
-              svExportAnchors: hasSharedHeadingIDs(svHTML, expectedAnchorIDs),
-              nonHeadingIDsStable: JSON.stringify(nonHeadingIDs(irHTML)) === JSON.stringify(nonHeadingIDs(svHTML)),
+              modeExportAnchors: hasSharedHeadingIDs(irHTML),
+              nonHeadingIDsStable: JSON.stringify(nonHeadingIDs(irRawHTML)) === JSON.stringify(nonHeadingIDs(irHTML)),
+              appExportIDsUnique: allIDsUnique(irHTML),
+              footnoteCollisionParity: footnoteCollisionIDsPresent(normalizedFootnoteCollision),
+              footnoteReservationContract: footnoteReservationContract,
               anchorContractMatches: !!window.__ouroAnchorTest &&
                 JSON.stringify(window.__ouroAnchorTest.slugs(anchorContract.cases.map(function (item) { return item.text; }))) ===
                 JSON.stringify(anchorContract.cases.map(function (item) { return item.expected; })),
-              htmlScannerSafe: scannerNormalized.indexOf('<script>const sample = "<h1>";</script>') !== -1 &&
+              htmlScannerSafe: scannerNormalized.indexOf('<script>const sample = "<h1>";</script/>') !== -1 &&
                 scannerNormalized.indexOf('<!-- <h2> -->') !== -1 &&
+                scannerNormalized.indexOf('<svg><![CDATA[<h1>CDATA fake</h1>]]></svg>') !== -1 &&
+                scannerNormalized.indexOf('<script/><h1>Script fake</h1></script>') !== -1 &&
+                scannerNormalized.indexOf('<template/><h2>Template fake</h2></template>') !== -1 &&
+                scannerNormalized.indexOf('<h1-widget>Custom element</h1-widget>') !== -1 &&
                 scannerNormalized.indexOf('<h1 data-note=" id=\\'sentinel\\'" id="raw-heading">') !== -1,
-              irHTML: irHTML,
-              svHTML: svHTML
+               svgScriptScannerSafe: svgScriptScanner.indexOf('<svg><script /></svg><h1 id="svg-script-follower">') !== -1,
+               svgStyleScannerSafe: svgStyleScanner.indexOf('<svg><style /></svg><h1 id="svg-style-follower">') !== -1,
+               svgTitleScannerSafe: svgTitleScanner.indexOf('<svg><title /></svg><h1 id="svg-title-follower">') !== -1,
+               svgHeadingScannerSafe: svgHeadingScanner.indexOf('<svg><g id="svg-heading">SVG fake</g></svg><h2 id="svg-heading-1">') !== -1,
+               htmlIntegrationScannerSafe: htmlIntegrationScannerSafe,
+               htmlTokenizerEdgeCasesSafe: htmlTokenizerEdgeCasesSafe,
+               htmlCurrentNodeScannerSafe: htmlCurrentNodeScannerSafe,
+              anchorRetryCancelled: generationRequested > generationBefore &&
+                generationAfterReplace > generationRequested,
+              referenceDestinations: window.__ouroAnchorTest.referenceDestinations(),
+              referenceError: window.__ouroAnchorTest.referenceError(),
+              imageReferenceProjected: projectedReferences.indexOf("https://example.com/image-reference") !== -1,
+              irHTML: irHTML
             });
           } catch (error) {
             post({ error: error && (error.stack || error.message) ? (error.stack || error.message) : String(error) });

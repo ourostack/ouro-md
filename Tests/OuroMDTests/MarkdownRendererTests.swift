@@ -29,6 +29,170 @@ final class MarkdownRendererTests: XCTestCase {
         XCTAssertTrue(render("## My  Section__Again").contains("id=\"my-section-again\""))
     }
 
+    func testHeadingIDsReserveAuthoredRawHTMLIDs() {
+        let html = render("<div id=\"same\"></div>\n\n# Same")
+
+        XCTAssertTrue(html.contains("<div id=\"same\"></div>"))
+        XCTAssertTrue(html.contains("<h1 id=\"same-1\">Same</h1>"))
+        XCTAssertEqual(html.components(separatedBy: "id=\"same\"").count - 1, 1)
+    }
+
+    func testAuthoredRawHTMLHeadingsUseSharedSemanticIDs() {
+        let html = render("""
+        <h1 class="kept" id="legacy">Raw &amp; <em>Heading</em></h1>
+
+        # Raw & Heading
+        """)
+
+        XCTAssertTrue(html.contains("<h1 class=\"kept\" id=\"raw-heading\">"))
+        XCTAssertTrue(html.contains("<h1 id=\"raw-heading-1\">Raw &amp; Heading</h1>"))
+        XCTAssertFalse(html.contains("id=\"legacy\""))
+    }
+
+    func testRawHTMLHeadingNormalizerHonorsForeignContentAndImageAltText() {
+        var slugger = HeadingAnchorSlugger(reserving: RawHTMLHeadingNormalizer.nonHeadingIDs(
+            in: #"<svg><g id="svg-heading">SVG fake</g><script /></svg>"#
+        ))
+        let html = RawHTMLHeadingNormalizer.normalize(
+            #"<svg><g id="svg-heading">SVG fake</g><script /></svg><h2><img alt="Image Alt" src="ignored.png">Line<br>Break &copy;</h2><h2>SVG Heading</h2>"#,
+            slugger: &slugger
+        )
+
+        XCTAssertTrue(html.contains(#"<svg><g id="svg-heading">SVG fake</g><script /></svg>"#), html)
+        XCTAssertTrue(html.contains(#"<h2 id="image-altline-break">"#), html)
+        XCTAssertTrue(html.contains(#"<h2 id="svg-heading-1">SVG Heading</h2>"#), html)
+    }
+
+    func testRawHTMLHeadingNormalizerHandlesIntegrationPointScripts() {
+        let samples = [
+            "<svg><desc><script /></desc></svg><h1>Fake</h1></script><h1>Real</h1>",
+            "<svg><title><script /></title></svg><h1>Fake</h1></script><h1>Real</h1>",
+            "<math><mtext><script /></mtext></math><h1>Fake</h1></script><h1>Real</h1>",
+        ]
+
+        for sample in samples {
+            var slugger = HeadingAnchorSlugger()
+            let html = RawHTMLHeadingNormalizer.normalize(sample, slugger: &slugger)
+            XCTAssertTrue(html.contains("<h1>Fake</h1></script><h1 id=\"real\">Real</h1>"), html)
+        }
+    }
+
+    func testRawHTMLHeadingNormalizerScopesIntegrationPointsByNamespace() {
+        let samples = [
+            "<svg><mtext><textarea><h1>Fake</h1></textarea></mtext></svg><h1>Real</h1>",
+            "<math><desc><textarea><h1>Fake</h1></textarea></desc></math><h1>Real</h1>",
+        ]
+
+        for sample in samples {
+            var slugger = HeadingAnchorSlugger()
+            let html = RawHTMLHeadingNormalizer.normalize(sample, slugger: &slugger)
+            XCTAssertTrue(html.contains("<h1 id=\"fake\">Fake</h1>"), html)
+            XCTAssertTrue(html.contains("<h1 id=\"real\">Real</h1>"), html)
+        }
+    }
+
+    func testRawHTMLHeadingNormalizerTracksHTMLDescendantsOfMathIntegrationPoints() {
+        var slugger = HeadingAnchorSlugger()
+        let html = RawHTMLHeadingNormalizer.normalize(
+            "<math><mtext><div><mglyph><textarea><h1>Same</h1></textarea></mglyph></div></mtext></math><h1>Same</h1>",
+            slugger: &slugger
+        )
+
+        XCTAssertTrue(html.contains("<h1>Same</h1></textarea>"), html)
+        XCTAssertTrue(html.contains("<h1 id=\"same\">Same</h1>"), html)
+        XCTAssertEqual(html.components(separatedBy: "id=\"same\"").count - 1, 1)
+    }
+
+    func testRawHTMLHeadingSemanticTextHonorsSVGTitleNamespace() {
+        var slugger = HeadingAnchorSlugger()
+        let html = RawHTMLHeadingNormalizer.normalize(
+            "<h1><svg><title><span>Text</span></title></svg>After</h1>",
+            slugger: &slugger
+        )
+
+        XCTAssertTrue(html.contains("<h1 id=\"textafter\">"), html)
+    }
+
+    func testRawHTMLHeadingNormalizerHandlesConditionalFontBreakout() {
+        var slugger = HeadingAnchorSlugger()
+        let html = RawHTMLHeadingNormalizer.normalize(
+            "<svg><font color=x><textarea><h1>Fake</h1></textarea></font></svg><h1>Real</h1>",
+            slugger: &slugger
+        )
+
+        XCTAssertTrue(html.contains("<h1>Fake</h1></textarea>"), html)
+        XCTAssertTrue(html.contains("<h1 id=\"real\">Real</h1>"), html)
+    }
+
+    func testRawHTMLHeadingNormalizerDecodesAnnotationEncoding() {
+        var slugger = HeadingAnchorSlugger()
+        let html = RawHTMLHeadingNormalizer.normalize(
+            "<math><annotation-xml encoding=\"text&#x2F;html\"><textarea><h1>Fake</h1></textarea></annotation-xml></math><h1>Real</h1>",
+            slugger: &slugger
+        )
+
+        XCTAssertTrue(html.contains("<h1>Fake</h1></textarea>"), html)
+        XCTAssertTrue(html.contains("<h1 id=\"real\">Real</h1>"), html)
+    }
+
+    func testRawHTMLHeadingNormalizerUsesHTMLCharacterReferences() {
+        let reserved = RawHTMLHeadingNormalizer.nonHeadingIDs(
+            in: #"<div id="same&#45;1"></div>"#
+        )
+        XCTAssertEqual(reserved, ["same-1"])
+
+        var slugger = HeadingAnchorSlugger(reserving: reserved)
+        let html = RawHTMLHeadingNormalizer.normalize(
+            "<h1>A &amp B</h1><h2>Same</h2><h2>Same</h2>",
+            slugger: &slugger
+        )
+        XCTAssertTrue(html.contains("<h1 id=\"a-b\">A &amp B</h1>"), html)
+        XCTAssertTrue(html.contains("<h2 id=\"same\">Same</h2>"), html)
+        XCTAssertTrue(html.contains("<h2 id=\"same-2\">Same</h2>"), html)
+    }
+
+    func testRawHTMLHeadingNormalizerUsesWHATWGNumericReferences() {
+        var slugger = HeadingAnchorSlugger()
+        let html = RawHTMLHeadingNormalizer.normalize(
+            "<h1>&#00000000065</h1><h2>&#131</h2>",
+            slugger: &slugger
+        )
+
+        XCTAssertTrue(html.contains("<h1 id=\"a\">"), html)
+        XCTAssertTrue(html.contains("<h2 id=\"ƒ\">"), html)
+    }
+
+    func testRawHTMLHeadingNormalizerClosesOnMismatchedHeadingEndTag() {
+        var slugger = HeadingAnchorSlugger()
+        let html = RawHTMLHeadingNormalizer.normalize(
+            "<h1>Alpha</h2>tail",
+            slugger: &slugger
+        )
+
+        XCTAssertEqual(html, "<h1 id=\"alpha\">Alpha</h2>tail")
+    }
+
+    func testRawHTMLHeadingNormalizerReprocessesForeignHeadingEndTag() {
+        var slugger = HeadingAnchorSlugger()
+        let html = RawHTMLHeadingNormalizer.normalize(
+            "<h1>Alpha<svg></h2>tail",
+            slugger: &slugger
+        )
+
+        XCTAssertEqual(html, "<h1 id=\"alpha\">Alpha<svg></h2>tail")
+    }
+
+    func testRawHTMLHeadingNormalizerAcceptsQuoteInUnquotedAttribute() {
+        var slugger = HeadingAnchorSlugger()
+        let html = RawHTMLHeadingNormalizer.normalize(
+            #"<h1 data=x">Alpha</h1><h2>Beta</h2>"#,
+            slugger: &slugger
+        )
+
+        XCTAssertTrue(html.contains(#"<h1 data=x" id="alpha">Alpha</h1>"#), html)
+        XCTAssertTrue(html.contains("<h2 id=\"beta\">Beta</h2>"), html)
+    }
+
     func testHeadingAnchorContractMatchesSharedFixture() throws {
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -36,7 +200,9 @@ final class MarkdownRendererTests: XCTestCase {
             .deletingLastPathComponent()
         let fixture = root.appendingPathComponent("Sources/OuroMD/web/heading-anchor-contract.json")
         let contract = try JSONDecoder().decode(AnchorContract.self, from: Data(contentsOf: fixture))
-        let html = render(contract.cases.map { "# \($0.text)" }.joined(separator: "\n\n"))
+        let html = render(contract.cases.map {
+            $0.text.contains("\n") ? "\($0.text)\n---" : "# \($0.text)"
+        }.joined(separator: "\n\n"))
 
         for item in contract.cases {
             XCTAssertTrue(html.contains("id=\"\(item.expected)\""), "missing heading id \(item.expected)")
@@ -243,6 +409,27 @@ final class MarkdownRendererTests: XCTestCase {
         XCTAssertFalse(html.contains("[^a]:"))
     }
 
+    func testHeadingIDsRemainUniqueAcrossBodyAndFootnotes() {
+        let html = render("# Same\n\nBody[^a].\n\n[^a]: first\n\n    # Same")
+
+        XCTAssertEqual(html.components(separatedBy: "id=\"same\"").count - 1, 1)
+        XCTAssertEqual(html.components(separatedBy: "id=\"same-1\"").count - 1, 1)
+    }
+
+    func testHeadingIDsReserveFootnoteAndBackReferenceIDs() {
+        let html = render(
+            "# Fn A\n\n# Fnref A\n\n# Footnotes Def 1\n\n# Footnotes Ref 1\n\n# Footnotes Ref 1 2\n\nBody[^a] and again[^a].\n\n[^a]: first"
+        )
+
+        XCTAssertTrue(html.contains("<h1 id=\"fn-a-1\">Fn A</h1>"))
+        XCTAssertTrue(html.contains("<h1 id=\"fnref-a-1\">Fnref A</h1>"))
+        XCTAssertTrue(html.contains("<h1 id=\"footnotes-def-1-1\">Footnotes Def 1</h1>"))
+        XCTAssertTrue(html.contains("<h1 id=\"footnotes-ref-1-1\">Footnotes Ref 1</h1>"))
+        XCTAssertTrue(html.contains("<h1 id=\"footnotes-ref-1-2\">Footnotes Ref 1 2</h1>"))
+        XCTAssertTrue(html.contains("<li id=\"fn-a\">"))
+        XCTAssertTrue(html.contains("<sup id=\"fnref-a\">"))
+    }
+
     func testBrokenOrUnknownFootnoteReferencesAreLeftAsText() {
         let html = render("Known[^a] unknown[^missing] broken[^oops\n\n[^a]: ok")
 
@@ -256,6 +443,48 @@ final class MarkdownRendererTests: XCTestCase {
 
         XCTAssertTrue(html.contains("<li id=\"fn-a\"><p>first</p>"))
         XCTAssertFalse(html.contains("second</p>"))
+    }
+
+    func testDistinctFootnoteLabelsWithCollidingSlugsReceiveUniqueIDs() {
+        let html = render("One[^a!] two[^a?].\n\n[^a!]: first\n[^a?]: second")
+
+        XCTAssertTrue(html.contains("href=\"#fn-a\""))
+        XCTAssertTrue(html.contains("href=\"#fn-a-1\""))
+        XCTAssertTrue(html.contains("<li id=\"fn-a\">"))
+        XCTAssertTrue(html.contains("<li id=\"fn-a-1\">"))
+    }
+
+    func testFootnoteIDsAvoidAuthoredRawHTMLIDs() {
+        let html = render("""
+        <div id="fn-a"></div>
+        <div id="fnref-b"></div>
+
+        One[^a] two[^b].
+
+        [^a]: first
+        [^b]: second
+        """)
+
+        XCTAssertTrue(html.contains("<li id=\"fn-a-1\">"), html)
+        XCTAssertTrue(html.contains("<sup id=\"fnref-a-1\">"), html)
+        XCTAssertTrue(html.contains("<li id=\"fn-b-1\">"), html)
+        XCTAssertTrue(html.contains("<sup id=\"fnref-b-1\">"), html)
+        XCTAssertEqual(html.components(separatedBy: "id=\"fn-a\"").count - 1, 1)
+        XCTAssertEqual(html.components(separatedBy: "id=\"fnref-b\"").count - 1, 1)
+    }
+
+    func testFootnoteIDsAvoidRawHTMLIDsInDeindentedDefinitions() {
+        let html = render("""
+        Body[^a].
+
+        [^a]:
+
+            <div id="fn-a"></div>
+        """)
+
+        XCTAssertTrue(html.contains("<li id=\"fn-a-1\">"), html)
+        XCTAssertTrue(html.contains("<div id=\"fn-a\"></div>"), html)
+        XCTAssertEqual(html.components(separatedBy: "id=\"fn-a\"").count - 1, 1)
     }
 
     func testFootnoteDefinitionsInsideCodeBlocksRemainCode() {

@@ -65,7 +65,8 @@ trap cleanup EXIT
 link_fixture="Tests/Fixtures/reference-links-and-anchors.md"
 roundtrip_fixture="Tests/Fixtures/reference-links-roundtrip.md"
 reference_roundtrip_out="$tmp/reference-links-roundtrip.md"
-run_with_timeout "$OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS" --linktest --linktest-file "$link_fixture"
+run_with_timeout "$OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS" --linktest --linktest-file "$link_fixture" --linktest-mode ir
+run_with_timeout "$OURO_LINKTEST_SCENARIO_TIMEOUT_SECONDS" --linktest --linktest-file "$link_fixture" --linktest-mode sv
 run --roundtrip "$roundtrip_fixture" --roundtrip-strict raw --out "$reference_roundtrip_out"
 cmp "$roundtrip_fixture" "$reference_roundtrip_out"
 

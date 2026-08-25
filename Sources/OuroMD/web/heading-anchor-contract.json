@@ -7,6 +7,8 @@
     { "text": "Foo", "expected": "foo-1" },
     { "text": "Foo-1", "expected": "foo-1-1" },
     { "text": "Docs heading", "expected": "docs-heading" },
+    { "text": "Image alt", "expected": "image-alt" },
+    { "text": "Foo\nbar", "expected": "foo-bar" },
     { "text": "snake_case name", "expected": "snake-case-name" },
     { "text": "Café", "expected": "café" },
     { "text": "Café", "expected": "café-1" },
