@@ -81,6 +81,8 @@ jobs:
           ./scripts/prepare-ci-signing-assets.sh
       - name: Run tests
         run: ./scripts/swift-test-budget.sh
+      - name: Check file watcher concurrency
+        run: swift test --sanitize=thread --filter FileWatcher
       - name: Upload Swift test timings
         if: always()
         uses: actions/upload-artifact@v6

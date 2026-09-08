@@ -46,4 +46,69 @@ final class FileWatcherTests: XCTestCase {
         wait(for: [exp], timeout: 6)
         watcher.stop()
     }
+
+    func testRestartWhileFileChanges() throws {
+        let url = tempFile()
+        try "initial".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let writesFinished = expectation(description: "external writes finished")
+        let finalChange = expectation(description: "watcher remains live after restarts")
+        finalChange.assertForOverFulfill = false
+        let watcher = FileWatcher(url: url) {
+            if (try? String(contentsOf: url, encoding: .utf8)) == "final" {
+                finalChange.fulfill()
+            }
+        }
+        watcher.start()
+        defer { watcher.stop() }
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            defer { writesFinished.fulfill() }
+            do {
+                for index in 0..<200 {
+                    try "edit \(index)".write(to: url, atomically: true, encoding: .utf8)
+                }
+            } catch {
+                XCTFail("External write failed: \(error)")
+            }
+        }
+        for _ in 0..<200 {
+            watcher.stop()
+            watcher.start()
+        }
+        wait(for: [writesFinished], timeout: 5)
+        try "final".write(to: url, atomically: false, encoding: .utf8)
+        wait(for: [finalChange], timeout: 3)
+    }
+
+    func testStopWhileFileIsMissingDoesNotRearm() throws {
+        let url = tempFile()
+        defer { try? FileManager.default.removeItem(at: url) }
+        let unexpectedChange = expectation(description: "stopped watcher stays stopped")
+        unexpectedChange.isInverted = true
+        let watcher = FileWatcher(url: url) { unexpectedChange.fulfill() }
+        watcher.start()
+        watcher.stop()
+        defer { watcher.stop() }
+
+        try "restored".write(to: url, atomically: true, encoding: .utf8)
+        wait(for: [unexpectedChange], timeout: 0.6)
+    }
+
+    func testStopSuppressesAlreadyQueuedChange() throws {
+        let url = tempFile()
+        defer { try? FileManager.default.removeItem(at: url) }
+        let unexpectedChange = expectation(description: "queued notification is cancelled")
+        unexpectedChange.isInverted = true
+        let watcher = FileWatcher(url: url) { unexpectedChange.fulfill() }
+        watcher.start()
+        defer { watcher.stop() }
+
+        try "restored".write(to: url, atomically: true, encoding: .utf8)
+        // Let recovery enqueue its notification while the main queue is occupied.
+        Thread.sleep(forTimeInterval: 0.35)
+        watcher.stop()
+        wait(for: [unexpectedChange], timeout: 0.6)
+    }
 }

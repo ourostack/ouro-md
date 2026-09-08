@@ -23,7 +23,7 @@ final class FileWatcher {
     private let onChange: () -> Void
     private let queue = DispatchQueue(label: "md.ouro.filewatcher")
     private var source: DispatchSourceFileSystemObject?
-    private var fd: Int32 = -1
+    private var isRunning = false
     private var debounce: DispatchWorkItem?
     private var poll: DispatchSourceTimer?
     /// Last on-disk identity we reconciled, so the poll only fires on real change.
@@ -42,23 +42,26 @@ final class FileWatcher {
         self.onChange = onChange
     }
 
-    deinit { stop() }
+    // No callback can still own self during deinit, which may run on queue.
+    deinit { stopSources() }
 
-    func start() { start(notifyOnAcquire: false) }
+    func start() {
+        queue.sync {
+            stopSources()
+            isRunning = true
+            lastStamp = Self.stamp(of: url.path)
+            armVnode(notifyOnAcquire: false)
+            armPoll()
+        }
+    }
 
     /// `notifyOnAcquire` fires `onChange` once the vnode watch is (re)established
     /// after the file had been missing — so a delete-then-recreate (e.g. an agent
     /// that removes a file before rewriting it) is reconciled instead of leaving
     /// the reader on a stale "deleted" view.
-    private func start(notifyOnAcquire: Bool) {
-        stopSources()
-        lastStamp = Self.stamp(of: url.path)
-        armVnode(notifyOnAcquire: notifyOnAcquire)
-        armPoll()
-    }
-
     private func armVnode(notifyOnAcquire: Bool) {
-        fd = open(url.path, O_EVTONLY)
+        guard isRunning else { return }
+        let fd = open(url.path, O_EVTONLY)
         guard fd >= 0 else {
             // File may be momentarily absent (mid-rename) or genuinely gone; the
             // poll still covers reappearance. Retry the vnode, notifying once it
@@ -77,10 +80,7 @@ final class FileWatcher {
             guard let self, let source = self.source else { return }
             self.handle(flags: source.data)
         }
-        src.setCancelHandler { [weak self] in
-            guard let self else { return }
-            if self.fd >= 0 { close(self.fd); self.fd = -1 }
-        }
+        src.setCancelHandler { close(fd) }
         source = src
         src.resume()
         if notifyOnAcquire {
@@ -103,10 +103,11 @@ final class FileWatcher {
     }
 
     func stop() {
-        stopSources()
+        queue.sync { stopSources() }
     }
 
     private func stopSources() {
+        isRunning = false
         debounce?.cancel()
         debounce = nil
         poll?.cancel()
@@ -141,7 +142,10 @@ final class FileWatcher {
     }
 
     private func fire() {
-        DispatchQueue.main.async { [weak self] in self?.onChange() }
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.queue.sync(execute: { self.isRunning }) else { return }
+            self.onChange()
+        }
     }
 
     private static func stamp(of path: String) -> FileStamp? {
