@@ -31,5 +31,6 @@ swift build
 ./scripts/swift-test-budget.sh
 ./scripts/check-coverage.sh
 OURO_MD_EXE="${OURO_MD_EXE:-.build/debug/ouro-md}" ./scripts/run-native-scenarios.sh
+swift test --sanitize=thread --filter FileWatcher
 
 echo "PR preflight ok"
