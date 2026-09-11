@@ -57,7 +57,7 @@ final class OuroMDAppStoreApplyPlanTests: XCTestCase {
         XCTAssertEqual(summary["mode"] as? String, "apply")
         XCTAssertEqual(summary["transport"] as? String, "fixture")
         XCTAssertEqual(summary["appId"] as? String, "6787262892")
-        XCTAssertEqual(summary["targetVersion"] as? String, "0.9.86")
+        XCTAssertEqual(summary["targetVersion"] as? String, "0.9.87")
         XCTAssertEqual(summary["executedRequestCount"] as? Int, 30)
         XCTAssertEqual(summary["executedUploadOperationCount"] as? Int, 4)
 
@@ -598,7 +598,7 @@ final class OuroMDAppStoreApplyPlanTests: XCTestCase {
             "appId": "6787262892",
             "bundleId": "bot.ouro.md",
             "teamId": "743GT2AJ24",
-            "targetVersion": "0.9.86",
+            "targetVersion": "0.9.87",
             "targetAppStoreVersionExists": targetAppStoreVersionExists,
             "targetAppStoreVersionIds": targetAppStoreVersionIds,
             "appInfo": [
@@ -613,7 +613,7 @@ final class OuroMDAppStoreApplyPlanTests: XCTestCase {
             ],
             "uploadedBuild": [
                 "id": uploadedBuildId,
-                "version": "0.9.86",
+                "version": "0.9.87",
                 "processingState": "VALID",
                 "expired": false
             ]

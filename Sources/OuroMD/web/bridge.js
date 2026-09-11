@@ -1568,6 +1568,7 @@
   function postRender() {
     try { restoreTableCellSpaces(true); } catch (e) { /* never block a render */ }
     rewriteRelativeImages();
+    renderHTMLLineBreaks();
     styleAlerts();
     updateAlertEditing();
     annotateTableCellSizing();
@@ -1575,6 +1576,24 @@
     annotateScrollableTables();
     resetTableScrollIfNeeded();
     resetNewTableScroll(document);
+  }
+
+  // Mark the break as already rendered so Vditor neither re-renders nor serializes it.
+  function renderHTMLLineBreaks() {
+    var nodes = document.querySelectorAll('.vditor-ir [data-type="html-inline"]');
+    for (var i = 0; i < nodes.length; i++) {
+      var marker = nodes[i].querySelector(".vditor-ir__marker");
+      var preview = nodes[i].querySelector("br.ouro-html-break");
+      var isBreak = marker && /^<br(?:\s|\/?>)/i.test(marker.textContent || "");
+      if (isBreak && !preview) {
+        preview = document.createElement("br");
+        preview.className = "vditor-ir__preview ouro-html-break";
+        preview.setAttribute("data-render", "1");
+        nodes[i].appendChild(preview);
+      } else if (!isBreak && preview) {
+        preview.remove();
+      }
+    }
   }
 
   // Tables are centered and capped at the reading column in pure CSS

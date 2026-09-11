@@ -199,6 +199,35 @@ final class UndoTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         redoTwo.indexOf("ONE") >= 0 && redoTwo.indexOf("TWO") >= 0,
         "edit=" + afterTwo + " undo1=" + undoOne + " undo2=" + undoTwo + " redo1=" + redoOne + " redo2=" + redoTwo);
 
+      step("HTML breaks with edits in another paragraph");
+      await reset("Edit here.\\n\\nbefore<br/>after");
+      var original = gv();
+      var editor = window.__ouroEditor.vditor;
+      var range = document.createRange();
+      range.selectNodeContents(editor.ir.element.querySelector("p"));
+      range.collapse(false);
+      var selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      var inputCount = 0;
+      var originalInput = editor.options.input;
+      editor.options.input = function (value) {
+        inputCount += 1;
+        originalInput(value);
+      };
+      var inserted = document.execCommand("insertText", false, " CHANGED");
+      await delay(500);
+      var edited = gv();
+      var inputAfterEdit = inputCount;
+      var undone = await undo();
+      var redone = await redo();
+      editor.options.input = originalInput;
+      record("HTML breaks preserve edit notifications and undo/redo",
+        inserted && inputAfterEdit > 0 && edited.indexOf("CHANGED") >= 0 &&
+        edited.indexOf("before<br/>after") >= 0 && undone === original && redone === edited,
+        "inserted=" + inserted + " inputs=" + inputAfterEdit + " edit=" + edited +
+        " undo=" + undone + " redo=" + redone);
+
       finish(results);
       } catch (e) {
         finish([{ name: "script exception", ok: false, detail: String(e && (e.stack || e.message) || e) }]);
