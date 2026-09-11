@@ -199,6 +199,41 @@ final class UndoTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         redoTwo.indexOf("ONE") >= 0 && redoTwo.indexOf("TWO") >= 0,
         "edit=" + afterTwo + " undo1=" + undoOne + " undo2=" + undoTwo + " redo1=" + redoOne + " redo2=" + redoTwo);
 
+      step("HTML breaks with edits in another paragraph");
+      await reset("Edit here.\\n\\nbefore<br/>after");
+      var original = gv();
+      var editor = window.__ouroEditor.vditor;
+      var range = document.createRange();
+      range.selectNodeContents(editor.ir.element.querySelector("p"));
+      range.collapse(false);
+      var selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      var inputCount = 0;
+      var originalInput = editor.options.input;
+      editor.options.input = function (value) {
+        inputCount += 1;
+        originalInput(value);
+      };
+      var firstInserted = document.execCommand("insertText", false, " FIRST");
+      await delay(editor.options.undoDelay + 100);
+      var afterFirst = gv();
+      var inserted = document.execCommand("insertText", false, " CHANGED");
+      await delay(editor.options.undoDelay + 100);
+      var edited = gv();
+      var inputAfterEdit = inputCount;
+      var undoFirst = await undo();
+      var undone = await undo();
+      var redoFirst = await redo();
+      var redone = await redo();
+      editor.options.input = originalInput;
+      record("HTML breaks preserve edit notifications and undo/redo",
+        firstInserted && inserted && inputAfterEdit > 1 && edited.indexOf("CHANGED") >= 0 &&
+        edited.indexOf("before<br/>after") >= 0 && undoFirst === afterFirst && undone === original &&
+        redoFirst === afterFirst && redone === edited,
+        "inserted=" + inserted + " inputs=" + inputAfterEdit + " first=" + afterFirst + " edit=" + edited +
+        " undo1=" + undoFirst + " undo2=" + undone + " redo1=" + redoFirst + " redo2=" + redone);
+
       finish(results);
       } catch (e) {
         finish([{ name: "script exception", ok: false, detail: String(e && (e.stack || e.message) || e) }]);

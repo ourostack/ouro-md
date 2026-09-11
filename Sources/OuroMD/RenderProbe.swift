@@ -54,7 +54,7 @@ final class RenderProbe: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
                 print("script      : MISSING ✗ — \(error)")
                 exit(1)
             }
-            let features = ["heading", "bold", "inlineCode", "codeBlock", "table",
+            let features = ["heading", "bold", "inlineCode", "codeBlock", "table", "htmlBreaks",
                             "taskList", "math", "footnote", "alert", "mermaid"]
             var allCore = true
             for key in features {
@@ -120,6 +120,32 @@ final class RenderProbe: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
         "",
         "Body **bold** and `code` with a footnote[^1].",
         "",
+        "break-br-before<br>break-br-after",
+        "",
+        "break-slash-before<br/>break-slash-after",
+        "",
+        "break-spaced-before<br />break-spaced-after",
+        "",
+        "break-upper-before<BR/>break-upper-after",
+        "",
+        "break-attrs-before<br class=\"authored\">break-attrs-after",
+        "",
+        "break-double-before<br/><br>break-double-after",
+        "",
+        "- break-list-before<br/>break-list-after",
+        "",
+        "> break-quote-before<br/>break-quote-after",
+        "",
+        "control-hard-before  \ncontrol-hard-after",
+        "",
+        "control-escaped-before&lt;br/&gt;control-escaped-after",
+        "",
+        "`control-code-before<br/>control-code-after`",
+        "",
+        "control-tag-before<bravo>control-tag-after",
+        "",
+        "control-custom-before<br-custom>control-custom-after",
+        "",
         "[^1]: Footnote text.",
         "",
         "  > Leading-space top-level quote stays normal.",
@@ -172,7 +198,7 @@ final class RenderProbe: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
         "",
         "| A | B |",
         "| - | - |",
-        "| 1 | 2 |",
+        "| break-table-before<br/>break-table-after | 2 |",
         "",
         "$$E = mc^2$$",
         "",
@@ -182,10 +208,71 @@ final class RenderProbe: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
         ""
       ].join("\n");
       window.ouro.setValue(doc);
+      var expectedSource = window.ouro.getValue();
       function probe(attempt) {
         try {
         var root = document.querySelector("#editor");
         function has(sel) { return !!root.querySelector(sel); }
+        function htmlBreakProbe() {
+          function position(text) {
+            var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+            while (walker.nextNode()) {
+              var node = walker.currentNode;
+              var offset = node.nodeValue.indexOf(text);
+              if (offset < 0) { continue; }
+              var range = document.createRange();
+              range.setStart(node, offset);
+              range.setEnd(node, offset + text.length);
+              var rect = range.getBoundingClientRect();
+              if (rect.height > 0) {
+                return { top: rect.top, lineHeight: parseFloat(getComputedStyle(node.parentElement).lineHeight) };
+              }
+            }
+            return null;
+          }
+          var cases = [
+            ["break-br", 1], ["break-slash", 1], ["break-spaced", 1], ["break-upper", 1],
+            ["break-attrs", 1], ["break-double", 2], ["break-list", 1], ["break-quote", 1],
+            ["break-table", 1], ["control-hard", 1], ["control-escaped", 0], ["control-code", 0],
+            ["control-tag", 0], ["control-custom", 0]
+          ];
+          var failures = cases.filter(function (item) {
+            var before = position(item[0] + "-before");
+            var after = position(item[0] + "-after");
+            if (!before || !after) { return true; }
+            var expected = item[1] === 0 ? 0 : item[1] * before.lineHeight;
+            return !Number.isFinite(expected) || Math.abs(after.top - before.top - expected) > 1;
+          }).map(function (item) { return item[0]; });
+          var sourceOK = ["<br>", "<br/>", "<br />", "<BR/>", "<br class=\"authored\">", "<br/><br>"].every(function (tag) {
+            return window.ouro.getValue().indexOf(tag) !== -1;
+          });
+          var inline = root.querySelector('[data-type="html-inline"]');
+          if (failures.length === 0 && inline) {
+            var marker = inline.querySelector(".vditor-ir__marker");
+            var source = marker.textContent;
+            window.ouro.refreshDecorations();
+            if (inline.querySelectorAll("br").length !== 1) { failures.push("idempotence"); }
+            marker.textContent = "<wbr>";
+            window.ouro.refreshDecorations();
+            if (inline.querySelector("br")) { failures.push("edited-tag"); }
+            marker.textContent = source;
+            window.ouro.refreshDecorations();
+            marker.remove();
+            window.ouro.refreshDecorations();
+            if (inline.querySelector("br")) { failures.push("removed-marker"); }
+            inline.prepend(marker);
+            window.ouro.refreshDecorations();
+            if (inline.querySelectorAll("br").length !== 1) { failures.push("restored-marker"); }
+          }
+          sourceOK = sourceOK && window.ouro.getValue() === expectedSource;
+          return {
+            ok: failures.length === 0 && sourceOK,
+            detail: "failed=" + failures.join(",") + " sourceOK=" + sourceOK +
+              " inline=" + (inline ? inline.outerHTML : "missing") +
+              " expected=" + JSON.stringify(expectedSource.slice(0, 1000)) +
+              " actual=" + JSON.stringify(window.ouro.getValue().slice(0, 1000))
+          };
+        }
         function alertProbe() {
           var alerts = root.querySelectorAll("blockquote.ouro-alert");
           var markers = root.querySelectorAll("blockquote.ouro-alert .ouro-alert-marker");
@@ -219,12 +306,15 @@ final class RenderProbe: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
           };
         }
         var alert = alertProbe();
+        var htmlBreaks = htmlBreakProbe();
         var result = {
           heading: has("h1"),
           bold: has("strong"),
           inlineCode: has("code"),
           codeBlock: has("pre") || has(".vditor-ir__marker--pre") || has("code.language-mermaid"),
           table: has("table"),
+          htmlBreaks: htmlBreaks.ok,
+          htmlBreaksDetail: htmlBreaks.detail,
           taskList: has('input[type="checkbox"]'),
           math: has(".katex") || has(".language-math svg") || has(".vditor-math"),
           footnote: has("sup") || has('[data-type="footnotes-ref"]') || has(".vditor-footnotes__ref"),
@@ -234,7 +324,7 @@ final class RenderProbe: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
         };
         var coreReady = result.heading && result.bold && result.inlineCode &&
           result.codeBlock && result.table && result.taskList && result.math &&
-          result.footnote && result.alert;
+          result.footnote && result.alert && result.htmlBreaks;
         if (!coreReady && attempt < 60) {
           setTimeout(function () { probe(attempt + 1); }, 250);
           return;
