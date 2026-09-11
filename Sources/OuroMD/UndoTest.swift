@@ -215,18 +215,24 @@ final class UndoTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         inputCount += 1;
         originalInput(value);
       };
+      var firstInserted = document.execCommand("insertText", false, " FIRST");
+      await delay(editor.options.undoDelay + 100);
+      var afterFirst = gv();
       var inserted = document.execCommand("insertText", false, " CHANGED");
-      await delay(500);
+      await delay(editor.options.undoDelay + 100);
       var edited = gv();
       var inputAfterEdit = inputCount;
+      var undoFirst = await undo();
       var undone = await undo();
+      var redoFirst = await redo();
       var redone = await redo();
       editor.options.input = originalInput;
       record("HTML breaks preserve edit notifications and undo/redo",
-        inserted && inputAfterEdit > 0 && edited.indexOf("CHANGED") >= 0 &&
-        edited.indexOf("before<br/>after") >= 0 && undone === original && redone === edited,
-        "inserted=" + inserted + " inputs=" + inputAfterEdit + " edit=" + edited +
-        " undo=" + undone + " redo=" + redone);
+        firstInserted && inserted && inputAfterEdit > 1 && edited.indexOf("CHANGED") >= 0 &&
+        edited.indexOf("before<br/>after") >= 0 && undoFirst === afterFirst && undone === original &&
+        redoFirst === afterFirst && redone === edited,
+        "inserted=" + inserted + " inputs=" + inputAfterEdit + " first=" + afterFirst + " edit=" + edited +
+        " undo1=" + undoFirst + " undo2=" + undone + " redo1=" + redoFirst + " redo2=" + redone);
 
       finish(results);
       } catch (e) {
