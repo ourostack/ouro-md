@@ -64,10 +64,27 @@ final class AccessibilityAuditTester {
         .union(accessibilityStrings(CommandReferenceView(items: CommandPaletteCatalog.items()), size: NSSize(width: 560, height: 620)))
         .union(accessibilityStrings(OuroMDAboutView(updateCoordinator: makeCurrentUpdateCoordinator()), size: NSSize(width: 540, height: 540)))
         .union(accessibilityStrings(UpdateProgressView(updateCoordinator: updateCoordinator), size: NSSize(width: 440, height: 190)))
-        let shellText = renderedText(OuroMDAboutView(updateCoordinator: makeCurrentUpdateCoordinator()), size: NSSize(width: 540, height: 540))
-            .union(renderedText(OuroMDReleaseControls(updateCoordinator: availableUpdateCoordinator, showTitle: true)
-                .frame(width: 560, alignment: .leading), size: NSSize(width: 560, height: 220)))
-            .union(renderedText(OuroMDUpdateInstalledNotice(version: "0.10.0", onOpenAbout: {}, onDismiss: {}), size: NSSize(width: 380, height: 140)))
+        let about = OuroMDAboutView(updateCoordinator: makeCurrentUpdateCoordinator())
+        let controls = OuroMDReleaseControls(updateCoordinator: availableUpdateCoordinator, showTitle: true)
+            .frame(width: 560, alignment: .leading)
+        let notice = OuroMDUpdateInstalledNotice(version: "0.10.0", onOpenAbout: {}, onDismiss: {})
+        var shellText: Set<String>
+        var shellSource = "rendered text"
+        if let rendered = [
+            renderedText(about, size: NSSize(width: 540, height: 540)),
+            renderedText(controls, size: NSSize(width: 560, height: 220)),
+            renderedText(notice, size: NSSize(width: 380, height: 140)),
+        ].reduce(Optional(Set<String>()), { acc, next in next.flatMap { n in acc.map { $0.union(n) } } }) {
+            shellText = rendered
+        } else {
+            // Some machines (CI virtual machines) have no working text
+            // recognition. Check the same labels through the accessibility
+            // tree, and say so, rather than skipping the check.
+            shellSource = "accessibility tree; text recognition is unavailable on this machine"
+            shellText = accessibilityStrings(about, size: NSSize(width: 540, height: 540))
+                .union(accessibilityStrings(controls, size: NSSize(width: 560, height: 220)))
+                .union(accessibilityStrings(notice, size: NSSize(width: 380, height: 140)))
+        }
 
         let runtimeRequired = ["Light", "Dark", "Outline", "Files", "Search"]
         let documentTruthRequired = ["File status"]
@@ -119,7 +136,7 @@ final class AccessibilityAuditTester {
             print("missing document truth labels: \(missingDocumentTruth.joined(separator: " | "))")
             print("observed labels: \(labels.sorted().joined(separator: " | "))")
         }
-        print("shell rendered accessibility labels: \(missingShellRendered.isEmpty ? "✓" : "✗")")
+        print("shell rendered accessibility labels: \(missingShellRendered.isEmpty && missingShellRenderedAlternatives.isEmpty ? "✓" : "✗") (\(shellSource))")
         if !missingShellRendered.isEmpty {
             print("missing shell rendered labels: \(missingShellRendered.joined(separator: " | "))")
             print("observed shell text: \(shellText.sorted().joined(separator: " | "))")
@@ -195,7 +212,9 @@ final class AccessibilityAuditTester {
         return out
     }
 
-    private func renderedText<Content: View>(_ view: Content, size: NSSize) -> Set<String> {
+    /// The text recognized in the rendered view, or nil when text recognition
+    /// doesn't work on this machine.
+    private func renderedText<Content: View>(_ view: Content, size: NSSize) -> Set<String>? {
         let host = NSHostingController(
             rootView: view
                 .background(Color.white)
@@ -225,16 +244,39 @@ final class AccessibilityAuditTester {
         return representation.cgImage
     }
 
-    private func recognizeText(in image: CGImage) -> Set<String> {
-        let request = VNRecognizeTextRequest()
-        request.recognitionLevel = .accurate
-        request.usesLanguageCorrection = false
-        let handler = VNImageRequestHandler(cgImage: image, options: [:])
+    private func recognizeText(in image: CGImage) -> Set<String>? {
+        func makeRequest(cpuOnly: Bool) -> VNRecognizeTextRequest {
+            let request = VNRecognizeTextRequest()
+            request.recognitionLevel = .accurate
+            request.usesLanguageCorrection = false
+            if cpuOnly {
+                if #available(macOS 14, *) {
+                    if let cpu = (try? request.supportedComputeStageDevices)?[.main]?.first(where: {
+                        if case .cpu = $0 { return true } else { return false }
+                    }) {
+                        request.setComputeDevice(cpu, for: .main)
+                    }
+                } else {
+                    request.usesCPUOnly = true
+                }
+            }
+            return request
+        }
+        // Lets the fallback be exercised on a machine where recognition works.
+        if ProcessInfo.processInfo.environment["OURO_MD_AUDIT_WITHOUT_TEXT_RECOGNITION"] == "1" { return nil }
+        var request = makeRequest(cpuOnly: false)
         do {
-            try handler.perform([request])
+            try VNImageRequestHandler(cgImage: image, options: [:]).perform([request])
         } catch {
-            FileHandle.standardError.write(Data("accessibilityaudit: text recognition failed: \(error)\n".utf8))
-            return []
+            // Virtual machines without a Neural Engine can fail here; the CPU
+            // path is slower but works on more machines.
+            request = makeRequest(cpuOnly: true)
+            do {
+                try VNImageRequestHandler(cgImage: image, options: [:]).perform([request])
+            } catch let cpuError {
+                FileHandle.standardError.write(Data("accessibilityaudit: text recognition failed: \(error); on the CPU: \(cpuError)\n".utf8))
+                return nil
+            }
         }
         if (request.results ?? []).isEmpty {
             FileHandle.standardError.write(Data("accessibilityaudit: text recognition found nothing in a \(image.width)x\(image.height) render with \(Self.inkPixels(in: image)) ink pixels\n".utf8))
