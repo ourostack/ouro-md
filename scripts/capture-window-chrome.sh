@@ -28,13 +28,21 @@ capture() {
   defaults write "$domain" ouro.session.docs -array "$fixtures/dogfood-visual-surface.md"
 
   open -n "$app"
-  local id=""
-  for _ in $(seq 1 40); do
+  local id="" pid=""
+  for _ in $(seq 1 60); do
     sleep 0.5
-    id="$(swift scripts/lib/window-id.swift ouro-md 2>/dev/null || true)"
+    pid="$(pgrep -nx ouro-md || true)"
+    [[ -n "$pid" ]] || continue
+    id="$(swift scripts/lib/window-id.swift "$pid" 2>"$out/$name-windows.log" || true)"
     [[ -n "$id" ]] && break
   done
-  [[ -n "$id" ]] || { echo "error: no Ouro MD window appeared for $name" >&2; pkill -x ouro-md || true; return 1; }
+  if [[ -z "$id" ]]; then
+    echo "error: no Ouro MD window appeared for $name (pid ${pid:-none})" >&2
+    cat "$out/$name-windows.log" >&2 || true
+    screencapture -x "$out/$name-screen.png" || true
+    pkill -x ouro-md || true
+    return 1
+  fi
   sleep 4
   screencapture -x -o -l "$id" "$out/$name-window.png"
   screencapture -x "$out/$name-screen.png"
