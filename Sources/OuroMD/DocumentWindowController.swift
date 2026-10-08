@@ -7,7 +7,7 @@ import SwiftUI
 /// centered title, chrome sync, the status bar, and unsaved-close
 /// handling. Multiple instances give independent windows.
 @MainActor
-final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate {
+final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate, NSToolbarDelegate {
     let model = AppModel()
     let window: NSWindow
     private var sidebarItem: NSSplitViewItem?
@@ -48,6 +48,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         window.isReleasedWhenClosed = false
         self.window = window
         super.init()
+        adoptSystemToolbar()
 
         window.delegate = self
         // Click the filename to open a document (same as File ▸ Open), while the
@@ -234,6 +235,53 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
 
     func printDocument() {
         model.printDocument()
+    }
+
+    // MARK: - Toolbar (new design)
+
+    private static let toolbarIdentifier = NSToolbar.Identifier("OuroMDDocumentToolbar")
+    private static let sidebarToggleItem = NSToolbarItem.Identifier("OuroMDToggleSidebar")
+
+    /// On macOS 26+ the window gets a real toolbar, which is what carries the
+    /// system glass, and the content runs under it (the editor keeps its text
+    /// clear through WebKit's obscured content insets). Earlier systems keep
+    /// the plain transparent title bar.
+    private func adoptSystemToolbar() {
+        guard SystemDesign.usesGlass else { return }
+        window.styleMask.insert(.fullSizeContentView)
+        let toolbar = NSToolbar(identifier: Self.toolbarIdentifier)
+        toolbar.delegate = self
+        toolbar.displayMode = .iconOnly
+        toolbar.allowsUserCustomization = false
+        window.toolbar = toolbar
+        window.toolbarStyle = .unified
+    }
+
+    func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        [Self.sidebarToggleItem, .sidebarTrackingSeparator, .flexibleSpace]
+    }
+
+    func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        toolbarDefaultItemIdentifiers(toolbar)
+    }
+
+    func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
+        guard itemIdentifier == Self.sidebarToggleItem else { return nil }
+        // Our own item rather than the system toggle, so the sidebar state the
+        // model persists stays in step (NSSplitViewController's built-in
+        // toggleSidebar: would bypass it).
+        let item = NSToolbarItem(itemIdentifier: itemIdentifier)
+        item.label = "Sidebar"
+        item.toolTip = "Show or hide the sidebar"
+        item.image = NSImage(systemSymbolName: "sidebar.left", accessibilityDescription: "Toggle Sidebar")
+        item.isBordered = true
+        item.target = self
+        item.action = #selector(toggleSidebarFromToolbar(_:))
+        return item
+    }
+
+    @objc private func toggleSidebarFromToolbar(_ sender: Any?) {
+        toggleSidebar()
     }
 
     // MARK: - NSWindowDelegate
