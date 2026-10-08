@@ -185,7 +185,7 @@ private func readerCSS(_ p: Palette) -> String {
     body{background:\(p.bg);color:\(p.fg);font-family:\(Fonts.sans);line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;margin:0;}
     ::selection{background:\(p.selection);}
     ::selection:window-inactive{background:rgba(128,128,128,0.30);}
-    .markdown-body{max-width:860px;margin:0 auto;padding:30px 30px 100px;--ouro-table-viewport:calc(100vw - 24px);}
+    .markdown-body{max-width:860px;margin:0 auto;padding:30px clamp(16px,4vw,30px) 100px;--ouro-table-viewport:calc(100vw - 24px);}
     @media (min-width:1400px){.markdown-body{max-width:1024px;}}
     @media (min-width:1800px){.markdown-body{max-width:1200px;}}
     .markdown-body>:first-child{margin-top:0;}
@@ -237,7 +237,7 @@ private func editorCSS(_ p: Palette) -> String {
 
     /* Content column — centered, responsive max-width (Github theme). Width is
        global across themes; a theme changes type + color, never the measure. */
-    .vditor-reset{color:\(p.fg)!important;font-family:\(Fonts.sans)!important;font-size:\(Fonts.size)!important;line-height:1.6!important;max-width:860px!important;margin:0 auto!important;padding:30px 30px 100px!important;-webkit-font-smoothing:antialiased;caret-color:\(p.accent);box-sizing:border-box;overflow:visible!important;--ouro-table-viewport:calc(100vw - 24px);}
+    .vditor-reset{color:\(p.fg)!important;font-family:\(Fonts.sans)!important;font-size:\(Fonts.size)!important;line-height:1.6!important;max-width:860px!important;margin:0 auto!important;padding:30px clamp(16px,4vw,30px) 100px!important;-webkit-font-smoothing:antialiased;caret-color:\(p.accent);box-sizing:border-box;overflow:visible!important;--ouro-table-viewport:calc(100vw - 24px);}
     @media (min-width:1400px){.vditor-reset{max-width:1024px!important;}}
     @media (min-width:1800px){.vditor-reset{max-width:1200px!important;}}
 
@@ -302,6 +302,18 @@ private func editorCSS(_ p: Palette) -> String {
     .vditor-reset hr{background:\(p.hrColor);height:2px;border:none;margin:16px 0;padding:0;}
     .vditor-reset ul,.vditor-reset ol{padding-left:30px!important;margin:0.8em 0!important;}
     .vditor-reset li{margin:0.25em 0;}
+    /* List markers are drawn as generated content, not ::marker. WebKit paints a
+       separate, soft-edged selection box around each ::marker that does not line
+       up with the surrounding selection fill, so a selection across a list showed
+       seams around every bullet and number. Generated content is never selected,
+       so the block's selection fill stays one clean rectangle. Task items keep
+       their checkbox. */
+    .vditor-reset ul>li:not(.vditor-task),.vditor-reset ol>li:not(.vditor-task){list-style-type:none!important;position:relative;}
+    .vditor-reset ul>li:not(.vditor-task)::before,.vditor-reset ol>li:not(.vditor-task)::before{position:absolute;-webkit-user-select:none;user-select:none;pointer-events:none;}
+    .vditor-reset ul>li:not(.vditor-task)::before{content:"";width:0.36em;height:0.36em;left:-1.05em;top:calc(0.8em - 0.18em);border-radius:50%;background:currentColor;box-sizing:border-box;}
+    .vditor-reset ul ul>li:not(.vditor-task)::before{background:transparent;border:1px solid currentColor;}
+    .vditor-reset ul ul ul>li:not(.vditor-task)::before{background:currentColor;border:0;border-radius:0;}
+    .vditor-reset ol>li:not(.vditor-task)::before{content:counter(list-item) ".";right:100%;top:0;margin-right:0.4em;white-space:nowrap;font-variant-numeric:tabular-nums;}
 
     /* Tables (Github exact): #dfe2e5 borders, #f8f8f8 header + even rows, 6px 13px cells. */
     .vditor-reset table{border-collapse:collapse!important;display:block!important;overflow-x:auto!important;width:max-content!important;max-width:100%!important;margin:0.8em 0!important;table-layout:auto;text-align:left;-webkit-overflow-scrolling:touch;box-sizing:border-box!important;}

@@ -12,12 +12,20 @@ final class Snapshotter: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
     private let size: NSSize
     private var webView: WKWebView!
     private var markdown = ""
+    private let zoom: Double
+    private let selectionScript: String?
 
-    init(fileURL: URL, outURL: URL, themeID: String, size: NSSize) {
+    /// `zoom` applies the app's text size exactly as a document window does
+    /// (`EditorZoom`), so layout at a non-default text size can be checked
+    /// headlessly. `selectionScript` runs after render to build a selection,
+    /// so selection painting can be inspected without a visible window.
+    init(fileURL: URL, outURL: URL, themeID: String, size: NSSize, zoom: Double = 1.0, selectionScript: String? = nil) {
         self.fileURL = fileURL
         self.outURL = outURL
         self.theme = ThemeStore.shared.theme(id: themeID)
         self.size = size
+        self.zoom = zoom
+        self.selectionScript = selectionScript
     }
 
     func run() -> Never {
@@ -33,6 +41,7 @@ final class Snapshotter: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
 
         webView = WKWebView(frame: NSRect(origin: .zero, size: size), configuration: configuration)
         webView.navigationDelegate = self
+        EditorZoom.apply(zoom, to: webView)
 
         guard let indexURL = OuroResources.web("index", "html") else {
             fail("index.html not found in bundle")
@@ -53,8 +62,10 @@ final class Snapshotter: NSObject, WKScriptMessageHandler, WKNavigationDelegate 
     }
 
     private func capture() {
-        webView.evaluateJavaScript("document.querySelectorAll('.vditor-reset table').forEach(function(t){t.scrollLeft=0})") { [weak self] _, _ in
+        let prepare = "document.querySelectorAll('.vditor-reset table').forEach(function(t){t.scrollLeft=0});" + (selectionScript ?? "")
+        webView.evaluateJavaScript(prepare) { [weak self] _, _ in
             guard let self else { return }
+
             let config = WKSnapshotConfiguration()
             config.rect = NSRect(origin: .zero, size: self.size)
             self.webView.takeSnapshot(with: config) { [weak self] image, error in

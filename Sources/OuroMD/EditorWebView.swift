@@ -328,7 +328,7 @@ struct EditorWebView: NSViewRepresentable {
             operation.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
         }
 
-        func setZoom(_ factor: Double) { webView?.magnification = CGFloat(factor) }
+        func setZoom(_ factor: Double) { if let webView { EditorZoom.apply(factor, to: webView) } }
 
         private func eval(_ js: String) {
             webView?.evaluateJavaScript(js, completionHandler: nil)

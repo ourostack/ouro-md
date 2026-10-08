@@ -144,7 +144,8 @@ if hasFlag("--visualqatest") {
         markdownPath: argValue("--visualqa-file"),
         viewportWidth: CGFloat(width),
         viewportHeight: CGFloat(height),
-        themeID: argValue("--theme") ?? ThemeStore.shared.defaultTheme.id
+        themeID: argValue("--theme") ?? ThemeStore.shared.defaultTheme.id,
+        zoom: Double(argValue("--visualqa-zoom") ?? "") ?? 1.0
     ).run()
 }
 
@@ -213,7 +214,9 @@ if hasFlag("--shoot") {
     Snapshotter(fileURL: URL(fileURLWithPath: path),
                 outURL: URL(fileURLWithPath: out),
                 themeID: themeID,
-                size: NSSize(width: width, height: height)).run()
+                size: NSSize(width: width, height: height),
+                zoom: Double(argValue("--zoom") ?? "") ?? 1.0,
+                selectionScript: argValue("--select-js")).run()
 }
 
 // GUI launch.
