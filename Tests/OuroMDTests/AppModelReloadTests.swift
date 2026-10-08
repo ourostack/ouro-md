@@ -166,6 +166,50 @@ final class AppModelReloadTests: XCTestCase {
         assertTelemetryDoesNotLeak(recorder.events, forbidden: [url.path, url.lastPathComponent, "Updated by agent"])
     }
 
+    /// Writing Tools tracks the text it is rewriting with live DOM ranges, so an
+    /// agent's rewrite of the file must wait for the session to end, then reload
+    /// through the usual path.
+    func testExternalEditDuringWritingToolsWaitsForSessionEnd() {
+        let url = tempFile()
+        try? "# Original\n".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let model = AppModel()
+        let recorder = recordTelemetry(on: model)
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+        model.loadInitialFile(url.path)
+
+        model.setWritingToolsActive(true)
+        try? "# Updated by agent during a rewrite\n".write(to: url, atomically: true, encoding: .utf8)
+        model.reconcileExternalChangeForTesting()
+        XCTAssertTrue(bridge.reloads.isEmpty, "live reload must wait while Writing Tools is editing")
+        XCTAssertEqual(bridge.current, "# Original\n")
+
+        model.setWritingToolsActive(false)
+        XCTAssertEqual(bridge.reloads, ["# Updated by agent during a rewrite\n"], "the deferred reload applies when the session ends")
+        assertTelemetry(recorder.events, contains: "ouro_md_writing_tools_session_started", properties: [:])
+        assertTelemetry(recorder.events, contains: "ouro_md_writing_tools_session_ended", properties: [:])
+        assertTelemetryDoesNotLeak(recorder.events, forbidden: [url.path, url.lastPathComponent, "Updated by agent"])
+    }
+
+    func testWritingToolsSessionWithoutExternalEditDoesNotReload() {
+        let url = tempFile()
+        try? "# Original\n".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let model = AppModel()
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+        model.loadInitialFile(url.path)
+
+        model.setWritingToolsActive(true)
+        model.setWritingToolsActive(false)
+        XCTAssertTrue(bridge.reloads.isEmpty)
+    }
+
     func testExternalEditBeforeEditorReadyQueuesReloadWithoutFalseCompletion() {
         let url = tempFile()
         try? "# Original\n".write(to: url, atomically: true, encoding: .utf8)

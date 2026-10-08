@@ -141,6 +141,10 @@ final class AppModel: ObservableObject {
 
     private let defaults = UserDefaults.standard
     private var pendingMarkdown: String?
+    /// True while Writing Tools is editing the page. Autosave and live reload
+    /// wait for it to finish, so neither writes or replaces text mid-rewrite.
+    private(set) var writingToolsActive = false
+    private var externalContentDuringWritingTools: (disk: String, url: URL)?
     private var pendingAnchorFragment: String?
     private var autosaveItem: DispatchWorkItem?
     /// The content currently on disk (last loaded or saved). Lets the file
@@ -269,11 +273,30 @@ final class AppModel: ObservableObject {
 
     /// Auto-save silently persists a titled document a moment after the last
     /// edit, so the user rarely has to press ⌘S.
+    func setWritingToolsActive(_ active: Bool) {
+        guard active != writingToolsActive else { return }
+        writingToolsActive = active
+        if active {
+            autosaveItem?.cancel()
+            captureTelemetry("ouro_md_writing_tools_session_started")
+            return
+        }
+        captureTelemetry("ouro_md_writing_tools_session_ended")
+        // An agent rewrote the file while Writing Tools was open: reconcile it
+        // now, through the usual path (live reload, or a conflict if the
+        // session left unsaved edits).
+        if let deferred = externalContentDuringWritingTools {
+            externalContentDuringWritingTools = nil
+            if deferred.url == currentURL { reconcileExternalContent(deferred.disk, url: deferred.url) }
+        }
+        if isDirty { scheduleAutosave() }
+    }
+
     private func scheduleAutosave() {
-        guard autoSaveEnabled, currentURL != nil else { return }
+        guard autoSaveEnabled, currentURL != nil, !writingToolsActive else { return }
         autosaveItem?.cancel()
         let item = DispatchWorkItem { [weak self] in
-            guard let self, self.isDirty, self.currentURL != nil else { return }
+            guard let self, self.isDirty, self.currentURL != nil, !self.writingToolsActive else { return }
             self.performSave(source: "autosave") { _ in }
         }
         autosaveItem = item
@@ -757,6 +780,10 @@ final class AppModel: ObservableObject {
     /// flag if the file has returned, then live-reloads (or flags a conflict when
     /// the reader has unsaved edits).
     private func reconcileExternalContent(_ disk: String, url: URL) {
+        if writingToolsActive {
+            externalContentDuringWritingTools = (disk, url)
+            return
+        }
         if deletedOnDisk {
             deletedOnDisk = false
             refreshDocumentTruth()

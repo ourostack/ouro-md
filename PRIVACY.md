@@ -16,6 +16,7 @@ Ouro MD may send:
   such as `manual`, `autosave`, `write_failed`, `editor_not_ready`,
   `collision`, or `keep_edits`.
 - Folder open events.
+- Writing Tools session start and end events (never the text being rewritten).
 - Export success/failure events with the export format.
 - Editor web-view crash recovery events.
 - App version, bundle id, macOS version, architecture, and an anonymous install

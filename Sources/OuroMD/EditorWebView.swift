@@ -22,6 +22,7 @@ struct EditorWebView: NSViewRepresentable {
         controller.add(context.coordinator, name: "ouro")
         configuration.userContentController = controller
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
+        EditorWritingTools.enableInlineEditing(on: configuration)
 
         let webView = EditorDropWebView(frame: .zero, configuration: configuration)
         webView.model = model
@@ -38,6 +39,7 @@ struct EditorWebView: NSViewRepresentable {
 
         applyObscuredInset(to: webView)
         context.coordinator.webView = webView
+        context.coordinator.observeWritingTools(on: webView)
         model.bridge = context.coordinator
 
         if let indexURL = OuroResources.web("index", "html") {
@@ -342,6 +344,23 @@ struct EditorWebView: NSViewRepresentable {
             let operation = webView.printOperation(with: NSPrintInfo.shared)
             operation.view?.frame = webView.bounds
             operation.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
+        }
+
+        private var writingToolsObservation: NSKeyValueObservation?
+
+        /// Tells the editor and the model when a Writing Tools session (a
+        /// rewrite, proofread or "Write with Siri" edit) starts and ends.
+        func observeWritingTools(on webView: WKWebView) {
+            guard #available(macOS 15, *) else { return }
+            writingToolsObservation = webView.observe(\.isWritingToolsActive, options: [.new]) { [weak self] view, _ in
+                let active = view.isWritingToolsActive
+                DispatchQueue.main.async { self?.writingToolsDidChange(active) }
+            }
+        }
+
+        private func writingToolsDidChange(_ active: Bool) {
+            eval("window.ouro && window.ouro.setWritingToolsActive(\(active))")
+            model.setWritingToolsActive(active)
         }
 
         func setZoom(_ factor: Double) { if let webView { EditorZoom.apply(factor, to: webView) } }

@@ -107,6 +107,10 @@ if hasFlag("--darkdiagramtest") {
     DarkDiagramTester().run()
 }
 
+if hasFlag("--writingtoolstest") {
+    WritingToolsTester().run()
+}
+
 if hasFlag("--selectionblurtest") {
     SelectionBlurTester().run()
 }
