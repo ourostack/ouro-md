@@ -68,23 +68,18 @@ final class AccessibilityAuditTester {
         let controls = OuroMDReleaseControls(updateCoordinator: availableUpdateCoordinator, showTitle: true)
             .frame(width: 560, alignment: .leading)
         let notice = OuroMDUpdateInstalledNotice(version: "0.10.0", onOpenAbout: {}, onDismiss: {})
-        var shellText: Set<String>
-        var shellSource = "rendered text"
-        if let rendered = [
+        let rendered = [
             renderedText(about, size: NSSize(width: 540, height: 540)),
             renderedText(controls, size: NSSize(width: 560, height: 220)),
             renderedText(notice, size: NSSize(width: 380, height: 140)),
-        ].reduce(Optional(Set<String>()), { acc, next in next.flatMap { n in acc.map { $0.union(n) } } }) {
-            shellText = rendered
-        } else {
-            // Some machines (CI virtual machines) have no working text
-            // recognition. Check the same labels through the accessibility
-            // tree, and say so, rather than skipping the check.
-            shellSource = "accessibility tree; text recognition is unavailable on this machine"
-            shellText = accessibilityStrings(about, size: NSSize(width: 540, height: 540))
-                .union(accessibilityStrings(controls, size: NSSize(width: 560, height: 220)))
-                .union(accessibilityStrings(notice, size: NSSize(width: 380, height: 140)))
-        }
+        ]
+        // Text recognition doesn't work on some machines (the Xcode 27 CI
+        // image). There the check fails unless CI says a job on another runner
+        // runs it; it is never silently skipped.
+        let recognitionUnavailable = rendered.contains { $0 == nil }
+        let renderedElsewhere = recognitionUnavailable
+            && ProcessInfo.processInfo.environment["OURO_MD_RENDERED_TEXT_AUDIT_ELSEWHERE"] == "1"
+        let shellText = rendered.reduce(into: Set<String>()) { $0.formUnion($1 ?? []) }
 
         let runtimeRequired = ["Light", "Dark", "Outline", "Files", "Search"]
         let documentTruthRequired = ["File status"]
@@ -105,13 +100,13 @@ final class AccessibilityAuditTester {
             "Copy Version",
             "What's New",
         ]
-        let missingShellRendered = shellRenderedRequired.filter { expected in
+        let missingShellRendered = renderedElsewhere ? [] : shellRenderedRequired.filter { expected in
             !shellText.contains { renderedTextContains($0, expected) }
         }
         let shellRenderedAlternatives = [
             ("installed update dismiss action", ["OK", "Done"]),
         ]
-        let missingShellRenderedAlternatives = shellRenderedAlternatives.compactMap { label, alternatives in
+        let missingShellRenderedAlternatives = renderedElsewhere ? [] : shellRenderedAlternatives.compactMap { label, alternatives in
             alternatives.contains { expected in
                 shellText.contains { renderedTextContains($0, expected) }
             } ? nil : "\(label) (\(alternatives.joined(separator: " or ")))"
@@ -136,7 +131,11 @@ final class AccessibilityAuditTester {
             print("missing document truth labels: \(missingDocumentTruth.joined(separator: " | "))")
             print("observed labels: \(labels.sorted().joined(separator: " | "))")
         }
-        print("shell rendered accessibility labels: \(missingShellRendered.isEmpty && missingShellRenderedAlternatives.isEmpty ? "✓" : "✗") (\(shellSource))")
+        if renderedElsewhere {
+            print("shell rendered accessibility labels: deferred (text recognition is unavailable on this machine; CI runs this check in the Rendered text audit job)")
+        } else {
+            print("shell rendered accessibility labels: \(missingShellRendered.isEmpty && missingShellRenderedAlternatives.isEmpty ? "✓" : "✗")\(recognitionUnavailable ? " (text recognition is unavailable on this machine)" : "")")
+        }
         if !missingShellRendered.isEmpty {
             print("missing shell rendered labels: \(missingShellRendered.joined(separator: " | "))")
             print("observed shell text: \(shellText.sorted().joined(separator: " | "))")

@@ -34,15 +34,22 @@ OURO_TEST_LOG="${OURO_TEST_LOG:-.build/ouro-coverage-swift-test.log}" \
   OURO_TEST_TIMINGS="${OURO_TEST_TIMINGS:-.build/ouro-coverage-test-timings.tsv}" \
   ./scripts/swift-test-budget.sh --enable-code-coverage
 
-bin="$(find .build -name 'ouro-mdPackageTests' -type f -path '*MacOS*' ! -path '*dSYM*' | head -1)"
+# Xcode 16 builds one combined ouro-mdPackageTests bundle; Xcode 27 builds one
+# bundle per test target. Cover every test binary either way.
+bins=()
+while IFS= read -r found; do bins+=("$found"); done < <(
+  find .build -type f -path '*.xctest/Contents/MacOS/*' ! -path '*dSYM*' | sort
+)
 prof="$(find .build -name 'default.profdata' | head -1)"
-if [ -z "$bin" ] || [ -z "$prof" ]; then
-  echo "error: could not locate coverage artifacts (binary='$bin' profdata='$prof')" >&2
+if [ "${#bins[@]}" -eq 0 ] || [ -z "$prof" ]; then
+  echo "error: could not locate coverage artifacts (binaries='${bins[*]:-}' profdata='$prof')" >&2
   exit 1
 fi
 
-echo "==> exporting coverage summary"
-xcrun llvm-cov export "$bin" -instr-profile "$prof" -summary-only > .build/ouro-coverage.json
+echo "==> exporting coverage summary (${#bins[@]} test binaries)"
+objects=("${bins[0]}")
+for extra in "${bins[@]:1}"; do objects+=(-object "$extra"); done
+xcrun llvm-cov export "${objects[@]}" -instr-profile "$prof" -summary-only > .build/ouro-coverage.json
 
 python3 - <<'PY'
 import json, os, sys

@@ -111,6 +111,7 @@ jobs:
       - name: Verify packaged app probes
         env:
           OURO_MD_ALLOW_UNCONFIGURED_TELEMETRY: "1"
+          OURO_MD_RENDERED_TEXT_AUDIT_ELSEWHERE: "1"
         run: ./scripts/verify-packaged-app.sh OuroMD.app
 
   native-scenario-verifier:
@@ -132,7 +133,38 @@ jobs:
       - name: Run headless editor harnesses
         env:
           OURO_VISUAL_ARTIFACT_DIR: ${{ runner.temp }}/ouro-md-artifacts/visual-qa
+          OURO_MD_RENDERED_TEXT_AUDIT_ELSEWHERE: "1"
         run: ./scripts/run-native-scenarios.sh
+      - name: Package the harness binary for the rendered text audit
+        run: |
+          bin="$(swift build --show-bin-path)"
+          tar -czf "$RUNNER_TEMP/ouro-md-harness.tgz" -C "$bin" ouro-md $(cd "$bin" && ls -d *.bundle)
+      - uses: actions/upload-artifact@v6
+        with:
+          name: ouro-md-harness
+          path: ${{ runner.temp }}/ouro-md-harness.tgz
+          retention-days: 3
+
+  rendered-text-audit:
+    name: Rendered text audit
+    # Vision text recognition fails on the Xcode 27 image, so the shell label
+    # check runs the same binary on a runner where it works.
+    needs: native-scenario-verifier
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v8
+        with:
+          name: ouro-md-harness
+          path: ${{ runner.temp }}
+      - name: Run the accessibility audit with text recognition
+        run: |
+          mkdir -p "$RUNNER_TEMP/harness"
+          tar -xzf "$RUNNER_TEMP/ouro-md-harness.tgz" -C "$RUNNER_TEMP/harness"
+          sw_vers
+          "$RUNNER_TEMP/harness/ouro-md" --accessibilityaudit | tee "$RUNNER_TEMP/audit.log"
+          grep -q "shell rendered accessibility labels: ✓" "$RUNNER_TEMP/audit.log"
       - name: Upload visual QA artifacts
         if: failure()
         uses: actions/upload-artifact@v6

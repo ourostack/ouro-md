@@ -5,20 +5,24 @@
 # the packaged app with a restored session, so it is meant for CI runners, not
 # a machine someone is using.
 #
-#   scripts/capture-window-chrome.sh OuroMD.app out-dir
+#   scripts/capture-window-chrome.sh OuroMD.app out-dir [name-prefix]
+#
+# A prefix lets the same run capture another build (for example the last
+# release) side by side, to tell an app change from a runner limitation.
 #
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 app="${1:-OuroMD.app}"
 out="${2:-.build/window-chrome}"
+prefix="${3:-}"
 domain="bot.ouro.md"
 fixtures="$PWD/Tests/Fixtures"
 mkdir -p "$out"
 [[ -d "$app" ]] || { echo "error: app bundle not found: $app" >&2; exit 1; }
 
 capture() {
-  local name="$1" theme="$2" appearance="$3"
+  local name="$prefix$1" theme="$2" appearance="$3"
   defaults write -g AppleInterfaceStyle -string "$appearance" 2>/dev/null || true
   [[ "$appearance" == "Light" ]] && defaults delete -g AppleInterfaceStyle 2>/dev/null || true
   defaults write "$domain" ouro.hasLaunched -bool true
