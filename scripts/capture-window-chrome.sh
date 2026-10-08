@@ -45,6 +45,10 @@ capture() {
   fi
   sleep 4
   screencapture -x -o -l "$id" "$out/$name-window.png"
+  # A second, later frame separates slow first paint on a GPU-less runner
+  # from content that never paints.
+  sleep 8
+  screencapture -x -o -l "$id" "$out/$name-window-late.png"
   screencapture -x "$out/$name-screen.png"
   echo "captured $name (window $id)"
   pkill -x ouro-md || true

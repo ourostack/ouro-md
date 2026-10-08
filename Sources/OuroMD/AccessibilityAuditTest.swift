@@ -233,11 +233,29 @@ final class AccessibilityAuditTester {
         do {
             try handler.perform([request])
         } catch {
+            FileHandle.standardError.write(Data("accessibilityaudit: text recognition failed: \(error)\n".utf8))
             return []
+        }
+        if (request.results ?? []).isEmpty {
+            FileHandle.standardError.write(Data("accessibilityaudit: text recognition found nothing in a \(image.width)x\(image.height) render with \(Self.inkPixels(in: image)) ink pixels\n".utf8))
         }
         return Set((request.results ?? []).compactMap { observation in
             observation.topCandidates(1).first?.string
         })
+    }
+
+    /// Counts clearly non-white pixels, so a failed audit says whether the
+    /// view painted at all.
+    private static func inkPixels(in image: CGImage) -> Int {
+        let width = image.width, height = image.height
+        var pixels = [UInt8](repeating: 255, count: width * height * 4)
+        guard let context = CGContext(data: &pixels, width: width, height: height, bitsPerComponent: 8,
+                                      bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return -1 }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        var ink = 0
+        for i in stride(from: 0, to: pixels.count, by: 4) where Int(pixels[i]) + Int(pixels[i + 1]) + Int(pixels[i + 2]) < 600 { ink += 1 }
+        return ink
     }
 
     private func renderedTextContains(_ line: String, _ token: String) -> Bool {
