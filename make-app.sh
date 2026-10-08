@@ -45,8 +45,17 @@ if [[ "${OURO_MD_DISTRIBUTION_CHANNEL}" == "app-store" ]]; then
   APP_CATEGORY="public.app-category.developer-tools"
 fi
 
-echo "==> Building (${CONFIG})…"
-swift build -c "${CONFIG}"
+# Stamp the binary with the SDK it is built against. Xcode 27's SwiftPM build
+# system writes the deployment target (13.0) as the SDK version in
+# LC_BUILD_VERSION, and macOS uses that stamp to decide whether an app gets the
+# current system design and behavior or runs in compatibility mode. Passing the
+# real SDK version to the linker keeps Ouro MD on the current design.
+MIN_MACOS="$(sed -n 's/.*\.macOS(\.v\([0-9][0-9]*\)).*/\1.0/p' Package.swift | head -1)"
+SDK_VERSION="$(xcrun --sdk macosx --show-sdk-version)"
+[[ -n "${MIN_MACOS}" && -n "${SDK_VERSION}" ]] || { echo "error: could not read the deployment target or SDK version" >&2; exit 1; }
+
+echo "==> Building (${CONFIG}) against macOS SDK ${SDK_VERSION}, deployment target ${MIN_MACOS}…"
+swift build -c "${CONFIG}" -Xlinker -platform_version -Xlinker macos -Xlinker "${MIN_MACOS}" -Xlinker "${SDK_VERSION}"
 
 BIN_DIR=".build/${CONFIG}"
 RES_BUNDLE="${BIN_DIR}/ouro-md_OuroMD.bundle"
