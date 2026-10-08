@@ -78,13 +78,17 @@ final class DocumentWindowControllerTests: XCTestCase {
 
         let button = try XCTUnwrap(
             controller.window.titlebarAccessoryViewControllers
-                .compactMap { $0.view as? DocumentTruthTitleButton }
+                .compactMap { ($0.view as? DocumentTruthAccessoryContainer)?.button }
                 .first
         )
         XCTAssertEqual(button.intrinsicContentSize, DocumentTruthTitleButton.controlSize)
         XCTAssertEqual(button.frame.width, DocumentTruthTitleButton.controlSize.width)
         XCTAssertGreaterThanOrEqual(button.frame.height, DocumentTruthTitleButton.controlSize.height)
         XCTAssertLessThanOrEqual(button.frame.height, 32)
+        controller.window.layoutIfNeeded()
+        if let container = button.superview, container.frame.height > button.frame.height {
+            XCTAssertEqual(button.frame.midY, container.bounds.midY, accuracy: 1, "glyph stays centred in a tall toolbar")
+        }
         XCTAssertEqual(button.title, "")
         XCTAssertNotNil(button.image)
         XCTAssertFalse(button.subviews.contains { $0 is NSTextField })
