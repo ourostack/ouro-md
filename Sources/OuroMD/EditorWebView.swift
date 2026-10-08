@@ -222,6 +222,10 @@ struct EditorWebView: NSViewRepresentable {
             eval("window.ouro && window.ouro.reloadValue(\(Coordinator.jsString(markdown)))")
         }
 
+        func applyEdit(_ markdown: String) {
+            eval("window.ouro && window.ouro.applyEdit(\(Coordinator.jsString(markdown)))")
+        }
+
         func getMarkdown(_ completion: @escaping (String?) -> Void) {
             guard let webView else { completion(nil); return }
             webView.evaluateJavaScript("window.ouro ? window.ouro.getValue() : null") { result, _ in

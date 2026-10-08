@@ -73,6 +73,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         installUndoRedoShortcutMonitor()
+        DocumentIntentsWorkspace.current = self
         if isSelfTest {
             let controller = DocumentWindowController(filePath: initialFilePath, selfTest: true, useAutosave: true)
             track(controller)
@@ -629,3 +630,48 @@ extension NSColor {
                   alpha: 1.0)
     }
 }
+
+// MARK: - Siri, Shortcuts and Spotlight
+
+extension AppDelegate: MarkdownDocumentWorkspace {
+    func knownDocumentURLs() -> [URL] {
+        let open = controllers.compactMap { $0.model.currentURL?.standardizedFileURL }
+        let recent = recentDocumentURLsProvider()
+            .map(\.standardizedFileURL)
+            .filter { AppModel.isMarkdownDocumentURL($0) && isReadable($0) }
+        return open + recent.filter { !open.contains($0) }
+    }
+
+    func isReadable(_ url: URL) -> Bool {
+        AppModel.isMarkdownDocumentURL(url) && FileManager.default.isReadableFile(atPath: url.path)
+    }
+
+    func frontDocumentURL() -> URL? {
+        frontController?.model.currentURL?.standardizedFileURL
+    }
+
+    private func controller(for url: URL) -> DocumentWindowController? {
+        let target = url.standardizedFileURL
+        return controllers.first { $0.model.currentURL?.standardizedFileURL == target }
+    }
+
+    func markdown(for url: URL) async -> String? {
+        if let controller = controller(for: url) { return await controller.model.currentMarkdown() }
+        guard isReadable(url) else { return nil }
+        return AppModel.readText(at: url)
+    }
+
+    func replaceMarkdown(_ markdown: String, in url: URL) async throws {
+        if let controller = controller(for: url) {
+            controller.model.applyAssistantEdit(markdown)
+            return
+        }
+        guard isReadable(url) else { throw DocumentIntentError.unreadable(url.lastPathComponent) }
+        try markdown.write(to: url.resolvingSymlinksInPath(), atomically: true, encoding: .utf8)
+    }
+
+    func open(_ url: URL) {
+        openInNewWindow(url.standardizedFileURL)
+    }
+}
+

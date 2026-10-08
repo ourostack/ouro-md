@@ -9,6 +9,9 @@ protocol EditorBridge: AnyObject {
     func setMarkdown(_ markdown: String)
     /// Replace content while preserving the reader's scroll position (external reload).
     func reloadMarkdown(_ markdown: String)
+    /// Replace content as one undoable edit that marks the document edited
+    /// (an assistant's change through Siri or Shortcuts).
+    func applyEdit(_ markdown: String)
     func getMarkdown(_ completion: @escaping (String?) -> Void)
     func getHTML(_ completion: @escaping (String?) -> Void)
     func applyTheme(uiMode: String, css: String, codeTheme: String, background: String)
@@ -43,6 +46,10 @@ protocol EditorBridge: AnyObject {
     func focusEditor()
     func printDocument()
     func setZoom(_ factor: Double)
+}
+
+extension EditorBridge {
+    func applyEdit(_ markdown: String) { reloadMarkdown(markdown) }
 }
 
 extension EditorBridge {
@@ -211,6 +218,9 @@ final class AppModel: ObservableObject {
     /// Reads a text file tolerantly: UTF-8 first, then system detection, then
     /// common legacy encodings — so a non-UTF-8 document still opens instead of
     /// failing. (Saves are always written as UTF-8.)
+    /// Whether a URL names a Markdown document Ouro MD opens.
+    static func isMarkdownDocumentURL(_ url: URL) -> Bool { isMarkdownURL(url) }
+
     static func readText(at url: URL) -> String? {
         if let s = try? String(contentsOf: url, encoding: .utf8) { return s }
         var used: String.Encoding = .utf8
@@ -273,6 +283,25 @@ final class AppModel: ObservableObject {
 
     /// Auto-save silently persists a titled document a moment after the last
     /// edit, so the user rarely has to press ⌘S.
+    /// The editor's current Markdown, including unsaved edits.
+    func currentMarkdown() async -> String? {
+        guard isReady, let bridge else { return currentURL.flatMap(AppModel.readText(at:)) }
+        return await withCheckedContinuation { continuation in
+            bridge.getMarkdown { continuation.resume(returning: $0) }
+        }
+    }
+
+    /// Takes an assistant's (Siri, Shortcuts) rewrite of the open document as
+    /// one undoable edit; autosave persists it like any other edit.
+    func applyAssistantEdit(_ markdown: String) {
+        guard isReady, let bridge else {
+            pendingMarkdown = markdown
+            return
+        }
+        bridge.applyEdit(markdown)
+        captureTelemetry("ouro_md_document_assistant_edit_applied")
+    }
+
     func setWritingToolsActive(_ active: Bool) {
         guard active != writingToolsActive else { return }
         writingToolsActive = active

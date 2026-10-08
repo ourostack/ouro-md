@@ -60,7 +60,10 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         // producing the malformed white chip/artifacts seen in 0.9.82.
         let truthAccessory = NSTitlebarAccessoryViewController()
         let truthButton = DocumentTruthTitleButton(model: model)
-        truthAccessory.view = truthButton
+        // The unified toolbar (macOS 26) stretches title-bar accessories to its
+        // height; the container takes the stretch and keeps the glyph at its
+        // fixed size, centred.
+        truthAccessory.view = DocumentTruthAccessoryContainer(button: truthButton)
         truthAccessory.layoutAttribute = .trailing
         window.addTitlebarAccessoryViewController(truthAccessory)
         self.truthAccessory = truthAccessory
@@ -106,6 +109,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         if let background = NSColor(hex: model.theme.backgroundHex) { window.backgroundColor = background }
         truthButton?.refresh()
         truthAccessory?.isHidden = model.focusMode
+        DocumentIntentsPresence.update(window: window, documentURL: model.currentURL)
         MenuBuilder.refreshDynamicState(model: model)
     }
 
@@ -288,6 +292,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
 
     func windowDidBecomeKey(_ notification: Notification) {
         MenuBuilder.refreshDynamicState(model: model)
+        window.userActivity?.becomeCurrent()
         onBecomeKey?(self)
     }
 
@@ -547,4 +552,28 @@ enum TitleClickGesture {
     static func isDrag(deltaX: CGFloat, deltaY: CGFloat) -> Bool {
         (deltaX * deltaX + deltaY * deltaY) >= dragThresholdSquared
     }
+}
+
+/// Holds the document-status glyph in the title bar at its own size, centred
+/// vertically, however tall the title bar or toolbar makes the accessory.
+final class DocumentTruthAccessoryContainer: NSView {
+    let button: DocumentTruthTitleButton
+
+    init(button: DocumentTruthTitleButton) {
+        self.button = button
+        super.init(frame: NSRect(origin: .zero, size: DocumentTruthTitleButton.controlSize))
+        button.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(button)
+        NSLayoutConstraint.activate([
+            button.leadingAnchor.constraint(equalTo: leadingAnchor),
+            button.trailingAnchor.constraint(equalTo: trailingAnchor),
+            button.centerYAnchor.constraint(equalTo: centerYAnchor),
+            heightAnchor.constraint(greaterThanOrEqualTo: button.heightAnchor),
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
+
+    override var intrinsicContentSize: NSSize { button.intrinsicContentSize }
 }

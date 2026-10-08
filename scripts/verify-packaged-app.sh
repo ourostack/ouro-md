@@ -42,6 +42,17 @@ binary_sdk="$(otool -l "$exe" | awk '/LC_BUILD_VERSION/{found=1} found && $1=="s
 (( ${binary_sdk%%.*} >= min_sdk_major )) || fail "binary is stamped with macOS SDK $binary_sdk; need $min_sdk_major or later so macOS runs the current design"
 echo "binary SDK stamp ok: $binary_sdk"
 
+# Siri, Shortcuts and Spotlight only see the document actions when the bundle
+# carries compiled App Intents metadata (make-app.sh generates it).
+intents="$app/Contents/Resources/Metadata.appintents/extract.actionsdata"
+[[ -f "$intents" ]] || fail "missing App Intents metadata: $intents"
+for action in OpenMarkdownDocumentIntent GetMarkdownDocumentIntent AppendToMarkdownDocumentIntent ReplaceMarkdownDocumentIntent; do
+  grep -q "\"$action\"" "$intents" || fail "App Intents metadata does not list $action"
+done
+/usr/libexec/PlistBuddy -c "Print :NSUserActivityTypes" "$info" | grep -q "bot.ouro.md.document" \
+  || fail "Info.plist does not declare the bot.ouro.md.document activity type"
+echo "App Intents metadata ok"
+
 plist() { /usr/libexec/PlistBuddy -c "Print :$1" "$info"; }
 
 version="$(plist CFBundleShortVersionString)"

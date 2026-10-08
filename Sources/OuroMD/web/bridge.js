@@ -2095,6 +2095,33 @@
       };
       requestAnimationFrame(function () { restore(); requestAnimationFrame(restore); });
     },
+    applyEdit: function (md) {
+      // An assistant's rewrite (Siri, Shortcuts): replace the content as one
+      // undoable step, keep the reader's place, and mark the document edited so
+      // autosave persists it.
+      var next = (md == null) ? "" : md;
+      if (!vditor || !ready) { state.value = next; setDirty(true); postCount(next); return; }
+      var scroller = document.scrollingElement || document.documentElement;
+      var prevY = scroller ? scroller.scrollTop : window.scrollY;
+      vditor.setValue(next, false);
+      // Vditor records the undo step after its input delay; record it now so
+      // an undo straight after an assistant's edit reverts exactly that edit.
+      try {
+        var undo = vditor.vditor && vditor.vditor.undo;
+        if (undo && typeof undo.addToUndoStack === "function") { undo.addToUndoStack(vditor.vditor); }
+      } catch (e) { /* undo bookkeeping must never lose the edit */ }
+      state.value = next;
+      invalidateReferenceLinkCache();
+      cancelAnchorRequests();
+      queueTableScrollReset();
+      schedulePostRender();
+      setDirty(true);
+      postCount(next);
+      var restore = function () {
+        if (scroller) { scroller.scrollTop = prevY; } else { window.scrollTo(0, prevY); }
+      };
+      requestAnimationFrame(function () { restore(); requestAnimationFrame(restore); });
+    },
     getValue: function () {
       // Repair lute's dropped table-cell boundary spaces before serializing, so
       // a save never writes `word**bold**` for the author's `word **bold**`.

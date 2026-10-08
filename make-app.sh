@@ -55,7 +55,14 @@ SDK_VERSION="$(xcrun --sdk macosx --show-sdk-version)"
 [[ -n "${MIN_MACOS}" && -n "${SDK_VERSION}" ]] || { echo "error: could not read the deployment target or SDK version" >&2; exit 1; }
 
 echo "==> Building (${CONFIG}) against macOS SDK ${SDK_VERSION}, deployment target ${MIN_MACOS}…"
-swift build -c "${CONFIG}" -Xlinker -platform_version -Xlinker macos -Xlinker "${MIN_MACOS}" -Xlinker "${SDK_VERSION}"
+# -emit-const-values records the App Intents declarations (Siri, Shortcuts,
+# Spotlight) that the metadata step below compiles into the bundle; Xcode does
+# this for app targets, SwiftPM does not.
+APP_INTENTS_PROTOCOLS="${PWD}/config/app-intents-const-protocols.json"
+swift build -c "${CONFIG}" \
+  -Xlinker -platform_version -Xlinker macos -Xlinker "${MIN_MACOS}" -Xlinker "${SDK_VERSION}" \
+  -Xswiftc -emit-const-values \
+  -Xswiftc -Xfrontend -Xswiftc -const-gather-protocols-file -Xswiftc -Xfrontend -Xswiftc "${APP_INTENTS_PROTOCOLS}"
 
 BIN_DIR=".build/${CONFIG}"
 RES_BUNDLE="${BIN_DIR}/ouro-md_OuroMD.bundle"
@@ -74,6 +81,30 @@ cp -R "${RES_BUNDLE}" "${APP}/Contents/Resources/"
 if [[ -f "Resources/AppIcon.icns" ]]; then
   cp "Resources/AppIcon.icns" "${APP}/Contents/Resources/AppIcon.icns"
 fi
+
+echo "==> Compiling App Intents metadata…"
+INTENTS_WORK="$(mktemp -d)"
+# The executable target OuroMD builds in the product's (ouro-md) directory.
+CONST_DIR=".build/out/Intermediates.noindex/ouro-md.build/$(echo "${CONFIG:0:1}" | tr a-z A-Z)${CONFIG:1}/ouro-md-p.build/Objects-normal/$(uname -m)"
+find "${PWD}/${CONST_DIR}" -name "*.swiftconstvalues" -print 2>/dev/null > "${INTENTS_WORK}/constvalues.txt" || true
+[[ -s "${INTENTS_WORK}/constvalues.txt" ]] || { echo "error: no App Intents const values were emitted" >&2; exit 1; }
+find "${PWD}/Sources/OuroMD" -name "*.swift" > "${INTENTS_WORK}/sources.txt"
+xcrun appintentsmetadataprocessor \
+  --output "${APP}/Contents/Resources" \
+  --toolchain-dir "$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain" \
+  --module-name OuroMD \
+  --sdk-root "$(xcrun --sdk macosx --show-sdk-path)" \
+  --xcode-version "$(xcodebuild -version | awk '/Build version/{print $3}')" \
+  --platform-family macOS \
+  --deployment-target "${MIN_MACOS}" \
+  --target-triple "$(uname -m)-apple-macos${MIN_MACOS}" \
+  --source-file-list "${INTENTS_WORK}/sources.txt" \
+  --swift-const-vals-list "${INTENTS_WORK}/constvalues.txt" \
+  --force >"${INTENTS_WORK}/processor.log" 2>&1 \
+  || { cat "${INTENTS_WORK}/processor.log" >&2; echo "error: App Intents metadata failed" >&2; exit 1; }
+[[ -f "${APP}/Contents/Resources/Metadata.appintents/extract.actionsdata" ]] \
+  || { cat "${INTENTS_WORK}/processor.log" >&2; echo "error: App Intents metadata missing from the bundle" >&2; exit 1; }
+rm -rf "${INTENTS_WORK}"
 
 cat > "${APP}/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -96,6 +127,10 @@ cat > "${APP}/Contents/Info.plist" <<PLIST
     <key>ITSAppUsesNonExemptEncryption</key><false/>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSPrincipalClass</key><string>NSApplication</string>
+    <key>NSUserActivityTypes</key>
+    <array>
+        <string>bot.ouro.md.document</string>
+    </array>
     <key>CFBundleDocumentTypes</key>
     <array>
         <dict>

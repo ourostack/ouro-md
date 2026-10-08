@@ -79,7 +79,16 @@ final class WritingToolsTester: NSObject, WKScriptMessageHandler, WKNavigationDe
         window.ouro.undo();
         await sleep(400);
         const undone = window.ouro.getValue();
-        return { edited, blockUntouched, markdown, undone };
+
+        // An assistant edit (Siri, Shortcuts) lands as one undoable step too.
+        const assisted = undone.replace(/\s+$/, "") + "\n\nAdded by an assistant.\n";
+        window.ouro.applyEdit(assisted);
+        await sleep(400);
+        const afterAssist = window.ouro.getValue();
+        window.ouro.undo();
+        await sleep(400);
+        const assistUndone = window.ouro.getValue();
+        return { edited, blockUntouched, markdown, undone, assisted, afterAssist, assistUndone };
         """#
         webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { [weak self] result in
             guard let self else { return }
@@ -98,13 +107,17 @@ final class WritingToolsTester: NSObject, WKScriptMessageHandler, WKNavigationDe
             if #available(macOS 15, *) { behaviorOK = behavior == NSWritingToolsBehavior.complete.rawValue } else { behaviorOK = true }
             let markdownOK = markdown == Self.expected
             let undoOK = undone == Self.original
+            let assistOK = (r["afterAssist"] as? String) == (r["assisted"] as? String)
+            let assistUndoOK = (r["assistUndone"] as? String) == Self.original
             print("writing tools behavior: \(behavior.map(String.init) ?? "n/a") \(behaviorOK ? "✓" : "✗")")
             print("edit applied: \(edited) \(edited ? "✓" : "✗")")
             print("block left alone during session: \(untouched) \(untouched ? "✓" : "✗")")
             print("markdown after session: \(markdown.debugDescription) \(markdownOK ? "✓" : "✗")")
             print("reported dirty: \(self.sawDirty) \(self.sawDirty ? "✓" : "✗")")
             print("one undo restores original: \(undone.debugDescription) \(undoOK ? "✓" : "✗")")
-            exit(behaviorOK && edited && untouched && markdownOK && self.sawDirty && undoOK ? 0 : 1)
+            print("assistant edit applied: \(assistOK ? "✓" : "✗ \(String(describing: r["afterAssist"]))")")
+            print("one undo reverts assistant edit: \(assistUndoOK ? "✓" : "✗ \(String(describing: r["assistUndone"]))")")
+            exit(behaviorOK && edited && untouched && markdownOK && self.sawDirty && undoOK && assistOK && assistUndoOK ? 0 : 1)
         }
     }
 
