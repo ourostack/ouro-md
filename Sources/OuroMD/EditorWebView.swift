@@ -25,7 +25,12 @@ struct EditorWebView: NSViewRepresentable {
         webView.model = model
         Self.applyLayerBackground(model.theme.backgroundHex, to: webView)
         webView.navigationDelegate = context.coordinator
-        webView.allowsMagnification = true
+        // Pinch changes text size (see EditorDropWebView.magnify) instead of
+        // WebKit's view magnification, which scales without reflowing.
+        webView.allowsMagnification = false
+        // Apply the saved text size before the first load so a new window does
+        // not paint at 100% and then reflow.
+        EditorZoom.apply(model.zoom, to: webView)
         webView.allowsBackForwardNavigationGestures = false
         webView.registerForDraggedTypes([.fileURL])
 
@@ -328,7 +333,7 @@ struct EditorWebView: NSViewRepresentable {
             operation.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
         }
 
-        func setZoom(_ factor: Double) { webView?.magnification = CGFloat(factor) }
+        func setZoom(_ factor: Double) { if let webView { EditorZoom.apply(factor, to: webView) } }
 
         private func eval(_ js: String) {
             webView?.evaluateJavaScript(js, completionHandler: nil)
@@ -347,6 +352,24 @@ struct EditorWebView: NSViewRepresentable {
 
 final class EditorDropWebView: WKWebView {
     weak var model: AppModel?
+    private var pinching = false
+
+    /// A trackpad pinch adjusts text size, the same setting as View > Zoom In
+    /// and Zoom Out, so the page reflows instead of being magnified. Each event
+    /// carries the change since the previous one; the end snaps to 5% steps.
+    override func magnify(with event: NSEvent) {
+        guard let model else { return }
+        switch event.phase {
+        case .began, .changed:
+            pinching = true
+            model.setTextScale(model.zoom * (1 + event.magnification))
+        default:
+            if pinching {
+                model.setTextScale((model.zoom * 20).rounded() / 20)
+            }
+            pinching = false
+        }
+    }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
         Self.openableMarkdownURL(from: sender.draggingPasteboard) == nil ? super.draggingEntered(sender) : .copy

@@ -11,8 +11,10 @@ final class VisualQATester: NSObject, WKScriptMessageHandler, WKNavigationDelega
     private let viewportWidth: CGFloat
     private let viewportHeight: CGFloat
     private let theme: Theme
+    private let zoom: Double
 
-    init(markdownPath: String? = nil, viewportWidth: CGFloat = 720, viewportHeight: CGFloat = 900, themeID: String = "quartz") {
+    init(markdownPath: String? = nil, viewportWidth: CGFloat = 720, viewportHeight: CGFloat = 900, themeID: String = "quartz", zoom: Double = 1.0) {
+        self.zoom = zoom
         self.markdownPath = markdownPath
         self.viewportWidth = viewportWidth
         self.viewportHeight = viewportHeight
@@ -32,6 +34,7 @@ final class VisualQATester: NSObject, WKScriptMessageHandler, WKNavigationDelega
         let frame = NSRect(x: 0, y: 0, width: viewportWidth, height: viewportHeight)
         webView = WKWebView(frame: frame, configuration: configuration)
         webView.navigationDelegate = self
+        EditorZoom.apply(zoom, to: webView)
         guard let indexURL = OuroResources.web("index", "html") else {
             FileHandle.standardError.write(Data("visualqatest: index.html not found\n".utf8)); exit(1)
         }
@@ -69,6 +72,10 @@ final class VisualQATester: NSObject, WKScriptMessageHandler, WKNavigationDelega
             let tableOverflowCount = (body["tableOverflowCount"] as? Int) ?? .max
             let collapsedCellCount = (body["collapsedCellCount"] as? Int) ?? .max
             let imbalancedTableCount = (body["imbalancedTableCount"] as? Int) ?? .max
+            let layoutWidth = (body["layoutWidth"] as? Double) ?? 0
+            let columnSkew = (body["columnSkew"] as? Double) ?? .infinity
+            let nativeMarkerCount = (body["nativeMarkerCount"] as? Int) ?? .max
+            let listItemCount = (body["listItemCount"] as? Int) ?? 0
 
             let pageOK = pageOverflow <= 2
             let headingOK = headingCount >= 2 && longHeadingCount >= 1 && escapedHeadingCount == 0
@@ -76,6 +83,13 @@ final class VisualQATester: NSObject, WKScriptMessageHandler, WKNavigationDelega
             let listOK = nestedListCount >= 2
             let alertOK = alertCount >= 2
             let tableOK = tableCount >= 2 && tableOverflowCount == 0 && collapsedCellCount == 0 && imbalancedTableCount == 0
+            // Text size must reflow the page (layout width shrinks by the zoom
+            // factor) and keep the column centered, not magnify a full-width page.
+            let expectedLayoutWidth = Double(viewportWidth) / zoom
+            let zoomOK = abs(layoutWidth - expectedLayoutWidth) <= 2 && columnSkew <= 2
+            // Native ::marker boxes paint seams in a selection; every list item
+            // except task items must use the generated marker instead.
+            let markerOK = listItemCount >= 1 && nativeMarkerCount == 0
 
             print(String(format: "page horizontal overflow: %.1fpx %@", pageOverflow, pageOK ? "✓" : "✗"))
             print("headings: \(headingCount), long: \(longHeadingCount), escaped: \(escapedHeadingCount) \(headingOK ? "✓" : "✗")")
@@ -83,7 +97,9 @@ final class VisualQATester: NSObject, WKScriptMessageHandler, WKNavigationDelega
             print("nested list items: \(nestedListCount) \(listOK ? "✓" : "✗")")
             print("callouts: \(alertCount) \(alertOK ? "✓" : "✗")")
             print("tables: \(tableCount), escaped: \(tableOverflowCount), collapsed cells: \(collapsedCellCount), imbalanced: \(imbalancedTableCount) \(tableOK ? "✓" : "✗")")
-            exit(pageOK && headingOK && imageOK && listOK && alertOK && tableOK ? 0 : 1)
+            print(String(format: "zoom %.2f: layout width %.1fpx (expected %.1fpx), column skew %.1fpx %@", zoom, layoutWidth, expectedLayoutWidth, columnSkew, zoomOK ? "✓" : "✗"))
+            print("list items: \(listItemCount), with native markers: \(nativeMarkerCount) \(markerOK ? "✓" : "✗")")
+            exit(pageOK && headingOK && imageOK && listOK && alertOK && tableOK && zoomOK && markerOK ? 0 : 1)
         }
     }
 
@@ -175,8 +191,19 @@ final class VisualQATester: NSObject, WKScriptMessageHandler, WKNavigationDelega
           imbalancedTableCount += 1;
         }
       });
+      var column = root.querySelector(".vditor-ir .vditor-reset") || root.querySelector(".vditor-reset");
+      var columnRect = column ? column.getBoundingClientRect() : { left: 0, right: viewportWidth };
+      var columnSkew = Math.abs(columnRect.left - (viewportWidth - columnRect.right));
+      var listItems = Array.prototype.slice.call(root.querySelectorAll(".vditor-reset li:not(.vditor-task)"));
+      var nativeMarkerCount = listItems.filter(function (li) {
+        return getComputedStyle(li).listStyleType !== "none" || getComputedStyle(li, "::before").content === "none";
+      }).length;
       window.webkit.messageHandlers.ouro.postMessage({
         type: "visualqa",
+        layoutWidth: window.innerWidth,
+        columnSkew: columnSkew,
+        listItemCount: listItems.length,
+        nativeMarkerCount: nativeMarkerCount,
         pageOverflow: pageOverflow,
         headingCount: headings.length,
         longHeadingCount: longHeadings.length,

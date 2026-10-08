@@ -60,6 +60,7 @@ shoot_case() {
   local theme="$3"
   local width="${4:-1200}"
   local height="${5:-1400}"
+  local zoom="${6:-1.0}"
 
   if [[ -z "$fixture" ]]; then
     if [[ -z "$fallback_fixture" ]]; then
@@ -70,7 +71,7 @@ shoot_case() {
 
   local out="$artifact_dir/${name}.png"
   echo "visual artifact: $out"
-  if ! "$exe" --shoot "$fixture" --theme "$theme" --width "$width" --height "$height" --out "$out"; then
+  if ! "$exe" --shoot "$fixture" --theme "$theme" --width "$width" --height "$height" --zoom "$zoom" --out "$out"; then
     echo "warning: failed to capture visual artifact for $name" >&2
   fi
 }
@@ -81,7 +82,8 @@ run_case() {
   local theme="$3"
   local width="${4:-720}"
   local height="${5:-900}"
-  local -a args=(--visualqatest --theme "$theme" --visualqa-width "$width" --visualqa-height "$height")
+  local zoom="${6:-1.0}"
+  local -a args=(--visualqatest --theme "$theme" --visualqa-width "$width" --visualqa-height "$height" --visualqa-zoom "$zoom")
   if [[ -n "$fixture" ]]; then
     args+=(--visualqa-file "$fixture")
   fi
@@ -93,7 +95,7 @@ run_case() {
   fi
 
   echo "visual QA failed: $name" >&2
-  shoot_case "$name" "$fixture" "$theme" "$width" "$height"
+  shoot_case "$name" "$fixture" "$theme" "$width" "$height" "$zoom"
   return 1
 }
 
@@ -101,6 +103,9 @@ failed=0
 run_case "fallback-quartz" "" "quartz" || failed=1
 run_case "dogfood-quartz" "Tests/Fixtures/dogfood-visual-surface.md" "quartz" || failed=1
 run_case "dogfood-graphite" "Tests/Fixtures/dogfood-visual-surface.md" "graphite" || failed=1
+# Text size above 100% must reflow the page and keep the column centered.
+run_case "dogfood-quartz-zoom" "Tests/Fixtures/dogfood-visual-surface.md" "quartz" 792 760 1.1 || failed=1
+run_case "dogfood-quartz-narrow-zoom" "Tests/Fixtures/dogfood-visual-surface.md" "quartz" 560 760 1.3 || failed=1
 
 if [[ "$failed" == "1" ]]; then
   echo "visual QA artifacts written under $(shell_quote "$artifact_dir")" >&2
