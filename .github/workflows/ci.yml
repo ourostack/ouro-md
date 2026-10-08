@@ -12,18 +12,18 @@ permissions:
 jobs:
   swift-test:
     name: Swift tests
-    runs-on: macos-14
+    runs-on: xcode-27
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - name: Select newest Xcode (Swift 6.0+)
+      - name: Select Xcode 27 (macOS 27 SDK)
         run: |
-          latest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"
-          [ -n "$latest" ] || latest="$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
-          sudo xcode-select -s "$latest/Contents/Developer"
+          sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
+          xcodebuild -version
           swift --version
+          xcrun --sdk macosx --show-sdk-version
       - name: Verify release version contract
         run: ./scripts/verify-release-version.sh
       - name: Verify release freshness policy
@@ -94,45 +94,79 @@ jobs:
 
   app-bundle:
     name: App bundle
-    runs-on: macos-14
+    runs-on: xcode-27
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - name: Select newest Xcode (Swift 6.0+)
+      - name: Select Xcode 27 (macOS 27 SDK)
         run: |
-          latest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"
-          [ -n "$latest" ] || latest="$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
-          sudo xcode-select -s "$latest/Contents/Developer"
+          sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
+          xcodebuild -version
           swift --version
+          xcrun --sdk macosx --show-sdk-version
       - name: Build the app bundle
         run: ./make-app.sh
       - name: Verify packaged app probes
         env:
           OURO_MD_ALLOW_UNCONFIGURED_TELEMETRY: "1"
+          OURO_MD_RENDERED_TEXT_AUDIT_ELSEWHERE: "1"
         run: ./scripts/verify-packaged-app.sh OuroMD.app
 
   native-scenario-verifier:
     name: Native scenario verifier
-    runs-on: macos-14
+    runs-on: xcode-27
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - name: Select newest Xcode (Swift 6.0+)
+      - name: Select Xcode 27 (macOS 27 SDK)
         run: |
-          latest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"
-          [ -n "$latest" ] || latest="$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
-          sudo xcode-select -s "$latest/Contents/Developer"
+          sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
+          xcodebuild -version
           swift --version
+          xcrun --sdk macosx --show-sdk-version
       - name: Build
         run: swift build
       - name: Run headless editor harnesses
         env:
           OURO_VISUAL_ARTIFACT_DIR: ${{ runner.temp }}/ouro-md-artifacts/visual-qa
+          OURO_MD_RENDERED_TEXT_AUDIT_ELSEWHERE: "1"
         run: ./scripts/run-native-scenarios.sh
+      - name: Package the harness binary for the rendered text audit
+        run: |
+          bin="$(swift build --show-bin-path)"
+          tar -czf "$RUNNER_TEMP/ouro-md-harness.tgz" -C "$bin" ouro-md $(cd "$bin" && ls -d *.bundle)
+      - uses: actions/upload-artifact@v6
+        with:
+          name: ouro-md-harness
+          path: ${{ runner.temp }}/ouro-md-harness.tgz
+          retention-days: 3
+
+  rendered-text-audit:
+    name: Rendered text audit
+    # Vision text recognition fails on the Xcode 27 image, so the shell label
+    # check runs the same binary on a runner where it works.
+    needs: native-scenario-verifier
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v8
+        with:
+          name: ouro-md-harness
+          path: ${{ runner.temp }}
+      - name: Run the rendered-text checks with text recognition
+        run: |
+          mkdir -p "$RUNNER_TEMP/harness"
+          tar -xzf "$RUNNER_TEMP/ouro-md-harness.tgz" -C "$RUNNER_TEMP/harness"
+          sw_vers
+          "$RUNNER_TEMP/harness/ouro-md" --accessibilityaudit | tee "$RUNNER_TEMP/audit.log"
+          grep -q "shell rendered accessibility labels: ✓" "$RUNNER_TEMP/audit.log"
+          "$RUNNER_TEMP/harness/ouro-md" --uisurfacetest | tee "$RUNNER_TEMP/surface.log"
+          grep -q "direct shell install suppressed; review prompt available: ✓$" "$RUNNER_TEMP/surface.log"
       - name: Upload visual QA artifacts
         if: failure()
         uses: actions/upload-artifact@v6
@@ -142,18 +176,18 @@ jobs:
 
   coverage:
     name: Coverage
-    runs-on: macos-14
+    runs-on: xcode-27
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - name: Select newest Xcode (Swift 6.0+)
+      - name: Select Xcode 27 (macOS 27 SDK)
         run: |
-          latest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"
-          [ -n "$latest" ] || latest="$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
-          sudo xcode-select -s "$latest/Contents/Developer"
+          sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
+          xcodebuild -version
           swift --version
+          xcrun --sdk macosx --show-sdk-version
       - name: Enforce 100% line+region coverage on pure support targets
         run: ./scripts/check-coverage.sh
       - name: Upload coverage test timings

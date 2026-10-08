@@ -4,7 +4,7 @@ public enum OuroMDRelease {
     public static let appName = "Ouro MD"
     public static let bundleIdentifier = "bot.ouro.md"
     public static let repository = "ourostack/ouro-md"
-    public static let version = "0.9.88"
+    public static let version = "0.9.89"
     public static let userAgent = "OuroMD/\(version)"
     public static let releaseDate = "2026-10-08"
     public static let positioningSubtitle = "Local Markdown workspace for Mac files."
@@ -16,5 +16,8 @@ public enum OuroMDRelease {
         "Render HTML line breaks in the editor, including table cells, without changing the Markdown source.",
         "Text size now reflows the page, so the column stays centered and the side margins shrink in narrow windows.",
         "Selecting across bullets and numbered lists now draws one clean highlight, without seams around the markers.",
+        "Built for macOS 27: the window adopts the current system design, with a glass toolbar and a floating status pill.",
+        "Writing Tools rewrites text in place in the editor, and one undo reverts the whole rewrite.",
+        "Siri, Shortcuts and Spotlight can open, read and add to your Markdown documents, including unsaved edits.",
     ]
 }

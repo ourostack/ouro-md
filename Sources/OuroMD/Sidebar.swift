@@ -434,9 +434,34 @@ struct EditorPane: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
+        GeometryReader { geometry in
+            editor(topInset: geometry.safeAreaInsets.top)
+        }
+        .frame(minWidth: 400, minHeight: 320)
+    }
+
+    /// On the new design the page runs under the toolbar (WebKit keeps its
+    /// content clear of `topInset` via obscured content insets), and the
+    /// document status floats over the page instead of sitting in a bar.
+    @ViewBuilder private func editor(topInset: CGFloat) -> some View {
         VStack(spacing: 0) {
             ZStack {
-                EditorWebView(model: model)
+                if SystemDesign.usesGlass {
+                    EditorWebView(model: model, topObscuredInset: topInset)
+                        .ignoresSafeArea(.container, edges: .top)
+                } else {
+                    EditorWebView(model: model)
+                }
+                if SystemDesign.usesGlass && model.statusBarVisible && !model.focusMode {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            DocumentStatusBar(model: model)
+                        }
+                    }
+                    .padding(12)
+                }
                 VStack {
                     HStack {
                         Spacer()
@@ -455,7 +480,7 @@ struct EditorPane: View {
                     }
                 }
             }
-            if model.statusBarVisible && !model.focusMode {
+            if model.statusBarVisible && !model.focusMode && !SystemDesign.usesGlass {
                 HStack {
                     Spacer()
                     DocumentStatusBar(model: model)
@@ -466,7 +491,6 @@ struct EditorPane: View {
                 .overlay(Divider(), alignment: .top)
             }
         }
-        .frame(minWidth: 400, minHeight: 320)
     }
 }
 
@@ -484,10 +508,9 @@ struct DocumentStatusBar: View {
         .font(.system(size: 11))
         .monospacedDigit()
         .foregroundStyle(.secondary)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(.quaternary, lineWidth: 1))
+        .padding(.horizontal, SystemDesign.usesGlass ? 10 : 8)
+        .padding(.vertical, SystemDesign.usesGlass ? 5 : 4)
+        .glassSurface(cornerRadius: SystemDesign.usesGlass ? 12 : 6)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Document status")
         .accessibilityValue("\(model.wordCount) words, \(model.charCount) characters, \(model.mode == "sv" ? "Source" : "Rich"), \(model.theme.displayName)\(model.isDirty ? ", edited" : "")")
@@ -544,9 +567,7 @@ struct CommandPaletteView: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(.quaternary, lineWidth: 1))
-        .shadow(radius: 10)
+        .glassSurface(cornerRadius: SystemDesign.usesGlass ? 18 : 8, elevated: true)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Command palette")
         .onAppear { focused = true }
@@ -599,8 +620,7 @@ private struct FindBar: View {
         }
         .font(.system(size: 12))
         .padding(.horizontal, 10).padding(.vertical, 7)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(.quaternary, lineWidth: 1))
+        .glassSurface(cornerRadius: SystemDesign.usesGlass ? 14 : 8)
         .onAppear { focused = true }
     }
 

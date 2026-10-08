@@ -73,6 +73,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         installUndoRedoShortcutMonitor()
+        DocumentIntentsWorkspace.current = self
         if isSelfTest {
             let controller = DocumentWindowController(filePath: initialFilePath, selfTest: true, useAutosave: true)
             track(controller)
@@ -312,7 +313,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     }
 
     func openInNewWindow(_ url: URL, fragment: String? = nil) {
-        if let existing = controllers.first(where: { $0.model.currentURL == url }) {
+        if let existing = controllers.first(where: { AppModel.isSameDocument($0.model.currentURL, url) }) {
             existing.model.requestAnchorScroll(fragment)
             existing.window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
@@ -398,7 +399,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        let dirty = controllers.filter { $0.model.isDirty || $0.model.deletedOnDisk }
+        let dirty = controllers.filter { $0.model.hasUnsavedWork }
         guard !dirty.isEmpty else { return .terminateNow }
         let alert = NSAlert()
         alert.messageText = dirty.count == 1 ? "You have unsaved changes." : "You have unsaved changes in \(dirty.count) windows."
@@ -629,3 +630,57 @@ extension NSColor {
                   alpha: 1.0)
     }
 }
+
+// MARK: - Siri, Shortcuts and Spotlight
+
+extension AppDelegate: MarkdownDocumentWorkspace {
+    func knownDocumentURLs() -> [URL] {
+        let open = controllers.compactMap { $0.model.currentURL?.standardizedFileURL }
+        let recent = recentDocumentURLsProvider()
+            .map(\.standardizedFileURL)
+            .filter { AppModel.isMarkdownDocumentURL($0) && isReadable($0) }
+        return open + recent.filter { !open.contains($0) }
+    }
+
+    func isReadable(_ url: URL) -> Bool {
+        AppModel.isMarkdownDocumentURL(url) && FileManager.default.isReadableFile(atPath: url.path)
+    }
+
+    func frontDocumentURL() -> URL? {
+        frontController?.model.currentURL?.standardizedFileURL
+    }
+
+    private func controller(for url: URL) -> DocumentWindowController? {
+        controllers.first { AppModel.isSameDocument($0.model.currentURL, url) }
+    }
+
+    func markdown(for url: URL) async -> String? {
+        if let controller = controller(for: url) { return await controller.model.currentMarkdown() }
+        guard isReadable(url) else { return nil }
+        return AppModel.readText(at: url)
+    }
+
+    func replaceMarkdown(_ markdown: String, in url: URL) async throws {
+        if let controller = controller(for: url) {
+            guard controller.model.applyAssistantEdit(markdown) else {
+                throw DocumentIntentError.writingToolsActive(url.lastPathComponent)
+            }
+            return
+        }
+        guard isReadable(url) else { throw DocumentIntentError.unreadable(url.lastPathComponent) }
+        let file = url.resolvingSymlinksInPath()
+        let data = try Data(contentsOf: file)
+        guard let original = String(data: data, encoding: .utf8) else {
+            // Rewriting a non-UTF-8 file with no window and no undo would
+            // silently change its encoding; the editor handles that case.
+            throw DocumentIntentError.needsOpenDocument(url.lastPathComponent)
+        }
+        try DocumentIntentsFileText.matchingLineEndings(markdown, of: original)
+            .write(to: file, atomically: true, encoding: .utf8)
+    }
+
+    func open(_ url: URL) {
+        openInNewWindow(url.standardizedFileURL)
+    }
+}
+

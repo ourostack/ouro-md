@@ -33,6 +33,26 @@ exe="$app/Contents/MacOS/ouro-md"
 [[ -f "$info" ]] || fail "Info.plist not found in $app"
 [[ -x "$exe" ]] || fail "executable not found in $app"
 
+# The SDK stamp decides whether macOS runs the app with the current system
+# design or in compatibility mode. Ship only binaries stamped with a macOS 26 or
+# later SDK (make-app.sh passes the real SDK version to the linker).
+min_sdk_major="${OURO_MD_MIN_SDK_MAJOR:-26}"
+binary_sdk="$(otool -l "$exe" | awk '/LC_BUILD_VERSION/{found=1} found && $1=="sdk"{print $2; exit}')"
+[[ -n "$binary_sdk" ]] || fail "could not read the SDK version from $exe"
+(( ${binary_sdk%%.*} >= min_sdk_major )) || fail "binary is stamped with macOS SDK $binary_sdk; need $min_sdk_major or later so macOS runs the current design"
+echo "binary SDK stamp ok: $binary_sdk"
+
+# Siri, Shortcuts and Spotlight only see the document actions when the bundle
+# carries compiled App Intents metadata (make-app.sh generates it).
+intents="$app/Contents/Resources/Metadata.appintents/extract.actionsdata"
+[[ -f "$intents" ]] || fail "missing App Intents metadata: $intents"
+for action in OpenMarkdownDocumentIntent GetMarkdownDocumentIntent AppendToMarkdownDocumentIntent ReplaceMarkdownDocumentIntent; do
+  grep -q "\"$action\"" "$intents" || fail "App Intents metadata does not list $action"
+done
+/usr/libexec/PlistBuddy -c "Print :NSUserActivityTypes" "$info" | grep -q "bot.ouro.md.document" \
+  || fail "Info.plist does not declare the bot.ouro.md.document activity type"
+echo "App Intents metadata ok"
+
 plist() { /usr/libexec/PlistBuddy -c "Print :$1" "$info"; }
 
 version="$(plist CFBundleShortVersionString)"

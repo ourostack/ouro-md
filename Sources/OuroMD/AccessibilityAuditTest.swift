@@ -64,10 +64,22 @@ final class AccessibilityAuditTester {
         .union(accessibilityStrings(CommandReferenceView(items: CommandPaletteCatalog.items()), size: NSSize(width: 560, height: 620)))
         .union(accessibilityStrings(OuroMDAboutView(updateCoordinator: makeCurrentUpdateCoordinator()), size: NSSize(width: 540, height: 540)))
         .union(accessibilityStrings(UpdateProgressView(updateCoordinator: updateCoordinator), size: NSSize(width: 440, height: 190)))
-        let shellText = renderedText(OuroMDAboutView(updateCoordinator: makeCurrentUpdateCoordinator()), size: NSSize(width: 540, height: 540))
-            .union(renderedText(OuroMDReleaseControls(updateCoordinator: availableUpdateCoordinator, showTitle: true)
-                .frame(width: 560, alignment: .leading), size: NSSize(width: 560, height: 220)))
-            .union(renderedText(OuroMDUpdateInstalledNotice(version: "0.10.0", onOpenAbout: {}, onDismiss: {}), size: NSSize(width: 380, height: 140)))
+        let about = OuroMDAboutView(updateCoordinator: makeCurrentUpdateCoordinator())
+        let controls = OuroMDReleaseControls(updateCoordinator: availableUpdateCoordinator, showTitle: true)
+            .frame(width: 560, alignment: .leading)
+        let notice = OuroMDUpdateInstalledNotice(version: "0.10.0", onOpenAbout: {}, onDismiss: {})
+        let rendered = [
+            renderedText(about, size: NSSize(width: 540, height: 540)),
+            renderedText(controls, size: NSSize(width: 560, height: 220)),
+            renderedText(notice, size: NSSize(width: 380, height: 140)),
+        ]
+        // Text recognition doesn't work on some machines (the Xcode 27 CI
+        // image). There the check fails unless CI says a job on another runner
+        // runs it; it is never silently skipped.
+        let recognitionUnavailable = rendered.contains { $0 == nil }
+        let renderedElsewhere = recognitionUnavailable
+            && HeadlessTextRecognition.deferredElsewhere
+        let shellText = rendered.reduce(into: Set<String>()) { $0.formUnion($1 ?? []) }
 
         let runtimeRequired = ["Light", "Dark", "Outline", "Files", "Search"]
         let documentTruthRequired = ["File status"]
@@ -88,13 +100,13 @@ final class AccessibilityAuditTester {
             "Copy Version",
             "What's New",
         ]
-        let missingShellRendered = shellRenderedRequired.filter { expected in
+        let missingShellRendered = renderedElsewhere ? [] : shellRenderedRequired.filter { expected in
             !shellText.contains { renderedTextContains($0, expected) }
         }
         let shellRenderedAlternatives = [
             ("installed update dismiss action", ["OK", "Done"]),
         ]
-        let missingShellRenderedAlternatives = shellRenderedAlternatives.compactMap { label, alternatives in
+        let missingShellRenderedAlternatives = renderedElsewhere ? [] : shellRenderedAlternatives.compactMap { label, alternatives in
             alternatives.contains { expected in
                 shellText.contains { renderedTextContains($0, expected) }
             } ? nil : "\(label) (\(alternatives.joined(separator: " or ")))"
@@ -119,7 +131,11 @@ final class AccessibilityAuditTester {
             print("missing document truth labels: \(missingDocumentTruth.joined(separator: " | "))")
             print("observed labels: \(labels.sorted().joined(separator: " | "))")
         }
-        print("shell rendered accessibility labels: \(missingShellRendered.isEmpty ? "✓" : "✗")")
+        if renderedElsewhere {
+            print("shell rendered accessibility labels: deferred (text recognition is unavailable on this machine; CI runs this check in the Rendered text audit job)")
+        } else {
+            print("shell rendered accessibility labels: \(missingShellRendered.isEmpty && missingShellRenderedAlternatives.isEmpty ? "✓" : "✗")\(recognitionUnavailable ? " (text recognition is unavailable on this machine)" : "")")
+        }
         if !missingShellRendered.isEmpty {
             print("missing shell rendered labels: \(missingShellRendered.joined(separator: " | "))")
             print("observed shell text: \(shellText.sorted().joined(separator: " | "))")
@@ -195,7 +211,9 @@ final class AccessibilityAuditTester {
         return out
     }
 
-    private func renderedText<Content: View>(_ view: Content, size: NSSize) -> Set<String> {
+    /// The text recognized in the rendered view, or nil when text recognition
+    /// doesn't work on this machine.
+    private func renderedText<Content: View>(_ view: Content, size: NSSize) -> Set<String>? {
         let host = NSHostingController(
             rootView: view
                 .background(Color.white)
@@ -225,19 +243,26 @@ final class AccessibilityAuditTester {
         return representation.cgImage
     }
 
-    private func recognizeText(in image: CGImage) -> Set<String> {
-        let request = VNRecognizeTextRequest()
-        request.recognitionLevel = .accurate
-        request.usesLanguageCorrection = false
-        let handler = VNImageRequestHandler(cgImage: image, options: [:])
-        do {
-            try handler.perform([request])
-        } catch {
-            return []
+    private func recognizeText(in image: CGImage) -> Set<String>? {
+        guard let text = HeadlessTextRecognition.recognize(in: image, harness: "accessibilityaudit") else { return nil }
+        if text.isEmpty {
+            FileHandle.standardError.write(Data("accessibilityaudit: text recognition found nothing in a \(image.width)x\(image.height) render with \(Self.inkPixels(in: image)) ink pixels\n".utf8))
         }
-        return Set((request.results ?? []).compactMap { observation in
-            observation.topCandidates(1).first?.string
-        })
+        return text
+    }
+
+    /// Counts clearly non-white pixels, so a failed audit says whether the
+    /// view painted at all.
+    private static func inkPixels(in image: CGImage) -> Int {
+        let width = image.width, height = image.height
+        var pixels = [UInt8](repeating: 255, count: width * height * 4)
+        guard let context = CGContext(data: &pixels, width: width, height: height, bitsPerComponent: 8,
+                                      bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return -1 }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        var ink = 0
+        for i in stride(from: 0, to: pixels.count, by: 4) where Int(pixels[i]) + Int(pixels[i + 1]) + Int(pixels[i + 2]) < 600 { ink += 1 }
+        return ink
     }
 
     private func renderedTextContains(_ line: String, _ token: String) -> Bool {

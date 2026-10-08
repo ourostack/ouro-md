@@ -7,7 +7,7 @@ import SwiftUI
 /// centered title, chrome sync, the status bar, and unsaved-close
 /// handling. Multiple instances give independent windows.
 @MainActor
-final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate {
+final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate, NSToolbarDelegate {
     let model = AppModel()
     let window: NSWindow
     private var sidebarItem: NSSplitViewItem?
@@ -48,6 +48,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         window.isReleasedWhenClosed = false
         self.window = window
         super.init()
+        adoptSystemToolbar()
 
         window.delegate = self
         // Click the filename to open a document (same as File ▸ Open), while the
@@ -59,7 +60,10 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         // producing the malformed white chip/artifacts seen in 0.9.82.
         let truthAccessory = NSTitlebarAccessoryViewController()
         let truthButton = DocumentTruthTitleButton(model: model)
-        truthAccessory.view = truthButton
+        // The unified toolbar (macOS 26) stretches title-bar accessories to its
+        // height; the container takes the stretch and keeps the glyph at its
+        // fixed size, centred.
+        truthAccessory.view = DocumentTruthAccessoryContainer(button: truthButton)
         truthAccessory.layoutAttribute = .trailing
         window.addTitlebarAccessoryViewController(truthAccessory)
         self.truthAccessory = truthAccessory
@@ -105,6 +109,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         if let background = NSColor(hex: model.theme.backgroundHex) { window.backgroundColor = background }
         truthButton?.refresh()
         truthAccessory?.isHidden = model.focusMode
+        DocumentIntentsPresence.update(window: window, documentURL: model.currentURL)
         MenuBuilder.refreshDynamicState(model: model)
     }
 
@@ -236,10 +241,58 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         model.printDocument()
     }
 
+    // MARK: - Toolbar (new design)
+
+    private static let toolbarIdentifier = NSToolbar.Identifier("OuroMDDocumentToolbar")
+    private static let sidebarToggleItem = NSToolbarItem.Identifier("OuroMDToggleSidebar")
+
+    /// On macOS 26+ the window gets a real toolbar, which is what carries the
+    /// system glass, and the content runs under it (the editor keeps its text
+    /// clear through WebKit's obscured content insets). Earlier systems keep
+    /// the plain transparent title bar.
+    private func adoptSystemToolbar() {
+        guard SystemDesign.usesGlass else { return }
+        window.styleMask.insert(.fullSizeContentView)
+        let toolbar = NSToolbar(identifier: Self.toolbarIdentifier)
+        toolbar.delegate = self
+        toolbar.displayMode = .iconOnly
+        toolbar.allowsUserCustomization = false
+        window.toolbar = toolbar
+        window.toolbarStyle = .unified
+    }
+
+    func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        [Self.sidebarToggleItem, .sidebarTrackingSeparator, .flexibleSpace]
+    }
+
+    func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        toolbarDefaultItemIdentifiers(toolbar)
+    }
+
+    func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
+        guard itemIdentifier == Self.sidebarToggleItem else { return nil }
+        // Our own item rather than the system toggle, so the sidebar state the
+        // model persists stays in step (NSSplitViewController's built-in
+        // toggleSidebar: would bypass it).
+        let item = NSToolbarItem(itemIdentifier: itemIdentifier)
+        item.label = "Sidebar"
+        item.toolTip = "Show or hide the sidebar"
+        item.image = NSImage(systemSymbolName: "sidebar.left", accessibilityDescription: "Toggle Sidebar")
+        item.isBordered = true
+        item.target = self
+        item.action = #selector(toggleSidebarFromToolbar(_:))
+        return item
+    }
+
+    @objc private func toggleSidebarFromToolbar(_ sender: Any?) {
+        toggleSidebar()
+    }
+
     // MARK: - NSWindowDelegate
 
     func windowDidBecomeKey(_ notification: Notification) {
         MenuBuilder.refreshDynamicState(model: model)
+        window.userActivity?.becomeCurrent()
         onBecomeKey?(self)
     }
 
@@ -249,7 +302,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-        guard model.isDirty || model.deletedOnDisk else { return true }
+        guard model.hasUnsavedWork else { return true }
         let alert = NSAlert()
         if model.deletedOnDisk {
             alert.messageText = "“\(model.windowTitle)” was deleted on disk."
@@ -499,4 +552,28 @@ enum TitleClickGesture {
     static func isDrag(deltaX: CGFloat, deltaY: CGFloat) -> Bool {
         (deltaX * deltaX + deltaY * deltaY) >= dragThresholdSquared
     }
+}
+
+/// Holds the document-status glyph in the title bar at its own size, centred
+/// vertically, however tall the title bar or toolbar makes the accessory.
+final class DocumentTruthAccessoryContainer: NSView {
+    let button: DocumentTruthTitleButton
+
+    init(button: DocumentTruthTitleButton) {
+        self.button = button
+        super.init(frame: NSRect(origin: .zero, size: DocumentTruthTitleButton.controlSize))
+        button.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(button)
+        NSLayoutConstraint.activate([
+            button.leadingAnchor.constraint(equalTo: leadingAnchor),
+            button.trailingAnchor.constraint(equalTo: trailingAnchor),
+            button.centerYAnchor.constraint(equalTo: centerYAnchor),
+            heightAnchor.constraint(greaterThanOrEqualTo: button.heightAnchor),
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
+
+    override var intrinsicContentSize: NSSize { button.intrinsicContentSize }
 }

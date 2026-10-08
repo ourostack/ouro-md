@@ -6,6 +6,8 @@ import WebKit
 /// Hosts the Vditor editor in a WKWebView and bridges it to `AppModel`.
 struct EditorWebView: NSViewRepresentable {
     let model: AppModel
+    /// Height of the toolbar the page scrolls under (new design only).
+    var topObscuredInset: CGFloat = 0
 
     func makeCoordinator() -> Coordinator { Coordinator(model: model) }
 
@@ -20,6 +22,7 @@ struct EditorWebView: NSViewRepresentable {
         controller.add(context.coordinator, name: "ouro")
         configuration.userContentController = controller
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
+        EditorWritingTools.enableInlineEditing(on: configuration)
 
         let webView = EditorDropWebView(frame: .zero, configuration: configuration)
         webView.model = model
@@ -34,7 +37,9 @@ struct EditorWebView: NSViewRepresentable {
         webView.allowsBackForwardNavigationGestures = false
         webView.registerForDraggedTypes([.fileURL])
 
+        applyObscuredInset(to: webView)
         context.coordinator.webView = webView
+        context.coordinator.observeWritingTools(on: webView)
         model.bridge = context.coordinator
 
         if let indexURL = OuroResources.web("index", "html") {
@@ -47,6 +52,14 @@ struct EditorWebView: NSViewRepresentable {
 
     func updateNSView(_ nsView: WKWebView, context: Context) {
         Self.applyLayerBackground(model.theme.backgroundHex, to: nsView)
+        applyObscuredInset(to: nsView)
+    }
+
+    private func applyObscuredInset(to webView: WKWebView) {
+        if #available(macOS 26, *) {
+            let insets = NSEdgeInsets(top: topObscuredInset, left: 0, bottom: 0, right: 0)
+            if webView.obscuredContentInsets.top != insets.top { webView.obscuredContentInsets = insets }
+        }
     }
 
     static func initialThemeBootstrapScript(for theme: Theme) -> String {
@@ -209,6 +222,10 @@ struct EditorWebView: NSViewRepresentable {
             eval("window.ouro && window.ouro.reloadValue(\(Coordinator.jsString(markdown)))")
         }
 
+        func applyEdit(_ markdown: String) {
+            eval("window.ouro && window.ouro.applyEdit(\(Coordinator.jsString(markdown)))")
+        }
+
         func getMarkdown(_ completion: @escaping (String?) -> Void) {
             guard let webView else { completion(nil); return }
             webView.evaluateJavaScript("window.ouro ? window.ouro.getValue() : null") { result, _ in
@@ -331,6 +348,34 @@ struct EditorWebView: NSViewRepresentable {
             let operation = webView.printOperation(with: NSPrintInfo.shared)
             operation.view?.frame = webView.bounds
             operation.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
+        }
+
+        private var writingToolsObservation: NSKeyValueObservation?
+
+        /// Tells the editor and the model when a Writing Tools session (a
+        /// rewrite, proofread or "Write with Siri" edit) starts and ends.
+        func observeWritingTools(on webView: WKWebView) {
+            guard #available(macOS 15, *) else { return }
+            writingToolsObservation = webView.observe(\.isWritingToolsActive, options: [.new]) { [weak self] view, _ in
+                let active = view.isWritingToolsActive
+                DispatchQueue.main.async { self?.writingToolsDidChange(active) }
+            }
+        }
+
+        private func writingToolsDidChange(_ active: Bool) {
+            guard !active else {
+                eval("window.ouro && window.ouro.setWritingToolsActive(true)")
+                model.setWritingToolsActive(true)
+                return
+            }
+            // The editor folds the session's edits back in first and reports
+            // whether the text changed; only then may the model reconcile a
+            // file change that arrived during the session, so it sees the
+            // edits as unsaved instead of reloading over them.
+            guard let webView else { model.setWritingToolsActive(false); return }
+            webView.evaluateJavaScript("window.ouro ? window.ouro.setWritingToolsActive(false) === true : false") { [weak self] result, _ in
+                self?.model.setWritingToolsActive(false, editorChanged: (result as? Bool) ?? false)
+            }
         }
 
         func setZoom(_ factor: Double) { if let webView { EditorZoom.apply(factor, to: webView) } }
