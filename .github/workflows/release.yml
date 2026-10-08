@@ -28,6 +28,7 @@ on:
       - 'scripts/check-app-store-build.sh'
       - 'scripts/create-dmg.sh'
       - 'config/app-store-entitlements.plist'
+      - 'config/app-intents-const-protocols.json'
       - 'scripts/check-hosted-installer.sh'
       - 'scripts/check-live-update-path.sh'
       - 'scripts/check-shell-boundary.sh'
@@ -58,7 +59,51 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Vision text recognition fails on the Xcode 27 image, so the checks that
+  # read the shell's drawn text run the same harness binary on macos-15 before
+  # anything is packaged or published.
+  harness:
+    name: Build the harness
+    runs-on: xcode-27
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Select Xcode 27 (macOS 27 SDK)
+        run: sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
+      - name: Build and package the harness binary
+        run: |
+          swift build
+          bin="$(swift build --show-bin-path)"
+          tar -czf "$RUNNER_TEMP/ouro-md-harness.tgz" -C "$bin" ouro-md $(cd "$bin" && ls -d *.bundle)
+      - uses: actions/upload-artifact@v6
+        with:
+          name: ouro-md-release-harness
+          path: ${{ runner.temp }}/ouro-md-harness.tgz
+          retention-days: 3
+
+  rendered-text-audit:
+    name: Rendered text audit
+    needs: harness
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v8
+        with:
+          name: ouro-md-release-harness
+          path: ${{ runner.temp }}
+      - name: Run the rendered-text checks with text recognition
+        run: |
+          mkdir -p "$RUNNER_TEMP/harness"
+          tar -xzf "$RUNNER_TEMP/ouro-md-harness.tgz" -C "$RUNNER_TEMP/harness"
+          sw_vers
+          "$RUNNER_TEMP/harness/ouro-md" --accessibilityaudit | tee "$RUNNER_TEMP/audit.log"
+          grep -q "shell rendered accessibility labels: ✓" "$RUNNER_TEMP/audit.log"
+          "$RUNNER_TEMP/harness/ouro-md" --uisurfacetest | tee "$RUNNER_TEMP/surface.log"
+          grep -q "direct shell install suppressed; review prompt available: ✓$" "$RUNNER_TEMP/surface.log"
+
   release:
+    needs: rendered-text-audit
     runs-on: xcode-27
     timeout-minutes: 30
     steps:
@@ -155,6 +200,9 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # The rendered-text audit job above ran these checks with working
+          # text recognition; this runner can't.
+          OURO_MD_RENDERED_TEXT_AUDIT_ELSEWHERE: "1"
         run: ./scripts/package-release.sh
 
       - name: Upload artifacts to the run (always, for inspection / dry run)
