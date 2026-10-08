@@ -29,13 +29,6 @@ cleanup_root_profraw() {
 }
 trap cleanup_root_profraw EXIT
 
-# CI runners default to an older toolchain; the package needs Swift 6.
-if [ -d /Applications ]; then
-  latest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1 || true)"
-  [ -z "${latest:-}" ] && latest="$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1 || true)"
-  [ -n "${latest:-}" ] && export DEVELOPER_DIR="$latest/Contents/Developer"
-fi
-
 echo "==> swift test --enable-code-coverage"
 OURO_TEST_LOG="${OURO_TEST_LOG:-.build/ouro-coverage-swift-test.log}" \
   OURO_TEST_TIMINGS="${OURO_TEST_TIMINGS:-.build/ouro-coverage-test-timings.tsv}" \

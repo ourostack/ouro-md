@@ -19,19 +19,19 @@ concurrency:
 jobs:
   refresh-shell-dependency:
     if: github.repository == 'ourostack/ouro-md'
-    runs-on: macos-14
+    runs-on: xcode-27
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - name: Select newest Xcode (Swift 6.0+)
+      - name: Select Xcode 27 (macOS 27 SDK)
         run: |
-          latest="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)"
-          [ -n "$latest" ] || latest="$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
-          sudo xcode-select -s "$latest/Contents/Developer"
+          sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
+          xcodebuild -version
           swift --version
+          xcrun --sdk macosx --show-sdk-version
 
       - name: Check shared shell freshness
         id: freshness
