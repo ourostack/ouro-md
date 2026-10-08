@@ -302,7 +302,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-        guard model.isDirty || model.deletedOnDisk else { return true }
+        guard model.hasUnsavedWork else { return true }
         let alert = NSAlert()
         if model.deletedOnDisk {
             alert.messageText = "“\(model.windowTitle)” was deleted on disk."

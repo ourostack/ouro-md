@@ -23,6 +23,8 @@ private final class MockBridge: EditorBridge {
 
     func setMarkdown(_ markdown: String) { current = markdown }
     func reloadMarkdown(_ markdown: String) { current = markdown; reloads.append(markdown); onReload?(markdown) }
+    var assistantEdits: [String] = []
+    func applyEdit(_ markdown: String) { current = markdown; assistantEdits.append(markdown) }
     func getMarkdown(_ completion: @escaping (String?) -> Void) {
         getMarkdownCalls += 1
         completion(returnsNilMarkdown ? nil : current)
@@ -208,6 +210,64 @@ final class AppModelReloadTests: XCTestCase {
         model.setWritingToolsActive(true)
         model.setWritingToolsActive(false)
         XCTAssertTrue(bridge.reloads.isEmpty)
+    }
+
+    /// A rewrite plus an agent's file change during the session is a conflict,
+    /// not a silent reload over the rewrite.
+    func testExternalEditDuringAChangingWritingToolsSessionIsAConflict() {
+        let url = tempFile()
+        try? "# Original\n".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let model = AppModel()
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+        model.loadInitialFile(url.path)
+        var asked: [URL] = []
+        model.externalConflictChooser = { asked.append($0); return false }
+
+        model.setWritingToolsActive(true)
+        XCTAssertTrue(model.hasUnsavedWork, "closing or quitting mid-session must ask")
+        bridge.current = "# Rewritten\n"
+        try? "# Updated by agent during a rewrite\n".write(to: url, atomically: true, encoding: .utf8)
+        model.reconcileExternalChangeForTesting()
+
+        model.setWritingToolsActive(false, editorChanged: true)
+        XCTAssertTrue(bridge.reloads.isEmpty, "the rewrite must not be reloaded over")
+        XCTAssertEqual(asked.count, 1, "the person chooses between the rewrite and the agent's version")
+        XCTAssertTrue(model.isDirty)
+        XCTAssertEqual(bridge.current, "# Rewritten\n")
+    }
+
+    func testAssistantEditWaitsOutWritingToolsAndCrashEndsTheSession() {
+        let model = AppModel()
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+
+        model.setWritingToolsActive(true)
+        XCTAssertFalse(model.applyAssistantEdit("# From Siri\n"), "an assistant edit must not land under Writing Tools")
+        XCTAssertTrue(bridge.assistantEdits.isEmpty)
+
+        model.editorCrashed()
+        XCTAssertFalse(model.writingToolsActive, "a crashed page has no session to wait for")
+    }
+
+    func testAssistantEditBeforeEditorReadyLandsAsAnEdit() {
+        let url = tempFile()
+        try? "# Original\n".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let model = AppModel()
+        let bridge = MockBridge()
+        model.bridge = bridge
+        model.loadInitialFile(url.path)
+
+        XCTAssertTrue(model.applyAssistantEdit("# Original\n\nFrom Siri.\n"))
+        XCTAssertTrue(bridge.assistantEdits.isEmpty)
+        model.editorDidBecomeReady()
+        XCTAssertEqual(bridge.assistantEdits, ["# Original\n\nFrom Siri.\n"], "applied as an undoable, dirtying edit, not a plain load")
     }
 
     func testExternalEditBeforeEditorReadyQueuesReloadWithoutFalseCompletion() {

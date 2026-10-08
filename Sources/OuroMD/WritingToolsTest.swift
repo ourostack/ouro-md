@@ -73,7 +73,7 @@ final class WritingToolsTester: NSObject, WKScriptMessageHandler, WKNavigationDe
         const edited = document.execCommand("insertText", false, "Rewritten");
         await sleep(400);
         const blockUntouched = root.querySelector("p") === block && block.isConnected;
-        window.ouro.setWritingToolsActive(false);
+        const reportedChange = window.ouro.setWritingToolsActive(false) === true;
         await sleep(400);
         const markdown = window.ouro.getValue();
         window.ouro.undo();
@@ -88,7 +88,20 @@ final class WritingToolsTester: NSObject, WKScriptMessageHandler, WKNavigationDe
         window.ouro.undo();
         await sleep(400);
         const assistUndone = window.ouro.getValue();
-        return { edited, blockUntouched, markdown, undone, assisted, afterAssist, assistUndone };
+        // Typing still inside Vditor's undo delay stays its own step when an
+        // assistant edit lands right after it.
+        root.focus();
+        const sel2 = getSelection();
+        sel2.selectAllChildren(root.querySelector("p"));
+        sel2.collapseToEnd();
+        document.execCommand("insertText", false, " typed");
+        const typed = window.ouro.getValue();
+        window.ouro.applyEdit("# Replaced\n");
+        await sleep(400);
+        window.ouro.undo();
+        await sleep(400);
+        const typedKept = window.ouro.getValue();
+        return { typed, typedKept, edited, blockUntouched, reportedChange, markdown, undone, assisted, afterAssist, assistUndone };
         """#
         webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { [weak self] result in
             guard let self else { return }
@@ -107,6 +120,8 @@ final class WritingToolsTester: NSObject, WKScriptMessageHandler, WKNavigationDe
             if #available(macOS 15, *) { behaviorOK = behavior == NSWritingToolsBehavior.complete.rawValue } else { behaviorOK = true }
             let markdownOK = markdown == Self.expected
             let undoOK = undone == Self.original
+            let reportedChange = (r["reportedChange"] as? Bool) ?? false
+            let typedOK = (r["typedKept"] as? String) == (r["typed"] as? String) && ((r["typed"] as? String) ?? "").contains("typed")
             let assistOK = (r["afterAssist"] as? String) == (r["assisted"] as? String)
             let assistUndoOK = (r["assistUndone"] as? String) == Self.original
             print("writing tools behavior: \(behavior.map(String.init) ?? "n/a") \(behaviorOK ? "✓" : "✗")")
@@ -115,9 +130,11 @@ final class WritingToolsTester: NSObject, WKScriptMessageHandler, WKNavigationDe
             print("markdown after session: \(markdown.debugDescription) \(markdownOK ? "✓" : "✗")")
             print("reported dirty: \(self.sawDirty) \(self.sawDirty ? "✓" : "✗")")
             print("one undo restores original: \(undone.debugDescription) \(undoOK ? "✓" : "✗")")
+            print("session end reports the change: \(reportedChange ? "✓" : "✗")")
+            print("typing just before an assistant edit survives one undo: \(typedOK ? "✓" : "✗ \(String(describing: r["typed"])) vs \(String(describing: r["typedKept"]))")")
             print("assistant edit applied: \(assistOK ? "✓" : "✗ \(String(describing: r["afterAssist"]))")")
             print("one undo reverts assistant edit: \(assistUndoOK ? "✓" : "✗ \(String(describing: r["assistUndone"]))")")
-            exit(behaviorOK && edited && untouched && markdownOK && self.sawDirty && undoOK && assistOK && assistUndoOK ? 0 : 1)
+            exit(behaviorOK && edited && untouched && markdownOK && self.sawDirty && undoOK && reportedChange && typedOK && assistOK && assistUndoOK ? 0 : 1)
         }
     }
 

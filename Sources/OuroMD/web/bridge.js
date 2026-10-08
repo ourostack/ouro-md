@@ -1717,11 +1717,11 @@
   // rewritten DOM to Markdown, record it as one undo step, and report the edit
   // so autosave and the word count follow.
   function endWritingToolsSession() {
-    if (!vditor || !ready) { return; }
+    if (!vditor || !ready) { return false; }
     var before = state.value;
     var md;
-    try { md = vditor.getValue(); } catch (e) { return; }
-    if (md === before) { schedulePostRender(); return; }
+    try { md = vditor.getValue(); } catch (e) { return false; }
+    if (md === before) { schedulePostRender(); return false; }
     try {
       var undo = vditor.vditor && vditor.vditor.undo;
       if (undo && typeof undo.addToUndoStack === "function") { undo.addToUndoStack(vditor.vditor); }
@@ -1731,7 +1731,9 @@
     setDirty(true);
     postCount(md);
     schedulePostRender();
+    return true;
   }
+
 
   function schedulePostRender() {
     requestAnimationFrame(function () {
@@ -2103,12 +2105,20 @@
       if (!vditor || !ready) { state.value = next; setDirty(true); postCount(next); return; }
       var scroller = document.scrollingElement || document.documentElement;
       var prevY = scroller ? scroller.scrollTop : window.scrollY;
-      vditor.setValue(next, false);
-      // Vditor records the undo step after its input delay; record it now so
-      // an undo straight after an assistant's edit reverts exactly that edit.
+      // Vditor records undo steps after its input delay. Record any typing
+      // still waiting as its own step, replace the text, then record the
+      // assistant's edit now in place of Vditor's delayed one, so one undo
+      // reverts exactly that edit.
+      var inner = vditor.vditor;
+      var undo = inner && inner.undo;
+      var pending = function () { return inner && inner[inner.currentMode] && inner[inner.currentMode].processTimeoutId; };
       try {
-        var undo = vditor.vditor && vditor.vditor.undo;
-        if (undo && typeof undo.addToUndoStack === "function") { undo.addToUndoStack(vditor.vditor); }
+        if (pending()) { clearTimeout(pending()); inner[inner.currentMode].processTimeoutId = 0; if (undo) { undo.addToUndoStack(inner); } }
+      } catch (e) { /* undo bookkeeping must never lose the edit */ }
+      vditor.setValue(next, false);
+      try {
+        if (pending()) { clearTimeout(pending()); inner[inner.currentMode].processTimeoutId = 0; }
+        if (undo && typeof undo.addToUndoStack === "function") { undo.addToUndoStack(inner); }
       } catch (e) { /* undo bookkeeping must never lose the edit */ }
       state.value = next;
       invalidateReferenceLinkCache();
@@ -2189,9 +2199,10 @@
     setAutoPair: function (on) { autoPair = !!on; },
     setWritingToolsActive: function (on) {
       var next = !!on;
-      if (next === writingToolsActive) { return; }
+      // Returns, at the end of a session, whether Writing Tools changed the text.
+      if (next === writingToolsActive) { return false; }
       writingToolsActive = next;
-      if (!next) { endWritingToolsSession(); }
+      return next ? false : endWritingToolsSession();
     },
     isWritingToolsActive: function () { return writingToolsActive; },
     exec: function (cmd) {

@@ -363,8 +363,19 @@ struct EditorWebView: NSViewRepresentable {
         }
 
         private func writingToolsDidChange(_ active: Bool) {
-            eval("window.ouro && window.ouro.setWritingToolsActive(\(active))")
-            model.setWritingToolsActive(active)
+            guard !active else {
+                eval("window.ouro && window.ouro.setWritingToolsActive(true)")
+                model.setWritingToolsActive(true)
+                return
+            }
+            // The editor folds the session's edits back in first and reports
+            // whether the text changed; only then may the model reconcile a
+            // file change that arrived during the session, so it sees the
+            // edits as unsaved instead of reloading over them.
+            guard let webView else { model.setWritingToolsActive(false); return }
+            webView.evaluateJavaScript("window.ouro ? window.ouro.setWritingToolsActive(false) === true : false") { [weak self] result, _ in
+                self?.model.setWritingToolsActive(false, editorChanged: (result as? Bool) ?? false)
+            }
         }
 
         func setZoom(_ factor: Double) { if let webView { EditorZoom.apply(factor, to: webView) } }

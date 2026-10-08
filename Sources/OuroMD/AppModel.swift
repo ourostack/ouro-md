@@ -148,6 +148,10 @@ final class AppModel: ObservableObject {
 
     private let defaults = UserDefaults.standard
     private var pendingMarkdown: String?
+    private var pendingAssistantEdit: String?
+    /// Tests answer the external-change conflict here (true reloads from
+    /// disk) instead of the modal alert.
+    var externalConflictChooser: ((URL) -> Bool)?
     /// True while Writing Tools is editing the page. Autosave and live reload
     /// wait for it to finish, so neither writes or replaces text mid-rewrite.
     private(set) var writingToolsActive = false
@@ -221,6 +225,18 @@ final class AppModel: ObservableObject {
     /// Whether a URL names a Markdown document Ouro MD opens.
     static func isMarkdownDocumentURL(_ url: URL) -> Bool { isMarkdownURL(url) }
 
+    /// True when two URLs name the same file, whatever the spelling: symlinks
+    /// (/tmp and /private/tmp), case on a case-insensitive volume, or `..`.
+    static func isSameDocument(_ a: URL?, _ b: URL?) -> Bool {
+        guard let a, let b else { return false }
+        let left = a.resolvingSymlinksInPath().standardizedFileURL
+        let right = b.resolvingSymlinksInPath().standardizedFileURL
+        if left == right { return true }
+        guard let l = try? left.resourceValues(forKeys: [.fileResourceIdentifierKey]).fileResourceIdentifier,
+              let r = try? right.resourceValues(forKeys: [.fileResourceIdentifierKey]).fileResourceIdentifier else { return false }
+        return l.isEqual(r)
+    }
+
     static func readText(at url: URL) -> String? {
         if let s = try? String(contentsOf: url, encoding: .utf8) { return s }
         var used: String.Encoding = .utf8
@@ -249,6 +265,12 @@ final class AppModel: ObservableObject {
             bridge.setDocBase(currentURL?.deletingLastPathComponent().path)
             bridge.setMarkdown(pending)
             pendingMarkdown = nil
+            // An assistant edited the document before the editor was ready:
+            // apply it now as an edit, so it is undoable, marked dirty and saved.
+            if let assistant = pendingAssistantEdit {
+                pendingAssistantEdit = nil
+                bridge.applyEdit(assistant)
+            }
             if let source = pendingRecoverySource {
                 pendingRecoverySource = nil
                 captureTelemetry(
@@ -291,18 +313,31 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// Something the window can't close or quit over without asking: unsaved
+    /// edits, a deleted file, or a Writing Tools session whose edits the model
+    /// hasn't been told about yet.
+    var hasUnsavedWork: Bool { isDirty || deletedOnDisk || writingToolsActive }
+
     /// Takes an assistant's (Siri, Shortcuts) rewrite of the open document as
-    /// one undoable edit; autosave persists it like any other edit.
-    func applyAssistantEdit(_ markdown: String) {
-        guard isReady, let bridge else {
-            pendingMarkdown = markdown
-            return
+    /// one undoable edit; autosave persists it like any other edit. Returns
+    /// false, changing nothing, while a Writing Tools session owns the text.
+    @discardableResult
+    func applyAssistantEdit(_ markdown: String) -> Bool {
+        guard !writingToolsActive else { return false }
+        if isReady, let bridge {
+            bridge.applyEdit(markdown)
+        } else {
+            if pendingMarkdown == nil { pendingMarkdown = currentURL.flatMap(AppModel.readText(at:)) ?? lastLoadedContent ?? "" }
+            pendingAssistantEdit = markdown
         }
-        bridge.applyEdit(markdown)
         captureTelemetry("ouro_md_document_assistant_edit_applied")
+        return true
     }
 
-    func setWritingToolsActive(_ active: Bool) {
+    /// `editorChanged` is the editor's own report, at the end of a session, of
+    /// whether Writing Tools changed the text; its input events were held from
+    /// the model during the session, so the model learns of the change here.
+    func setWritingToolsActive(_ active: Bool, editorChanged: Bool = false) {
         guard active != writingToolsActive else { return }
         writingToolsActive = active
         if active {
@@ -311,6 +346,7 @@ final class AppModel: ObservableObject {
             return
         }
         captureTelemetry("ouro_md_writing_tools_session_ended")
+        if editorChanged { setDirty(true) }
         // An agent rewrote the file while Writing Tools was open: reconcile it
         // now, through the usual path (live reload, or a conflict if the
         // session left unsaved edits).
@@ -881,7 +917,12 @@ final class AppModel: ObservableObject {
         alert.informativeText = "This file was modified by another program while you had unsaved changes. Reload the new version (discarding your edits), or keep your edits?"
         alert.addButton(withTitle: "Reload from Disk")
         alert.addButton(withTitle: "Keep My Edits")
-        let response = alert.runModal()
+        let response: NSApplication.ModalResponse
+        if let choose = externalConflictChooser {
+            response = choose(url) ? .alertFirstButtonReturn : .alertSecondButtonReturn
+        } else {
+            response = alert.runModal()
+        }
         // Either way, treat the on-disk content as the new baseline so we don't
         // re-prompt for the same external change.
         lastLoadedContent = diskContent
@@ -1039,6 +1080,10 @@ final class AppModel: ObservableObject {
     /// the reloaded editor isn't left blank and work isn't lost.
     func editorCrashed() {
         isReady = false
+        // The reloaded page starts with no Writing Tools session; don't leave
+        // autosave and reloads held for one that is gone.
+        writingToolsActive = false
+        externalContentDuringWritingTools = nil
         let diskContent = currentURL.flatMap { AppModel.readText(at: $0) }
         let recovered = diskContent ?? lastLoadedContent ?? ""
         pendingMarkdown = recovered

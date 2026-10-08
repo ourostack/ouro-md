@@ -106,4 +106,23 @@ final class DocumentIntentsTests: XCTestCase {
         XCTAssertTrue(AppModel.isMarkdownDocumentURL(URL(fileURLWithPath: "/x/a.md")))
         XCTAssertFalse(AppModel.isMarkdownDocumentURL(URL(fileURLWithPath: "/x/a.png")))
     }
+
+    func testSameDocumentSeesThroughSymlinksAndCase() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("ouro-md-same-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let file = dir.appendingPathComponent("Plan.md")
+        try "x".write(to: file, atomically: true, encoding: .utf8)
+        XCTAssertTrue(AppModel.isSameDocument(file, file.resolvingSymlinksInPath()))
+        XCTAssertTrue(AppModel.isSameDocument(file, dir.appendingPathComponent("sub/../Plan.md")))
+        XCTAssertTrue(AppModel.isSameDocument(file, dir.appendingPathComponent("plan.md")), "APFS is case-insensitive by default")
+        XCTAssertFalse(AppModel.isSameDocument(file, dir.appendingPathComponent("Other.md")))
+        XCTAssertFalse(AppModel.isSameDocument(nil, file))
+    }
+
+    func testClosedDocumentEditsKeepCRLF() {
+        XCTAssertEqual(DocumentIntentsFileText.matchingLineEndings("a\n\nb\n", of: "a\r\n"), "a\r\n\r\nb\r\n")
+        XCTAssertEqual(DocumentIntentsFileText.matchingLineEndings("a\r\nb\n", of: "a\r\n"), "a\r\nb\r\n")
+        XCTAssertEqual(DocumentIntentsFileText.matchingLineEndings("a\nb", of: "a\n"), "a\nb")
+    }
 }

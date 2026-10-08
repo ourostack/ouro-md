@@ -32,12 +32,16 @@ enum DocumentIntentError: Error, CustomLocalizedStringResourceConvertible {
     case appNotReady
     case noDocument
     case unreadable(String)
+    case writingToolsActive(String)
+    case needsOpenDocument(String)
 
     var localizedStringResource: LocalizedStringResource {
         switch self {
         case .appNotReady: return "Ouro MD isn't ready yet. Try again in a moment."
         case .noDocument: return "There's no Markdown document open in Ouro MD."
         case .unreadable(let name): return "Ouro MD can't read \(name)."
+        case .writingToolsActive(let name): return "Writing Tools is editing \(name). Finish or cancel it, then try again."
+        case .needsOpenDocument(let name): return "\(name) isn't UTF-8 text. Open it in Ouro MD first, then try again."
         }
     }
 }
@@ -245,5 +249,14 @@ enum DocumentIntentsPresence {
         guard #available(macOS 15, *), !urls.isEmpty else { return }
         let entities = urls.map(MarkdownDocumentEntity.init(url:))
         Task { try? await CSSearchableIndex.default().indexAppEntities(entities) }
+    }
+}
+
+/// Text handling for edits to documents that aren't open in a window.
+enum DocumentIntentsFileText {
+    /// Keeps a CRLF file CRLF after an assistant's edit joins lines with LF.
+    static func matchingLineEndings(_ text: String, of original: String) -> String {
+        guard original.contains("\r\n") else { return text }
+        return text.replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\n", with: "\r\n")
     }
 }
