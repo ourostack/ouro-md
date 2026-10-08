@@ -78,7 +78,7 @@ final class AccessibilityAuditTester {
         // runs it; it is never silently skipped.
         let recognitionUnavailable = rendered.contains { $0 == nil }
         let renderedElsewhere = recognitionUnavailable
-            && ProcessInfo.processInfo.environment["OURO_MD_RENDERED_TEXT_AUDIT_ELSEWHERE"] == "1"
+            && HeadlessTextRecognition.deferredElsewhere
         let shellText = rendered.reduce(into: Set<String>()) { $0.formUnion($1 ?? []) }
 
         let runtimeRequired = ["Light", "Dark", "Outline", "Files", "Search"]
@@ -244,45 +244,11 @@ final class AccessibilityAuditTester {
     }
 
     private func recognizeText(in image: CGImage) -> Set<String>? {
-        func makeRequest(cpuOnly: Bool) -> VNRecognizeTextRequest {
-            let request = VNRecognizeTextRequest()
-            request.recognitionLevel = .accurate
-            request.usesLanguageCorrection = false
-            if cpuOnly {
-                if #available(macOS 14, *) {
-                    if let cpu = (try? request.supportedComputeStageDevices)?[.main]?.first(where: {
-                        if case .cpu = $0 { return true } else { return false }
-                    }) {
-                        request.setComputeDevice(cpu, for: .main)
-                    }
-                } else {
-                    request.usesCPUOnly = true
-                }
-            }
-            return request
-        }
-        // Lets the fallback be exercised on a machine where recognition works.
-        if ProcessInfo.processInfo.environment["OURO_MD_AUDIT_WITHOUT_TEXT_RECOGNITION"] == "1" { return nil }
-        var request = makeRequest(cpuOnly: false)
-        do {
-            try VNImageRequestHandler(cgImage: image, options: [:]).perform([request])
-        } catch {
-            // Virtual machines without a Neural Engine can fail here; the CPU
-            // path is slower but works on more machines.
-            request = makeRequest(cpuOnly: true)
-            do {
-                try VNImageRequestHandler(cgImage: image, options: [:]).perform([request])
-            } catch let cpuError {
-                FileHandle.standardError.write(Data("accessibilityaudit: text recognition failed: \(error); on the CPU: \(cpuError)\n".utf8))
-                return nil
-            }
-        }
-        if (request.results ?? []).isEmpty {
+        guard let text = HeadlessTextRecognition.recognize(in: image, harness: "accessibilityaudit") else { return nil }
+        if text.isEmpty {
             FileHandle.standardError.write(Data("accessibilityaudit: text recognition found nothing in a \(image.width)x\(image.height) render with \(Self.inkPixels(in: image)) ink pixels\n".utf8))
         }
-        return Set((request.results ?? []).compactMap { observation in
-            observation.topCandidates(1).first?.string
-        })
+        return text
     }
 
     /// Counts clearly non-white pixels, so a failed audit says whether the

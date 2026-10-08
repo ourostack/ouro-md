@@ -183,11 +183,16 @@ final class UISurfaceTester {
         let availableShellState = availableUpdateCoordinator.appShellUpdateState
         let availableShellActions = availableUpdateCoordinator.appShellUpdateActions
         let availableUpdateSizeOK = availableUpdateSize.width <= 560 && availableUpdateSize.height <= 220
-        let availableTextOK = containsAll(availableUpdateText, ["Review Update", "Open Release"])
-            && !availableUpdateText.contains {
+        // Without text recognition here, CI checks the drawn text in its
+        // Rendered text audit job; nil without that note fails.
+        let availableTextDeferred = availableUpdateText == nil && HeadlessTextRecognition.deferredElsewhere
+        let availableTextOK = availableTextDeferred || availableUpdateText.map { text in
+            containsAll(text, ["Review Update", "Open Release"])
+            && !text.contains {
                 ($0.localizedCaseInsensitiveContains("Install")
                     && $0.localizedCaseInsensitiveContains("Relaunch"))
             }
+        } ?? false
         let directInstallSuppressedOK = availableShellState.kind == .updateAvailable
             && availableShellState.canReviewUpdate
             && availableShellState.canOpenReleasePage
@@ -212,7 +217,7 @@ final class UISurfaceTester {
         print(String(format: "available update controls fitting size: %.1fx%.1f %@", availableUpdateSize.width, availableUpdateSize.height, availableUpdateSizeOK ? "✓" : "✗"))
         print(String(format: "update progress fitting size: installing %.1fx%.1f failed %.1fx%.1f %@", installingSize.width, installingSize.height, failedSize.width, failedSize.height, progressOK ? "✓" : "✗"))
         print("installing update review state: \(installingReviewStateOK ? "✓" : "✗")")
-        print("direct shell install suppressed; review prompt available: \(directInstallSuppressedOK ? "✓" : "✗")")
+        print("direct shell install suppressed; review prompt available: \(directInstallSuppressedOK ? "✓" : "✗")\(availableTextDeferred ? " (drawn text deferred: text recognition is unavailable on this machine; CI checks it in the Rendered text audit job)" : "")")
         print("invalid regex visible state: \(regexErrorOK ? "✓" : "✗")")
         print("search result row state: \(searchResultsOK ? "✓" : "✗")")
         print("menu topology: \(menuOK ? "✓" : "✗")")
@@ -221,8 +226,8 @@ final class UISurfaceTester {
             print("installing shell state: \(installingShellState.kind.rawValue), canReviewUpdate=\(installingShellState.canReviewUpdate)")
         }
         if !directInstallSuppressedOK {
-            print("available shell state: \(availableShellState.kind.rawValue), canReviewUpdate=\(availableShellState.canReviewUpdate), canOpenReleasePage=\(availableShellState.canOpenReleasePage), canInstallUpdate=\(availableShellState.canInstallUpdate), hasReviewAction=\(availableShellActions.reviewUpdate != nil), hasOpenReleaseAction=\(availableShellActions.openReleasePage != nil), hasInstallAction=\(availableShellActions.installAndRelaunch != nil), renderedTextObservable=\(!availableUpdateText.isEmpty)")
-            print("available update text: \(availableUpdateText.sorted().joined(separator: " | "))")
+            print("available shell state: \(availableShellState.kind.rawValue), canReviewUpdate=\(availableShellState.canReviewUpdate), canOpenReleasePage=\(availableShellState.canOpenReleasePage), canInstallUpdate=\(availableShellState.canInstallUpdate), hasReviewAction=\(availableShellActions.reviewUpdate != nil), hasOpenReleaseAction=\(availableShellActions.openReleasePage != nil), hasInstallAction=\(availableShellActions.installAndRelaunch != nil), renderedTextObservable=\(availableUpdateText.map { !$0.isEmpty } ?? false)")
+            print("available update text: \((availableUpdateText ?? []).sorted().joined(separator: " | "))")
         }
         if !axOK {
             print("preferences labels: \(prefsLabels.sorted().joined(separator: " | "))")
@@ -262,7 +267,7 @@ final class UISurfaceTester {
         return labels
     }
 
-    private func renderedText<Content: View>(_ view: Content, constrainedTo size: NSSize) -> Set<String> {
+    private func renderedText<Content: View>(_ view: Content, constrainedTo size: NSSize) -> Set<String>? {
         let host = NSHostingController(
             rootView: view
                 .background(Color.white)
@@ -333,19 +338,8 @@ final class UISurfaceTester {
         return URL(fileURLWithPath: trimmed, isDirectory: true)
     }
 
-    private func recognizeText(in image: CGImage) -> Set<String> {
-        let request = VNRecognizeTextRequest()
-        request.recognitionLevel = .accurate
-        request.usesLanguageCorrection = false
-        let handler = VNImageRequestHandler(cgImage: image, options: [:])
-        do {
-            try handler.perform([request])
-        } catch {
-            return []
-        }
-        return Set((request.results ?? []).compactMap { observation in
-            observation.topCandidates(1).first?.string
-        })
+    private func recognizeText(in image: CGImage) -> Set<String>? {
+        HeadlessTextRecognition.recognize(in: image, harness: "uisurfacetest")
     }
 
     private func collectAccessibilityLabels(from root: Any?) -> Set<String> {

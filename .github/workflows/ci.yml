@@ -158,13 +158,15 @@ jobs:
         with:
           name: ouro-md-harness
           path: ${{ runner.temp }}
-      - name: Run the accessibility audit with text recognition
+      - name: Run the rendered-text checks with text recognition
         run: |
           mkdir -p "$RUNNER_TEMP/harness"
           tar -xzf "$RUNNER_TEMP/ouro-md-harness.tgz" -C "$RUNNER_TEMP/harness"
           sw_vers
           "$RUNNER_TEMP/harness/ouro-md" --accessibilityaudit | tee "$RUNNER_TEMP/audit.log"
           grep -q "shell rendered accessibility labels: ✓" "$RUNNER_TEMP/audit.log"
+          "$RUNNER_TEMP/harness/ouro-md" --uisurfacetest | tee "$RUNNER_TEMP/surface.log"
+          grep -q "direct shell install suppressed; review prompt available: ✓$" "$RUNNER_TEMP/surface.log"
       - name: Upload visual QA artifacts
         if: failure()
         uses: actions/upload-artifact@v6
