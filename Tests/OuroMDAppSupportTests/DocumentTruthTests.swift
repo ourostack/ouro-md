@@ -3,6 +3,18 @@ import XCTest
 @testable import OuroMDAppSupport
 
 final class DocumentTruthTests: XCTestCase {
+    func testShortLabelsNameTheGitStateInAWord() {
+        let expected: [(DocumentTruthState, String)] = [
+            (.untitled, "Not saved"), (.unavailable, "Unavailable"), (.gitUnavailable, "No Git"),
+            (.notInGit, "Not in Git"), (.untracked, "New"), (.trackedClean, "Committed"),
+            (.trackedModified, "Modified"), (.trackedStaged, "Staged"), (.trackedMixed, "Partly staged"),
+        ]
+        for (state, word) in expected {
+            let snapshot = DocumentTruthSnapshot(state: state, absolutePath: nil, repositoryRoot: nil, relativePath: nil)
+            XCTAssertEqual(snapshot.shortLabel, word)
+        }
+    }
+
     func testUntitledAndNonFileURLsHaveHonestUnavailableState() {
         let provider = DocumentTruthProvider(gitRunner: FakeGitRunner())
 

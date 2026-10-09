@@ -1893,9 +1893,12 @@
       block = node && node.closest("#editor .vditor-reset > *");
       if (block) { block.classList.add("ouro-change-flash"); lastFlashBlock = block; }
     }
-    // The glow holds, then fades; when the page scrolled to show the change,
-    // the hold starts once the scroll has settled, so the reader sees it whole.
-    var reduce = prefersReducedMotion(), hold = reduce ? 900 : 450, fade = reduce ? 0 : 750, start = 0;
+    // One continuous fade from full strength, easing in and out so it reads
+    // as a single glow; when the page scrolled to show the change, it starts
+    // once the scroll has settled, so the reader sees it whole. Reduce Motion
+    // shows the glow steadily and then clears it.
+    var reduce = prefersReducedMotion(), hold = reduce ? 900 : 0, fade = reduce ? 0 : 1100, start = 0;
+    if (window.__ouroLastChangeFlash) { window.__ouroLastChangeFlash.timing = { hold: hold, fade: fade }; }
     var finish = function () {
       if (block) { block.classList.remove("ouro-change-flash"); }
       if (token !== changeFlashToken) { return; }
@@ -1907,7 +1910,7 @@
       if (token !== changeFlashToken) { return; }
       var t = Date.now() - start, level = 1;
       if (t >= hold + fade) { finish(); return; }
-      if (t > hold) { var x = (t - hold) / fade; level = 1 - x * x * (3 - 2 * x); }
+      if (t > hold) { level = (1 + Math.cos(Math.PI * (t - hold) / fade)) / 2; }
       rootStyle.setProperty("--ouro-flash", level.toFixed(3));
       setTimeout(step, 16);
     };
@@ -1916,6 +1919,7 @@
       // A smooth scroll can stall when the page isn't drawing frames; make
       // sure the change really is on screen before the glow starts.
       if (scrolled) { revealRange(range, true); }
+      if (window.__ouroLastChangeFlash) { window.__ouroLastChangeFlash.begun = true; }
       start = Date.now();
       setTimeout(step, 16);
       setTimeout(finish, hold + fade + 250);
