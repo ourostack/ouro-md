@@ -518,7 +518,7 @@ final class AppModel: ObservableObject {
             self.pushMarkdown(text)
             self.isDirty = false
             self.refreshDocumentTruth()
-            NSDocumentController.shared.noteNewRecentDocumentURL(url)
+            DocumentAccess.noteRecent(url)
             self.refreshFolder()
             self.startWatching()
             self.onChromeUpdate?()
@@ -553,7 +553,7 @@ final class AppModel: ObservableObject {
         pushMarkdown(text)
         isDirty = false
         refreshDocumentTruth()
-        NSDocumentController.shared.noteNewRecentDocumentURL(url)
+        DocumentAccess.noteRecent(url)
         refreshFolder()
         startWatching()
         onChromeUpdate?()
@@ -600,7 +600,7 @@ final class AppModel: ObservableObject {
         do {
             try FileManager.default.moveItem(at: url, to: dest)
             currentURL = dest
-            NSDocumentController.shared.noteNewRecentDocumentURL(dest)
+            DocumentAccess.noteRecent(dest)
             refreshFolder()
             startWatching()
             refreshDocumentTruth()
@@ -642,7 +642,7 @@ final class AppModel: ObservableObject {
         let finish: (Bool) -> Void = { [weak self] ok in
             guard let self else { completion(ok); return }
             if ok {
-                NSDocumentController.shared.noteNewRecentDocumentURL(url)
+                DocumentAccess.noteRecent(url)
             } else {
                 self.currentURL = previousURL
                 self.refreshDocumentTruth()
@@ -1148,7 +1148,7 @@ final class AppModel: ObservableObject {
         mountedFolder = url
         sidebarMode = .files
         sidebarVisible = true
-        NSDocumentController.shared.noteNewRecentDocumentURL(url)
+        DocumentAccess.noteRecent(url)
         startFolderWatching()
         rescanFolder()
         onChromeUpdate?()
