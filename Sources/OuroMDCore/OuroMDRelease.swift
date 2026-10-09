@@ -21,5 +21,6 @@ public enum OuroMDRelease {
         "Text scrolling under the toolbar now fades behind a soft edge instead of running into the window controls and title.",
         "Pastes and Siri edits glow briefly; agent changes get quiet margin marks that clear as you scroll past, with Next change for off-screen edits.",
         "The file status in the toolbar now says where the file stands in Git in a word, such as Modified or Committed.",
+        "What's New scrolls inside the About window, keeping its action buttons reachable as the release notes grow.",
     ]
 }
