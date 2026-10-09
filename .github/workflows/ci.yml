@@ -81,6 +81,8 @@ jobs:
           ./scripts/prepare-ci-signing-assets.sh
       - name: Run tests
         run: ./scripts/swift-test-budget.sh
+      - name: Test agent-change cue model
+        run: node --test scripts/test-change-marks.cjs
       - name: Check file watcher concurrency
         run: swift test --sanitize=thread --filter FileWatcher
       - name: Upload Swift test timings

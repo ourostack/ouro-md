@@ -22,6 +22,15 @@
   var resetTablesSeen = (typeof WeakSet === "function") ? new WeakSet() : null;
   var initialTheme = window.__ouroInitialTheme || {};
   var state = { mode: "ir", value: "", outline: false, uiTheme: initialTheme.uiMode || "classic", focus: false, typewriter: false, codeTheme: initialTheme.codeTheme || "github" };
+  var changeMarks = window.OuroChangeMarks.create({
+    root: function () { return ready ? changeRoot() : null; },
+    text: changeText,
+    mode: function () { return state.mode; },
+    markdown: function () { return ready && vditor ? vditor.getValue() : state.value; },
+    renderMarkdown: function (md) {
+      return ready && vditor ? vditor.vditor.lute.Md2VditorIRDOM(md) : null;
+    }
+  });
 
   function post(type, extra) {
     try {
@@ -1239,6 +1248,7 @@
         installEditorQOL();
         installWritingToolsGuard();
         installPasteHighlight();
+        changeMarks.update();
         postCount(state.value);
         window.__ouroEditor = vditor;   // exposed for headless undo/redo verification
         post("ready", {});
@@ -1585,6 +1595,7 @@
     annotateScrollableTables();
     resetTableScrollIfNeeded();
     resetNewTableScroll(document);
+    changeMarks.update();
   }
 
   // Mark the break as already rendered so Vditor neither re-renders nor serializes it.
@@ -2320,6 +2331,7 @@
 
   window.ouro = {
     setValue: function (md) {
+      changeMarks.reset();
       state.value = (md == null) ? "" : md;
       invalidateReferenceLinkCache();
       cancelAnchorRequests();
@@ -2340,19 +2352,16 @@
       // the open file is rewritten externally (agent edit) and we live-reload.
       var scroller = document.scrollingElement || document.documentElement;
       var prevY = scroller ? scroller.scrollTop : window.scrollY;
-      var beforeText = "";
-      try { beforeText = (vditor && ready) ? changeText(changeRoot()) : ""; } catch (e) { beforeText = ""; }
+      var cueTicket = changeMarks.begin((md == null) ? "" : md);
       state.value = (md == null) ? "" : md;
       invalidateReferenceLinkCache();
       cancelAnchorRequests();
       if (vditor && ready) { vditor.setValue(state.value, true); }
-      // Show what the agent changed without moving the reader: an edit
+      // Mark what the agent changed without moving the reader: an edit
       // elsewhere in the file must not pull their place away. Measured once
-      // rendering settles, after post-render fix-ups (such as restored table
-      // cell spaces) that the "before" text already had.
-      if (beforeText) {
-        afterEditorSettles(function () { try { flashChange(beforeText, false); } catch (e) { /* never break a reload */ } });
-      }
+      // rendering settles. The ticket keeps the external replacement separate
+      // from local typing that happens while rendering is still settling.
+      afterEditorSettles(function () { changeMarks.finish(cueTicket); });
       queueTableScrollReset();
       schedulePostRender();
       dirty = false;

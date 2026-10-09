@@ -5,11 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <link rel="stylesheet" href="vditor/dist/index.css">
 <style>
-  /* Change highlight: pasted text and text an assistant or agent changed glow
+  /* Change highlight: pasted text and assistant changes glow
      briefly; bridge.js fades --ouro-flash from 1 to 0. Themes set
      --ouro-change-color to their accent; user themes get this default. */
   ::highlight(ouro-change){background-color:color-mix(in srgb,var(--ouro-change-color,#2f7de1) calc(var(--ouro-flash,0) * 30%),transparent);}
   .ouro-change-flash{background-color:color-mix(in srgb,var(--ouro-change-color,#2f7de1) calc(var(--ouro-flash,0) * 30%),transparent)!important;border-radius:3px;}
+  #ouro-change-marks{position:fixed;inset:48px 0 32px;overflow:hidden;pointer-events:none;z-index:3;}
+  .ouro-change-mark{position:absolute;width:2px;border-radius:2px;background:var(--ouro-change-color,#2f7de1);opacity:.55;pointer-events:none;}
+  .ouro-change-deletion{width:7px;}
+  #ouro-next-change{position:fixed;right:16px;bottom:12px;z-index:4;padding:5px 10px;border:1px solid color-mix(in srgb,var(--ouro-change-color,#2f7de1) 25%,transparent);border-radius:8px;background:Canvas;color:CanvasText;font:12px system-ui;cursor:pointer;}
+  #ouro-next-change:focus-visible{outline:2px solid var(--ouro-change-color,#2f7de1);outline-offset:2px;}
+  #ouro-next-change[hidden]{display:none;}
+  @media print{#ouro-change-marks,#ouro-next-change{display:none!important;}}
   /* Open Sans — bundled under Apache-2.0 so the
      reading surface matches regardless of installed system fonts. */
   @font-face { font-family: "Open Sans"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/open-sans-400.woff2") format("woff2"); }
@@ -110,8 +117,11 @@
 </head>
 <body>
   <div id="editor"></div>
+  <div id="ouro-change-marks" aria-hidden="true"></div>
+  <button id="ouro-next-change" type="button" hidden>Next change</button>
   <script src="vditor/dist/index.min.js"></script>
   <script src="unicode-case-fold.js"></script>
+  <script src="change-marks.js"></script>
   <script src="bridge.js"></script>
 </body>
 </html>
