@@ -428,7 +428,7 @@ final class UISurfaceTester {
     }
 
     private func makeCurrentUpdateCoordinator() -> OuroMDUpdateCoordinator {
-        let defaults = UserDefaults(suiteName: "ouro-ui-current-\(UUID().uuidString)") ?? .standard
+        let defaults = ScratchUserDefaults(label: "ouro-ui-current").defaults
         return OuroMDUpdateCoordinator(
             defaults: defaults,
             checker: {
@@ -450,7 +450,7 @@ final class UISurfaceTester {
     }
 
     private func makeInstallingUpdateCoordinator() -> OuroMDUpdateCoordinator {
-        let defaults = UserDefaults(suiteName: "ouro-ui-surface-\(UUID().uuidString)") ?? .standard
+        let defaults = ScratchUserDefaults(label: "ouro-ui-surface").defaults
         return OuroMDUpdateCoordinator(
             defaults: defaults,
             checker: {
@@ -467,7 +467,7 @@ final class UISurfaceTester {
     }
 
     private func makeAvailableUpdateCoordinator() -> OuroMDUpdateCoordinator {
-        let defaults = UserDefaults(suiteName: "ouro-ui-available-\(UUID().uuidString)") ?? .standard
+        let defaults = ScratchUserDefaults(label: "ouro-ui-available").defaults
         return OuroMDUpdateCoordinator(
             defaults: defaults,
             checker: {
