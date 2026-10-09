@@ -643,7 +643,8 @@ extension AppDelegate: MarkdownDocumentWorkspace {
     }
 
     func isReadable(_ url: URL) -> Bool {
-        AppModel.isMarkdownDocumentURL(url) && FileManager.default.isReadableFile(atPath: url.path)
+        AppModel.isMarkdownDocumentURL(url)
+            && DocumentAccess.withAccess(to: url) { FileManager.default.isReadableFile(atPath: url.path) }
     }
 
     func frontDocumentURL() -> URL? {
@@ -657,7 +658,7 @@ extension AppDelegate: MarkdownDocumentWorkspace {
     func markdown(for url: URL) async -> String? {
         if let controller = controller(for: url) { return await controller.model.currentMarkdown() }
         guard isReadable(url) else { return nil }
-        return AppModel.readText(at: url)
+        return DocumentAccess.withAccess(to: url) { AppModel.readText(at: url) }
     }
 
     func replaceMarkdown(_ markdown: String, in url: URL) async throws {
@@ -668,18 +669,35 @@ extension AppDelegate: MarkdownDocumentWorkspace {
             return
         }
         guard isReadable(url) else { throw DocumentIntentError.unreadable(url.lastPathComponent) }
-        let file = url.resolvingSymlinksInPath()
-        let data = try Data(contentsOf: file)
-        guard let original = String(data: data, encoding: .utf8) else {
-            // Rewriting a non-UTF-8 file with no window and no undo would
-            // silently change its encoding; the editor handles that case.
-            throw DocumentIntentError.needsOpenDocument(url.lastPathComponent)
+        try DocumentAccess.withAccess(to: url) {
+            let file = url.resolvingSymlinksInPath()
+            let data = try Data(contentsOf: file)
+            guard let original = String(data: data, encoding: .utf8) else {
+                // Rewriting a non-UTF-8 file with no window and no undo would
+                // silently change its encoding; the editor handles that case.
+                throw DocumentIntentError.needsOpenDocument(url.lastPathComponent)
+            }
+            let text = DocumentIntentsFileText.matchingLineEndings(markdown, of: original)
+            do {
+                try text.write(to: file, atomically: true, encoding: .utf8)
+            } catch CocoaError.fileWriteNoPermission where DocumentAccess.isSandboxed {
+                // An atomic write makes a temporary file beside the original,
+                // which a grant for the file alone doesn't allow; rewrite the
+                // file in place instead.
+                try Data(text.utf8).write(to: file, options: [])
+            }
         }
-        try DocumentIntentsFileText.matchingLineEndings(markdown, of: original)
-            .write(to: file, atomically: true, encoding: .utf8)
     }
 
     func open(_ url: URL) {
+        // A window keeps reading, watching and saving its file, so hold the
+        // remembered access for as long as the app runs, as session restore
+        // does. It isn't released when the window closes; a later open of the
+        // same file finds it readable and doesn't start access again.
+        if DocumentAccess.isSandboxed, !FileManager.default.isReadableFile(atPath: url.path),
+           let granting = DocumentAccess.bookmarks.grantingURL(for: url) {
+            _ = securityScopedResources.startAccessing(granting)
+        }
         openInNewWindow(url.standardizedFileURL)
     }
 }
