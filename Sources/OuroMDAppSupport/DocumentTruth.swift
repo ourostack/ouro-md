@@ -53,6 +53,30 @@ public struct DocumentTruthSnapshot: Equatable {
         }
     }
 
+    /// One or two words for the toolbar, saying where the file stands in Git.
+    public var shortLabel: String {
+        switch state {
+        case .untitled:
+            return "Not saved"
+        case .unavailable:
+            return "Unavailable"
+        case .gitUnavailable:
+            return "No Git"
+        case .notInGit:
+            return "Not in Git"
+        case .untracked:
+            return "New"
+        case .trackedClean:
+            return "Committed"
+        case .trackedModified:
+            return "Modified"
+        case .trackedStaged:
+            return "Staged"
+        case .trackedMixed:
+            return "Partly staged"
+        }
+    }
+
     public var canCopyPath: Bool {
         absolutePath != nil
     }

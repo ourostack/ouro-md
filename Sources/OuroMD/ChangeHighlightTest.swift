@@ -58,6 +58,11 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
       return { text: range.toString(), top: r.top, bottom: r.bottom, left: r.left, right: r.right, viewport: window.innerHeight };
     };
     const scroller = document.scrollingElement || document.documentElement;
+    // Waits until the glow has begun, which is after any reveal scroll has
+    // come to rest.
+    const glowBegun = async () => {
+      for (let i = 0; i < 80 && !(window.__ouroLastChangeFlash && window.__ouroLastChangeFlash.begun); i++) { await sleep(50); }
+    };
     """#
 
     private func pasteCase() {
@@ -83,19 +88,21 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
         const pasted = " PASTED-TEXT";
         const data = new DataTransfer();
         data.setData("text/plain", pasted);
+        window.__ouroLastChangeFlash = null;
         target.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
         await sleep(40);
         // A synthetic paste event has no default action; insert the text the
         // way WebKit's paste does, unless the editor already did.
         if (root.textContent.indexOf("PASTED-TEXT") < 0) { document.execCommand("insertText", false, pasted); }
-        // Wait for the reveal scroll to come to rest; the glow holds from then.
-        await sleep(150);
-        let lastTop = -1;
-        for (let i = 0; i < 30 && scroller.scrollTop !== lastTop; i++) { lastTop = scroller.scrollTop; await sleep(60); }
+        // The glow begins once any reveal scroll has come to rest.
+        await glowBegun();
         const during = live();
-        const flash = getComputedStyle(document.documentElement).getPropertyValue("--ouro-flash").trim();
+        const flashLevel = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ouro-flash"));
+        const flash = flashLevel();
+        const timing = (window.__ouroLastChangeFlash || {}).timing || {};
         const changeColor = getComputedStyle(document.documentElement).getPropertyValue("--ouro-change-color").trim();
-        return { loadHighlight, during, flash, changeColor };
+        const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        return { loadHighlight, during, flash, hold: timing.hold, fade: timing.fade, reduceMotion, changeColor };
         """#
         webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { [weak self] result in
             guard let self else { return }
@@ -107,7 +114,14 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
             self.record("pasted text is highlighted exactly", text == "PASTED-TEXT", "\(text ?? "none")")
             let top = during?["top"] as? Double ?? -1, bottom = during?["bottom"] as? Double ?? -1, viewport = during?["viewport"] as? Double ?? 0
             self.record("paste below the fold is scrolled into view", top >= 0 && bottom <= viewport, "top=\(top) bottom=\(bottom) viewport=\(viewport)")
-            self.record("highlight is at full strength", Double((r["flash"] as? String) ?? "") == 1, "--ouro-flash=\(r["flash"] ?? "nil")")
+            // One continuous fade with no hold: strong once the change is on
+            // screen. (Timers are throttled off-screen, so the curve itself is
+            // checked through its timing rather than by sampling it.)
+            // Reduce Motion shows the glow steadily, then clears it.
+            let flash = r["flash"] as? Double ?? 0, hold = r["hold"] as? Double ?? -1, fade = r["fade"] as? Double ?? 0
+            let reduceMotion = r["reduceMotion"] as? Bool ?? false
+            let curve = reduceMotion ? (hold > 0 && fade == 0) : (hold == 0 && fade >= 800)
+            self.record("highlight fades in one continuous step", flash > 0.3 && curve, "--ouro-flash=\(flash) hold=\(hold) fade=\(fade) reduceMotion=\(reduceMotion)")
             // Sample the painted highlight against the same text once it clears.
             let rect = CGRect(x: during?["left"] as? Double ?? 0, y: top, width: (during?["right"] as? Double ?? 0) - (during?["left"] as? Double ?? 0), height: bottom - top)
             let changeColor = (r["changeColor"] as? String) ?? ""
@@ -143,10 +157,9 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
         scroller.scrollTop = 0;
         await sleep(100);
         const next = window.ouro.getValue().replace(/\s+$/, "") + "\n\nASSISTANT-ADDED paragraph.\n";
+        window.__ouroLastChangeFlash = null;
         window.ouro.applyEdit(next);
-        await sleep(150);
-        let lastTop = -1;
-        for (let i = 0; i < 30 && scroller.scrollTop !== lastTop; i++) { lastTop = scroller.scrollTop; await sleep(60); }
+        await glowBegun();
         return { during: live(), last: JSON.stringify(window.__ouroLastChangeFlash) };
         """#
         webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { [weak self] result in
