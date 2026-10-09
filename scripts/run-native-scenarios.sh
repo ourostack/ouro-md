@@ -43,6 +43,7 @@ run --darkdiagramtest
 run --selectionblurtest
 run --copyflavortest
 run --writingtoolstest
+run --changehighlighttest
 run --performanceprobe
 run --accessibilityaudit
 run --markdownparitytest

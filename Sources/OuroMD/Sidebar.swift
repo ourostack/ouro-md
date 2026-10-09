@@ -449,6 +449,9 @@ struct EditorPane: View {
                 if SystemDesign.usesGlass {
                     EditorWebView(model: model, topObscuredInset: topInset)
                         .ignoresSafeArea(.container, edges: .top)
+                    if topInset > 0 {
+                        ScrollEdgeCover(height: topInset)
+                    }
                 } else {
                     EditorWebView(model: model)
                 }
