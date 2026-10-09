@@ -106,6 +106,10 @@ run_case "dogfood-graphite" "Tests/Fixtures/dogfood-visual-surface.md" "graphite
 # Text size above 100% must reflow the page and keep the column centered.
 run_case "dogfood-quartz-zoom" "Tests/Fixtures/dogfood-visual-surface.md" "quartz" 792 760 1.1 || failed=1
 run_case "dogfood-quartz-narrow-zoom" "Tests/Fixtures/dogfood-visual-surface.md" "quartz" 560 760 1.3 || failed=1
+# Wide windows give prose columns room to grow past short label columns; the
+# table checks must still pass, and sparse tables must stay content-sized.
+run_case "dogfood-quartz-wide" "Tests/Fixtures/dogfood-visual-surface.md" "quartz" 1000 900 || failed=1
+run_case "dogfood-graphite-extra-wide" "Tests/Fixtures/dogfood-visual-surface.md" "graphite" 1440 900 || failed=1
 
 if [[ "$failed" == "1" ]]; then
   echo "visual QA artifacts written under $(shell_quote "$artifact_dir")" >&2
