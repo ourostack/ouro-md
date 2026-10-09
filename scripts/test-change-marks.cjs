@@ -85,3 +85,8 @@ test("only reached marks clear after scrolling past", () => {
   assert.equal(passed({ seen: true }, { top: 650, bottom: 700 }, 600), true);
   assert.equal(passed({ seen: true }, { top: -100, bottom: 700 }, 600), false);
 });
+
+test("a reached cue remains while visible at the native viewport top", () => {
+  assert.equal(typeof context.window.OuroChangeMarks?.passed, "function");
+  assert.equal(context.window.OuroChangeMarks.passed({ seen: true }, { top: 10, bottom: 30 }, 600), false);
+});

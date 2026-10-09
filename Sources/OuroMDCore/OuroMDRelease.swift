@@ -4,7 +4,7 @@ public enum OuroMDRelease {
     public static let appName = "Ouro MD"
     public static let bundleIdentifier = "bot.ouro.md"
     public static let repository = "ourostack/ouro-md"
-    public static let version = "0.9.94"
+    public static let version = "0.9.95"
     public static let userAgent = "OuroMD/\(version)"
     public static let releaseDate = "2026-10-09"
     public static let positioningSubtitle = "Local Markdown workspace for Mac files."
@@ -18,7 +18,7 @@ public enum OuroMDRelease {
         "Built for macOS 27: the window adopts the current system design, with a glass toolbar and a floating status pill.",
         "Writing Tools rewrites text in place in the editor, and one undo reverts the whole rewrite.",
         "Siri, Shortcuts and Spotlight can open, read and add to your Markdown documents, including recent ones and unsaved edits.",
-        "Text scrolling under the toolbar now fades behind a soft edge instead of running into the window controls and title.",
+        "The editor respects the native toolbar's content boundary, keeping text clear of its controls without a custom fade.",
         "Pastes and Siri edits glow briefly; agent changes get quiet margin marks that clear as you scroll past, with Next change for off-screen edits.",
         "The file status in the toolbar now says where the file stands in Git in a word, such as Modified or Committed.",
         "What's New scrolls inside the About window, keeping its action buttons reachable as the release notes grow.",

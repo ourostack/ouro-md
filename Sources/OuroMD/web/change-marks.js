@@ -122,7 +122,7 @@
   }
 
   function passed(mark, rect, viewport) {
-    return mark.seen && (rect.bottom <= 48 || rect.top >= viewport - 32);
+    return mark.seen && (rect.bottom <= 0 || rect.top >= viewport - 32);
   }
 
   function create(options) {
@@ -204,14 +204,14 @@
         var bounds = mark.deletion
           ? { top: mark.atEnd ? rect.bottom - 3 : rect.top, bottom: mark.atEnd ? rect.bottom : rect.top + 3 }
           : rect;
-        var visible = bounds.bottom > 48 && bounds.top < window.innerHeight - 32;
+        var visible = bounds.bottom > 0 && bounds.top < window.innerHeight - 32;
         if (scrolled && passed(mark, bounds, window.innerHeight)) { mark.marked = false; return; }
         if (visible) { mark.seen = true; }
         else { offscreen.push({ node: node, rect: bounds }); }
         var bar = document.createElement("span");
         bar.className = "ouro-change-mark" + (mark.deletion ? " ouro-change-deletion" : "");
         bar.style.left = Math.max(3, rect.left - 10) + "px";
-        bar.style.top = bounds.top - 48 + "px";
+        bar.style.top = bounds.top + "px";
         bar.style.height = Math.max(3, bounds.bottom - bounds.top) + "px";
         overlay.appendChild(bar);
       });

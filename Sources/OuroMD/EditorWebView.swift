@@ -6,8 +6,6 @@ import WebKit
 /// Hosts the Vditor editor in a WKWebView and bridges it to `AppModel`.
 struct EditorWebView: NSViewRepresentable {
     let model: AppModel
-    /// Height of the toolbar the page scrolls under (new design only).
-    var topObscuredInset: CGFloat = 0
 
     func makeCoordinator() -> Coordinator { Coordinator(model: model) }
 
@@ -37,7 +35,6 @@ struct EditorWebView: NSViewRepresentable {
         webView.allowsBackForwardNavigationGestures = false
         webView.registerForDraggedTypes([.fileURL])
 
-        applyObscuredInset(to: webView)
         context.coordinator.webView = webView
         context.coordinator.observeWritingTools(on: webView)
         model.bridge = context.coordinator
@@ -52,14 +49,6 @@ struct EditorWebView: NSViewRepresentable {
 
     func updateNSView(_ nsView: WKWebView, context: Context) {
         Self.applyLayerBackground(model.theme.backgroundHex, to: nsView)
-        applyObscuredInset(to: nsView)
-    }
-
-    private func applyObscuredInset(to webView: WKWebView) {
-        if #available(macOS 26, *) {
-            let insets = NSEdgeInsets(top: topObscuredInset, left: 0, bottom: 0, right: 0)
-            if webView.obscuredContentInsets.top != insets.top { webView.obscuredContentInsets = insets }
-        }
     }
 
     static func initialThemeBootstrapScript(for theme: Theme) -> String {

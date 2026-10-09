@@ -434,27 +434,15 @@ struct EditorPane: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
-        GeometryReader { geometry in
-            editor(topInset: geometry.safeAreaInsets.top)
-        }
-        .frame(minWidth: 400, minHeight: 320)
+        editor.frame(minWidth: 400, minHeight: 320)
     }
 
-    /// On the new design the page runs under the toolbar (WebKit keeps its
-    /// content clear of `topInset` via obscured content insets), and the
+    /// The editor respects the native toolbar's safe area. On the new design,
     /// document status floats over the page instead of sitting in a bar.
-    @ViewBuilder private func editor(topInset: CGFloat) -> some View {
+    @ViewBuilder private var editor: some View {
         VStack(spacing: 0) {
             ZStack {
-                if SystemDesign.usesGlass {
-                    EditorWebView(model: model, topObscuredInset: topInset)
-                        .ignoresSafeArea(.container, edges: .top)
-                    if topInset > 0 {
-                        ScrollEdgeCover(height: topInset)
-                    }
-                } else {
-                    EditorWebView(model: model)
-                }
+                EditorWebView(model: model).clipped()
                 if SystemDesign.usesGlass && model.statusBarVisible && !model.focusMode {
                     VStack {
                         Spacer()
