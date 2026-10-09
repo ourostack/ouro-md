@@ -128,11 +128,10 @@ final class TerminationSaveCoordinatorTests: XCTestCase {
             stagingRoot: URL(fileURLWithPath: "/tmp/staged"),
             version: "0.10.0"
         )
-        let suiteName = "TerminationSaveCoordinatorTests-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defaults.removePersistentDomain(forName: suiteName)
+        let scratch = ScratchUserDefaults(label: "TerminationSaveCoordinatorTests")
+        let defaults = scratch.defaults
         defer {
-            defaults.removePersistentDomain(forName: suiteName)
+            scratch.remove()
         }
         let coordinator = OuroMDUpdateCoordinator(
             defaults: defaults,
