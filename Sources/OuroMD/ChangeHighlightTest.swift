@@ -107,7 +107,7 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
             self.record("pasted text is highlighted exactly", text == "PASTED-TEXT", "\(text ?? "none")")
             let top = during?["top"] as? Double ?? -1, bottom = during?["bottom"] as? Double ?? -1, viewport = during?["viewport"] as? Double ?? 0
             self.record("paste below the fold is scrolled into view", top >= 0 && bottom <= viewport, "top=\(top) bottom=\(bottom) viewport=\(viewport)")
-            self.record("highlight is at full strength", (r["flash"] as? String) == "1", "--ouro-flash=\(r["flash"] ?? "nil")")
+            self.record("highlight is at full strength", Double((r["flash"] as? String) ?? "") == 1, "--ouro-flash=\(r["flash"] ?? "nil")")
             // Sample the painted highlight against the same text once it clears.
             let rect = CGRect(x: during?["left"] as? Double ?? 0, y: top, width: (during?["right"] as? Double ?? 0) - (during?["left"] as? Double ?? 0), height: bottom - top)
             let changeColor = (r["changeColor"] as? String) ?? ""
@@ -125,7 +125,9 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
 
     private func clearedCase() {
         let script = Self.probe + #"""
-        return { after: live(), flash: getComputedStyle(document.documentElement).getPropertyValue("--ouro-flash").trim() };
+        const flashLevel = () => getComputedStyle(document.documentElement).getPropertyValue("--ouro-flash").trim();
+        for (let i = 0; i < 40 && (live() || flashLevel() !== "0"); i++) { await sleep(50); }
+        return { after: live(), flash: flashLevel() };
         """#
         webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { [weak self] result in
             guard let self else { return }
@@ -177,6 +179,66 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
             self.record("agent change is highlighted", text == "now AGENT-CHANGED", text)
             let scrollTop = r["scrollTop"] as? Double ?? -1
             self.record("agent change does not move the reader", scrollTop == 0, "scrollTop=\(scrollTop)")
+            self.reviewCases()
+        }
+    }
+
+    /// Regressions from review: post-render table fix-ups must not widen an
+    /// agent's highlight, a visible paste must not scroll, and an edit inside a
+    /// code block's hidden source highlights the block without moving the page.
+    private func reviewCases() {
+        let script = Self.probe + #"""
+        await sleep(1600);
+        const table = "Intro line.\n\n| Column | Notes |\n| --- | --- |\n| one | see **this** here |\n\n```js\nconst answer = 41;\n```\n\nClosing line.\n";
+        window.ouro.setValue(table);
+        await sleep(900);
+        scroller.scrollTop = 0;
+        window.ouro.reloadValue(table.replace("Intro line.", "Intro AGENT-TOP line."));
+        await sleep(500);
+        const tableHighlight = live();
+        await sleep(1600);
+
+        const root = document.querySelector("#editor .vditor-ir .vditor-reset");
+        const closing = [...root.querySelectorAll("p")].find((p) => p.textContent.indexOf("Closing line.") === 0);
+        root.focus();
+        const walker = document.createTreeWalker(closing, NodeFilter.SHOW_TEXT);
+        let last = null;
+        while (walker.nextNode()) { last = walker.currentNode; }
+        const caret = document.createRange();
+        caret.setStart(last, last.data.length);
+        getSelection().removeAllRanges();
+        getSelection().addRange(caret);
+        const before = scroller.scrollTop;
+        const data = new DataTransfer();
+        data.setData("text/plain", " VISIBLE-PASTE");
+        closing.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
+        await sleep(40);
+        if (root.textContent.indexOf("VISIBLE-PASTE") < 0) { document.execCommand("insertText", false, " VISIBLE-PASTE"); }
+        await sleep(400);
+        const visiblePaste = live();
+        const pasteScroll = scroller.scrollTop - before;
+        await sleep(1600);
+
+        getSelection().removeAllRanges();
+        scroller.scrollTop = 0;
+        await sleep(100);
+        window.ouro.applyEdit(window.ouro.getValue().replace("const answer = 41;", "const answer = 42;"));
+        await sleep(500);
+        const codeHighlight = live();
+        return { tableHighlight, visiblePaste, pasteScroll, codeHighlight, codeScroll: scroller.scrollTop };
+        """#
+        webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { [weak self] result in
+            guard let self else { return }
+            guard case .success(let value) = result, let r = value as? [String: Any] else { self.fail("review script failed: \(result)") }
+            let tableText = ((r["tableHighlight"] as? [String: Any])?["text"] as? String)?.trimmingCharacters(in: .whitespaces) ?? ""
+            self.record("agent change beside a formatted table cell stays exact", tableText == "AGENT-TOP", tableText)
+            let pasteText = ((r["visiblePaste"] as? [String: Any])?["text"] as? String)?.trimmingCharacters(in: .whitespaces) ?? ""
+            let pasteScroll = r["pasteScroll"] as? Double ?? -1
+            self.record("a paste already on screen is highlighted without scrolling", pasteText == "VISIBLE-PASTE" && pasteScroll == 0, "text=\(pasteText) scrolled=\(pasteScroll)")
+            let code = r["codeHighlight"] as? [String: Any]
+            let codeScroll = r["codeScroll"] as? Double ?? -1
+            let codeVisible = (code?["bottom"] as? Double ?? 0) > (code?["top"] as? Double ?? 0)
+            self.record("an edit in a code block highlights the block without moving the page", codeVisible && codeScroll == 0, "highlight=\(String(describing: code)) scrollTop=\(codeScroll)")
             self.finish()
         }
     }

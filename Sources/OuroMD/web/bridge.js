@@ -1714,9 +1714,6 @@
     el.addEventListener("input", guard, true);
   }
 
-  // Fold a finished Writing Tools session back into Vditor: serialize the
-  // rewritten DOM to Markdown, record it as one undo step, and report the edit
-  // so autosave and the word count follow.
   // --- Change highlight -------------------------------------------------
   // Pasted text, and text an assistant or agent changed, glows briefly so the
   // reader can see what changed. The changed span comes from diffing the
@@ -1732,13 +1729,15 @@
       || document.querySelector("#editor .vditor-reset");
   }
 
+  var CHANGE_SKIP = ".vditor-ir__preview, .vditor-wysiwyg__preview, style, script";
+
+  // Visits text nodes in order, skipping preview subtrees whole (rejecting an
+  // element skips its descendants), so large KaTeX or diagram previews cost
+  // one check each.
   function changeTextWalker(root) {
-    return document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    return document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
       acceptNode: function (node) {
-        var el = node.parentElement;
-        if (el && el.closest(".vditor-ir__preview, .vditor-wysiwyg__preview, style, script")) {
-          return NodeFilter.FILTER_REJECT;
-        }
+        if (node.nodeType === 1) { return node.matches(CHANGE_SKIP) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP; }
         return NodeFilter.FILTER_ACCEPT;
       }
     });
@@ -1751,12 +1750,26 @@
     return out.join("");
   }
 
+  // The changeText offset of a DOM position, without cloning anything.
+  function changeOffset(root, container, offset) {
+    var point = document.createRange();
+    point.setStart(container, offset);
+    var walker = changeTextWalker(root), total = 0;
+    while (walker.nextNode()) {
+      var node = walker.currentNode;
+      if (node === container) { return total + offset; }
+      if (point.comparePoint(node, 0) >= 0) { return total; }
+      total += node.data.length;
+    }
+    return total;
+  }
+
   // The changed span of `after`; null when the change only removed text. A
   // paste passes where the caret was (`hint.caret`, and `hint.removed`, the
   // length of the selection it replaced), which pins the inserted text down
   // exactly. Otherwise it is found by common prefix and suffix, and an
   // insertion that could sit at several places (pasting "Pa" before "Paris")
-  // is placed at the earliest.
+  // takes the placement that starts a word, else the latest.
   function changedSpan(before, after, hint) {
     var visible = function (span) { return span && span.end > span.start && /\S/.test(after.slice(span.start, span.end)) ? span : null; };
     if (hint && hint.caret >= 0) {
@@ -1793,15 +1806,9 @@
     if (!root || !sel || !sel.rangeCount) { return null; }
     var range = sel.getRangeAt(0);
     if (!root.contains(range.startContainer)) { return null; }
-    var measure = function (r) {
-      var box = document.createElement("div");
-      box.appendChild(r.cloneContents());
-      return changeText(box).length;
-    };
-    var pre = document.createRange();
-    pre.setStart(root, 0);
-    pre.setEnd(range.startContainer, range.startOffset);
-    return { caret: measure(pre), removed: range.collapsed ? 0 : measure(range) };
+    var caret = changeOffset(root, range.startContainer, range.startOffset);
+    var removed = range.collapsed ? 0 : changeOffset(root, range.endContainer, range.endOffset) - caret;
+    return { caret: caret, removed: Math.max(0, removed) };
   }
 
   function rangeForSpan(root, span) {
@@ -1825,16 +1832,23 @@
     return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }
 
-  // Scrolls just enough to show the change, clear of the floating status pill.
-  function revealRange(range) {
+  // Scrolls just enough to show the change, clear of the toolbar's soft edge
+  // and the floating status pill. If either end is already on screen it leaves
+  // the view alone (a long paste keeps the caret where WebKit put it); a change
+  // taller than the screen shows its end, where the caret is.
+  function revealRange(range, instant) {
     var rects = range.getClientRects();
-    var rect = rects.length ? rects[0] : range.getBoundingClientRect();
-    var last = rects.length ? rects[rects.length - 1] : rect;
-    var top = rect.top, bottom = last.bottom, viewport = window.innerHeight;
+    if (!rects.length) { return false; }
+    var first = rects[0], last = rects[rects.length - 1];
+    var top = first.top, bottom = last.bottom, viewport = window.innerHeight;
+    if (!(bottom - top > 0)) { return false; }
     var topMargin = 48, bottomMargin = 72, delta = 0;
-    if (top < topMargin) { delta = top - topMargin; }
-    else if (bottom > viewport - bottomMargin) { delta = Math.min(bottom - (viewport - bottomMargin), top - topMargin); }
-    if (delta) { window.scrollBy({ top: delta, behavior: prefersReducedMotion() ? "auto" : "smooth" }); }
+    var onScreen = function (y) { return y >= topMargin && y <= viewport - bottomMargin; };
+    if (onScreen(top) || onScreen(bottom) || (top < topMargin && bottom > viewport - bottomMargin)) { return false; }
+    if (bottom - top > viewport - topMargin - bottomMargin) { delta = bottom - (viewport - bottomMargin); }
+    else if (top < topMargin) { delta = top - topMargin; }
+    else { delta = bottom - (viewport - bottomMargin); }
+    if (delta) { window.scrollBy({ top: delta, behavior: instant || prefersReducedMotion() ? "auto" : "smooth" }); }
     return delta !== 0;
   }
 
@@ -1851,21 +1865,39 @@
     setTimeout(tick, 40);
   }
 
+  // A change inside a code or math block's source, which is hidden until the
+  // block is edited, has no layout; highlight the block's rendered preview.
+  function visibleChangeRange(range) {
+    if (!range || range.getClientRects().length) { return range; }
+    var el = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
+    var node = el && el.closest(".vditor-ir__node, [data-block]");
+    var preview = node && node.querySelector(".vditor-ir__preview");
+    if (!preview) { return range; }
+    var shown = document.createRange();
+    shown.selectNodeContents(preview);
+    return shown;
+  }
+
+  var lastFlashBlock = null;
+
   function flashRange(range, reveal) {
+    range = visibleChangeRange(range);
     if (!range || range.collapsed) { return false; }
     var scrolled = reveal ? revealRange(range) : false;
     var token = ++changeFlashToken, rootStyle = document.documentElement.style, block = null;
     if (window.CSS && CSS.highlights && window.Highlight) {
       CSS.highlights.set(CHANGE_HIGHLIGHT, new Highlight(range));
     } else {
+      if (lastFlashBlock) { lastFlashBlock.classList.remove("ouro-change-flash"); }
       var node = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
       block = node && node.closest("#editor .vditor-reset > *");
-      if (block) { block.classList.add("ouro-change-flash"); }
+      if (block) { block.classList.add("ouro-change-flash"); lastFlashBlock = block; }
     }
     // The glow holds, then fades; when the page scrolled to show the change,
     // the hold starts once the scroll has settled, so the reader sees it whole.
     var reduce = prefersReducedMotion(), hold = reduce ? 900 : 450, fade = reduce ? 0 : 750, start = 0;
     var finish = function () {
+      if (block) { block.classList.remove("ouro-change-flash"); }
       if (token !== changeFlashToken) { return; }
       rootStyle.setProperty("--ouro-flash", "0");
       if (window.CSS && CSS.highlights) { CSS.highlights.delete(CHANGE_HIGHLIGHT); }
@@ -1881,6 +1913,9 @@
     };
     var begin = function () {
       if (token !== changeFlashToken) { return; }
+      // A smooth scroll can stall when the page isn't drawing frames; make
+      // sure the change really is on screen before the glow starts.
+      if (scrolled) { revealRange(range, true); }
       start = Date.now();
       setTimeout(step, 16);
       setTimeout(finish, hold + fade + 250);
@@ -1930,6 +1965,9 @@
     }, true);
   }
 
+  // Fold a finished Writing Tools session back into Vditor: serialize the
+  // rewritten DOM to Markdown, record it as one undo step, and report the edit
+  // so autosave and the word count follow.
   function endWritingToolsSession() {
     if (!vditor || !ready) { return false; }
     var before = state.value;
@@ -2298,14 +2336,19 @@
       // the open file is rewritten externally (agent edit) and we live-reload.
       var scroller = document.scrollingElement || document.documentElement;
       var prevY = scroller ? scroller.scrollTop : window.scrollY;
-      var beforeText = (vditor && ready) ? changeText(changeRoot()) : "";
+      var beforeText = "";
+      try { beforeText = (vditor && ready) ? changeText(changeRoot()) : ""; } catch (e) { beforeText = ""; }
       state.value = (md == null) ? "" : md;
       invalidateReferenceLinkCache();
       cancelAnchorRequests();
       if (vditor && ready) { vditor.setValue(state.value, true); }
       // Show what the agent changed without moving the reader: an edit
-      // elsewhere in the file must not pull their place away.
-      if (beforeText) { flashChange(beforeText, false); }
+      // elsewhere in the file must not pull their place away. Measured once
+      // rendering settles, after post-render fix-ups (such as restored table
+      // cell spaces) that the "before" text already had.
+      if (beforeText) {
+        afterEditorSettles(function () { try { flashChange(beforeText, false); } catch (e) { /* never break a reload */ } });
+      }
       queueTableScrollReset();
       schedulePostRender();
       dirty = false;
@@ -2321,7 +2364,8 @@
       // autosave persists it.
       var next = (md == null) ? "" : md;
       if (!vditor || !ready) { state.value = next; setDirty(true); postCount(next); return; }
-      var beforeText = changeText(changeRoot());
+      var beforeText = "";
+      try { beforeText = changeText(changeRoot()); } catch (e) { beforeText = ""; }
       var scroller = document.scrollingElement || document.documentElement;
       var prevY = scroller ? scroller.scrollTop : window.scrollY;
       // Vditor records undo steps after its input delay. Record any typing
@@ -2352,7 +2396,10 @@
       // Keep the reader's place, then bring the assistant's change into view
       // and highlight it, so they can see what Siri or Shortcuts did.
       requestAnimationFrame(function () { restore(); requestAnimationFrame(restore); });
-      setTimeout(function () { restore(); flashChange(beforeText, true); }, 60);
+      afterEditorSettles(function () {
+        restore();
+        try { if (beforeText) { flashChange(beforeText, true); } } catch (e) { /* never break an edit */ }
+      });
     },
     getValue: function () {
       // Repair lute's dropped table-cell boundary spaces before serializing, so
