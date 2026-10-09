@@ -88,6 +88,8 @@ final class DocumentWindowControllerTests: XCTestCase {
         XCTAssertEqual(button.accessibilityLabel(), "File status")
         XCTAssertEqual(button.accessibilityValue() as? String, "Untitled")
         XCTAssertEqual(button.makeMenu().items.count, 4)
+        XCTAssertEqual(item.menuFormRepresentation?.submenu?.items.count, 4, "the overflow menu keeps the actions")
+        XCTAssertTrue(controller.toolbar(controller.window.toolbar!, itemForItemIdentifier: item.itemIdentifier, willBeInsertedIntoToolbar: false) === item, "the item is made once")
 
         controller.model.toggleFocusMode()
         controller.syncChrome()

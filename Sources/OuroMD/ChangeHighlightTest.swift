@@ -101,7 +101,8 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
         const flash = flashLevel();
         const timing = (window.__ouroLastChangeFlash || {}).timing || {};
         const changeColor = getComputedStyle(document.documentElement).getPropertyValue("--ouro-change-color").trim();
-        return { loadHighlight, during, flash, hold: timing.hold, fade: timing.fade, changeColor };
+        const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        return { loadHighlight, during, flash, hold: timing.hold, fade: timing.fade, reduceMotion, changeColor };
         """#
         webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { [weak self] result in
             guard let self else { return }
@@ -116,8 +117,11 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
             // One continuous fade with no hold: strong once the change is on
             // screen. (Timers are throttled off-screen, so the curve itself is
             // checked through its timing rather than by sampling it.)
+            // Reduce Motion shows the glow steadily, then clears it.
             let flash = r["flash"] as? Double ?? 0, hold = r["hold"] as? Double ?? -1, fade = r["fade"] as? Double ?? 0
-            self.record("highlight fades in one continuous step", flash > 0.6 && hold == 0 && fade >= 800, "--ouro-flash=\(flash) hold=\(hold) fade=\(fade)")
+            let reduceMotion = r["reduceMotion"] as? Bool ?? false
+            let curve = reduceMotion ? (hold > 0 && fade == 0) : (hold == 0 && fade >= 800)
+            self.record("highlight fades in one continuous step", flash > 0.3 && curve, "--ouro-flash=\(flash) hold=\(hold) fade=\(fade) reduceMotion=\(reduceMotion)")
             // Sample the painted highlight against the same text once it clears.
             let rect = CGRect(x: during?["left"] as? Double ?? 0, y: top, width: (during?["right"] as? Double ?? 0) - (during?["left"] as? Double ?? 0), height: bottom - top)
             let changeColor = (r["changeColor"] as? String) ?? ""

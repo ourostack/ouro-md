@@ -114,6 +114,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         truthButton?.refresh()
         truthAccessory?.isHidden = model.focusMode
         if #available(macOS 15.0, *) { truthToolbarItem?.isHidden = model.focusMode }
+        truthToolbarItem?.menuFormRepresentation?.submenu = truthButton?.makeMenu()
         DocumentIntentsPresence.update(window: window, documentURL: model.currentURL)
         MenuBuilder.refreshDynamicState(model: model)
     }
@@ -277,10 +278,16 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
 
     func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
         if itemIdentifier == Self.fileStatusItem, let truthButton {
+            if let truthToolbarItem { return truthToolbarItem }
             let item = NSToolbarItem(itemIdentifier: itemIdentifier)
             item.label = "File Status"
             item.view = truthButton
             item.visibilityPriority = .high
+            // In a narrow window the item collapses into the toolbar's
+            // overflow menu; give it the same actions there.
+            let overflow = NSMenuItem(title: "File Status", action: nil, keyEquivalent: "")
+            overflow.submenu = truthButton.makeMenu()
+            item.menuFormRepresentation = overflow
             truthToolbarItem = item
             return item
         }
@@ -340,9 +347,10 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
     }
 }
 
-/// Fixed-size native title-bar button for document truth. Keeping this surface
-/// entirely in AppKit guarantees that accessibility metadata never participates
-/// in visual layout.
+/// Native button for the document's file status: a labeled toolbar button
+/// with the system design, or a fixed-size glyph in the title bar before it.
+/// Keeping this surface entirely in AppKit guarantees that accessibility
+/// metadata never participates in visual layout.
 @MainActor
 final class DocumentTruthTitleButton: NSButton {
     static let controlSize = NSSize(width: 24, height: 24)
@@ -463,7 +471,8 @@ final class DocumentTruthTitleButton: NSButton {
     }
 
     @objc private func showDocumentTruthMenu(_ sender: NSButton) {
-        makeMenu().popUp(positioning: nil, at: NSPoint(x: bounds.minX, y: bounds.minY), in: self)
+        // Open below the button (its coordinates are flipped), not over it.
+        makeMenu().popUp(positioning: nil, at: NSPoint(x: bounds.minX, y: isFlipped ? bounds.maxY + 4 : bounds.minY - 4), in: self)
     }
 
     @objc private func revealInFinder(_ sender: Any?) {
