@@ -10,7 +10,7 @@
      --ouro-change-color to their accent; user themes get this default. */
   ::highlight(ouro-change){background-color:color-mix(in srgb,var(--ouro-change-color,#2f7de1) calc(var(--ouro-flash,0) * 30%),transparent);}
   .ouro-change-flash{background-color:color-mix(in srgb,var(--ouro-change-color,#2f7de1) calc(var(--ouro-flash,0) * 30%),transparent)!important;border-radius:3px;}
-  #ouro-change-marks{position:fixed;inset:48px 0 32px;overflow:hidden;pointer-events:none;z-index:3;}
+  #ouro-change-marks{position:fixed;inset:0 0 32px;overflow:hidden;pointer-events:none;z-index:3;}
   .ouro-change-mark{position:absolute;width:2px;border-radius:2px;background:var(--ouro-change-color,#2f7de1);opacity:.55;pointer-events:none;}
   .ouro-change-deletion{width:7px;}
   #ouro-next-change{position:fixed;right:16px;bottom:12px;z-index:4;padding:5px 10px;border:1px solid color-mix(in srgb,var(--ouro-change-color,#2f7de1) 25%,transparent);border-radius:8px;background:Canvas;color:CanvasText;font:12px system-ui;cursor:pointer;}

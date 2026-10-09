@@ -286,7 +286,7 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
         const unseenSurvives = marks();
         button().click();
         await sleep(150);
-        const jumped = paragraph(55).getBoundingClientRect().top >= 48
+        const jumped = paragraph(55).getBoundingClientRect().top >= 0
           && paragraph(55).getBoundingClientRect().bottom < window.innerHeight;
         const reachedStays = marks();
         scroller.scrollTop = 0;
@@ -387,6 +387,27 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
             self.record("consecutive reloads exclude local edits made while rendering settles", (r["consecutiveMarks"] as? Int) == 2, "\(r)")
             self.record("consecutive reloads exclude real typing before Vditor's input callback", (r["typingWorked"] as? Bool) == true && (r["typingMarks"] as? Int) == 2, "\(r)")
             self.record("late image reflow keeps the cue beside its passage", (r["reflowMoved"] as? Bool) == true && (r["reflowAligned"] as? Bool) == true, "\(r)")
+            self.viewportEdgeCase()
+        }
+    }
+
+    private func viewportEdgeCase() {
+        let script = Self.probe + #"""
+        window.ouro.setValue("First paragraph.\n\nSecond paragraph.\n");
+        await sleep(400);
+        scroller.scrollTop = 0;
+        window.ouro.reloadValue("First AGENT paragraph.\n\nSecond paragraph.\n");
+        await sleep(400);
+        const overlay = document.getElementById("ouro-change-marks").getBoundingClientRect();
+        const mark = document.querySelector(".ouro-change-mark");
+        const rect = mark && mark.getBoundingClientRect();
+        return { overlayTop: overlay.top, markTop: rect && rect.top,
+          unclipped: !!rect && rect.top >= overlay.top && rect.bottom <= overlay.bottom };
+        """#
+        webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { [weak self] result in
+            guard let self else { return }
+            guard case .success(let value) = result, let r = value as? [String: Any] else { self.fail("viewport edge script failed: \(result)") }
+            self.record("a cue at the native viewport top is not hidden behind an artificial toolbar band", (r["overlayTop"] as? Double) == 0 && (r["unclipped"] as? Bool) == true, "\(r)")
             self.finish()
         }
     }

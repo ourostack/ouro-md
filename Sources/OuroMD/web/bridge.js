@@ -1843,8 +1843,8 @@
     return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }
 
-  // Scrolls just enough to show the change, clear of the toolbar's soft edge
-  // and the floating status pill. If either end is already on screen it leaves
+  // Scrolls just enough to show the change, clear of the floating status pill.
+  // The native toolbar is outside this viewport. If either end is on screen it leaves
   // the view alone (a long paste keeps the caret where WebKit put it); a change
   // taller than the screen shows its end, where the caret is.
   function revealRange(range, instant) {
@@ -1853,7 +1853,7 @@
     var first = rects[0], last = rects[rects.length - 1];
     var top = first.top, bottom = last.bottom, viewport = window.innerHeight;
     if (!(bottom - top > 0)) { return false; }
-    var topMargin = 48, bottomMargin = 72, delta = 0;
+    var topMargin = 0, bottomMargin = 72, delta = 0;
     var onScreen = function (y) { return y >= topMargin && y <= viewport - bottomMargin; };
     if (onScreen(top) || onScreen(bottom) || (top < topMargin && bottom > viewport - bottomMargin)) { return false; }
     if (bottom - top > viewport - topMargin - bottomMargin) { delta = bottom - (viewport - bottomMargin); }

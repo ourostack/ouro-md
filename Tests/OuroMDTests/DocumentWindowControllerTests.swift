@@ -1,9 +1,44 @@
 import AppKit
 import XCTest
+import WebKit
 @testable import OuroMD
 
 @MainActor
 final class DocumentWindowControllerTests: XCTestCase {
+    func testEditorRespectsNativeToolbarContentBoundsWhenToolbarChanges() throws {
+        try XCTSkipUnless(SystemDesign.usesGlass, "native toolbar geometry is for the system design")
+        let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
+        defer { controller.window.close() }
+        let window = controller.window
+        let content = try XCTUnwrap(window.contentView)
+
+        func editor(in view: NSView) -> WKWebView? {
+            if let webView = view as? WKWebView { return webView }
+            for child in view.subviews {
+                if let found = editor(in: child) { return found }
+            }
+            return nil
+        }
+
+        for size in [NSSize(width: 1080, height: 800), NSSize(width: 600, height: 420)] {
+            window.setContentSize(size)
+            for visible in [true, false, true] {
+                window.toolbar?.isVisible = visible
+                window.layoutIfNeeded()
+                content.layoutSubtreeIfNeeded()
+                waitUntil(timeout: 1) { editor(in: content) != nil }
+                let webView = try XCTUnwrap(editor(in: content))
+                let frame = webView.convert(webView.bounds, to: nil)
+                XCTAssertGreaterThan(frame.height, 0)
+                XCTAssertLessThanOrEqual(frame.maxY, window.contentLayoutRect.maxY + 1, "the editor must not render beneath native toolbar controls")
+                if #available(macOS 26, *) {
+                    XCTAssertEqual(webView.obscuredContentInsets.top, 0, "native bounds need no custom WebKit obscured inset")
+                }
+            }
+        }
+        XCTAssertFalse(window.isVisible, "this geometry test must never order a test window front")
+    }
+
     func testRealTitleClickEventsRouteToOpenPanelWithoutConsumingNativeChrome() throws {
         let controller = DocumentWindowController(filePath: nil, selfTest: true, useAutosave: false)
         defer { controller.window.close() }
