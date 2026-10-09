@@ -31,6 +31,13 @@ final class SecurityScopedResourceStore {
         )
     }
 
+    /// Resolves a bookmark even when it is stale (the file moved or was
+    /// renamed): a stale bookmark still grants access to where the file is now.
+    static func resolveBookmarkAllowingStale(_ data: Data) -> URL? {
+        var stale = false
+        return try? URL(resolvingBookmarkData: data, options: [.withSecurityScope], relativeTo: nil, bookmarkDataIsStale: &stale)
+    }
+
     static func resolveBookmark(_ data: Data) -> URL? {
         var stale = false
         guard let url = try? URL(
@@ -58,7 +65,7 @@ enum DocumentAccess {
         load: { UserDefaults.standard.data(forKey: "ouro.documentAccessBookmarks") },
         save: { UserDefaults.standard.set($0, forKey: "ouro.documentAccessBookmarks") },
         makeBookmark: SecurityScopedResourceStore.bookmarkData(for:),
-        resolveBookmark: SecurityScopedResourceStore.resolveBookmark(_:)
+        resolveBookmark: SecurityScopedResourceStore.resolveBookmarkAllowingStale(_:)
     )
 
     /// Adds a document or folder to Open Recent and, when sandboxed,

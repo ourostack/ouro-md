@@ -677,14 +677,23 @@ extension AppDelegate: MarkdownDocumentWorkspace {
                 // silently change its encoding; the editor handles that case.
                 throw DocumentIntentError.needsOpenDocument(url.lastPathComponent)
             }
-            try DocumentIntentsFileText.matchingLineEndings(markdown, of: original)
-                .write(to: file, atomically: true, encoding: .utf8)
+            let text = DocumentIntentsFileText.matchingLineEndings(markdown, of: original)
+            do {
+                try text.write(to: file, atomically: true, encoding: .utf8)
+            } catch CocoaError.fileWriteNoPermission where DocumentAccess.isSandboxed {
+                // An atomic write makes a temporary file beside the original,
+                // which a grant for the file alone doesn't allow; rewrite the
+                // file in place instead.
+                try Data(text.utf8).write(to: file, options: [])
+            }
         }
     }
 
     func open(_ url: URL) {
         // A window keeps reading, watching and saving its file, so hold the
-        // remembered access for as long as the app runs, as session restore does.
+        // remembered access for as long as the app runs, as session restore
+        // does. It isn't released when the window closes; a later open of the
+        // same file finds it readable and doesn't start access again.
         if DocumentAccess.isSandboxed, !FileManager.default.isReadableFile(atPath: url.path),
            let granting = DocumentAccess.bookmarks.grantingURL(for: url) {
             _ = securityScopedResources.startAccessing(granting)
