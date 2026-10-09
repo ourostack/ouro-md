@@ -4,7 +4,7 @@ public enum OuroMDRelease {
     public static let appName = "Ouro MD"
     public static let bundleIdentifier = "bot.ouro.md"
     public static let repository = "ourostack/ouro-md"
-    public static let version = "0.9.91"
+    public static let version = "0.9.92"
     public static let userAgent = "OuroMD/\(version)"
     public static let releaseDate = "2026-10-09"
     public static let positioningSubtitle = "Local Markdown workspace for Mac files."
@@ -20,6 +20,7 @@ public enum OuroMDRelease {
         "Writing Tools rewrites text in place in the editor, and one undo reverts the whole rewrite.",
         "Siri, Shortcuts and Spotlight can open, read and add to your Markdown documents, including unsaved edits.",
         "Text scrolling under the toolbar now fades behind a soft edge instead of running into the window controls and title.",
-        "Pasted text, and text an agent or Siri changes, glows briefly; a paste off-screen scrolls into view so you can see it.",
+        "Pasted text, and text an agent or Siri changes, glows once and fades; a paste off-screen scrolls into view so you can see it.",
+        "The file status in the toolbar now says where the file stands in Git in a word, such as Modified or Committed.",
     ]
 }

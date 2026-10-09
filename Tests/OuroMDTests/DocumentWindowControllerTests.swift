@@ -72,7 +72,30 @@ final class DocumentWindowControllerTests: XCTestCase {
         XCTAssertFalse(opened)
     }
 
+    func testDocumentTruthIsALabeledToolbarButtonWithTheSystemDesign() throws {
+        try XCTSkipUnless(SystemDesign.usesGlass, "the labeled toolbar button is for the system design")
+        let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
+        defer { controller.window.close() }
+
+        XCTAssertTrue(controller.window.titlebarAccessoryViewControllers.allSatisfy { !($0.view is DocumentTruthAccessoryContainer) })
+        let item = try XCTUnwrap(controller.truthToolbarItem)
+        XCTAssertEqual(controller.window.toolbar?.items.last?.itemIdentifier, item.itemIdentifier, "status sits at the trailing end")
+        let button = try XCTUnwrap(item.view as? DocumentTruthTitleButton)
+        XCTAssertTrue(button.labeled)
+        XCTAssertEqual(button.title, "Not saved")
+        XCTAssertNotNil(button.image)
+        XCTAssertGreaterThan(button.intrinsicContentSize.width, DocumentTruthTitleButton.controlSize.width)
+        XCTAssertEqual(button.accessibilityLabel(), "File status")
+        XCTAssertEqual(button.accessibilityValue() as? String, "Untitled")
+        XCTAssertEqual(button.makeMenu().items.count, 4)
+
+        controller.model.toggleFocusMode()
+        controller.syncChrome()
+        if #available(macOS 15.0, *) { XCTAssertTrue(item.isHidden, "focus mode hides the status") }
+    }
+
     func testDocumentTruthAccessoryIsFixedSizeNativeGlyphWithAccessibleMenu() throws {
+        try XCTSkipIf(SystemDesign.usesGlass, "the title-bar glyph is for systems before the system design")
         let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
         defer { controller.window.close() }
 

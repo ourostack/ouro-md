@@ -13,6 +13,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
     private var sidebarItem: NSSplitViewItem?
     private var truthAccessory: NSTitlebarAccessoryViewController?
     private var truthButton: DocumentTruthTitleButton?
+    private(set) var truthToolbarItem: NSToolbarItem?
     private var renamePopover: NSPopover?
     private var renameField: NSTextField?
     var renamePresentationHandler: (() -> Void)?
@@ -47,6 +48,12 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         window.tabbingMode = .disallowed
         window.isReleasedWhenClosed = false
         self.window = window
+        // With the system design, the status is a toolbar button that names
+        // the file's Git state in a word, so it reads without a tooltip and
+        // the system spaces it like the sidebar button. Older systems keep a
+        // fixed-size glyph in the title bar.
+        let truthButton = DocumentTruthTitleButton(model: model, labeled: SystemDesign.usesGlass)
+        self.truthButton = truthButton
         super.init()
         adoptSystemToolbar()
 
@@ -58,16 +65,13 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         // Native fixed-size title-bar document-status glyph. A SwiftUI `Menu`
         // here previously let hidden accessibility text affect title-bar layout,
         // producing the malformed white chip/artifacts seen in 0.9.82.
-        let truthAccessory = NSTitlebarAccessoryViewController()
-        let truthButton = DocumentTruthTitleButton(model: model)
-        // The unified toolbar (macOS 26) stretches title-bar accessories to its
-        // height; the container takes the stretch and keeps the glyph at its
-        // fixed size, centred.
-        truthAccessory.view = DocumentTruthAccessoryContainer(button: truthButton)
-        truthAccessory.layoutAttribute = .trailing
-        window.addTitlebarAccessoryViewController(truthAccessory)
-        self.truthAccessory = truthAccessory
-        self.truthButton = truthButton
+        if !SystemDesign.usesGlass {
+            let truthAccessory = NSTitlebarAccessoryViewController()
+            truthAccessory.view = DocumentTruthAccessoryContainer(button: truthButton)
+            truthAccessory.layoutAttribute = .trailing
+            window.addTitlebarAccessoryViewController(truthAccessory)
+            self.truthAccessory = truthAccessory
+        }
         model.onChromeUpdate = { [weak self] in
             Task { @MainActor in self?.syncChrome() }
         }
@@ -109,6 +113,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         if let background = NSColor(hex: model.theme.backgroundHex) { window.backgroundColor = background }
         truthButton?.refresh()
         truthAccessory?.isHidden = model.focusMode
+        if #available(macOS 15.0, *) { truthToolbarItem?.isHidden = model.focusMode }
         DocumentIntentsPresence.update(window: window, documentURL: model.currentURL)
         MenuBuilder.refreshDynamicState(model: model)
     }
@@ -245,6 +250,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
 
     private static let toolbarIdentifier = NSToolbar.Identifier("OuroMDDocumentToolbar")
     private static let sidebarToggleItem = NSToolbarItem.Identifier("OuroMDToggleSidebar")
+    private static let fileStatusItem = NSToolbarItem.Identifier("OuroMDFileStatus")
 
     /// On macOS 26+ the window gets a real toolbar, which is what carries the
     /// system glass, and the content runs under it (the editor keeps its text
@@ -262,7 +268,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
     }
 
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        [Self.sidebarToggleItem, .sidebarTrackingSeparator, .flexibleSpace]
+        [Self.sidebarToggleItem, .sidebarTrackingSeparator, .flexibleSpace, Self.fileStatusItem]
     }
 
     func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
@@ -270,6 +276,14 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
     }
 
     func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
+        if itemIdentifier == Self.fileStatusItem, let truthButton {
+            let item = NSToolbarItem(itemIdentifier: itemIdentifier)
+            item.label = "File Status"
+            item.view = truthButton
+            item.visibilityPriority = .high
+            truthToolbarItem = item
+            return item
+        }
         guard itemIdentifier == Self.sidebarToggleItem else { return nil }
         // Our own item rather than the system toggle, so the sidebar state the
         // model persists stays in step (NSSplitViewController's built-in
@@ -335,17 +349,23 @@ final class DocumentTruthTitleButton: NSButton {
 
     private weak var model: AppModel?
     private var truthCancellable: AnyCancellable?
+    /// Labeled: a toolbar button showing the glyph and a word. Otherwise a
+    /// fixed-size glyph for the title bar.
+    let labeled: Bool
 
-    override var intrinsicContentSize: NSSize { Self.controlSize }
+    override var intrinsicContentSize: NSSize {
+        labeled ? super.intrinsicContentSize : Self.controlSize
+    }
 
-    init(model: AppModel) {
+    init(model: AppModel, labeled: Bool = false) {
         self.model = model
+        self.labeled = labeled
         super.init(frame: NSRect(origin: .zero, size: Self.controlSize))
         title = ""
-        imagePosition = .imageOnly
+        imagePosition = labeled ? .imageLeading : .imageOnly
         imageScaling = .scaleProportionallyDown
-        isBordered = false
-        bezelStyle = .inline
+        isBordered = labeled
+        bezelStyle = labeled ? .toolbar : .inline
         focusRingType = .none
         target = self
         action = #selector(showDocumentTruthMenu(_:))
@@ -406,6 +426,14 @@ final class DocumentTruthTitleButton: NSButton {
         )?.withSymbolConfiguration(configuration)
         image?.isTemplate = true
         contentTintColor = .secondaryLabelColor
+        if labeled {
+            let word = model.deletedOnDisk ? "Deleted" : snapshot.shortLabel
+            attributedTitle = NSAttributedString(string: word, attributes: [
+                .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize, weight: .medium),
+                .foregroundColor: NSColor.secondaryLabelColor,
+            ])
+            invalidateIntrinsicContentSize()
+        }
         let displayLabel: String
         if model.deletedOnDisk {
             displayLabel = "Deleted on disk"
