@@ -238,6 +238,7 @@ private func editorCSS(_ p: Palette) -> String {
     /* Content column — centered, responsive max-width (Github theme). Width is
        global across themes; a theme changes type + color, never the measure. */
     .vditor-reset{color:\(p.fg)!important;font-family:\(Fonts.sans)!important;font-size:\(Fonts.size)!important;line-height:1.6!important;max-width:860px!important;margin:0 auto!important;padding:30px clamp(16px,4vw,30px) 100px!important;-webkit-font-smoothing:antialiased;caret-color:\(p.accent);box-sizing:border-box;overflow:visible!important;--ouro-table-viewport:calc(100vw - 24px);}
+    :root{--ouro-change-color:\(p.accent);}
     @media (min-width:1400px){.vditor-reset{max-width:1024px!important;}}
     @media (min-width:1800px){.vditor-reset{max-width:1200px!important;}}
 

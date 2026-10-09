@@ -111,6 +111,10 @@ if hasFlag("--writingtoolstest") {
     WritingToolsTester().run()
 }
 
+if hasFlag("--changehighlighttest") {
+    ChangeHighlightTester().run()
+}
+
 if hasFlag("--selectionblurtest") {
     SelectionBlurTester().run()
 }

@@ -1238,6 +1238,7 @@
         attachImageHandlers();
         installEditorQOL();
         installWritingToolsGuard();
+        installPasteHighlight();
         postCount(state.value);
         window.__ouroEditor = vditor;   // exposed for headless undo/redo verification
         post("ready", {});
@@ -1713,6 +1714,257 @@
     el.addEventListener("input", guard, true);
   }
 
+  // --- Change highlight -------------------------------------------------
+  // Pasted text, and text an assistant or agent changed, glows briefly so the
+  // reader can see what changed. The changed span comes from diffing the
+  // editor's visible text before and after, so it works however Vditor
+  // inserted the text, and it is painted with the CSS Custom Highlight API,
+  // which never touches the DOM Vditor re-renders. Rendered previews (math,
+  // diagrams) are left out: they redraw asynchronously and would read as edits.
+  var CHANGE_HIGHLIGHT = "ouro-change";
+  var changeFlashToken = 0;
+
+  function changeRoot() {
+    return document.querySelector("#editor .vditor-ir .vditor-reset")
+      || document.querySelector("#editor .vditor-reset");
+  }
+
+  var CHANGE_SKIP = ".vditor-ir__preview, .vditor-wysiwyg__preview, style, script";
+
+  // Visits text nodes in order, skipping preview subtrees whole (rejecting an
+  // element skips its descendants), so large KaTeX or diagram previews cost
+  // one check each.
+  function changeTextWalker(root) {
+    return document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        if (node.nodeType === 1) { return node.matches(CHANGE_SKIP) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP; }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+  }
+
+  function changeText(root) {
+    if (!root) { return ""; }
+    var walker = changeTextWalker(root), out = [];
+    while (walker.nextNode()) { out.push(walker.currentNode.data); }
+    return out.join("");
+  }
+
+  // The changeText offset of a DOM position, without cloning anything.
+  function changeOffset(root, container, offset) {
+    var point = document.createRange();
+    point.setStart(container, offset);
+    var walker = changeTextWalker(root), total = 0;
+    while (walker.nextNode()) {
+      var node = walker.currentNode;
+      if (node === container) { return total + offset; }
+      if (point.comparePoint(node, 0) >= 0) { return total; }
+      total += node.data.length;
+    }
+    return total;
+  }
+
+  // The changed span of `after`; null when the change only removed text. A
+  // paste passes where the caret was (`hint.caret`, and `hint.removed`, the
+  // length of the selection it replaced), which pins the inserted text down
+  // exactly. Otherwise it is found by common prefix and suffix, and an
+  // insertion that could sit at several places (pasting "Pa" before "Paris")
+  // takes the placement that starts a word, else the latest.
+  function changedSpan(before, after, hint) {
+    var visible = function (span) { return span && span.end > span.start && /\S/.test(after.slice(span.start, span.end)) ? span : null; };
+    if (hint && hint.caret >= 0) {
+      var inserted = after.length - before.length + (hint.removed || 0), c = hint.caret;
+      if (inserted > 0 && c + inserted <= after.length
+          && before.slice(0, c) === after.slice(0, c)
+          && before.slice(c + (hint.removed || 0)) === after.slice(c + inserted)) {
+        return visible({ start: c, end: c + inserted });
+      }
+    }
+    var max = Math.min(before.length, after.length), p = 0, s = 0;
+    while (p < max && before.charCodeAt(p) === after.charCodeAt(p)) { p++; }
+    while (s < max - p && before.charCodeAt(before.length - 1 - s) === after.charCodeAt(after.length - 1 - s)) { s++; }
+    var end = after.length - s;
+    if (p + s === before.length && end > p) {
+      // A pure insertion can often slide (pasting "Pa" before "Paris"). Of the
+      // places it could sit, prefer one that starts a word, then the latest.
+      var isWord = function (i) { return i >= 0 && i < after.length && /[\w\u00C0-\uFFFF]/.test(after.charAt(i)); };
+      var startsWord = function (i) { return isWord(i) && !isWord(i - 1); };
+      var best = p, shift = p, shiftEnd = end;
+      while (shift > 0 && after.charCodeAt(shift - 1) === after.charCodeAt(shiftEnd - 1)) {
+        shift--; shiftEnd--;
+        if (startsWord(shift) && !startsWord(best)) { best = shift; }
+      }
+      end += best - p;
+      p = best;
+    }
+    return visible({ start: p, end: end });
+  }
+
+  // Where the selection starts, and how much it covers, in changeText terms.
+  function caretHint(root) {
+    var sel = window.getSelection();
+    if (!root || !sel || !sel.rangeCount) { return null; }
+    var range = sel.getRangeAt(0);
+    if (!root.contains(range.startContainer)) { return null; }
+    var caret = changeOffset(root, range.startContainer, range.startOffset);
+    var removed = range.collapsed ? 0 : changeOffset(root, range.endContainer, range.endOffset) - caret;
+    return { caret: caret, removed: Math.max(0, removed) };
+  }
+
+  function rangeForSpan(root, span) {
+    var walker = changeTextWalker(root), offset = 0, range = document.createRange(), started = false;
+    while (walker.nextNode()) {
+      var node = walker.currentNode, len = node.data.length;
+      if (!started && span.start < offset + len) {
+        range.setStart(node, span.start - offset);
+        started = true;
+      }
+      if (started && span.end <= offset + len) {
+        range.setEnd(node, span.end - offset);
+        return range;
+      }
+      offset += len;
+    }
+    return null;
+  }
+
+  function prefersReducedMotion() {
+    return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+
+  // Scrolls just enough to show the change, clear of the toolbar's soft edge
+  // and the floating status pill. If either end is already on screen it leaves
+  // the view alone (a long paste keeps the caret where WebKit put it); a change
+  // taller than the screen shows its end, where the caret is.
+  function revealRange(range, instant) {
+    var rects = range.getClientRects();
+    if (!rects.length) { return false; }
+    var first = rects[0], last = rects[rects.length - 1];
+    var top = first.top, bottom = last.bottom, viewport = window.innerHeight;
+    if (!(bottom - top > 0)) { return false; }
+    var topMargin = 48, bottomMargin = 72, delta = 0;
+    var onScreen = function (y) { return y >= topMargin && y <= viewport - bottomMargin; };
+    if (onScreen(top) || onScreen(bottom) || (top < topMargin && bottom > viewport - bottomMargin)) { return false; }
+    if (bottom - top > viewport - topMargin - bottomMargin) { delta = bottom - (viewport - bottomMargin); }
+    else if (top < topMargin) { delta = top - topMargin; }
+    else { delta = bottom - (viewport - bottomMargin); }
+    if (delta) { window.scrollBy({ top: delta, behavior: instant || prefersReducedMotion() ? "auto" : "smooth" }); }
+    return delta !== 0;
+  }
+
+  // Calls back once a scroll has come to rest (or after a short cap).
+  function afterScrollSettles(callback) {
+    var scroller = document.scrollingElement || document.documentElement;
+    var last = scroller.scrollTop, still = 0, waited = 0;
+    var tick = function () {
+      waited += 40;
+      if (scroller.scrollTop === last) { still++; } else { still = 0; last = scroller.scrollTop; }
+      if (still >= 2 || waited >= 900) { callback(); return; }
+      setTimeout(tick, 40);
+    };
+    setTimeout(tick, 40);
+  }
+
+  // A change inside a code or math block's source, which is hidden until the
+  // block is edited, has no layout; highlight the block's rendered preview.
+  function visibleChangeRange(range) {
+    if (!range || range.getClientRects().length) { return range; }
+    var el = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
+    var node = el && el.closest(".vditor-ir__node, [data-block]");
+    var preview = node && node.querySelector(".vditor-ir__preview");
+    if (!preview) { return range; }
+    var shown = document.createRange();
+    shown.selectNodeContents(preview);
+    return shown;
+  }
+
+  var lastFlashBlock = null;
+
+  function flashRange(range, reveal) {
+    range = visibleChangeRange(range);
+    if (!range || range.collapsed) { return false; }
+    var scrolled = reveal ? revealRange(range) : false;
+    var token = ++changeFlashToken, rootStyle = document.documentElement.style, block = null;
+    if (window.CSS && CSS.highlights && window.Highlight) {
+      CSS.highlights.set(CHANGE_HIGHLIGHT, new Highlight(range));
+    } else {
+      if (lastFlashBlock) { lastFlashBlock.classList.remove("ouro-change-flash"); }
+      var node = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
+      block = node && node.closest("#editor .vditor-reset > *");
+      if (block) { block.classList.add("ouro-change-flash"); lastFlashBlock = block; }
+    }
+    // The glow holds, then fades; when the page scrolled to show the change,
+    // the hold starts once the scroll has settled, so the reader sees it whole.
+    var reduce = prefersReducedMotion(), hold = reduce ? 900 : 450, fade = reduce ? 0 : 750, start = 0;
+    var finish = function () {
+      if (block) { block.classList.remove("ouro-change-flash"); }
+      if (token !== changeFlashToken) { return; }
+      rootStyle.setProperty("--ouro-flash", "0");
+      if (window.CSS && CSS.highlights) { CSS.highlights.delete(CHANGE_HIGHLIGHT); }
+      if (block) { block.classList.remove("ouro-change-flash"); }
+    };
+    var step = function () {
+      if (token !== changeFlashToken) { return; }
+      var t = Date.now() - start, level = 1;
+      if (t >= hold + fade) { finish(); return; }
+      if (t > hold) { var x = (t - hold) / fade; level = 1 - x * x * (3 - 2 * x); }
+      rootStyle.setProperty("--ouro-flash", level.toFixed(3));
+      setTimeout(step, 16);
+    };
+    var begin = function () {
+      if (token !== changeFlashToken) { return; }
+      // A smooth scroll can stall when the page isn't drawing frames; make
+      // sure the change really is on screen before the glow starts.
+      if (scrolled) { revealRange(range, true); }
+      start = Date.now();
+      setTimeout(step, 16);
+      setTimeout(finish, hold + fade + 250);
+    };
+    rootStyle.setProperty("--ouro-flash", "1");
+    if (scrolled) { afterScrollSettles(begin); } else { begin(); }
+    return true;
+  }
+
+  function flashChange(before, reveal, hint) {
+    var root = changeRoot();
+    if (!root) { window.__ouroLastChangeFlash = { reason: "no root" }; return false; }
+    var after = changeText(root);
+    var span = changedSpan(before, after, hint);
+    var range = span ? rangeForSpan(root, span) : null;
+    window.__ouroLastChangeFlash = { before: before.length, after: after.length, span: span, range: !!range };
+    return range ? flashRange(range, reveal) : false;
+  }
+
+  // Calls back once the editor's DOM has been quiet briefly, so Vditor has
+  // finished inserting and re-rendering.
+  function afterEditorSettles(callback) {
+    var root = changeRoot(), done = false, quiet = null, cap = null, observer = null;
+    var finish = function () {
+      if (done) { return; }
+      done = true;
+      if (observer) { observer.disconnect(); }
+      clearTimeout(quiet); clearTimeout(cap);
+      callback();
+    };
+    var kick = function () { clearTimeout(quiet); quiet = setTimeout(finish, 90); };
+    if (root && window.MutationObserver) {
+      observer = new MutationObserver(kick);
+      observer.observe(root, { subtree: true, childList: true, characterData: true });
+    }
+    cap = setTimeout(finish, 1500);
+    kick();
+  }
+
+  function installPasteHighlight() {
+    var el = document.getElementById("editor");
+    if (!el || el.__ouroPasteHighlight) { return; }
+    el.__ouroPasteHighlight = true;
+    el.addEventListener("paste", function () {
+      var root = changeRoot(), before = changeText(root), hint = caretHint(root);
+      afterEditorSettles(function () { flashChange(before, true, hint); });
+    }, true);
+  }
+
   // Fold a finished Writing Tools session back into Vditor: serialize the
   // rewritten DOM to Markdown, record it as one undo step, and report the edit
   // so autosave and the word count follow.
@@ -2084,10 +2336,19 @@
       // the open file is rewritten externally (agent edit) and we live-reload.
       var scroller = document.scrollingElement || document.documentElement;
       var prevY = scroller ? scroller.scrollTop : window.scrollY;
+      var beforeText = "";
+      try { beforeText = (vditor && ready) ? changeText(changeRoot()) : ""; } catch (e) { beforeText = ""; }
       state.value = (md == null) ? "" : md;
       invalidateReferenceLinkCache();
       cancelAnchorRequests();
       if (vditor && ready) { vditor.setValue(state.value, true); }
+      // Show what the agent changed without moving the reader: an edit
+      // elsewhere in the file must not pull their place away. Measured once
+      // rendering settles, after post-render fix-ups (such as restored table
+      // cell spaces) that the "before" text already had.
+      if (beforeText) {
+        afterEditorSettles(function () { try { flashChange(beforeText, false); } catch (e) { /* never break a reload */ } });
+      }
       queueTableScrollReset();
       schedulePostRender();
       dirty = false;
@@ -2103,6 +2364,8 @@
       // autosave persists it.
       var next = (md == null) ? "" : md;
       if (!vditor || !ready) { state.value = next; setDirty(true); postCount(next); return; }
+      var beforeText = "";
+      try { beforeText = changeText(changeRoot()); } catch (e) { beforeText = ""; }
       var scroller = document.scrollingElement || document.documentElement;
       var prevY = scroller ? scroller.scrollTop : window.scrollY;
       // Vditor records undo steps after its input delay. Record any typing
@@ -2130,7 +2393,13 @@
       var restore = function () {
         if (scroller) { scroller.scrollTop = prevY; } else { window.scrollTo(0, prevY); }
       };
+      // Keep the reader's place, then bring the assistant's change into view
+      // and highlight it, so they can see what Siri or Shortcuts did.
       requestAnimationFrame(function () { restore(); requestAnimationFrame(restore); });
+      afterEditorSettles(function () {
+        restore();
+        try { if (beforeText) { flashChange(beforeText, true); } } catch (e) { /* never break an edit */ }
+      });
     },
     getValue: function () {
       // Repair lute's dropped table-cell boundary spaces before serializing, so

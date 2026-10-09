@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <link rel="stylesheet" href="vditor/dist/index.css">
 <style>
+  /* Change highlight: pasted text and text an assistant or agent changed glow
+     briefly; bridge.js fades --ouro-flash from 1 to 0. Themes set
+     --ouro-change-color to their accent; user themes get this default. */
+  ::highlight(ouro-change){background-color:color-mix(in srgb,var(--ouro-change-color,#2f7de1) calc(var(--ouro-flash,0) * 30%),transparent);}
+  .ouro-change-flash{background-color:color-mix(in srgb,var(--ouro-change-color,#2f7de1) calc(var(--ouro-flash,0) * 30%),transparent)!important;border-radius:3px;}
   /* Open Sans — bundled under Apache-2.0 so the
      reading surface matches regardless of installed system fonts. */
   @font-face { font-family: "Open Sans"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/open-sans-400.woff2") format("woff2"); }

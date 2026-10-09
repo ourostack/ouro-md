@@ -175,6 +175,14 @@
       "privacy": "Uses synthetic local editor content only."
     },
     {
+      "flag": "--changehighlighttest",
+      "category": "hidden-diagnostic-harness",
+      "source": "Sources/OuroMD/main.swift",
+      "normalLaunchReachable": false,
+      "coveredBy": ["scripts/run-native-scenarios.sh"],
+      "privacy": "Uses synthetic local editor content only."
+    },
+    {
       "flag": "--renderprobe",
       "category": "hidden-diagnostic-harness",
       "source": "Sources/OuroMD/main.swift",
