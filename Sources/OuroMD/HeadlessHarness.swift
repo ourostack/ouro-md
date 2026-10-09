@@ -66,3 +66,85 @@ enum HeadlessHarness {
         return window
     }
 }
+
+/// Throwaway `UserDefaults` for the headless harnesses and unit tests.
+///
+/// `UserDefaults(suiteName: "SomeName")` stores its domain in
+/// `~/Library/Preferences/SomeName.plist`, and `removePersistentDomain(forName:)`
+/// only empties that file; it never deletes it. Tests that used a fresh suite
+/// name per run left thousands of empty plists behind. This type instead names
+/// the suite by an absolute path inside a private temporary directory, which
+/// CFPreferences stores at that path, so nothing reaches the user's Preferences
+/// folder. Call `remove()` when done to delete the directory as well; any
+/// directory still present when the process exits is deleted then.
+final class ScratchUserDefaults {
+    private static let registry = Registry()
+
+    let directory: URL
+    let suiteName: String
+    let defaults: UserDefaults
+
+    init(label: String) {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ouro-md-defaults-\(UUID().uuidString)", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        } catch {
+            preconditionFailure("could not create scratch defaults directory: \(error)")
+        }
+        let suiteName = directory.appendingPathComponent(label).path
+        guard let defaults = UserDefaults(suiteName: suiteName) else {
+            preconditionFailure("could not open scratch defaults at \(suiteName)")
+        }
+        self.directory = directory
+        self.suiteName = suiteName
+        self.defaults = defaults
+        Self.registry.add(directory)
+    }
+
+    /// Clears every value while keeping the same store.
+    func reset() {
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+
+    /// Clears every value and deletes the scratch directory.
+    func remove() {
+        reset()
+        try? FileManager.default.removeItem(at: directory)
+        Self.registry.forget(directory)
+    }
+
+    /// Tracks scratch directories so the harnesses, which keep their defaults
+    /// until the process ends, still leave nothing behind in the temp folder.
+    private final class Registry: @unchecked Sendable {
+        private let lock = NSLock()
+        private var directories: Set<URL> = []
+        private var installedExitHook = false
+
+        func add(_ directory: URL) {
+            lock.lock()
+            defer { lock.unlock() }
+            directories.insert(directory)
+            if !installedExitHook {
+                installedExitHook = true
+                atexit { ScratchUserDefaults.registry.removeAll() }
+            }
+        }
+
+        func forget(_ directory: URL) {
+            lock.lock()
+            defer { lock.unlock() }
+            directories.remove(directory)
+        }
+
+        func removeAll() {
+            lock.lock()
+            let pending = directories
+            directories.removeAll()
+            lock.unlock()
+            for directory in pending {
+                try? FileManager.default.removeItem(at: directory)
+            }
+        }
+    }
+}

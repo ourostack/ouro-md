@@ -4,20 +4,19 @@ import XCTest
 
 @MainActor
 final class OuroMDTelemetryTests: XCTestCase {
-    private var suiteName: String!
+    private var scratch: ScratchUserDefaults!
     private var defaults: UserDefaults!
 
     override func setUp() {
         super.setUp()
-        suiteName = "OuroMDTelemetryTests-\(UUID().uuidString)"
-        defaults = UserDefaults(suiteName: suiteName)!
-        defaults.removePersistentDomain(forName: suiteName)
+        scratch = ScratchUserDefaults(label: "OuroMDTelemetryTests")
+        defaults = scratch.defaults
     }
 
     override func tearDown() {
-        defaults.removePersistentDomain(forName: suiteName)
+        scratch.remove()
         defaults = nil
-        suiteName = nil
+        scratch = nil
         super.tearDown()
     }
 

@@ -470,7 +470,7 @@ final class AccessibilityAuditTester {
     }
 
     private func makeInstallingUpdateCoordinator() -> OuroMDUpdateCoordinator {
-        let defaults = UserDefaults(suiteName: "ouro-accessibility-audit-\(UUID().uuidString)") ?? .standard
+        let defaults = ScratchUserDefaults(label: "ouro-accessibility-audit").defaults
         return OuroMDUpdateCoordinator(
             defaults: defaults,
             checker: {
@@ -487,7 +487,7 @@ final class AccessibilityAuditTester {
     }
 
     private func makeAvailableUpdateCoordinator() -> OuroMDUpdateCoordinator {
-        let defaults = UserDefaults(suiteName: "ouro-accessibility-available-\(UUID().uuidString)") ?? .standard
+        let defaults = ScratchUserDefaults(label: "ouro-accessibility-available").defaults
         return OuroMDUpdateCoordinator(
             defaults: defaults,
             checker: {
@@ -499,7 +499,7 @@ final class AccessibilityAuditTester {
     }
 
     private func makeCurrentUpdateCoordinator() -> OuroMDUpdateCoordinator {
-        let defaults = UserDefaults(suiteName: "ouro-accessibility-current-\(UUID().uuidString)") ?? .standard
+        let defaults = ScratchUserDefaults(label: "ouro-accessibility-current").defaults
         return OuroMDUpdateCoordinator(
             defaults: defaults,
             checker: {

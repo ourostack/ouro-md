@@ -22,20 +22,19 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
         }
     }
 
-    private var suiteName: String!
+    private var scratch: ScratchUserDefaults!
     private var defaults: UserDefaults!
 
     override func setUp() {
         super.setUp()
-        suiteName = "OuroMDUpdateCoordinatorTests-\(UUID().uuidString)"
-        defaults = UserDefaults(suiteName: suiteName)!
-        defaults.removePersistentDomain(forName: suiteName)
+        scratch = ScratchUserDefaults(label: "OuroMDUpdateCoordinatorTests")
+        defaults = scratch.defaults
     }
 
     override func tearDown() {
-        defaults.removePersistentDomain(forName: suiteName)
+        scratch.remove()
         defaults = nil
-        suiteName = nil
+        scratch = nil
         super.tearDown()
     }
 
@@ -225,7 +224,7 @@ final class OuroMDUpdateCoordinatorTests: XCTestCase {
         ]
 
         for (snapshot, expectedLine, expectedKind) in cases {
-            defaults.removePersistentDomain(forName: suiteName)
+            scratch.reset()
             defaults.set("0.9.0", forKey: OuroMDUpdateCoordinator.lastObservedVersionDefaultsKey)
             let coordinator = makeCoordinator(checker: { snapshot })
 
