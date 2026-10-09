@@ -28,3 +28,7 @@ callouts, code, prose-heavy tables, and sparse audit rows all in one document.
 | Artifact | Repository | Producer | Verification consumer |
 | - | - | - | - |
 | `/Users/example/Projects/ouro-md/tasks/2026-06-20-visual-surface-fixture.md` | ouro-md | Visual QA dogfood pass before release | CI packaged-app probes must verify the file renders without sparse-table silliness. |
+
+| Setting | Value |
+| - | - |
+| Theme | Quartz |

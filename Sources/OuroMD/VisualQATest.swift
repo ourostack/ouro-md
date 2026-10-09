@@ -169,27 +169,53 @@ final class VisualQATester: NSObject, WKScriptMessageHandler, WKNavigationDelega
       var tableOverflowCount = 0;
       var collapsedCellCount = 0;
       var imbalancedTableCount = 0;
-      tables.forEach(function (table) {
-        if (escapes(table)) { tableOverflowCount += 1; }
-        var rows = Array.prototype.slice.call(table.querySelectorAll("tr"));
+      // Column widths of a table, taken from its widest row.
+      function columnWidthsOf(table) {
         var columnWidths = [];
-        rows.forEach(function (row) {
+        Array.prototype.slice.call(table.querySelectorAll("tr")).forEach(function (row) {
           var widths = Array.prototype.slice.call(row.children || []).map(function (cell) {
             return cell.getBoundingClientRect().width;
           });
           if (widths.length > columnWidths.length) { columnWidths = widths; }
         });
-        var minColumn = columnWidths.length ? Math.min.apply(Math, columnWidths) : 0;
-        var maxColumn = columnWidths.length ? Math.max.apply(Math, columnWidths) : 0;
-        var ratio = minColumn > 0 ? maxColumn / minColumn : 0;
+        return columnWidths;
+      }
+      // Natural column widths: the same table laid out with no width cap, so
+      // each column takes the width its content asks for (cells keep their own
+      // max-width, so long prose still wraps at its readable measure).
+      function naturalColumnWidthsOf(table) {
+        var clone = table.cloneNode(true);
+        ["position:absolute", "visibility:hidden", "left:0", "top:0", "width:max-content", "max-width:none"].forEach(function (rule) {
+          var parts = rule.split(":");
+          clone.style.setProperty(parts[0], parts[1], "important");
+        });
+        table.parentNode.appendChild(clone);
+        var widths = columnWidthsOf(clone);
+        clone.parentNode.removeChild(clone);
+        return widths;
+      }
+      tables.forEach(function (table) {
+        if (escapes(table)) { tableOverflowCount += 1; }
         Array.prototype.slice.call(table.querySelectorAll("th,td")).forEach(function (cell) {
           var text = (cell.textContent || "").trim();
           var width = cell.getBoundingClientRect().width;
           if ((text.length >= 24 || cell.querySelector("code")) && width < 120) { collapsedCellCount += 1; }
         });
-        if ((table.scrollWidth - table.clientWidth) <= 2 && columnWidths.length >= 2 && ratio > 3) {
-          imbalancedTableCount += 1;
-        }
+        // Sparse-table imbalance means a column stretched well past what its
+        // content needs, leaving a wide empty band. A large ratio between the
+        // widest and narrowest column is not enough on its own: WebKit shares a
+        // capped table's width in proportion to each column's natural width, so
+        // a short label column next to prose stays near its minimum while the
+        // prose columns grow with the window. Columns squeezed into ribbons are
+        // caught by the collapsed-cell check above.
+        var columnWidths = columnWidthsOf(table);
+        var naturalWidths = naturalColumnWidthsOf(table);
+        if (naturalWidths.length !== columnWidths.length) { imbalancedTableCount += 1; return; }
+        var stretched = columnWidths.some(function (width, index) {
+          var natural = naturalWidths[index];
+          return width > natural + 24 && width > natural * 1.25;
+        });
+        if (stretched) { imbalancedTableCount += 1; }
       });
       var column = root.querySelector(".vditor-ir .vditor-reset") || root.querySelector(".vditor-reset");
       var columnRect = column ? column.getBoundingClientRect() : { left: 0, right: viewportWidth };
