@@ -227,9 +227,14 @@ jobs:
             --generate-notes
 
       - name: Verify published release and installer
-        if: steps.check.outputs.exists == 'false' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run)
+        # Runs after a new release, and on a manual non-dry-run dispatch, which
+        # re-verifies the release that already exists for this version.
+        if: (steps.check.outputs.exists == 'false' && github.event_name != 'workflow_dispatch') || (github.event_name == 'workflow_dispatch' && !inputs.dry_run)
         env:
           GH_TOKEN: ${{ github.token }}
+          # The installed app runs the native scenarios; its drawn-text checks
+          # ran with working text recognition in the rendered-text audit job.
+          OURO_MD_RENDERED_TEXT_AUDIT_ELSEWHERE: "1"
         run: |
           ./scripts/release-policy.sh verify-published --version "${{ steps.ver.outputs.version }}" --sha "$GITHUB_SHA"
           OURO_MD_EXPECT_VERSION="${{ steps.ver.outputs.version }}" ./scripts/check-hosted-installer.sh
