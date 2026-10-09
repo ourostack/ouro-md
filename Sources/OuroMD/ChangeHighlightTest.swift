@@ -2,16 +2,18 @@ import AppKit
 import WebKit
 
 /// Headless `--changehighlighttest`: checks that pasted text, an assistant's
-/// edit and an agent's file change are highlighted, so the reader can see what
+/// edit glow, and agent file changes get margin cues, so the reader can see what
 /// changed. A paste far down the page must be highlighted exactly, scrolled into
 /// view and painted in the accent colour, then cleared; an assistant edit must
 /// be highlighted and brought into view; an agent's file change must be
-/// highlighted without moving the reader; and loading a document must
-/// highlight nothing.
+/// marked without moving the reader; and loading a document must add no cues.
+/// Agent cues persist until reached and scrolled past, with explicit navigation
+/// for off-screen changes and no saved review state.
 final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     private var webView: WKWebView!
     private let theme = ThemeStore.shared.defaultTheme
     private var results: [(String, Bool, String)] = []
+    private var started = false
 
     private static let paragraphs = (1...60).map { "Paragraph \($0) says something worth reading." }
     private static let original = paragraphs.joined(separator: "\n\n") + "\n"
@@ -41,6 +43,8 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
 
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let body = message.body as? [String: Any], (body["type"] as? String) == "ready" else { return }
+        guard !started else { return }
+        started = true
         let codeTheme = theme.uiMode == "dark" ? "github-dark" : "github"
         webView.evaluateJavaScript("window.ouro.setTheme(\(jsLiteral(theme.uiMode)),\(jsLiteral(theme.editorCSS)),\(jsLiteral(codeTheme)),\(jsLiteral(theme.backgroundHex)))", completionHandler: nil)
         webView.evaluateJavaScript("window.ouro.setValue(\(jsLiteral(Self.original)))", completionHandler: nil)
@@ -182,14 +186,12 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
         const next = window.ouro.getValue().replace("Paragraph 55 says", "Paragraph 55 now AGENT-CHANGED says");
         window.ouro.reloadValue(next);
         await sleep(250);
-        return { during: live(), scrollTop: scroller.scrollTop };
+        return { during: live(), marks: document.querySelectorAll(".ouro-change-mark").length, scrollTop: scroller.scrollTop };
         """#
         webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { [weak self] result in
             guard let self else { return }
             guard case .success(let value) = result, let r = value as? [String: Any] else { self.fail("agent script failed: \(result)") }
-            let during = r["during"] as? [String: Any]
-            let text = (during?["text"] as? String)?.trimmingCharacters(in: .whitespaces) ?? ""
-            self.record("agent change is highlighted", text == "now AGENT-CHANGED", text)
+            self.record("agent change gets a margin cue instead of a glow", (r["marks"] as? Int) == 1 && r["during"] is NSNull, "\(r)")
             let scrollTop = r["scrollTop"] as? Double ?? -1
             self.record("agent change does not move the reader", scrollTop == 0, "scrollTop=\(scrollTop)")
             self.reviewCases()
@@ -208,7 +210,9 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
         scroller.scrollTop = 0;
         window.ouro.reloadValue(table.replace("Intro line.", "Intro AGENT-TOP line."));
         await sleep(500);
-        const tableHighlight = live();
+        const tableMark = document.querySelector(".ouro-change-mark");
+        const intro = document.querySelector("#editor .vditor-ir .vditor-reset > p");
+        const tableCue = tableMark && intro && Math.abs(tableMark.getBoundingClientRect().top - intro.getBoundingClientRect().top) < 2;
         await sleep(1600);
 
         const root = document.querySelector("#editor .vditor-ir .vditor-reset");
@@ -238,13 +242,12 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
         window.ouro.applyEdit(window.ouro.getValue().replace("const answer = 41;", "const answer = 42;"));
         await sleep(500);
         const codeHighlight = live();
-        return { tableHighlight, visiblePaste, pasteScroll, codeHighlight, codeScroll: scroller.scrollTop };
+        return { tableCue, visiblePaste, pasteScroll, codeHighlight, codeScroll: scroller.scrollTop };
         """#
         webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { [weak self] result in
             guard let self else { return }
             guard case .success(let value) = result, let r = value as? [String: Any] else { self.fail("review script failed: \(result)") }
-            let tableText = ((r["tableHighlight"] as? [String: Any])?["text"] as? String)?.trimmingCharacters(in: .whitespaces) ?? ""
-            self.record("agent change beside a formatted table cell stays exact", tableText == "AGENT-TOP", tableText)
+            self.record("agent cue stays beside its passage after table fix-ups", (r["tableCue"] as? Bool) == true, "\(r["tableCue"] ?? "")")
             let pasteText = ((r["visiblePaste"] as? [String: Any])?["text"] as? String)?.trimmingCharacters(in: .whitespaces) ?? ""
             let pasteScroll = r["pasteScroll"] as? Double ?? -1
             self.record("a paste already on screen is highlighted without scrolling", pasteText == "VISIBLE-PASTE" && pasteScroll == 0, "text=\(pasteText) scrolled=\(pasteScroll)")
@@ -252,6 +255,138 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
             let codeScroll = r["codeScroll"] as? Double ?? -1
             let codeVisible = (code?["bottom"] as? Double ?? 0) > (code?["top"] as? Double ?? 0)
             self.record("an edit in a code block highlights the block without moving the page", codeVisible && codeScroll == 0, "highlight=\(String(describing: code)) scrollTop=\(codeScroll)")
+            self.marginCases()
+        }
+    }
+
+    private func marginCases() {
+        let script = Self.probe + #"""
+        const marks = () => document.querySelectorAll(".ouro-change-mark").length;
+        const button = () => document.getElementById("ouro-next-change");
+        if (!button()) { return { missing: true }; }
+        const root = () => document.querySelector("#editor .vditor-ir .vditor-reset");
+        const paragraph = (n) => [...root().querySelectorAll("p")].find((p) => p.textContent.indexOf("Paragraph " + n + " ") === 0);
+        window.ouro.setValue(original);
+        await sleep(500);
+        scroller.scrollTop = 0;
+        await sleep(100);
+        const initial = marks();
+        const next = original.replace("Paragraph 5 says", "Paragraph 5 AGENT says")
+          .replace("Paragraph 55 says", "Paragraph 55 AGENT says");
+        window.ouro.reloadValue(next);
+        await sleep(600);
+        const two = marks();
+        const unchangedScroll = scroller.scrollTop === 0;
+        const navigation = button() && !button().hidden && button().textContent === "Next change" && button().tabIndex === 0;
+        const serialized = window.ouro.getValue() === next;
+        await sleep(1700);
+        const persistent = marks();
+        scroller.scrollTop = paragraph(30).getBoundingClientRect().top + scroller.scrollTop - 100;
+        await sleep(150);
+        const unseenSurvives = marks();
+        button().click();
+        await sleep(150);
+        const jumped = paragraph(55).getBoundingClientRect().top >= 48
+          && paragraph(55).getBoundingClientRect().bottom < window.innerHeight;
+        const reachedStays = marks();
+        scroller.scrollTop = 0;
+        await sleep(150);
+        const cleared = marks();
+        const controlCleared = button().hidden;
+        window.ouro.reloadValue(next.replace("Paragraph 20 says something worth reading.\n\n", ""));
+        await sleep(500);
+        const deleted = document.querySelectorAll(".ouro-change-deletion").length;
+        window.ouro.setMode("sv");
+        await sleep(600);
+        const sourceHidden = marks() === 0 && button().hidden;
+        window.ouro.setMode("ir");
+        await sleep(600);
+        const modeRestored = document.querySelectorAll(".ouro-change-deletion").length;
+        window.ouro.reloadValue(next.replace("Paragraph 40 says", "Paragraph 40 LATE says"));
+        window.ouro.setValue("Another document.\n");
+        await sleep(600);
+        return { initial, two, unchangedScroll, navigation, serialized, persistent, unseenSurvives,
+          jumped, reachedStays, cleared, controlCleared, deleted, sourceHidden, modeRestored,
+          staleCleared: marks() === 0 && button().hidden };
+        """#
+        webView.callAsyncJavaScript(script, arguments: ["original": Self.original], in: nil, in: .page) { [weak self] result in
+            guard let self else { return }
+            guard case .success(let value) = result, let r = value as? [String: Any] else { self.fail("margin script failed: \(result)") }
+            self.record("opening a document adds no margin cues", (r["initial"] as? Int) == 0, "\(r)")
+            self.record("independent agent edits get separate cues without scrolling", (r["two"] as? Int) == 2 && (r["unchangedScroll"] as? Bool) == true, "\(r)")
+            self.record("off-screen changes have a keyboard-accessible Next change button", (r["navigation"] as? Bool) == true, "\(r)")
+            self.record("margin cues do not change saved Markdown", (r["serialized"] as? Bool) == true, "\(r)")
+            self.record("margin cues outlast the paste glow", (r["persistent"] as? Int) == 2, "\(r)")
+            self.record("scrolling past a reached cue preserves an unseen cue", (r["unseenSurvives"] as? Int) == 1, "\(r)")
+            self.record("Next change reveals a cue without dismissing it", (r["jumped"] as? Bool) == true && (r["reachedStays"] as? Int) == 1, "\(r)")
+            self.record("scrolling past the last reached cue clears navigation", (r["cleared"] as? Int) == 0 && (r["controlCleared"] as? Bool) == true, "\(r)")
+            self.record("deletion marks its gap", (r["deleted"] as? Int) == 1, "\(r)")
+            self.record("mode switches hide source cues and restore rendered anchors", (r["sourceHidden"] as? Bool) == true && (r["modeRestored"] as? Int) == 1, "\(r)")
+            self.record("new document cancels pending old-document cues", (r["staleCleared"] as? Bool) == true, "\(r)")
+            self.sourceAndReflowCases()
+        }
+    }
+
+    private func sourceAndReflowCases() {
+        let script = Self.probe + #"""
+        window.ouro.setValue("Alpha.\n\nBeta.\n\nGamma.\n");
+        await sleep(400);
+        window.ouro.setMode("sv");
+        await sleep(500);
+        window.ouro.reloadValue("Alpha.\n\nBeta agent.\n\nGamma.\n");
+        await sleep(20);
+        window.ouro.applyEdit("Alpha local.\n\nBeta agent.\n\nGamma.\n");
+        await sleep(400);
+        window.ouro.setMode("ir");
+        await sleep(500);
+        const sourceMarks = document.querySelectorAll(".ouro-change-mark").length;
+        window.ouro.setValue("Alpha.\n\nBeta.\n\nGamma.\n");
+        await sleep(300);
+        window.ouro.reloadValue("Alpha.\n\nBeta agent.\n\nGamma.\n");
+        window.ouro.applyEdit("Alpha local.\n\nBeta agent.\n\nGamma.\n");
+        window.ouro.reloadValue("Alpha local.\n\nBeta agent.\n\nGamma agent.\n");
+        await sleep(400);
+        const consecutiveMarks = document.querySelectorAll(".ouro-change-mark").length;
+        window.ouro.setValue("Alpha.\n\nBeta.\n\nGamma.\n");
+        await sleep(300);
+        window.ouro.reloadValue("Alpha.\n\nBeta agent.\n\nGamma.\n");
+        const editorRoot = document.querySelector("#editor .vditor-ir .vditor-reset");
+        editorRoot.focus();
+        const firstText = document.createTreeWalker(editorRoot.querySelector("p"), NodeFilter.SHOW_TEXT).nextNode();
+        const caret = document.createRange();
+        caret.setStart(firstText, 5); caret.collapse(true);
+        getSelection().removeAllRanges(); getSelection().addRange(caret);
+        const inserted = document.execCommand("insertText", false, " local");
+        const typed = window.ouro.getValue();
+        window.ouro.reloadValue(typed.replace("Gamma.", "Gamma agent."));
+        await sleep(400);
+        const typingWorked = inserted && typed.includes("Alpha local.");
+        const typingMarks = document.querySelectorAll(".ouro-change-mark").length;
+        const svg = btoa('<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"><rect width="4" height="4" fill="blue"/></svg>');
+        const imageDoc = "![pixel](data:image/svg+xml;base64," + svg + ")\n\nCue old.\n";
+        window.ouro.setValue(imageDoc);
+        await sleep(400);
+        window.ouro.reloadValue(imageDoc.replace("Cue old.", "Cue agent."));
+        await sleep(400);
+        const root = document.querySelector("#editor .vditor-ir .vditor-reset");
+        const target = [...root.querySelectorAll("p")].find((p) => p.textContent.indexOf("Cue agent.") === 0);
+        const image = root.querySelector("img");
+        const mark = document.querySelector(".ouro-change-mark");
+        if (!target || !image || !mark) { return { sourceMarks, consecutiveMarks, typingMarks, typingWorked, missingImage: true }; }
+        const oldTop = target.getBoundingClientRect().top;
+        image.style.height = "240px";
+        await sleep(200);
+        const targetTop = target.getBoundingClientRect().top;
+        const markerTop = document.querySelector(".ouro-change-mark").getBoundingClientRect().top;
+        return { sourceMarks, consecutiveMarks, typingMarks, typingWorked, reflowMoved: targetTop > oldTop + 100, reflowAligned: Math.abs(targetTop - markerTop) < 2 };
+        """#
+        webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { [weak self] result in
+            guard let self else { return }
+            guard case .success(let value) = result, let r = value as? [String: Any] else { self.fail("source/reflow script failed: \(result)") }
+            self.record("source-mode local edits are not attributed to an agent", (r["sourceMarks"] as? Int) == 1, "\(r)")
+            self.record("consecutive reloads exclude local edits made while rendering settles", (r["consecutiveMarks"] as? Int) == 2, "\(r)")
+            self.record("consecutive reloads exclude real typing before Vditor's input callback", (r["typingWorked"] as? Bool) == true && (r["typingMarks"] as? Int) == 2, "\(r)")
+            self.record("late image reflow keeps the cue beside its passage", (r["reflowMoved"] as? Bool) == true && (r["reflowAligned"] as? Bool) == true, "\(r)")
             self.finish()
         }
     }
