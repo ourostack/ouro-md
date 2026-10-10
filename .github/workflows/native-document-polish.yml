@@ -35,6 +35,29 @@ jobs:
           OURO_NATIVE_POLISH_PROBE: '1'
           OURO_MD_TELEMETRY_DISABLED: '1'
         run: swift test --filter NativeDocumentPolishProbeTests
+      - name: Capture registered native document application positive control
+        run: |
+          APP=.build/NativeDocumentTitleProbe.app
+          mkdir -p "$APP/Contents/MacOS"
+          swiftc -parse-as-library Tests/Fixtures/NativeDocumentTitleProbe.swift -o "$APP/Contents/MacOS/NativeDocumentTitleProbe"
+          cat > "$APP/Contents/Info.plist" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+          <key>CFBundleIdentifier</key><string>bot.ouro.native-document-title-probe</string>
+          <key>CFBundleExecutable</key><string>NativeDocumentTitleProbe</string>
+          <key>CFBundleName</key><string>NativeDocumentTitleProbe</string>
+          <key>CFBundlePackageType</key><string>APPL</string>
+          <key>NSPrincipalClass</key><string>NSApplication</string>
+          <key>CFBundleDocumentTypes</key><array><dict>
+          <key>CFBundleTypeName</key><string>Markdown</string>
+          <key>CFBundleTypeRole</key><string>Editor</string>
+          <key>LSItemContentTypes</key><array><string>net.daringfireball.markdown</string></array>
+          <key>NSDocumentClass</key><string>NativeDocumentTitleProbeDocument</string>
+          </dict></array>
+          </dict></plist>
+          PLIST
+          "$APP/Contents/MacOS/NativeDocumentTitleProbe" "$PWD/.build/native-document-polish/Harbor field notes.md" "$PWD/.build/native-document-polish/packaged-native-title"
       - uses: actions/upload-artifact@v6
         if: always()
         with:
