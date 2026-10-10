@@ -16,8 +16,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
     private(set) var truthToolbarItem: NSToolbarItem?
     private(set) var nativeDocument: NativeDocumentMetadata?
     var renamePresentationHandler: (() -> Void)?
-    /// Test seam: overrides what a title click does (defaults to the Open panel).
-    var openDocumentFromTitleClickHandler: (() -> Void)?
+    var documentControlsFromTitleClickHandler: (() -> Void)?
 
     /// `onBecomeKey` lets the app re-point menu state at the active window.
     var onBecomeKey: ((DocumentWindowController) -> Void)?
@@ -55,15 +54,11 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         self.truthButton = truthButton
         super.init()
         adoptSystemToolbar()
-        let nativeDocument = NativeDocumentMetadata(model: model)
-        nativeDocument.addWindowController(NSWindowController(window: window))
-        NSDocumentController.shared.addDocument(nativeDocument)
-        self.nativeDocument = nativeDocument
 
         window.delegate = self
         // Unsaved documents need Save As; saved documents use AppKit's native
         // document-title controls through their NSDocument association.
-        window.onTitleClicked = { [weak self] in self?.openDocumentFromTitleClick() }
+        window.onTitleClicked = { [weak self] in self?.presentDocumentControlsFromTitleClick() }
         window.titleHitView = { [weak self] in self?.nativeTitleField() }
         // Native fixed-size title-bar document-status glyph. A SwiftUI `Menu`
         // here previously let hidden accessibility text affect title-bar layout,
@@ -90,6 +85,14 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
             window.orderFront(nil)
         }
         if let filePath { model.loadInitialFile(filePath) }
+        do {
+            let nativeDocument = try NativeDocumentMetadata(model: model)
+            nativeDocument.addWindowController(NSWindowController(window: window))
+            NSDocumentController.shared.addDocument(nativeDocument)
+            self.nativeDocument = nativeDocument
+        } catch {
+            model.reportDocumentMetadataError(error)
+        }
         syncChrome()
     }
 
@@ -115,7 +118,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         window.isDocumentEdited = model.isDirty
         if let documentWindow = window as? DocumentWindow {
             documentWindow.onTitleClicked = model.currentURL == nil
-                ? { [weak self] in self?.openDocumentFromTitleClick() } : nil
+                ? { [weak self] in self?.presentDocumentControlsFromTitleClick() } : nil
         }
         window.appearance = NSAppearance(named: model.theme.uiMode == "dark" ? .darkAqua : .aqua)
         if let background = NSColor(hex: model.theme.backgroundHex) { window.backgroundColor = background }
@@ -131,9 +134,9 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
 
     /// The title of an unsaved buffer routes to naming it; saved document
     /// titles are handled by AppKit without an additional click observer.
-    func openDocumentFromTitleClick() {
-        if let openDocumentFromTitleClickHandler {
-            openDocumentFromTitleClickHandler()
+    func presentDocumentControlsFromTitleClick() {
+        if let documentControlsFromTitleClickHandler {
+            documentControlsFromTitleClickHandler()
             return
         }
         presentRename()

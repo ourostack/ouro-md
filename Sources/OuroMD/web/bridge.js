@@ -21,7 +21,7 @@
   var resetTableScrollPending = false;
   var resetTablesSeen = (typeof WeakSet === "function") ? new WeakSet() : null;
   var initialTheme = window.__ouroInitialTheme || {};
-  var state = { mode: "ir", value: "", outline: false, uiTheme: initialTheme.uiMode || "classic", focus: false, typewriter: false, codeTheme: initialTheme.codeTheme || "github" };
+  var state = { mode: "ir", value: "", outline: false, editable: true, uiTheme: initialTheme.uiMode || "classic", focus: false, typewriter: false, codeTheme: initialTheme.codeTheme || "github" };
   var changeMarks = window.OuroChangeMarks.create({
     root: function () { return ready ? changeRoot() : null; },
     text: changeText,
@@ -2518,6 +2518,12 @@
         case "math": insertAtCursor("\n$$\n\n$$\n"); break;
         case "hr": insertAtCursor("\n\n---\n\n"); break;
         default: break;
+      }
+    },
+    setEditable: function (editable) {
+      state.editable = !!editable;
+      if (vditor) {
+        if (state.editable) { vditor.enable(); } else { vditor.disabled(); }
       }
     },
     markSaved: function () { dirty = false; },

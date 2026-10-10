@@ -29,6 +29,10 @@ enum NativeDocumentApplicationProbe {
         var windows: [[String: Any]] = []
         for _ in 0..<100 {
             windows = ownedWindows()
+            guard windows.contains(where: { ($0[kCGWindowLayer as String] as? Int ?? 0) > 0 }) else {
+                fputs("Native document popover did not open\n", stderr)
+                exit(2)
+            }
             if windows.contains(where: { ($0[kCGWindowLayer as String] as? Int) == 0 }) { break }
             Thread.sleep(forTimeInterval: 0.1)
         }
@@ -58,13 +62,48 @@ enum NativeDocumentApplicationProbe {
             capture.waitUntilExit()
             guard capture.terminationStatus == 0 else { exit(1) }
         }
+        var focused: CFTypeRef?
+        let focusedStatus = AXUIElementCopyAttributeValue(application, kAXFocusedUIElementAttribute as CFString, &focused)
+        guard focusedStatus == .success, let focused,
+              CFGetTypeID(focused) == AXUIElementGetTypeID() else {
+            fputs("Native filename field was not accessible\n", stderr)
+            exit(3)
+        }
+        let field = unsafeBitCast(focused, to: AXUIElement.self)
+        let renamedFile = URL(fileURLWithPath: file).deletingLastPathComponent()
+            .appendingPathComponent("Revised field notes.md")
+        let originalBytes = try Data(contentsOf: URL(fileURLWithPath: file))
+        guard AXUIElementSetAttributeValue(field, kAXValueAttribute as CFString,
+                                          "Revised field notes.md" as CFString) == .success else { exit(3) }
+        guard let enterDown = CGEvent(keyboardEventSource: nil, virtualKey: 36, keyDown: true),
+              let enterUp = CGEvent(keyboardEventSource: nil, virtualKey: 36, keyDown: false) else { exit(3) }
+        enterDown.post(tap: .cghidEventTap)
+        enterUp.post(tap: .cghidEventTap)
+        for _ in 0..<100 {
+            if FileManager.default.fileExists(atPath: renamedFile.path) { break }
+            Thread.sleep(forTimeInterval: 0.1)
+        }
+        guard FileManager.default.fileExists(atPath: renamedFile.path),
+              !FileManager.default.fileExists(atPath: file),
+              try Data(contentsOf: renamedFile) == originalBytes else {
+            fputs("Native rename did not preserve the original file bytes and identity\n", stderr)
+            exit(4)
+        }
+        Thread.sleep(forTimeInterval: 1)
+        let renamedWindows = ownedWindows()
+        guard renamedWindows.contains(where: {
+            ($0[kCGWindowName as String] as? String)?.contains("Revised field notes") == true
+        }) else {
+            fputs("Native rename did not synchronize the application title\n", stderr)
+            exit(4)
+        }
         try JSONSerialization.data(withJSONObject: [
             "ownedWindows": windows,
             "accessibilityStatus": accessibility.rawValue,
             "clickPoint": ["x": point.x, "y": point.y],
-            "fixture": URL(fileURLWithPath: file).lastPathComponent
+            "fixture": URL(fileURLWithPath: file).lastPathComponent,
+            "renamedWindows": renamedWindows, "nativeRenamePreservedBytes": true
         ], options: [.prettyPrinted, .sortedKeys])
             .write(to: output.appendingPathComponent("application-probe.json"))
-        guard windows.contains(where: { ($0[kCGWindowLayer as String] as? Int ?? 0) > 0 }) else { exit(2) }
     }
 }

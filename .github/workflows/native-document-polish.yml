@@ -1,95 +1,24 @@
-name: Native document polish investigation
+name: Native document controls
 
 on:
   workflow_dispatch:
   push:
     branches: [fix-native-document-polish]
+  pull_request:
+    paths:
+      - 'Sources/OuroMD/NativeDocumentMetadata.swift'
+      - 'Sources/OuroMD/DocumentWindowController.swift'
+      - 'Tests/Fixtures/NativeDocumentApplicationProbe.swift'
+      - '.github/workflows/native-document-polish.yml'
 
 permissions:
   contents: read
 
 concurrency:
   group: native-document-polish-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
-  probe:
-    if: github.event_name == 'workflow_dispatch'
-    strategy:
-      fail-fast: false
-      matrix:
-        runner: [macos-26-intel, xcode-27]
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v5
-      - name: Record native environment
-        run: |
-          if [[ '${{ matrix.runner }}' == 'xcode-27' ]]; then
-            sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
-          fi
-          xcodebuild -version
-          sw_vers
-          system_profiler SPDisplaysDataType
-      - name: Run actual AppKit-loop characterization
-        env:
-          OURO_NATIVE_POLISH_PROBE: '1'
-          OURO_MD_TELEMETRY_DISABLED: '1'
-        run: swift test --filter NativeDocumentPolishProbeTests
-      - uses: actions/upload-artifact@v6
-        if: always()
-        with:
-          name: native-document-polish-${{ matrix.runner }}
-          path: .build/native-document-polish
-          if-no-files-found: error
-
-  registered-document:
-    strategy:
-      fail-fast: false
-      matrix:
-        runner: [xcode-27]
-        adoption: [canonical, manual]
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v5
-      - name: Capture registered native document application positive control
-        run: |
-          if [[ '${{ matrix.runner }}' == 'xcode-27' ]]; then
-            sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
-          fi
-          APP=.build/NativeDocumentTitleProbe.app
-          mkdir -p "$APP/Contents/MacOS"
-          swiftc -parse-as-library Tests/Fixtures/NativeDocumentTitleProbe.swift -o "$APP/Contents/MacOS/NativeDocumentTitleProbe"
-          cat > "$APP/Contents/Info.plist" <<'PLIST'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0"><dict>
-          <key>CFBundleIdentifier</key><string>bot.ouro.native-document-title-probe</string>
-          <key>CFBundleExecutable</key><string>NativeDocumentTitleProbe</string>
-          <key>CFBundleName</key><string>NativeDocumentTitleProbe</string>
-          <key>CFBundlePackageType</key><string>APPL</string>
-          <key>NSPrincipalClass</key><string>NSApplication</string>
-          <key>CFBundleDocumentTypes</key><array><dict>
-          <key>CFBundleTypeName</key><string>Markdown</string>
-          <key>CFBundleTypeRole</key><string>Editor</string>
-          <key>CFBundleTypeExtensions</key><array><string>md</string></array>
-          <key>LSItemContentTypes</key><array><string>net.daringfireball.markdown</string></array>
-          <key>NSDocumentClass</key><string>NativeDocumentTitleProbeDocument</string>
-          </dict></array>
-          </dict></plist>
-          PLIST
-          OURO_TITLE_PROBE_FILE="$PWD/Tests/Fixtures/Harbor field notes.md" \
-          OURO_TITLE_PROBE_OUTPUT="$PWD/.build/registered-native-title" \
-          OURO_TITLE_PROBE_ADOPTION='${{ matrix.adoption }}' \
-          "$APP/Contents/MacOS/NativeDocumentTitleProbe"
-      - uses: actions/upload-artifact@v6
-        if: always()
-        with:
-          name: registered-native-title-${{ matrix.runner }}-${{ matrix.adoption }}
-          path: .build/registered-native-title
-          if-no-files-found: error
-
   application-controls:
     runs-on: xcode-27
     timeout-minutes: 15
@@ -100,7 +29,7 @@ jobs:
           sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
           OURO_MD_TELEMETRY_DISABLED=1 bash make-app.sh
           swiftc -parse-as-library Tests/Fixtures/NativeDocumentApplicationProbe.swift -o .build/native-document-application-probe
-      - name: Click filename in actual packaged app
+      - name: Click filename and rename in actual packaged app
         env:
           OURO_MD_TELEMETRY_DISABLED: '1'
         run: |

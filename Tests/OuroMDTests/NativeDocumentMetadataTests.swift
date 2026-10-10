@@ -52,11 +52,13 @@ final class NativeDocumentMetadataTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: directory) }
         let file = directory.appendingPathComponent("Plan.md")
         try Data("public plan".utf8).write(to: file)
-        let controller = DocumentWindowController(filePath: file.path, selfTest: false, useAutosave: false)
+        let controller = makeController(file: file)
         defer { controller.window.close() }
         let document = try XCTUnwrap(controller.nativeDocument)
 
         XCTAssertTrue(document.windowForSheet === controller.window)
+        XCTAssertTrue(controller.window.delegate === controller,
+                      "Native document association must not replace the app's close/teardown delegate")
         XCTAssertEqual(document.fileURL, file)
         XCTAssertEqual(document.fileType, "net.daringfireball.markdown")
         XCTAssertFalse(document.isDocumentEdited, "AppModel alone owns content autosave and unsaved-close prompts")
@@ -71,7 +73,7 @@ final class NativeDocumentMetadataTests: XCTestCase {
         let file = directory.appendingPathComponent("Plan.md")
         let destination = directory.appendingPathComponent("Revised.md")
         try Data("public plan".utf8).write(to: file)
-        let controller = DocumentWindowController(filePath: file.path, selfTest: false, useAutosave: false)
+        let controller = makeController(file: file)
         controller.model.autoSaveEnabled = false
         defer { controller.window.close() }
         controller.model.setDirty(true)
@@ -100,7 +102,7 @@ final class NativeDocumentMetadataTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: directory) }
         let file = directory.appendingPathComponent("Plan.md")
         try Data("public plan".utf8).write(to: file)
-        let controller = DocumentWindowController(filePath: file.path, selfTest: false, useAutosave: false)
+        let controller = makeController(file: file)
         defer { controller.window.close() }
         let window = try XCTUnwrap(controller.window as? DocumentWindow)
 
@@ -139,6 +141,116 @@ final class NativeDocumentMetadataTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: destination.path))
     }
 
+    func testNativeLockPreventsAssistantEditsAndUnlockRestoresEditing() throws {
+        let directory = try makeDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("Plan.md")
+        try Data("public plan".utf8).write(to: file)
+        let controller = makeController(file: file)
+        defer {
+            try? FileManager.default.setAttributes([.immutable: false], ofItemAtPath: file.path)
+            controller.window.close()
+        }
+        let document = try XCTUnwrap(controller.nativeDocument)
+        let locked = expectation(description: "locked")
+        document.lock(completionHandler: { (error: Error?) in
+            XCTAssertNil(error)
+            locked.fulfill()
+        })
+        wait(for: [locked], timeout: 3)
+
+        XCTAssertEqual(try FileManager.default.attributesOfItem(atPath: file.path)[.immutable] as? Bool, true)
+        XCTAssertTrue(controller.model.isFileLocked)
+        XCTAssertFalse(controller.model.applyAssistantEdit("must not replace locked text"))
+        XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "public plan")
+
+        let unlocked = expectation(description: "unlocked")
+        document.unlock(completionHandler: { (error: Error?) in
+            XCTAssertNil(error)
+            unlocked.fulfill()
+        })
+        wait(for: [unlocked], timeout: 3)
+        XCTAssertFalse(controller.model.isFileLocked)
+        XCTAssertTrue(controller.model.applyAssistantEdit("allowed after unlock"))
+        XCTAssertFalse(controller.window.isVisible)
+    }
+
+    func testNativeSaveFailsWithoutLiveEditorAndPreservesFileBytes() throws {
+        let directory = try makeDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("Plan.md")
+        try Data("original bytes".utf8).write(to: file)
+        let controller = makeController(file: file)
+        controller.model.autoSaveEnabled = false
+        defer { controller.window.close() }
+        controller.model.setDirty(true)
+        let document = try XCTUnwrap(controller.nativeDocument)
+        var saveError: Error?
+        document.save(to: file, ofType: "net.daringfireball.markdown", for: .saveOperation) {
+            saveError = $0
+        }
+        XCTAssertNotNil(saveError)
+        XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "original bytes")
+        XCTAssertTrue(controller.model.isDirty)
+        XCTAssertFalse(controller.window.isVisible)
+    }
+
+    func testNativeSaveToDoesNotSilentlyAdoptAnotherFile() throws {
+        let directory = try makeDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("Plan.md")
+        let copy = directory.appendingPathComponent("Copy.md")
+        try Data("original bytes".utf8).write(to: file)
+        let controller = makeController(file: file)
+        defer { controller.window.close() }
+        let document = try XCTUnwrap(controller.nativeDocument)
+        var saveError: Error?
+        document.save(to: copy, ofType: "net.daringfireball.markdown", for: .saveToOperation) {
+            saveError = $0
+        }
+        XCTAssertNotNil(saveError, "Unsupported copy/version operations must not pretend to be Save As")
+        XCTAssertEqual(controller.model.currentURL, file)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: copy.path))
+    }
+
+    func testLockWritesPendingHumanFeedbackBeforeProtectingTheFile() throws {
+        let directory = try makeDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("Plan.md")
+        try Data("original".utf8).write(to: file)
+        let controller = makeController(file: file)
+        let bridge = MetadataBridge()
+        controller.model.bridge = bridge
+        controller.model.autoSaveEnabled = false
+        controller.model.editorDidBecomeReady()
+        bridge.content = "human feedback"
+        controller.model.setDirty(true)
+        defer {
+            try? FileManager.default.setAttributes([.immutable: false], ofItemAtPath: file.path)
+            controller.window.close()
+        }
+        let document = try XCTUnwrap(controller.nativeDocument)
+        let locked = expectation(description: "pending edit locked safely")
+        document.lock(completionHandler: { (error: Error?) in
+            XCTAssertNil(error)
+            locked.fulfill()
+        })
+        wait(for: [locked], timeout: 3)
+        XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "human feedback")
+        XCTAssertFalse(controller.model.isDirty)
+        XCTAssertTrue(controller.model.isFileLocked)
+        XCTAssertEqual(bridge.editable, false)
+    }
+
+    private func makeController(file: URL) -> DocumentWindowController {
+        let controller = DocumentWindowController(filePath: file.path, selfTest: false, useAutosave: false)
+        controller.model.autoSaveEnabled = false
+        controller.model.presentErrorHandler = { message, error in
+            XCTFail("\(message): \(error)")
+        }
+        return controller
+    }
+
     private func makeDirectory() throws -> URL {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("ouro-native-metadata-\(UUID().uuidString)", isDirectory: true)
@@ -150,6 +262,7 @@ final class NativeDocumentMetadataTests: XCTestCase {
         var deferRead = false
         var pendingRead: ((String?) -> Void)?
         var content = ""
+        var editable = true
         func setMarkdown(_ markdown: String) { content = markdown }
         func reloadMarkdown(_ markdown: String) { content = markdown }
         func getMarkdown(_ completion: @escaping (String?) -> Void) {
@@ -162,6 +275,7 @@ final class NativeDocumentMetadataTests: XCTestCase {
         func setFocusMode(_ on: Bool) {}
         func setTypewriter(_ on: Bool) {}
         func setAutoPair(_ on: Bool) {}
+        func setEditable(_ editable: Bool) { self.editable = editable }
         func scrollToHeading(_ index: Int) {}
         func find(_ query: String, backward: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool) {}
         func revealSearchMatch(lineNumber: Int, sourceColumn: Int, sourceLength: Int, matchOrdinal: Int,

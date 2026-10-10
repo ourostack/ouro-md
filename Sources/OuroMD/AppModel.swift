@@ -20,6 +20,7 @@ protocol EditorBridge: AnyObject {
     func setFocusMode(_ on: Bool)
     func setTypewriter(_ on: Bool)
     func setAutoPair(_ on: Bool)
+    func setEditable(_ editable: Bool)
     func scrollToHeading(_ index: Int)
     func scrollToAnchor(_ fragment: String)
     func find(_ query: String, backward: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool)
@@ -57,6 +58,7 @@ extension EditorBridge {
     // WKWebView coordinator provides the actual implementation.
     func copyAs(_ mode: String) {}
     func scrollToAnchor(_ fragment: String) {}
+    func setEditable(_ editable: Bool) {}
 }
 
 /// Owns document state (current file, dirty flag, theme/mode) and orchestrates
@@ -70,6 +72,7 @@ final class AppModel: ObservableObject {
     /// the file, so the in-memory copy is never lost silently.
     private(set) var deletedOnDisk = false
     private(set) var isReady = false
+    private(set) var isFileLocked = false
     private(set) var themeID: String
     private(set) var lastLightThemeID: String
     private(set) var lastDarkThemeID: String
@@ -283,6 +286,7 @@ final class AppModel: ObservableObject {
         bridge?.setMode(mode)
         bridge?.setOutline(showOutline)
         bridge?.setAutoPair(autoPairEnabled)
+        bridge?.setEditable(!isFileLocked)
         bridge?.setZoom(zoom)
         // A newly opened document window should be ready to type into
         // immediately, without a stray click to place the caret first.
@@ -302,6 +306,19 @@ final class AppModel: ObservableObject {
     func setCounts(words: Int, chars: Int) {
         wordCount = words
         charCount = chars
+    }
+
+    func setFileLocked(_ locked: Bool) {
+        guard locked != isFileLocked else { return }
+        isFileLocked = locked
+        bridge?.setEditable(!locked)
+        onChromeUpdate?()
+    }
+
+    func reportDocumentMetadataError(_ error: Error) {
+        presentError("Could not prepare document controls", error)
+        captureTelemetry("ouro_md_document_metadata_failed",
+                         properties: ["code": .string("metadata_initialization_failed")])
     }
 
     /// Auto-save silently persists a titled document a moment after the last
@@ -324,7 +341,11 @@ final class AppModel: ObservableObject {
     /// false, changing nothing, while a Writing Tools session owns the text.
     @discardableResult
     func applyAssistantEdit(_ markdown: String) -> Bool {
-        guard !writingToolsActive else { return false }
+        guard !writingToolsActive, !isFileLocked else {
+            captureTelemetry("ouro_md_document_assistant_edit_rejected",
+                             properties: ["code": .string(isFileLocked ? "document_locked" : "writing_tools_active")])
+            return false
+        }
         if isReady, let bridge {
             bridge.applyEdit(markdown)
         } else {
