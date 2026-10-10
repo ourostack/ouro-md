@@ -32,6 +32,10 @@ jobs:
         run: |
           if [[ '${{ matrix.runner }}' == 'xcode-27' ]]; then
             sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
+          else
+            # Xcode 26 uses SwiftPM's classic target directory, not Xcode 27's
+            # Intermediates layout. This changes only diagnostic packaging.
+            sed -i '' 's|^CONST_DIR=.*|CONST_DIR=".build/$(uname -m)-apple-macosx/${CONFIG}/OuroMD.build"|' make-app.sh
           fi
           OURO_MD_TELEMETRY_DISABLED=1 bash make-app.sh
           swiftc -parse-as-library Tests/Fixtures/NativeDocumentApplicationProbe.swift -o .build/native-document-application-probe
