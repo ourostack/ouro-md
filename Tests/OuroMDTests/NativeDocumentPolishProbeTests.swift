@@ -107,6 +107,7 @@ final class NativeDocumentPolishProbeTests: XCTestCase {
             let document: ProbeDocument = autosaves ? AutosavingProbeDocument() : ProbeDocument()
             document.fileURL = url
             document.fileType = "net.daringfireball.markdown"
+            document.fileModificationDate = try url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
             document.contents = try Data(contentsOf: url)
             let nativeController = NSWindowController(window: controller.window)
             document.addWindowController(nativeController)
@@ -119,8 +120,24 @@ final class NativeDocumentPolishProbeTests: XCTestCase {
             }
             document.rename(nil)
             try await capture("native-title-autosaves-\(autosaves)")
+            for (index, owned) in NSApp.windows.filter({ $0.isVisible && $0 !== controller.window }).enumerated() {
+                let process = Process()
+                process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+                process.arguments = ["-x", "-o", "-l", "\(owned.windowNumber)",
+                                     output.appendingPathComponent("native-title-\(autosaves)-aux-\(index).png").path]
+                try process.run()
+                process.waitUntilExit()
+                XCTAssertEqual(process.terminationStatus, 0)
+            }
             records.append(["name": "native-title-association-\(autosaves)",
                             "windowControllerDocumentMatches": nativeController.document === document,
+                            "windowControllerMatches": controller.window.windowController === nativeController,
+                            "windowForSheetMatches": document.windowForSheet === controller.window,
+                            "writableTypes": document.writableTypes(for: .saveOperation),
+                            "visibleWindows": NSApp.windows.filter(\.isVisible).map {
+                                ["title": $0.title, "frame": NSStringFromRect($0.frame),
+                                 "number": $0.windowNumber, "key": $0.isKeyWindow] as [String: Any]
+                            },
                             "documentEdited": document.isDocumentEdited,
                             "documentLocked": document.isLocked])
         }
@@ -187,6 +204,10 @@ final class NativeDocumentPolishProbeTests: XCTestCase {
 @MainActor
 private class ProbeDocument: NSDocument {
     var contents = Data()
+    override class var readableTypes: [String] { ["net.daringfireball.markdown"] }
+    override func writableTypes(for saveOperation: NSDocument.SaveOperationType) -> [String] {
+        ["net.daringfireball.markdown"]
+    }
     override func data(ofType typeName: String) throws -> Data { contents }
 }
 
