@@ -150,6 +150,9 @@ enum NativeDocumentApplicationProbe {
         }
         try JSONSerialization.data(withJSONObject: [
             "directory": try FileManager.default.contentsOfDirectory(atPath: renamedFile.deletingLastPathComponent().path),
+            "applicationRunning": app.isRunning,
+            "terminationStatus": app.isRunning ? -1 : app.terminationStatus,
+            "terminationReason": app.isRunning ? -1 : app.terminationReason.rawValue,
             "accessibility": snapshotAX(application, depth: 9)
         ], options: [.prettyPrinted, .sortedKeys])
             .write(to: output.appendingPathComponent("rename-outcome.json"))
