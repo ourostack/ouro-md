@@ -14,8 +14,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
         try XCTSkipUnless(SystemDesign.usesGlass)
         NSApplication.shared.setActivationPolicy(.regular)
         NSApplication.shared.finishLaunching()
-        let output = URL(fileURLWithPath: env["OURO_HEADER_OUTPUT"] ?? ".build/header-rendering",
-                         isDirectory: true)
+        let output = URL(fileURLWithPath: env["OURO_HEADER_OUTPUT"] ?? ".build/header-rendering", isDirectory: true)
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         let underlap = env["OURO_HEADER_EXPECT_UNDERLAP"] != "0"
         let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
@@ -35,6 +34,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
         XCTAssertTrue(controller.model.isReady, "must prove real editor readiness, not capture a blank body")
         let web = try XCTUnwrap(editor(in: content))
         var measurements: [[String: Any]] = []
+        var sampledHeaders: [[Double]] = []
         for theme in ["quartz", "graphite"] {
             controller.model.setTheme(id: theme)
             controller.syncChrome()
@@ -43,8 +43,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
             }.joined(separator: "\n\n")
             controller.model.bridge?.setMarkdown(document)
             try await Task.sleep(for: .seconds(1))
-            pumpNativeApplicationEvents()
-            let preparation = try await web.evaluateJavaScript("""
+            let prepared = try await web.evaluateJavaScript("""
             (() => {
               const root = document.querySelector(".vditor-ir .vditor-reset");
               if (!root || !root.textContent.includes("Moving document backdrop")) { return false; }
@@ -56,7 +55,8 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 && getComputedStyle(root.children[3]).backgroundColor === "rgb(51, 136, 238)";
             })()
             """)
-            XCTAssertEqual(preparation as? Bool, true, "capture requires actual rendered document text")
+            XCTAssertEqual(prepared as? Bool, true, "capture requires actual rendered document text and contrasting colors")
+            var headerMeans: [[Double]] = []
             for (name, index) in [("warm", 1), ("cool", 3)] {
                 _ = try await web.evaluateJavaScript("""
                 (() => {
@@ -65,144 +65,91 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 })()
                 """)
                 try await Task.sleep(for: .seconds(1))
+                pumpNativeApplicationEvents()
                 let geometry = try await web.evaluateJavaScript("""
-                ({scroll:scrollY, viewport:innerHeight, text:document.querySelector(".vditor-ir .vditor-reset").innerText,
+                ({scroll:scrollY, viewport:innerHeight,
                   sampleTop:document.querySelector(".vditor-ir .vditor-reset").children[\(index)].getBoundingClientRect().top,
                   sampleBottom:document.querySelector(".vditor-ir .vditor-reset").children[\(index)].getBoundingClientRect().bottom,
                   sampleColor:getComputedStyle(document.querySelector(".vditor-ir .vditor-reset").children[\(index)]).backgroundColor})
                 """)
                 let values = try XCTUnwrap(geometry as? [String: Any])
-                XCTAssertGreaterThan(values["scroll"] as? Double ?? 0, 0, "the document must really scroll")
-                XCTAssertLessThan(values["sampleTop"] as? Double ?? 0, -52,
-                                  "the selected passage must span the native header sampling band")
+                XCTAssertGreaterThan(values["scroll"] as? Double ?? 0, 0)
+                XCTAssertLessThan(values["sampleTop"] as? Double ?? 0, -52)
                 XCTAssertGreaterThan(values["sampleBottom"] as? Double ?? 0, 0)
-                XCTAssertEqual(values["sampleColor"] as? String,
-                               name == "warm" ? "rgb(238, 102, 85)" : "rgb(51, 136, 238)")
                 let snapshot = try await web.takeSnapshot(configuration: nil)
-                let bitmap = try XCTUnwrap(NSBitmapImageRep(data: try XCTUnwrap(snapshot.tiffRepresentation)))
-                try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+                let webBitmap = try XCTUnwrap(NSBitmapImageRep(data: try XCTUnwrap(snapshot.tiffRepresentation)))
+                try XCTUnwrap(webBitmap.representation(using: .png, properties: [:]))
                     .write(to: output.appendingPathComponent("\(theme)-\(name)-web.png"))
                 content.displayIfNeeded()
                 CATransaction.flush()
+                let imageURL = output.appendingPathComponent("\(theme)-\(name)-window.png")
                 let capture = Process()
                 capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-                capture.arguments = ["-x", "-o", "-l", "\(controller.window.windowNumber)",
-                                     output.appendingPathComponent("\(theme)-\(name)-window.png").path]
+                capture.arguments = ["-x", "-o", "-l", "\(controller.window.windowNumber)", imageURL.path]
                 try capture.run()
                 capture.waitUntilExit()
-                XCTAssertEqual(capture.terminationStatus, 0, "real native composition must be captured")
-                if underlap, #available(macOS 26, *) {
-                    let insets = web.obscuredContentInsets
-                    web.obscuredContentInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
-                    pumpNativeApplicationEvents()
-                    try await Task.sleep(for: .milliseconds(300))
-                    let unobscured = Process()
-                    unobscured.executableURL = capture.executableURL
-                    unobscured.arguments = ["-x", "-o", "-l", "\(controller.window.windowNumber)",
-                                            output.appendingPathComponent("\(theme)-\(name)-zero-inset-diagnostic-window.png").path]
-                    try unobscured.run()
-                    unobscured.waitUntilExit()
-                    XCTAssertEqual(unobscured.terminationStatus, 0)
-                    web.obscuredContentInsets = insets
-                    pumpNativeApplicationEvents()
-                }
-                // A separate compositor diagnostic distinguishes a missing
-                // WebKit remote surface on a GPU-less runner from native glass.
-                // It is explicitly labeled a raster proxy, never live WK proof.
-                let proxy = try installRasterProxy(snapshot, web: web, content: content, underlap: underlap)
-                proxy.display()
-                CATransaction.flush()
-                try await Task.sleep(for: .milliseconds(300))
-                let composition = Process()
-                composition.executableURL = capture.executableURL
-                composition.arguments = ["-x", "-o", "-l", "\(controller.window.windowNumber)",
-                                         output.appendingPathComponent("\(theme)-\(name)-raster-proxy-window.png").path]
-                try composition.run()
-                composition.waitUntilExit()
-                XCTAssertEqual(composition.terminationStatus, 0)
-                if underlap, #available(macOS 26, *) {
-                    let panel = try XCTUnwrap(findBackdrop(in: content))
-                    let originalParent = try XCTUnwrap(panel.superview)
-                    let originalFrame = panel.frame
-                    let rootFrame = panel.convert(panel.bounds, to: content)
-                    panel.removeFromSuperview()
-                    panel.frame = rootFrame
-                    content.addSubview(panel, positioned: .above, relativeTo: nil)
-                    panel.display()
-                    CATransaction.flush()
-                    try await Task.sleep(for: .milliseconds(300))
-                    let rootComposition = Process()
-                    rootComposition.executableURL = capture.executableURL
-                    rootComposition.arguments = ["-x", "-o", "-l", "\(controller.window.windowNumber)",
-                                                 output.appendingPathComponent("\(theme)-\(name)-root-panel-diagnostic-window.png").path]
-                    try rootComposition.run()
-                    rootComposition.waitUntilExit()
-                    panel.removeFromSuperview()
-                    originalParent.addSubview(panel)
-                    panel.frame = originalFrame
-                    XCTAssertEqual(rootComposition.terminationStatus, 0)
-                }
-                proxy.removeFromSuperview()
+                XCTAssertEqual(capture.terminationStatus, 0)
+                let bitmap = try XCTUnwrap(NSBitmapImageRep(data: Data(contentsOf: imageURL)))
+                let header = meanRGB(bitmap, region: NSRect(x: 320, y: 12, width: 480, height: 26))
+                headerMeans.append(header)
                 let frame = web.convert(web.bounds, to: nil)
-                let top = frame.maxY - controller.window.contentLayoutRect.maxY
-                if underlap {
-                    XCTAssertGreaterThan(top, 0)
-                } else {
-                    XCTAssertLessThanOrEqual(top, 1, "negative control must be the flat released layout")
-                }
-                measurements.append(["theme": theme, "state": name, "underlap": top,
-                                     "webWidth": web.bounds.width, "webHeight": web.bounds.height,
-                                     "layout": values, "title": controller.window.title,
-                                     "applicationActive": NSApplication.shared.isActive,
-                                     "windowKey": controller.window.isKeyWindow,
-                                     "toolbarVisible": controller.window.toolbar?.isVisible ?? false])
+                measurements.append(["theme": theme, "state": name, "headerRGB": header,
+                                     "coloredBodyPixels": coloredPixels(bitmap),
+                                     "webHeight": web.bounds.height, "webTop": frame.maxY,
+                                     "contentLayoutTop": controller.window.contentLayoutRect.maxY,
+                                     "layout": values, "applicationActive": NSApplication.shared.isActive,
+                                     "windowKey": controller.window.isKeyWindow])
             }
-
+            sampledHeaders.append(headerMeans[0])
+            sampledHeaders.append(headerMeans[1])
         }
         try JSONSerialization.data(withJSONObject: measurements, options: [.prettyPrinted, .sortedKeys])
             .write(to: output.appendingPathComponent("measurements.json"))
+        let liveBodyPaints = measurements.allSatisfy { ($0["coloredBodyPixels"] as? Int ?? 0) > 1000 }
+        if env["OURO_HEADER_REQUIRE_LIVE_PAINT"] == "1" {
+            XCTAssertTrue(liveBodyPaints, "blank native captures cannot certify glass, even when WK snapshots paint")
+            for index in stride(from: 0, to: sampledHeaders.count, by: 2) {
+                let change = zip(sampledHeaders[index], sampledHeaders[index + 1]).map { abs($0 - $1) }.max() ?? 0
+                if underlap {
+                    XCTAssertGreaterThan(change, 5, "the native header must visibly sample moving document colors")
+                } else {
+                    XCTAssertLessThan(change, 3, "released flat chrome is the unchanged-header negative control")
+                }
+            }
+        }
     }
 
     private func pumpNativeApplicationEvents() {
         let app = NSApplication.shared
         for _ in 0..<10 {
             if let event = app.nextEvent(matching: .any, until: Date(timeIntervalSinceNow: 0.05),
-                                         inMode: .default, dequeue: true) {
-                app.sendEvent(event)
-            }
+                                         inMode: .default, dequeue: true) { app.sendEvent(event) }
             app.updateWindows()
         }
     }
 
-    private func installRasterProxy(_ snapshot: NSImage, web: WKWebView, content: NSView,
-                                    underlap: Bool) throws -> NSImageView {
-        let proxy = NSImageView()
-        proxy.image = snapshot
-        proxy.imageScaling = .scaleAxesIndependently
-        if underlap {
-            let glass = try XCTUnwrap(findBackdrop(in: content), "capture the production panel, never recreate it for proof")
-            var ancestor = try XCTUnwrap(web.superview)
-            var branch = glass
-            while branch.superview !== ancestor {
-                if let parent = branch.superview {
-                    branch = parent
-                } else {
-                    ancestor = try XCTUnwrap(ancestor.superview)
-                    branch = glass
-                }
+    private func meanRGB(_ bitmap: NSBitmapImageRep, region: NSRect) -> [Double] {
+        var sum = [Double](repeating: 0, count: 3), count = 0.0
+        for y in Int(region.minY)..<min(bitmap.pixelsHigh, Int(region.maxY)) {
+            for x in Int(region.minX)..<min(bitmap.pixelsWide, Int(region.maxX)) {
+                guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else { continue }
+                sum[0] += color.redComponent * 255
+                sum[1] += color.greenComponent * 255
+                sum[2] += color.blueComponent * 255
+                count += 1
             }
-            proxy.frame = web.convert(web.bounds, to: ancestor)
-            ancestor.addSubview(proxy, positioned: .below, relativeTo: branch)
-        } else {
-            let parent = try XCTUnwrap(web.superview)
-            proxy.frame = web.convert(web.bounds, to: parent)
-            parent.addSubview(proxy, positioned: .above, relativeTo: web)
         }
-        return proxy
+        return sum.map { $0 / max(1, count) }
     }
 
-    private func findBackdrop(in view: NSView) -> NSView? {
-        if view.identifier?.rawValue == "OuroMDDocumentHeaderBackdrop" { return view }
-        return view.subviews.lazy.compactMap { self.findBackdrop(in: $0) }.first
+    private func coloredPixels(_ bitmap: NSBitmapImageRep) -> Int {
+        var count = 0
+        for y in stride(from: 80, to: bitmap.pixelsHigh, by: 4) {
+            for x in stride(from: 100, to: min(900, bitmap.pixelsWide), by: 4) {
+                guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else { continue }
+                if max(color.redComponent, color.blueComponent) - color.greenComponent > 0.2 { count += 1 }
+            }
+        }
+        return count
     }
 }

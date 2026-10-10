@@ -446,7 +446,7 @@ struct EditorPane: View {
         VStack(spacing: 0) {
             ZStack {
                 if SystemDesign.usesGlass {
-                    EditorWebView(model: model, topObscuredInset: topInset)
+                    EditorWebView(model: model, headerInset: topInset)
                         .ignoresSafeArea(.container, edges: .top)
                     if topInset > 0 {
                         VStack(spacing: 0) {

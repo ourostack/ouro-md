@@ -18,7 +18,7 @@ public enum OuroMDRelease {
         "Built for macOS 27: the window adopts the current system design, with a glass toolbar and a floating status pill.",
         "Writing Tools rewrites text in place in the editor, and one undo reverts the whole rewrite.",
         "Siri, Shortcuts and Spotlight can open, read and add to your Markdown documents, including recent ones and unsaved edits.",
-        "The document scrolls behind the native glass toolbar, with system-managed editing insets and no custom header fade.",
+        "Moving document content extends behind the native glass header, with system-managed editing bounds and no custom fade.",
         "Pastes and Siri edits glow briefly; agent changes get quiet margin marks that clear as you scroll past, with Next change for off-screen edits.",
         "The file status in the toolbar now says where the file stands in Git in a word, such as Modified or Committed.",
         "What's New scrolls inside the About window, keeping its action buttons reachable as the release notes grow.",

@@ -6,11 +6,11 @@ import WebKit
 /// Hosts the Vditor editor in a WKWebView and bridges it to `AppModel`.
 struct EditorWebView: NSViewRepresentable {
     let model: AppModel
-    var topObscuredInset: CGFloat = 0
+    var headerInset: CGFloat = 0
 
     func makeCoordinator() -> Coordinator { Coordinator(model: model) }
 
-    func makeNSView(context: Context) -> WKWebView {
+    func makeNSView(context: Context) -> NSView {
         let configuration = WKWebViewConfiguration()
         let controller = WKUserContentController()
         controller.addUserScript(WKUserScript(
@@ -36,7 +36,6 @@ struct EditorWebView: NSViewRepresentable {
         webView.allowsBackForwardNavigationGestures = false
         webView.registerForDraggedTypes([.fileURL])
 
-        applyObscuredInset(to: webView)
         context.coordinator.webView = webView
         context.coordinator.observeWritingTools(on: webView)
         model.bridge = context.coordinator
@@ -46,20 +45,22 @@ struct EditorWebView: NSViewRepresentable {
             // references by absolute or (resolved) relative file paths.
             webView.loadFileURL(indexURL, allowingReadAccessTo: URL(fileURLWithPath: "/"))
         }
+        if #available(macOS 26, *) {
+            let extensionView = DocumentBackgroundExtensionView()
+            extensionView.automaticallyPlacesContentView = false
+            extensionView.headerInset = headerInset
+            extensionView.contentView = webView
+            return extensionView
+        }
         return webView
     }
 
-    func updateNSView(_ nsView: WKWebView, context: Context) {
-        Self.applyLayerBackground(model.theme.backgroundHex, to: nsView)
-        applyObscuredInset(to: nsView)
-    }
-
-    private func applyObscuredInset(to webView: WKWebView) {
-        if #available(macOS 26, *) {
-            let top = max(0, topObscuredInset)
-            if webView.obscuredContentInsets.top != top {
-                webView.obscuredContentInsets = NSEdgeInsets(top: top, left: 0, bottom: 0, right: 0)
-            }
+    func updateNSView(_ nsView: NSView, context: Context) {
+        guard let webView = context.coordinator.webView else { return }
+        Self.applyLayerBackground(model.theme.backgroundHex, to: webView)
+        if #available(macOS 26, *), let extensionView = nsView as? DocumentBackgroundExtensionView {
+            extensionView.headerInset = headerInset
+            extensionView.needsLayout = true
         }
     }
 

@@ -3,8 +3,8 @@ import SwiftUI
 
 /// The system design (Liquid Glass) seams, in one place. On macOS 26 and later,
 /// with Ouro MD linked against the current SDK, floating controls use system
-/// glass while the document backdrop extends beneath the native toolbar.
-/// WebKit's occluded header band gets a native glass panel, not a custom fade;
+/// glass while a native background extension carries moving document imagery
+/// beneath the native toolbar. Its header panel is glass, not a custom fade;
 /// earlier systems keep the material look they had.
 enum SystemDesign {
     static var usesGlass: Bool {
@@ -13,8 +13,19 @@ enum SystemDesign {
     }
 }
 
-/// WebKit excludes this band from its layout viewport but requires the client
-/// to cover it. Keep the native window's foreground chrome system-owned.
+@available(macOS 26, *)
+final class DocumentBackgroundExtensionView: NSBackgroundExtensionView {
+    var headerInset: CGFloat = 0
+
+    override func layout() {
+        super.layout()
+        contentView?.frame = NSRect(x: bounds.minX, y: bounds.minY, width: bounds.width,
+                                    height: max(0, bounds.height - headerInset))
+    }
+}
+
+/// Covers the background extension's header band without changing document
+/// layout. Keep the native window's foreground chrome system-owned.
 struct DocumentHeaderBackdrop: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let view: NSView

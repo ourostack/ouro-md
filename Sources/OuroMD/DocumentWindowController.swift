@@ -255,7 +255,8 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
 
     /// On macOS 26+ the window gets a real toolbar, which is what carries the
     /// system-owned controls. The document extends underneath the native glass
-    /// header panel, with public WebKit insets keeping editing clear of controls.
+    /// header panel through NSBackgroundExtensionView, which keeps actual
+    /// editing inside the native safe area.
     /// Earlier systems keep the plain
     /// transparent title bar.
     private func adoptSystemToolbar() {
