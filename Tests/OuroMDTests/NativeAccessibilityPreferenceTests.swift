@@ -74,31 +74,32 @@ final class NativeAccessibilityPreferenceTests: XCTestCase {
         XCTAssertTrue(NSApplication.shared.sendAction(#selector(NSText.paste(_:)), to: editor, from: nil))
         var glowSamples: [[String: Any]] = []
         let start = ProcessInfo.processInfo.systemUptime
-        for delay in [200, 400, 650] {
-            let until = ProcessInfo.processInfo.systemUptime + Double(delay) / 1000
-            while ProcessInfo.processInfo.systemUptime < until {
-                pump()
-                try await Task.sleep(for: .milliseconds(10))
-            }
+        var observedFeedback = false
+        while ProcessInfo.processInfo.systemUptime - start < 5 {
+            pump()
+            try await Task.sleep(for: .milliseconds(40))
             let level = try await editor.evaluateJavaScript(
                 "Number(getComputedStyle(document.documentElement).getPropertyValue('--ouro-flash'))"
             ) as? Double ?? 0
             glowSamples.append(["time": ProcessInfo.processInfo.systemUptime - start, "level": level])
+            if level > 0 { observedFeedback = true }
+            if observedFeedback && level == 0 { break }
         }
         let timing = try await editor.evaluateJavaScript("window.__ouroLastChangeFlash && window.__ouroLastChangeFlash.timing") as? [String: Any]
         evidence["nativePasteGlowSamples"] = glowSamples
         evidence["nativePasteGlowTiming"] = timing ?? [:]
         XCTAssertEqual(timing?["hold"] as? Int, expectedMotion ? 900 : 0)
         XCTAssertEqual(timing?["fade"] as? Int, expectedMotion ? 0 : 1100)
-        let early = glowSamples[0]["level"] as? Double ?? 0
-        let middle = glowSamples[1]["level"] as? Double ?? 0
-        XCTAssertGreaterThan(early, 0, "real native Paste must produce visible feedback")
+        let positiveLevels = glowSamples.compactMap { $0["level"] as? Double }.filter { $0 > 0 }
+        XCTAssertTrue(observedFeedback, "real native Paste must produce visible feedback after WebKit processes it")
         if expectedMotion {
-            XCTAssertEqual(middle, 1, accuracy: 0.01, "Reduce Motion holds steady feedback instead of fading")
+            XCTAssertTrue(positiveLevels.allSatisfy { abs($0 - 1) <= 0.01 },
+                          "Reduce Motion holds steady feedback instead of fading")
         } else {
-            XCTAssertLessThan(middle, early, "the actual non-reduced feedback must fade")
+            XCTAssertGreaterThan((positiveLevels.max() ?? 0) - (positiveLevels.min() ?? 0), 0.03,
+                                 "actual non-reduced feedback must fade after it begins, not relative to action dispatch")
         }
-        XCTAssertEqual(glowSamples[2]["level"] as? Double ?? -1, 0, accuracy: 0.01)
+        XCTAssertEqual(glowSamples.last?["level"] as? Double ?? -1, 0, accuracy: 0.01)
 
         // Traverse accessibilityChildren only, never ordinary subviews or labels.
         var nodes: [[String: String]] = []
