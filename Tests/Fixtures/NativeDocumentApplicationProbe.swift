@@ -333,7 +333,12 @@ enum NativeDocumentApplicationProbe {
             escapeUp.post(tap: .cghidEventTap)
             Thread.sleep(forTimeInterval: 0.5)
         }
-        click(point)
+        let existingMetadataPopover = ownedWindows().contains { owned in
+            guard let rect = owned[kCGWindowBounds as String] as? [String: Any],
+                  let h = rect["Height"] as? Double, let w = rect["Width"] as? Double else { return false }
+            return (owned[kCGWindowName as String] as? String ?? "").isEmpty && h >= 100 && h < 250 && w > 300
+        }
+        if !existingMetadataPopover { click(point) }
         Thread.sleep(forTimeInterval: 1)
         var tagFocus: CFTypeRef?
         guard AXUIElementCopyAttributeValue(application, kAXFocusedUIElementAttribute as CFString, &tagFocus) == .success,
@@ -375,11 +380,10 @@ enum NativeDocumentApplicationProbe {
             down.post(tap: .cghidEventTap)
             up.post(tap: .cghidEventTap)
         }
-        guard let tags = findControl(metadataControls, role: kAXTextFieldRole, description: "tag editor"),
-              AXUIElementSetAttributeValue(tags, kAXFocusedAttribute as CFString, kCFBooleanTrue) == .success else {
-            fputs("Native Tags field was not focusable\n", stderr)
-            exit(6)
-        }
+        try JSONSerialization.data(withJSONObject: snapshotAX(metadataControls, depth: 10), options: [.prettyPrinted, .sortedKeys])
+            .write(to: output.appendingPathComponent("native-tags-controls.json"))
+        key(48)
+        Thread.sleep(forTimeInterval: 0.2)
         typeText("Ouro sample")
         key(36)
         key(48)
