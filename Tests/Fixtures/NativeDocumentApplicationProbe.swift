@@ -54,6 +54,11 @@ enum NativeDocumentApplicationProbe {
                 if AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success,
                    let string = value as? String { result[name] = string }
             }
+            for name in [kAXEnabledAttribute, kAXValueAttribute] {
+                var value: CFTypeRef?
+                if AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success,
+                   let number = value as? NSNumber { result[name] = number }
+            }
             if depth > 0 {
                 var children: CFTypeRef?
                 if AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &children) == .success,
@@ -204,8 +209,20 @@ enum NativeDocumentApplicationProbe {
                 }
                 return nil
             }
-            guard let lock = findLock(application),
-                  AXUIElementPerformAction(lock, kAXPressAction as CFString) == .success else { exit(5) }
+            guard let lock = findLock(application) else { exit(5) }
+            try JSONSerialization.data(withJSONObject: snapshotAX(lock, depth: 1), options: [.prettyPrinted, .sortedKeys])
+                .write(to: output.appendingPathComponent("lock-\(shouldLock)-before.json"))
+            var position: CFTypeRef?
+            var size: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(lock, kAXPositionAttribute as CFString, &position) == .success,
+                  AXUIElementCopyAttributeValue(lock, kAXSizeAttribute as CFString, &size) == .success,
+                  let position, let size,
+                  CFGetTypeID(position) == AXValueGetTypeID(), CFGetTypeID(size) == AXValueGetTypeID() else { exit(5) }
+            var origin = CGPoint.zero
+            var extent = CGSize.zero
+            guard AXValueGetValue(unsafeBitCast(position, to: AXValue.self), .cgPoint, &origin),
+                  AXValueGetValue(unsafeBitCast(size, to: AXValue.self), .cgSize, &extent) else { exit(5) }
+            click(CGPoint(x: origin.x + extent.width / 2, y: origin.y + extent.height / 2))
             Thread.sleep(forTimeInterval: 1)
             try JSONSerialization.data(withJSONObject: snapshotAX(application, depth: 9), options: [.prettyPrinted, .sortedKeys])
                 .write(to: output.appendingPathComponent("lock-\(shouldLock)-accessibility.json"))
