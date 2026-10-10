@@ -184,19 +184,30 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
         }
         let nextScroll = try await web.evaluateJavaScript("scrollY") as? Double ?? 0
         XCTAssertGreaterThan(nextScroll, 0)
-        _ = try await web.evaluateJavaScript("""
+        let selected = try await web.evaluateJavaScript("""
         (() => {
           window.scrollTo(0,0);
           const p = [...document.querySelectorAll('.vditor-ir .vditor-reset p')]
             .find(p => p.textContent.startsWith('Begin at the old lighthouse.'));
           document.querySelector('.vditor-ir .vditor-reset').focus();
-          const range = document.createRange(); range.selectNodeContents(p); range.collapse(false);
-          getSelection().removeAllRanges(); getSelection().addRange(range);
+          const sentence = 'This plan is a public demonstration document; every place and project is fictional.';
+          const walker = document.createTreeWalker(p, NodeFilter.SHOW_TEXT);
+          let node;
+          while ((node = walker.nextNode())) {
+            const start = node.textContent.indexOf(sentence);
+            if (start < 0) { continue; }
+            const range = document.createRange();
+            range.setStart(node, start); range.setEnd(node, start + sentence.length);
+            getSelection().removeAllRanges(); getSelection().addRange(range);
+            return getSelection().toString() === sentence;
+          }
+          return false;
         })()
         """)
+        XCTAssertEqual(selected as? Bool, true, "select the actual public sentence for a clean native replacement paste")
         controller.window.makeFirstResponder(web)
         NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(" Bring a notebook and leave room for discovery.", forType: .string)
+        NSPasteboard.general.setString("This fictional guide leaves room for discovery. Bring a notebook.", forType: .string)
         try await capture("paste", "quartz", 0)
         // A continuous native recording retains the short glow even when a
         // launched PNG capture takes longer than the feedback animation.
