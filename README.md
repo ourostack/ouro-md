@@ -155,6 +155,11 @@ open OuroMD.app
 
 ### Hosted native rendering evidence
 
+On macOS 26 and later, the native header samples scrolling document content in
+windowed and full-screen mode. Full-screen toolbar controls stay system-owned;
+their detached native window receives a behind-window material and regular
+glass backdrop, without extending the editing bounds beneath pinned chrome.
+
 The **Window chrome** workflow captures the real native header with a released
 flat-layout negative control. The **Native site media and accessibility**
 workflow opens `Tests/Fixtures/Launch plan.md` in a real committed sample

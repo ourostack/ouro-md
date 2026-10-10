@@ -9,9 +9,8 @@ mode="${1:-}"
 case "$mode" in
   media) root="${OURO_SITE_MEDIA_OUTPUT:-.build/site-media}" ;;
   header) root="${OURO_HEADER_OUTPUT:-.build/header-rendering/current}" ;;
-  fullscreen) root="${OURO_FULLSCREEN_OUTPUT:-.build/fullscreen-proof}" ;;
   accessibility) root=".build/accessibility-proof" ;;
-  *) echo "Usage: run-hosted-native-proof.sh media|header|fullscreen|accessibility" >&2; exit 2 ;;
+  *) echo "Usage: run-hosted-native-proof.sh media|header|accessibility" >&2; exit 2 ;;
 esac
 backup="$root/preferences"
 mkdir -p "$backup"
@@ -63,8 +62,6 @@ if [[ "$mode" != accessibility ]]; then
   if [[ "$mode" == media ]]; then
     export OURO_SITE_MEDIA=1 OURO_SITE_MEDIA_STANDARD_PROFILE=1
     swift test --filter NativeSiteMediaCaptureTests
-  elif [[ "$mode" == fullscreen ]]; then
-    python3 scripts/run-fullscreen-app-proof.py "$root"
   else
     export OURO_HEADER_RENDERING=1 OURO_HEADER_STANDARD_PROFILE=1
     swift test --filter NativeHeaderRenderingTests

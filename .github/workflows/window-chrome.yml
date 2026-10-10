@@ -14,6 +14,7 @@ on:
       - 'scripts/lib/window-id.swift'
       - '.github/workflows/window-chrome.yml'
       - 'Tests/OuroMDTests/NativeHeaderRenderingTests.swift'
+      - 'Tests/OuroMDTests/FullscreenBackdropTests.swift'
   workflow_dispatch:
 
 permissions:
@@ -24,10 +25,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  fullscreen-proof:
-    uses: ./.github/workflows/fullscreen-glass-proof.yml
   capture:
-    if: github.event_name != 'workflow_dispatch'
     name: Capture native header (${{ matrix.runner }})
     strategy:
       fail-fast: false
