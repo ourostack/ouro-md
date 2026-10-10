@@ -176,6 +176,42 @@ final class NativeDocumentMetadataTests: XCTestCase {
         bridge.pendingRead?("human feedback")
     }
 
+    func testCoordinatedExternalDeletionKeepsTheDocumentWindowAndBuffer() async throws {
+        let directory = try makeDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("Plan.md")
+        try Data("keep this public plan".utf8).write(to: file)
+        let controller = makeController(file: file)
+        defer { controller.model.teardown(); controller.window.close() }
+        var closed = false
+        controller.onClose = { _ in closed = true }
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            DispatchQueue.global().async {
+                let coordinator = NSFileCoordinator()
+                var coordinationError: NSError?
+                var deletionError: Error?
+                coordinator.coordinate(writingItemAt: file, options: .forDeleting, error: &coordinationError) { target in
+                    do { try FileManager.default.removeItem(at: target) }
+                    catch { deletionError = error }
+                }
+                if let error = coordinationError ?? deletionError as NSError? {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume()
+                }
+            }
+        }
+        for _ in 0..<50 {
+            if controller.model.deletedOnDisk || closed { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertFalse(closed, "Native metadata must not close the editor when an agent deletes its file")
+        XCTAssertTrue(controller.model.deletedOnDisk)
+        XCTAssertEqual(controller.model.currentURL, file)
+        XCTAssertFalse(controller.window.isVisible)
+    }
+
     func testNativeLockPreventsAssistantEditsAndUnlockRestoresEditing() throws {
         let directory = try makeDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -219,6 +255,7 @@ final class NativeDocumentMetadataTests: XCTestCase {
         controller.model.autoSaveEnabled = false
         defer { controller.window.close() }
         controller.model.setDirty(true)
+        controller.model.bridge = nil
         let document = try XCTUnwrap(controller.nativeDocument)
         var saveError: Error?
         document.save(to: file, ofType: "net.daringfireball.markdown", for: .saveOperation) {

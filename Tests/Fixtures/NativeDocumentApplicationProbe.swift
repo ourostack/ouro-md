@@ -42,6 +42,24 @@ enum NativeDocumentApplicationProbe {
         let application = AXUIElementCreateApplication(pid)
         var attributes: CFTypeRef?
         let accessibility = AXUIElementCopyAttributeValue(application, kAXChildrenAttribute as CFString, &attributes)
+        func snapshotAX(_ element: AXUIElement, depth: Int) -> [String: Any] {
+            var result: [String: Any] = [:]
+            for name in [kAXRoleAttribute, kAXTitleAttribute, kAXDescriptionAttribute] {
+                var value: CFTypeRef?
+                if AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success,
+                   let string = value as? String { result[name] = string }
+            }
+            if depth > 0 {
+                var children: CFTypeRef?
+                if AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &children) == .success,
+                   let list = children as? [AXUIElement] {
+                    result["children"] = list.map { snapshotAX($0, depth: depth - 1) }
+                }
+            }
+            return result
+        }
+        try JSONSerialization.data(withJSONObject: snapshotAX(application, depth: 7), options: [.prettyPrinted, .sortedKeys])
+            .write(to: output.appendingPathComponent("native-accessibility.json"))
         let point = CGPoint(x: x + 240, y: y + 25)
         func click(_ point: CGPoint) {
             guard let down = CGEvent(mouseEventSource: nil, mouseType: .leftMouseDown,
@@ -51,6 +69,7 @@ enum NativeDocumentApplicationProbe {
             down.setIntegerValueField(.mouseEventClickState, value: 1)
             up.setIntegerValueField(.mouseEventClickState, value: 1)
             down.post(tap: .cghidEventTap)
+            Thread.sleep(forTimeInterval: 0.1)
             up.post(tap: .cghidEventTap)
         }
         click(point)
