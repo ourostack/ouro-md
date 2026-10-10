@@ -6,11 +6,16 @@ on:
       - 'Tests/OuroMDTests/NativeSiteMediaCaptureTests.swift'
       - 'Tests/OuroMDTests/NativeAccessibilityPreferenceTests.swift'
       - 'Tests/Fixtures/**'
+      - 'scripts/run-hosted-native-proof.sh'
       - '.github/workflows/site-media.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: native-site-media-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   capture:
@@ -34,11 +39,12 @@ jobs:
       - name: Capture real public-document action frames
         env:
           OURO_SITE_MEDIA: '1'
+          OURO_NATIVE_PREFERENCE_PROOF: '1'
           OURO_SITE_MEDIA_OUTPUT: .build/site-media
           OURO_SITE_MEDIA_RENDERER_DIAGNOSTICS: ${{ matrix.runner == 'xcode-27' && '1' || '0' }}
           OURO_SITE_MEDIA_REQUIRE_BODY_PAINT: ${{ matrix.runner == 'macos-26-intel' && '1' || '0' }}
           OURO_MD_TELEMETRY_DISABLED: '1'
-        run: swift test --filter NativeSiteMediaCaptureTests
+        run: ./scripts/run-hosted-native-proof.sh media
       - uses: actions/upload-artifact@v6
         if: always()
         with:
@@ -55,53 +61,9 @@ jobs:
       - name: Dedicated hosted preference probe with exact key restoration
         env:
           OURO_ACCESSIBILITY_PROOF: '1'
+          OURO_NATIVE_PREFERENCE_PROOF: '1'
           OURO_MD_TELEMETRY_DISABLED: '1'
-        run: |
-          mkdir -p .build/accessibility-proof
-          for key in reduceMotion reduceTransparency; do
-            if defaults read com.apple.universalaccess "$key" > ".build/accessibility-proof/$key.before" 2>/dev/null; then
-              touch ".build/accessibility-proof/$key.existed"
-            fi
-          done
-          bool_value() {
-            case "$1" in
-              1|true|TRUE|yes|YES) printf true ;;
-              0|false|FALSE|no|NO) printf false ;;
-              *) return 1 ;;
-            esac
-          }
-          restore() {
-            local test_status=$? failures=0
-            set +e
-            for key in reduceMotion reduceTransparency; do
-              if [[ -f ".build/accessibility-proof/$key.existed" ]]; then
-                defaults write com.apple.universalaccess "$key" -bool "$(bool_value "$(cat ".build/accessibility-proof/$key.before")")" || failures=1
-                defaults read com.apple.universalaccess "$key" > ".build/accessibility-proof/$key.restored" || failures=1
-                cmp ".build/accessibility-proof/$key.before" ".build/accessibility-proof/$key.restored" || failures=1
-              else
-                defaults delete com.apple.universalaccess "$key" 2>/dev/null || true
-                if defaults read com.apple.universalaccess "$key" 2>/dev/null; then failures=1; fi
-              fi
-            done
-            echo "test_status=$test_status restoration_failures=$failures" > .build/accessibility-proof/restoration.txt
-            if [[ "$test_status" != '0' ]]; then exit "$test_status"; fi
-            exit "$failures"
-          }
-          trap restore EXIT
-          test_status=0
-          for state in baseline reduce-motion reduce-transparency both; do
-            export OURO_EXPECT_REDUCE_MOTION=0 OURO_EXPECT_REDUCE_TRANSPARENCY=0
-            case "$state" in
-              reduce-motion) export OURO_EXPECT_REDUCE_MOTION=1 ;;
-              reduce-transparency) export OURO_EXPECT_REDUCE_TRANSPARENCY=1 ;;
-              both) export OURO_EXPECT_REDUCE_MOTION=1 OURO_EXPECT_REDUCE_TRANSPARENCY=1 ;;
-            esac
-            export OURO_ACCESSIBILITY_OUTPUT=".build/accessibility-proof/$state"
-            defaults write com.apple.universalaccess reduceMotion -bool "$(bool_value "$OURO_EXPECT_REDUCE_MOTION")"
-            defaults write com.apple.universalaccess reduceTransparency -bool "$(bool_value "$OURO_EXPECT_REDUCE_TRANSPARENCY")"
-            swift test --filter NativeAccessibilityPreferenceTests || test_status=1
-          done
-          exit "$test_status"
+        run: ./scripts/run-hosted-native-proof.sh accessibility
       - uses: actions/upload-artifact@v6
         if: always()
         with:

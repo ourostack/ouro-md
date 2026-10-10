@@ -23,6 +23,8 @@ Begin at the old lighthouse. Follow the shoreline path to the reading room, then
 | Midday | Reading room | Find a favorite passage |
 | Afternoon | Harbor garden | Share a pot of tea |
 
+![A sketch of the fictional harbor walking loop](Harbor%20route.svg)
+
 ## Notes for the field guide
 
 Keep sentences short, directions clear, and the pace unhurried. A useful guide should help visitors find their own way—not tell them what to enjoy.

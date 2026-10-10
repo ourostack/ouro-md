@@ -19,6 +19,13 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
         let original = try String(contentsOf: fixture, encoding: .utf8)
         let document = output.appendingPathComponent("Harbor field notes.md")
         try original.write(to: document, atomically: true, encoding: .utf8)
+        try FileManager.default.copyItem(at: fixture.deletingLastPathComponent().appendingPathComponent("Harbor route.svg"),
+                                        to: output.appendingPathComponent("Harbor route.svg"))
+        if env["OURO_SITE_MEDIA_STANDARD_PROFILE"] == "1" {
+            XCTAssertFalse(NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
+            XCTAssertFalse(NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency,
+                           "a preference write alone is not evidence of the actual native capture profile")
+        }
         NSApplication.shared.setActivationPolicy(.regular)
         NSApplication.shared.finishLaunching()
         let controller = DocumentWindowController(filePath: document.path, selfTest: false, useAutosave: false)
@@ -32,6 +39,7 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
         let web = try await readyEditor(controller)
         XCTAssertEqual(controller.model.currentURL, document)
         try await wait(web, "document.body.textContent.includes('A thoughtful first visit')")
+        try await wait(web, "Array.from(document.images).some(i => i.alt === 'A sketch of the fictional harbor walking loop' && i.complete && i.naturalWidth > 0)")
         for _ in 0..<100 {
             if controller.model.outlineItems.count > 5 { break }
             pump()
@@ -62,6 +70,8 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
               marks:document.querySelectorAll('.ouro-change-mark').length,
               nextVisible:!!document.getElementById('ouro-next-change') && !document.getElementById('ouro-next-change').hidden,
               glow:!!(window.CSS && CSS.highlights && CSS.highlights.get('ouro-change')),
+              mapTop:document.querySelector('img[alt="A sketch of the fictional harbor walking loop"]').getBoundingClientRect().top,
+              mapBottom:document.querySelector('img[alt="A sketch of the fictional harbor walking loop"]').getBoundingClientRect().bottom,
               text:document.querySelector('.vditor-ir .vditor-reset').textContent})
             """)
             let bitmap = try XCTUnwrap(NSBitmapImageRep(data: Data(contentsOf: url)))

@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# Only disposable hosted jobs may present windows or change accessibility keys.
+set -euo pipefail
+if [[ "${GITHUB_ACTIONS:-}" != true || "${OURO_NATIVE_PREFERENCE_PROOF:-}" != 1 ]]; then
+  echo "Hosted native proof requires GITHUB_ACTIONS=true and explicit opt-in." >&2
+  exit 2
+fi
+mode="${1:-}"
+case "$mode" in
+  media) root="${OURO_SITE_MEDIA_OUTPUT:-.build/site-media}" ;;
+  header) root="${OURO_HEADER_OUTPUT:-.build/header-rendering/current}" ;;
+  accessibility) root=".build/accessibility-proof" ;;
+  *) echo "Usage: run-hosted-native-proof.sh media|header|accessibility" >&2; exit 2 ;;
+esac
+backup="$root/preferences"
+mkdir -p "$backup"
+for key in reduceMotion reduceTransparency; do
+  if defaults read com.apple.universalaccess "$key" > "$backup/$key.before" 2>/dev/null; then
+    touch "$backup/$key.existed"
+  fi
+done
+bool_value() {
+  case "$1" in
+    1|true|TRUE|yes|YES) printf true ;;
+    0|false|FALSE|no|NO) printf false ;;
+    *) return 1 ;;
+  esac
+}
+restore() {
+  local test_status=$? failures=0
+  set +e
+  for key in reduceMotion reduceTransparency; do
+    if [[ -f "$backup/$key.existed" ]]; then
+      defaults write com.apple.universalaccess "$key" -bool "$(bool_value "$(cat "$backup/$key.before")")" || failures=1
+      defaults read com.apple.universalaccess "$key" > "$backup/$key.restored" || failures=1
+      cmp "$backup/$key.before" "$backup/$key.restored" || failures=1
+    else
+      defaults delete com.apple.universalaccess "$key" 2>/dev/null || true
+      if defaults read com.apple.universalaccess "$key" 2>/dev/null; then failures=1; fi
+    fi
+  done
+  echo "test_status=$test_status restoration_failures=$failures" > "$backup/restoration.txt"
+  if [[ "$test_status" != 0 ]]; then exit "$test_status"; fi
+  exit "$failures"
+}
+trap restore EXIT
+if [[ "$mode" != accessibility ]]; then
+  defaults write com.apple.universalaccess reduceMotion -bool false
+  defaults write com.apple.universalaccess reduceTransparency -bool false
+  if [[ "$mode" == media ]]; then
+    export OURO_SITE_MEDIA=1 OURO_SITE_MEDIA_STANDARD_PROFILE=1
+    swift test --filter NativeSiteMediaCaptureTests
+  else
+    export OURO_HEADER_RENDERING=1 OURO_HEADER_STANDARD_PROFILE=1
+    swift test --filter NativeHeaderRenderingTests
+  fi
+else
+  test_status=0
+  for state in baseline reduce-motion reduce-transparency both; do
+    export OURO_EXPECT_REDUCE_MOTION=0 OURO_EXPECT_REDUCE_TRANSPARENCY=0
+    case "$state" in
+      reduce-motion) export OURO_EXPECT_REDUCE_MOTION=1 ;;
+      reduce-transparency) export OURO_EXPECT_REDUCE_TRANSPARENCY=1 ;;
+      both) export OURO_EXPECT_REDUCE_MOTION=1 OURO_EXPECT_REDUCE_TRANSPARENCY=1 ;;
+    esac
+    export OURO_ACCESSIBILITY_OUTPUT="$root/$state"
+    defaults write com.apple.universalaccess reduceMotion -bool "$(bool_value "$OURO_EXPECT_REDUCE_MOTION")"
+    defaults write com.apple.universalaccess reduceTransparency -bool "$(bool_value "$OURO_EXPECT_REDUCE_TRANSPARENCY")"
+    swift test --filter NativeAccessibilityPreferenceTests || test_status=1
+  done
+  exit "$test_status"
+fi

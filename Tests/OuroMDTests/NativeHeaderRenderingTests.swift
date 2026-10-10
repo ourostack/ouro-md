@@ -12,6 +12,10 @@ final class NativeHeaderRenderingTests: XCTestCase {
         try XCTSkipUnless(env["GITHUB_ACTIONS"] == "true" && env["OURO_HEADER_RENDERING"] == "1",
                           "never present test windows on an operator's Mac")
         try XCTSkipUnless(SystemDesign.usesGlass)
+        if env["OURO_HEADER_STANDARD_PROFILE"] == "1" {
+            XCTAssertFalse(NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
+            XCTAssertFalse(NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency)
+        }
         NSApplication.shared.setActivationPolicy(.regular)
         NSApplication.shared.finishLaunching()
         let output = URL(fileURLWithPath: env["OURO_HEADER_OUTPUT"] ?? ".build/header-rendering", isDirectory: true)
@@ -175,6 +179,8 @@ final class NativeHeaderRenderingTests: XCTestCase {
             measurements[0]["fullscreenStates"] = fullscreenStates
         }
         measurements[0]["fullscreenVerificationRequired"] = env["OURO_HEADER_REQUIRE_FULLSCREEN"] == "1"
+        measurements[0]["nativeReduceMotion"] = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        measurements[0]["nativeReduceTransparency"] = NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
         try JSONSerialization.data(withJSONObject: measurements, options: [.prettyPrinted, .sortedKeys])
             .write(to: output.appendingPathComponent("measurements.json"))
         let liveBodyPaints = measurements.allSatisfy { ($0["coloredBodyPixels"] as? Int ?? 0) > 1000 }

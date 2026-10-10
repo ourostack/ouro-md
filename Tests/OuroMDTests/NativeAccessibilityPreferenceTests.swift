@@ -35,6 +35,7 @@ final class NativeAccessibilityPreferenceTests: XCTestCase {
         let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
             .deletingLastPathComponent().appendingPathComponent("Fixtures/Harbor field notes.md")
         let controller = DocumentWindowController(filePath: fixture.path, selfTest: false, useAutosave: false)
+        controller.model.autoSaveEnabled = false
         defer { controller.window.delegate = nil; controller.window.close() }
         controller.revealSidebar(mode: .outline)
         controller.show(cascadeFrom: nil)
@@ -58,6 +59,42 @@ final class NativeAccessibilityPreferenceTests: XCTestCase {
         XCTAssertEqual(reducedMotion, expectedMotion, "the real WebKit media query must follow the native preference")
         let bodyText = try await editor.evaluateJavaScript("document.body.textContent.includes('A thoughtful first visit')") as? Bool
         XCTAssertEqual(bodyText, true)
+        _ = try await editor.evaluateJavaScript("""
+        (() => {
+          const root = document.querySelector('.vditor-ir .vditor-reset');
+          root.focus();
+          const range = document.createRange();
+          range.selectNodeContents(root.querySelector('p')); range.collapse(false);
+          getSelection().removeAllRanges(); getSelection().addRange(range);
+        })()
+        """)
+        controller.window.makeFirstResponder(editor)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(" Leave room for discovery.", forType: .string)
+        XCTAssertTrue(NSApplication.shared.sendAction(#selector(NSText.paste(_:)), to: editor, from: nil))
+        var glowSamples: [[String: Any]] = []
+        let start = ProcessInfo.processInfo.systemUptime
+        for delay in [200, 400, 650] {
+            try await Task.sleep(for: .milliseconds(delay))
+            let level = try await editor.evaluateJavaScript(
+                "Number(getComputedStyle(document.documentElement).getPropertyValue('--ouro-flash'))"
+            ) as? Double ?? 0
+            glowSamples.append(["time": ProcessInfo.processInfo.systemUptime - start, "level": level])
+        }
+        let timing = try await editor.evaluateJavaScript("window.__ouroLastChangeFlash && window.__ouroLastChangeFlash.timing") as? [String: Any]
+        evidence["nativePasteGlowSamples"] = glowSamples
+        evidence["nativePasteGlowTiming"] = timing ?? [:]
+        XCTAssertEqual(timing?["hold"] as? Int, expectedMotion ? 900 : 0)
+        XCTAssertEqual(timing?["fade"] as? Int, expectedMotion ? 0 : 1100)
+        let early = glowSamples[0]["level"] as? Double ?? 0
+        let middle = glowSamples[1]["level"] as? Double ?? 0
+        XCTAssertGreaterThan(early, 0, "real native Paste must produce visible feedback")
+        if expectedMotion {
+            XCTAssertEqual(middle, 1, accuracy: 0.01, "Reduce Motion holds steady feedback instead of fading")
+        } else {
+            XCTAssertLessThan(middle, early, "the actual non-reduced feedback must fade")
+        }
+        XCTAssertEqual(glowSamples[2]["level"] as? Double ?? -1, 0, accuracy: 0.01)
 
         // Traverse accessibilityChildren only, never ordinary subviews or labels.
         var nodes: [[String: String]] = []
