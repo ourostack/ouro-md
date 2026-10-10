@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-26-intel, xcode-27]
+        runner: [macos-26-intel, macos-26, xcode-27]
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 25
     steps:
@@ -64,20 +64,6 @@ jobs:
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0"><dict><key>CFBundleExecutable</key><string>ouro-md</string><key>CFBundleIdentifier</key><string>bot.ouro.md.fullscreen-proof</string><key>CFBundleName</key><string>Fullscreen Proof</string><key>CFBundlePackageType</key><string>APPL</string><key>NSHighResolutionCapable</key><true/></dict></plist>
           PLIST
-          python3 - <<'PY'
-          from pathlib import Path
-          import plistlib
-          p=Path('.build/FullscreenProof.app/Contents/Info.plist')
-          info=plistlib.loads(p.read_bytes())
-          info['LSEnvironment']={
-              'GITHUB_ACTIONS':'true',
-              'OURO_FULLSCREEN_PROBE':'1',
-              'OURO_FULLSCREEN_OUTPUT':str(Path('.build/fullscreen-proof').resolve()),
-              'OURO_FULLSCREEN_INPUT':str(Path('.build/fullscreen-input.md').resolve()),
-              'OURO_MD_TELEMETRY_DISABLED':'1',
-          }
-          p.write_bytes(plistlib.dumps(info))
-          PY
           codesign --force --deep --sign - .build/FullscreenProof.app
           /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f .build/FullscreenProof.app
           printf '# Public fullscreen QA document\n\nNative glass verification.\n' > .build/fullscreen-input.md
