@@ -236,9 +236,7 @@ enum NativeDocumentApplicationProbe {
                 var role: CFTypeRef?
                 if AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &role) == .success,
                    role as? String == kAXCheckBoxRole {
-                    var description: CFTypeRef?
-                    if AXUIElementCopyAttributeValue(element, kAXDescriptionAttribute as CFString, &description) == .success,
-                       ["lock", "unlock"].contains(description as? String ?? "") { return element }
+                    return element
                 }
                 var children: CFTypeRef?
                 if AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &children) == .success,

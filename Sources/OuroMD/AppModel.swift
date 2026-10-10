@@ -311,9 +311,12 @@ final class AppModel: ObservableObject {
     func setFileLocked(_ locked: Bool) {
         guard locked != isFileLocked else { return }
         isFileLocked = locked
+        if locked { autosaveItem?.cancel() }
         bridge?.setEditable(!locked)
         onChromeUpdate?()
     }
+
+    var hasPendingFileWrites: Bool { pendingFileWrites > 0 }
 
     func reportDocumentMetadataError(_ error: Error) {
         presentError("Could not prepare document controls", error)
@@ -360,6 +363,11 @@ final class AppModel: ObservableObject {
     /// whether Writing Tools changed the text; its input events were held from
     /// the model during the session, so the model learns of the change here.
     func setWritingToolsActive(_ active: Bool, editorChanged: Bool = false) {
+        guard !active || !isFileLocked else {
+            captureTelemetry("ouro_md_document_assistant_edit_rejected",
+                             properties: ["code": .string("document_locked")])
+            return
+        }
         guard active != writingToolsActive else { return }
         writingToolsActive = active
         if active {
@@ -380,10 +388,10 @@ final class AppModel: ObservableObject {
     }
 
     private func scheduleAutosave() {
-        guard autoSaveEnabled, currentURL != nil, !writingToolsActive else { return }
+        guard autoSaveEnabled, currentURL != nil, !writingToolsActive, !isFileLocked else { return }
         autosaveItem?.cancel()
         let item = DispatchWorkItem { [weak self] in
-            guard let self, self.isDirty, self.currentURL != nil, !self.writingToolsActive else { return }
+            guard let self, self.isDirty, self.currentURL != nil, !self.writingToolsActive, !self.isFileLocked else { return }
             self.performSave(source: "autosave") { _ in }
         }
         autosaveItem = item

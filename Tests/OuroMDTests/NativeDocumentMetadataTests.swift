@@ -314,6 +314,70 @@ final class NativeDocumentMetadataTests: XCTestCase {
         XCTAssertEqual(bridge.editable, false)
     }
 
+    func testLockProtectsTheEditorWhileItsSaveSnapshotIsPending() throws {
+        let directory = try makeDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("Plan.md")
+        try Data("original".utf8).write(to: file)
+        let controller = makeController(file: file)
+        let bridge = MetadataBridge()
+        controller.model.bridge = bridge
+        controller.model.editorDidBecomeReady()
+        bridge.content = "human feedback"
+        bridge.deferRead = true
+        controller.model.setDirty(true)
+        defer {
+            try? FileManager.default.setAttributes([.immutable: false], ofItemAtPath: file.path)
+            controller.window.close()
+        }
+        let document = try XCTUnwrap(controller.nativeDocument)
+        let locked = expectation(description: "deferred lock")
+        document.lock(completionHandler: { (error: Error?) in
+            XCTAssertNil(error)
+            locked.fulfill()
+        })
+        XCTAssertNotNil(bridge.pendingRead)
+        XCTAssertFalse(bridge.editable)
+        XCTAssertFalse(controller.model.applyAssistantEdit("late edit"),
+                       "A post-snapshot edit must not be accepted and then marked saved by an older snapshot")
+        controller.model.setWritingToolsActive(true)
+        XCTAssertFalse(controller.model.writingToolsActive)
+        controller.syncChrome()
+        XCTAssertFalse(bridge.editable, "Chrome refresh must not end the save-before-lock protection")
+        bridge.pendingRead?("human feedback")
+        bridge.pendingRead = nil
+        wait(for: [locked], timeout: 3)
+        XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "human feedback")
+        XCTAssertTrue(controller.model.isFileLocked)
+    }
+
+    func testLockWaitsForAnAlreadyPendingFileWrite() throws {
+        let directory = try makeDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("Plan.md")
+        try Data("original".utf8).write(to: file)
+        let controller = makeController(file: file)
+        let bridge = MetadataBridge()
+        controller.model.bridge = bridge
+        controller.model.editorDidBecomeReady()
+        bridge.deferRead = true
+        controller.model.setDirty(true)
+        defer {
+            try? FileManager.default.setAttributes([.immutable: false], ofItemAtPath: file.path)
+            controller.window.close()
+        }
+        controller.model.performSave { _ in }
+        let pendingSave = try XCTUnwrap(bridge.pendingRead)
+        let document = try XCTUnwrap(controller.nativeDocument)
+        var lockError: Error?
+        document.lock(completionHandler: { (error: Error?) in lockError = error })
+        XCTAssertNotNil(lockError)
+        XCTAssertFalse(controller.model.isFileLocked)
+        pendingSave("original")
+        if lockError == nil { bridge.pendingRead?("original") }
+        bridge.pendingRead = nil
+    }
+
     private func makeController(file: URL) -> DocumentWindowController {
         let controller = DocumentWindowController(filePath: file.path, selfTest: false, useAutosave: false)
         controller.model.autoSaveEnabled = false

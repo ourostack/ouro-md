@@ -5,6 +5,7 @@ import AppKit
 @MainActor
 final class NativeDocumentMetadata: NSDocument {
     private weak var model: AppModel?
+    private var locking = false
 
     convenience init(model: AppModel) throws {
         if let url = model.currentURL {
@@ -47,6 +48,7 @@ final class NativeDocumentMetadata: NSDocument {
     }
 
     private func refreshEditorLock() {
+        if locking { model?.setFileLocked(true); return }
         guard let model, let fileURL else { model?.setFileLocked(false); return }
         do {
             let attributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
@@ -87,9 +89,18 @@ final class NativeDocumentMetadata: NSDocument {
                                        userInfo: [NSLocalizedDescriptionKey: "Wait for Writing Tools to finish before locking this document."]))
             return
         }
+        guard !locking, !model.hasPendingFileWrites else {
+            completionHandler?(NSError(domain: "ouro-md", code: 26,
+                                       userInfo: [NSLocalizedDescriptionKey: "Wait for the current save to finish before locking this document."]))
+            return
+        }
+        locking = true
+        model.setFileLocked(true)
         if model.hasUnsavedWork {
             model.performSave { [weak self] saved in
                 guard saved else {
+                    self?.locking = false
+                    self?.refreshEditorLock()
                     completionHandler?(NSError(domain: "ouro-md", code: 25,
                                                userInfo: [NSLocalizedDescriptionKey: "Save your changes before locking this document."]))
                     return
@@ -109,6 +120,7 @@ final class NativeDocumentMetadata: NSDocument {
     private func lockSavedFile(completionHandler: ((Error?) -> Void)?) {
         super.lock(completionHandler: { [weak self] (error: Error?) in
             if let self {
+                self.locking = false
                 (self.fileURL as NSURL?)?.removeAllCachedResourceValues()
                 self.refreshEditorLock()
             }
