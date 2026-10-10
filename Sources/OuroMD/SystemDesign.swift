@@ -52,6 +52,122 @@ struct DocumentHeaderBackdrop: NSViewRepresentable {
 
 @available(macOS 26, *)
 private final class DocumentHeaderGlassView: NSGlassEffectView {
+    private var fullscreenObservers: [NSObjectProtocol] = []
+    private var fullscreenBackdrop: NSView?
+    private var fullscreenActive = false
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        removeFullscreenBackdrop()
+        fullscreenObservers.forEach(NotificationCenter.default.removeObserver)
+        fullscreenObservers.removeAll()
+        fullscreenActive = false
+        guard let window else { return }
+        fullscreenObservers.append(NotificationCenter.default.addObserver(
+            forName: NSWindow.didEnterFullScreenNotification, object: window, queue: .main
+        ) { [weak self, weak window] _ in
+            MainActor.assumeIsolated {
+                if let window {
+                    self?.fullscreenActive = true
+                    self?.installFullscreenBackdrop(for: window)
+                }
+            }
+        })
+        fullscreenObservers.append(NotificationCenter.default.addObserver(
+            forName: NSWindow.didExitFullScreenNotification, object: window, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.fullscreenActive = false
+                self?.removeFullscreenBackdrop()
+            }
+        })
+        fullscreenObservers.append(NotificationCenter.default.addObserver(
+            forName: NSWindow.didUpdateNotification, object: nil, queue: .main
+        ) { [weak self, weak window] _ in
+            MainActor.assumeIsolated {
+                if self?.fullscreenActive == true, let window {
+                    self?.installFullscreenBackdrop(for: window)
+                }
+            }
+        })
+        fullscreenObservers.append(NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification, object: window, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.fullscreenActive = false
+                self?.removeFullscreenBackdrop()
+            }
+        })
+        if window.styleMask.contains(.fullScreen) {
+            fullscreenActive = true
+            installFullscreenBackdrop(for: window)
+        }
+    }
+
+    private func installFullscreenBackdrop(for document: NSWindow) {
+        guard let anchor = document.toolbar?.items.compactMap(\.view).first,
+              let toolbarWindow = anchor.window, toolbarWindow !== document,
+              let toolbarContent = toolbarWindow.contentView else {
+            removeFullscreenBackdrop()
+            return
+        }
+        var foreground = anchor
+        while foreground.bounds.width < toolbarContent.bounds.width - 1,
+              let parent = foreground.superview {
+            foreground = parent
+        }
+        guard let host = foreground.superview,
+              foreground.bounds.width >= toolbarContent.bounds.width - 1,
+              host.bounds.height > 0,
+              host.bounds.height <= toolbarContent.bounds.height + 1 else {
+            removeFullscreenBackdrop()
+            return
+        }
+        if fullscreenBackdrop?.superview === host { return }
+        removeFullscreenBackdrop()
+        let panel = FullscreenHeaderBackdropView(frame: host.bounds)
+        host.addSubview(panel, positioned: .below, relativeTo: foreground)
+        fullscreenBackdrop = panel
+    }
+
+    private func removeFullscreenBackdrop() {
+        fullscreenBackdrop?.removeFromSuperview()
+        fullscreenBackdrop = nil
+    }
+
+    deinit {
+        fullscreenObservers.forEach(NotificationCenter.default.removeObserver)
+        fullscreenBackdrop?.removeFromSuperview()
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+}
+
+/// AppKit moves native toolbar controls to a separate fullscreen window. A
+/// within-window glass panel there has no document to sample. Native
+/// behind-window material supplies that backdrop, below the unchanged controls.
+@available(macOS 26, *)
+private final class FullscreenHeaderBackdropView: NSView {
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        identifier = NSUserInterfaceItemIdentifier("OuroMDFullscreenHeaderBackdrop")
+        autoresizingMask = [.width, .height]
+        setAccessibilityElement(false)
+        let material = NSVisualEffectView(frame: bounds)
+        material.material = .titlebar
+        material.blendingMode = .behindWindow
+        material.state = .followsWindowActiveState
+        material.autoresizingMask = [.width, .height]
+        addSubview(material)
+        let glass = NSGlassEffectView(frame: bounds)
+        glass.style = .regular
+        glass.cornerRadius = 0
+        glass.contentView = NSView()
+        glass.autoresizingMask = [.width, .height]
+        addSubview(glass)
+    }
+
+    required init?(coder: NSCoder) { nil }
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }
 

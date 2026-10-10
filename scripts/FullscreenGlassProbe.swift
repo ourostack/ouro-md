@@ -106,38 +106,18 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
             try await capture(theme: theme, state: "fullscreen-pinned", web: web)
             if let toolbarWindow = controller.truthToolbarItem?.view?.window, toolbarWindow !== controller.window {
                 rows.append(["toolbarViews": describe(toolbarWindow.contentView!), "theme": theme])
-                if let anchor = controller.truthToolbarItem?.view {
-                    var foreground = anchor
-                    while let parent = foreground.superview, foreground.bounds.width < toolbarWindow.contentView!.bounds.width - 1 {
-                        foreground = parent
-                    }
-                    if let host = foreground.superview {
-                        let material = NSVisualEffectView(frame: host.bounds)
-                        material.material = .titlebar
-                        material.blendingMode = .behindWindow
-                        material.state = .active
-                        material.autoresizingMask = [.width, .height]
-                        host.addSubview(material, positioned: .below, relativeTo: foreground)
-                        let glass = NSGlassEffectView(frame: host.bounds)
-                        glass.style = .regular
-                        glass.contentView = NSView()
-                        glass.autoresizingMask = [.width, .height]
-                        host.addSubview(glass, positioned: .below, relativeTo: foreground)
-                        fullscreenBackdrop = glass
-                    }
-                }
             }
             try await capture(theme: theme, state: "fullscreen-transparent-titlebar", web: web)
             try await transition(fullscreen: false)
             presentationDelegate.autoHideToolbar = true
             try await transition(fullscreen: true)
             if let toolbarWindow = controller.truthToolbarItem?.view?.window, toolbarWindow !== controller.window {
-                toolbarWindow.titlebarAppearsTransparent = true
+                rows.append(["autoHideToolbarViews": describe(toolbarWindow.contentView!), "theme": theme])
             }
-            movePointer(to: CGPoint(x: 500, y: 500))
+            try await movePointer(to: CGPoint(x: 500, y: 500))
             try await Task.sleep(for: .seconds(3))
             try await capture(theme: theme, state: "fullscreen-hidden", web: web)
-            movePointer(to: CGPoint(x: 500, y: 1))
+            try await movePointer(to: CGPoint(x: 500, y: 0))
             try await Task.sleep(for: .seconds(3))
             try await capture(theme: theme, state: "fullscreen-revealed", web: web)
             presentationDelegate.autoHideToolbar = false
@@ -186,10 +166,21 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
         try await Task.sleep(for: .seconds(2))
     }
 
-    func movePointer(to point: CGPoint) {
-        CGWarpMouseCursorPosition(point)
-        CGEvent(mouseEventSource: nil, mouseType: .mouseMoved, mouseCursorPosition: point,
-                mouseButton: .left)?.post(tap: .cghidEventTap)
+    func movePointer(to point: CGPoint) async throws {
+        let id = UUID().uuidString
+        try JSONSerialization.data(withJSONObject: ["id": id, "pid": ProcessInfo.processInfo.processIdentifier,
+                                                     "kind": "pointer", "x": point.x, "y": point.y])
+            .write(to: output.appendingPathComponent("capture-request.json"), options: .atomic)
+        for _ in 0..<300 {
+            if let data = try? Data(contentsOf: output.appendingPathComponent("capture-response.json")),
+               let response = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               response["id"] as? String == id {
+                guard response["status"] as? Int == 0 else { throw NSError(domain: "Pointer event failed", code: 8) }
+                return
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        throw NSError(domain: "Pointer event timed out", code: 9)
     }
 
     func captureImage(destination: URL, kind: String, window: Int, region: String = "") async throws {

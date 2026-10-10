@@ -53,7 +53,10 @@ try:
             time.sleep(0.05)
             continue
         owned_pid = int(request["pid"])
-        result = subprocess.run(["/usr/sbin/screencapture", *capture_arguments(request)],
+        command = ([str(Path(".build/fullscreen-pointer").resolve()), str(request["x"]), str(request["y"])]
+                   if request["kind"] == "pointer"
+                   else ["/usr/sbin/screencapture", *capture_arguments(request)])
+        result = subprocess.run(command,
                                 capture_output=True, text=True, timeout=30)
         response = {"id": request["id"], "status": result.returncode,
                     "stderr": result.stderr}
