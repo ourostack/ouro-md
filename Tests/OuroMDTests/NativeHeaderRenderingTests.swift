@@ -120,6 +120,21 @@ final class NativeHeaderRenderingTests: XCTestCase {
                                      "contentLayoutTop": controller.window.contentLayoutRect.maxY,
                                      "layout": values, "applicationActive": NSApplication.shared.isActive,
                                      "windowKey": controller.window.isKeyWindow])
+                if env["OURO_HEADER_ONSCREEN_DIAGNOSTIC"] == "1" {
+                    let screen = try XCTUnwrap(controller.window.screen)
+                    let rect = controller.window.frame
+                    let region = "\(Int(rect.minX)),\(Int(screen.frame.maxY - rect.maxY)),\(Int(rect.width)),\(Int(rect.height))"
+                    let regionURL = output.appendingPathComponent("\(theme)-\(name)-onscreen.png")
+                    let onscreen = Process()
+                    onscreen.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+                    onscreen.arguments = ["-x", "-R", region, regionURL.path]
+                    try onscreen.run()
+                    onscreen.waitUntilExit()
+                    XCTAssertEqual(onscreen.terminationStatus, 0)
+                    let pixels = try XCTUnwrap(NSBitmapImageRep(data: Data(contentsOf: regionURL)))
+                    measurements[measurements.count - 1]["onscreenColoredBodyPixels"] = coloredPixels(pixels)
+                    measurements[measurements.count - 1]["onscreenHeaderRGB"] = meanRGB(pixels, region: NSRect(x: 320, y: 12, width: 480, height: 26))
+                }
             }
             sampledHeaders.append(headerMeans[0])
             sampledHeaders.append(headerMeans[1])

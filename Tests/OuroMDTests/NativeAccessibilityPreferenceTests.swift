@@ -36,7 +36,7 @@ final class NativeAccessibilityPreferenceTests: XCTestCase {
             .deletingLastPathComponent().appendingPathComponent("Fixtures/Harbor field notes.md")
         let controller = DocumentWindowController(filePath: fixture.path, selfTest: false, useAutosave: false)
         defer { controller.window.delegate = nil; controller.window.close() }
-        controller.model.setSidebarVisible(true)
+        controller.revealSidebar(mode: .outline)
         controller.show(cascadeFrom: nil)
         func findWeb(_ view: NSView) -> WKWebView? {
             if let web = view as? WKWebView { return web }

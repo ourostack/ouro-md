@@ -1,5 +1,6 @@
 import AppKit
 import QuartzCore
+import Vision
 import WebKit
 import XCTest
 @testable import OuroMD
@@ -22,8 +23,7 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
         NSApplication.shared.finishLaunching()
         let controller = DocumentWindowController(filePath: document.path, selfTest: false, useAutosave: false)
         controller.model.autoSaveEnabled = false
-        controller.model.setSidebarVisible(true)
-        controller.model.setSidebarMode(.outline)
+        controller.revealSidebar(mode: .outline)
         defer {
             controller.window.delegate = nil
             controller.window.close()
@@ -36,6 +36,7 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
         XCTAssertFalse(controller.model.isDirty)
         XCTAssertGreaterThan(controller.model.outlineItems.count, 5)
         var records: [[String: Any]] = []
+        var heroText: [String: [String]] = [:]
         let epoch = ProcessInfo.processInfo.systemUptime
         func capture(_ scene: String, _ theme: String, _ index: Int) async throws {
             pump()
@@ -67,6 +68,7 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
             try? JSONSerialization.data(withJSONObject: [
                 "os": ProcessInfo.processInfo.operatingSystemVersionString,
                 "records": records,
+                "heroRecognizedBodyText": heroText,
                 "reduceMotion": NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,
                 "reduceTransparency": NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency,
                 "captureKind": "screencapture-owned-native-window"
@@ -78,6 +80,41 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
             _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
             try await Task.sleep(for: .seconds(2))
             try await capture("hero", theme, 0)
+            let url = output.appendingPathComponent("hero-\(theme)-000.png")
+            let bitmap = try XCTUnwrap(NSBitmapImageRep(data: Data(contentsOf: url)))
+            let request = VNRecognizeTextRequest()
+            request.recognitionLevel = .accurate
+            // Exclude the real sidebar and title so they cannot conceal a blank WK body.
+            request.regionOfInterest = CGRect(x: 0.25, y: 0.05, width: 0.73, height: 0.83)
+            try VNImageRequestHandler(cgImage: try XCTUnwrap(bitmap.cgImage)).perform([request])
+            let recognized = request.results?.compactMap { $0.topCandidates(1).first?.string } ?? []
+            heroText[theme] = recognized
+            if env["OURO_SITE_MEDIA_REQUIRE_BODY_PAINT"] == "1" {
+                XCTAssertTrue(recognized.joined(separator: " ").contains("thoughtful first visit"),
+                              "native screenshot must contain readable fixture content, not just live DOM/AX/sidebar")
+                XCTAssertTrue(recognized.joined(separator: " ").contains("Weekend rhythm"))
+            }
+        }
+        if env["OURO_SITE_MEDIA_RENDERER_DIAGNOSTICS"] == "1" {
+            // A region capture tests WindowServer's on-screen composition path,
+            // independently of screencapture's per-window layer capture.
+            let frame = controller.window.frame
+            let screen = try XCTUnwrap(controller.window.screen)
+            let region = "\(Int(frame.minX)),\(Int(screen.frame.maxY - frame.maxY)),\(Int(frame.width)),\(Int(frame.height))"
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+            process.arguments = ["-x", "-R", region, output.appendingPathComponent("diagnostic-onscreen-region.png").path]
+            try process.run()
+            process.waitUntilExit()
+            XCTAssertEqual(process.terminationStatus, 0)
+            controller.window.toolbar?.isVisible = false
+            try await Task.sleep(for: .seconds(2))
+            try await capture("diagnostic-no-toolbar", "graphite", 0)
+            controller.window.toolbar?.isVisible = true
+            controller.window.setContentSize(NSSize(width: 1121, height: 801))
+            try await Task.sleep(for: .seconds(2))
+            try await capture("diagnostic-resized", "graphite", 0)
+            controller.window.setContentSize(NSSize(width: 1120, height: 800))
         }
         controller.model.setTheme(id: "quartz")
         controller.syncChrome()

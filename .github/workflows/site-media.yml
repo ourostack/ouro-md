@@ -35,6 +35,8 @@ jobs:
         env:
           OURO_SITE_MEDIA: '1'
           OURO_SITE_MEDIA_OUTPUT: .build/site-media
+          OURO_SITE_MEDIA_RENDERER_DIAGNOSTICS: ${{ matrix.runner == 'xcode-27' && '1' || '0' }}
+          OURO_SITE_MEDIA_REQUIRE_BODY_PAINT: ${{ matrix.runner == 'macos-26-intel' && '1' || '0' }}
           OURO_MD_TELEMETRY_DISABLED: '1'
         run: swift test --filter NativeSiteMediaCaptureTests
       - uses: actions/upload-artifact@v6
