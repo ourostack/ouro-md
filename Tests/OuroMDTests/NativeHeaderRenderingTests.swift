@@ -12,6 +12,8 @@ final class NativeHeaderRenderingTests: XCTestCase {
         try XCTSkipUnless(env["GITHUB_ACTIONS"] == "true" && env["OURO_HEADER_RENDERING"] == "1",
                           "never present test windows on an operator's Mac")
         try XCTSkipUnless(SystemDesign.usesGlass)
+        NSApplication.shared.setActivationPolicy(.regular)
+        NSApplication.shared.finishLaunching()
         let output = URL(fileURLWithPath: env["OURO_HEADER_OUTPUT"] ?? ".build/header-rendering",
                          isDirectory: true)
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
@@ -45,22 +47,35 @@ final class NativeHeaderRenderingTests: XCTestCase {
               const root = document.querySelector(".vditor-ir .vditor-reset");
               if (!root || !root.textContent.includes("Moving document backdrop")) { return false; }
               Array.from(root.children).forEach((node, i) => {
-                node.style.minHeight = "100px";
-                node.style.background = i % 4 < 2 ? "#ee6655" : "#3388ee";
+                node.style.minHeight = "200px";
+                node.style.setProperty("background", i % 4 < 2 ? "#ee6655" : "#3388ee", "important");
               });
-              return true;
+              return getComputedStyle(root.children[1]).backgroundColor === "rgb(238, 102, 85)"
+                && getComputedStyle(root.children[3]).backgroundColor === "rgb(51, 136, 238)";
             })()
             """)
             XCTAssertEqual(preparation as? Bool, true, "capture requires actual rendered document text")
-            for (name, scroll) in [("warm", 140), ("cool", 360)] {
-                _ = try await web.evaluateJavaScript("window.scrollTo(0,\(scroll))")
+            for (name, index) in [("warm", 1), ("cool", 3)] {
+                _ = try await web.evaluateJavaScript("""
+                (() => {
+                  const node = document.querySelector(".vditor-ir .vditor-reset").children[\(index)];
+                  window.scrollTo(0, scrollY + node.getBoundingClientRect().top + 80);
+                })()
+                """)
                 try await Task.sleep(for: .seconds(1))
                 let geometry = try await web.evaluateJavaScript("""
                 ({scroll:scrollY, viewport:innerHeight, text:document.querySelector(".vditor-ir .vditor-reset").innerText,
-                  firstTop:document.querySelector(".vditor-ir .vditor-reset").firstElementChild.getBoundingClientRect().top})
+                  sampleTop:document.querySelector(".vditor-ir .vditor-reset").children[\(index)].getBoundingClientRect().top,
+                  sampleBottom:document.querySelector(".vditor-ir .vditor-reset").children[\(index)].getBoundingClientRect().bottom,
+                  sampleColor:getComputedStyle(document.querySelector(".vditor-ir .vditor-reset").children[\(index)]).backgroundColor})
                 """)
                 let values = try XCTUnwrap(geometry as? [String: Any])
                 XCTAssertGreaterThan(values["scroll"] as? Double ?? 0, 0, "the document must really scroll")
+                XCTAssertLessThan(values["sampleTop"] as? Double ?? 0, -52,
+                                  "the selected passage must span the native header sampling band")
+                XCTAssertGreaterThan(values["sampleBottom"] as? Double ?? 0, 0)
+                XCTAssertEqual(values["sampleColor"] as? String,
+                               name == "warm" ? "rgb(238, 102, 85)" : "rgb(51, 136, 238)")
                 let snapshot = try await web.takeSnapshot(configuration: nil)
                 let bitmap = try XCTUnwrap(NSBitmapImageRep(data: try XCTUnwrap(snapshot.tiffRepresentation)))
                 try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
@@ -74,6 +89,24 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 try capture.run()
                 capture.waitUntilExit()
                 XCTAssertEqual(capture.terminationStatus, 0, "real native composition must be captured")
+                // A separate compositor diagnostic distinguishes a missing
+                // WebKit remote surface on a GPU-less runner from native glass.
+                // It is explicitly labeled a raster proxy, never live WK proof.
+                let proxy = NSImageView(frame: web.convert(web.bounds, to: content))
+                proxy.image = snapshot
+                proxy.imageScaling = .scaleAxesIndependently
+                content.addSubview(proxy, positioned: .above, relativeTo: nil)
+                proxy.display()
+                CATransaction.flush()
+                try await Task.sleep(for: .milliseconds(300))
+                let composition = Process()
+                composition.executableURL = capture.executableURL
+                composition.arguments = ["-x", "-o", "-l", "\(controller.window.windowNumber)",
+                                         output.appendingPathComponent("\(theme)-\(name)-raster-proxy-window.png").path]
+                try composition.run()
+                composition.waitUntilExit()
+                XCTAssertEqual(composition.terminationStatus, 0)
+                proxy.removeFromSuperview()
                 let frame = web.convert(web.bounds, to: nil)
                 let top = frame.maxY - controller.window.contentLayoutRect.maxY
                 if underlap {

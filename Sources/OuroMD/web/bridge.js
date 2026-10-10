@@ -1844,7 +1844,9 @@
   }
 
   // Scrolls just enough to show the change, clear of the floating status pill.
-  // The native toolbar is outside this viewport. If either end is on screen it leaves
+  // Public WebKit obscured insets exclude the native toolbar from this layout
+  // viewport (including fixed margin cues), so topMargin is not inset again.
+  // If either end is on screen it leaves
   // the view alone (a long paste keeps the caret where WebKit put it); a change
   // taller than the screen shows its end, where the caret is.
   function revealRange(range, instant) {
