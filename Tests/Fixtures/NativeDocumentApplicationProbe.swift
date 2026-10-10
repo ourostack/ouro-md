@@ -70,7 +70,11 @@ enum NativeDocumentApplicationProbe {
         }
         try JSONSerialization.data(withJSONObject: snapshotAX(application, depth: 7), options: [.prettyPrinted, .sortedKeys])
             .write(to: output.appendingPathComponent("native-accessibility.json"))
-        let point = CGPoint(x: x + 240, y: y + 25)
+        let point = CGPoint(x: x + 340, y: y + 25)
+        guard let hover = CGEvent(mouseEventSource: nil, mouseType: .mouseMoved,
+                                  mouseCursorPosition: point, mouseButton: .left) else { exit(1) }
+        hover.post(tap: .cghidEventTap)
+        Thread.sleep(forTimeInterval: 1)
         func click(_ point: CGPoint) {
             guard let down = CGEvent(mouseEventSource: nil, mouseType: .leftMouseDown,
                                      mouseCursorPosition: point, mouseButton: .left),
@@ -109,6 +113,8 @@ enum NativeDocumentApplicationProbe {
         ], options: [.prettyPrinted, .sortedKeys])
             .write(to: output.appendingPathComponent("filename-click.json"))
         var focused: CFTypeRef?
+        try JSONSerialization.data(withJSONObject: snapshotAX(application, depth: 9), options: [.prettyPrinted, .sortedKeys])
+            .write(to: output.appendingPathComponent("native-popover-accessibility.json"))
         let focusedStatus = AXUIElementCopyAttributeValue(application, kAXFocusedUIElementAttribute as CFString, &focused)
         guard focusedStatus == .success, let focused,
               CFGetTypeID(focused) == AXUIElementGetTypeID() else {
