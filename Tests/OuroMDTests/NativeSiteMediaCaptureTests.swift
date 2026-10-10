@@ -85,7 +85,9 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
             let request = VNRecognizeTextRequest()
             request.recognitionLevel = .accurate
             // Exclude the real sidebar and title so they cannot conceal a blank WK body.
-            request.regionOfInterest = CGRect(x: 0.25, y: 0.05, width: 0.73, height: 0.83)
+            let frame = web.convert(web.bounds, to: nil)
+            request.regionOfInterest = CGRect(x: (frame.minX + 8) / controller.window.frame.width, y: 0.05,
+                                             width: (frame.width - 16) / controller.window.frame.width, height: 0.83)
             try VNImageRequestHandler(cgImage: try XCTUnwrap(bitmap.cgImage)).perform([request])
             let recognized = request.results?.compactMap { $0.topCandidates(1).first?.string } ?? []
             heroText[theme] = recognized
