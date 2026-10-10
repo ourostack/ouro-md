@@ -224,6 +224,7 @@ enum NativeDocumentApplicationProbe {
         ], options: [.prettyPrinted, .sortedKeys])
             .write(to: output.appendingPathComponent("application-probe.json"))
         var lockResults: [Bool] = []
+        var lockPoint: CGPoint?
         guard let closeDown = CGEvent(keyboardEventSource: nil, virtualKey: 53, keyDown: true),
               let closeUp = CGEvent(keyboardEventSource: nil, virtualKey: 53, keyDown: false) else { exit(5) }
         closeDown.post(tap: .cghidEventTap)
@@ -248,7 +249,18 @@ enum NativeDocumentApplicationProbe {
             var currentFocus: CFTypeRef?
             guard AXUIElementCopyAttributeValue(application, kAXFocusedUIElementAttribute as CFString, &currentFocus) == .success,
                   let currentFocus, CFGetTypeID(currentFocus) == AXUIElementGetTypeID() else { exit(5) }
-            let controls = containingWindow(of: unsafeBitCast(currentFocus, to: AXUIElement.self))
+            let controls: AXUIElement
+            if let lockPoint {
+                var hit: AXUIElement?
+                guard AXUIElementCopyElementAtPosition(application, Float(lockPoint.x), Float(lockPoint.y), &hit) == .success,
+                      let hit else {
+                    fputs("Native locked document checkbox could not be hit-tested\n", stderr)
+                    exit(5)
+                }
+                controls = hit
+            } else {
+                controls = containingWindow(of: unsafeBitCast(currentFocus, to: AXUIElement.self))
+            }
             try JSONSerialization.data(withJSONObject: snapshotAX(controls, depth: 9), options: [.prettyPrinted, .sortedKeys])
                 .write(to: output.appendingPathComponent("lock-\(shouldLock)-controls.json"))
             guard let lock = findLock(controls) else {
@@ -267,7 +279,9 @@ enum NativeDocumentApplicationProbe {
             var extent = CGSize.zero
             guard AXValueGetValue(unsafeBitCast(position, to: AXValue.self), .cgPoint, &origin),
                   AXValueGetValue(unsafeBitCast(size, to: AXValue.self), .cgSize, &extent) else { exit(5) }
-            click(CGPoint(x: origin.x + extent.width / 2, y: origin.y + extent.height / 2))
+            let checkboxPoint = CGPoint(x: origin.x + extent.width / 2, y: origin.y + extent.height / 2)
+            lockPoint = checkboxPoint
+            click(checkboxPoint)
             Thread.sleep(forTimeInterval: 1)
             try JSONSerialization.data(withJSONObject: snapshotAX(application, depth: 9), options: [.prettyPrinted, .sortedKeys])
                 .write(to: output.appendingPathComponent("lock-\(shouldLock)-accessibility.json"))
