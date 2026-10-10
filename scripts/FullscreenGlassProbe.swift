@@ -21,7 +21,7 @@ final class FullscreenPresentationDelegate: NSObject, NSWindowDelegate {
 final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
     var controller: DocumentWindowController!
     var presentationDelegate: FullscreenPresentationDelegate!
-    var accessory: NSTitlebarAccessoryViewController!
+    var fullscreenBackdrop: NSGlassEffectView?
     var rows: [[String: Any]] = []
     let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["OURO_FULLSCREEN_OUTPUT"] ?? ".build/fullscreen-proof")
 
@@ -71,13 +71,6 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
         for theme in ["quartz", "graphite"] {
             controller.model.setTheme(id: theme)
             controller.syncChrome()
-            if let accessory { controller.window.removeTitlebarAccessoryViewController(at: controller.window.titlebarAccessoryViewControllers.firstIndex(of: accessory)!) }
-            accessory = NSTitlebarAccessoryViewController()
-            accessory.layoutAttribute = .bottom
-            accessory.view = NSView(frame: NSRect(x: 0, y: 0, width: 1000, height: 1))
-            accessory.fullScreenMinHeight = 1
-            if #available(macOS 26.1, *) { accessory.preferredScrollEdgeEffectStyle = .hard }
-            controller.window.addTitlebarAccessoryViewController(accessory)
             controller.model.bridge?.setMarkdown((1...30).map {
                 "## Passage \($0)\n\nMoving document backdrop \($0). Native controls must remain readable."
             }.joined(separator: "\n\n"))
@@ -113,6 +106,20 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
             try await capture(theme: theme, state: "fullscreen-pinned", web: web)
             if let toolbarWindow = controller.truthToolbarItem?.view?.window, toolbarWindow !== controller.window {
                 rows.append(["toolbarViews": describe(toolbarWindow.contentView!), "theme": theme])
+                if let anchor = controller.truthToolbarItem?.view {
+                    var foreground = anchor
+                    while let parent = foreground.superview, foreground.bounds.width < toolbarWindow.contentView!.bounds.width - 1 {
+                        foreground = parent
+                    }
+                    if let host = foreground.superview {
+                        let glass = NSGlassEffectView(frame: host.bounds)
+                        glass.style = .regular
+                        glass.contentView = NSView()
+                        glass.autoresizingMask = [.width, .height]
+                        host.addSubview(glass, positioned: .below, relativeTo: foreground)
+                        fullscreenBackdrop = glass
+                    }
+                }
             }
             try await capture(theme: theme, state: "fullscreen-transparent-titlebar", web: web)
             try await transition(fullscreen: false)
