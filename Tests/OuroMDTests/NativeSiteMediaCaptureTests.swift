@@ -207,17 +207,18 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
         let recordingStart = ProcessInfo.processInfo.systemUptime
         try recording.run()
         defer { if recording.isRunning { recording.terminate() } }
-        for _ in 0..<100 {
+        while ProcessInfo.processInfo.systemUptime - recordingStart < 2 {
             pump()
-            try await Task.sleep(for: .milliseconds(20))
+            try await Task.sleep(for: .milliseconds(10))
         }
         XCTAssertTrue(recording.isRunning, "the owned native recorder must be running before the action")
         pasteVideo["actionAfterRecorderLaunch"] = ProcessInfo.processInfo.systemUptime - recordingStart
         let sent = NSApplication.shared.sendAction(#selector(NSText.paste(_:)), to: web, from: nil)
         XCTAssertTrue(sent, "the real WK native Paste responder must accept the action")
-        for _ in 0..<10 {
+        let feedbackDeadline = ProcessInfo.processInfo.systemUptime + 0.2
+        while ProcessInfo.processInfo.systemUptime < feedbackDeadline {
             pump()
-            try await Task.sleep(for: .milliseconds(20))
+            try await Task.sleep(for: .milliseconds(10))
         }
         pasteVideo["glowObservedAfterNativePaste"] = try await web.evaluateJavaScript(
             "!!(window.CSS && CSS.highlights && CSS.highlights.get('ouro-change'))"
