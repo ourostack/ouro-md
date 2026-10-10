@@ -23,7 +23,6 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
         NSApplication.shared.finishLaunching()
         let controller = DocumentWindowController(filePath: document.path, selfTest: false, useAutosave: false)
         controller.model.autoSaveEnabled = false
-        controller.revealSidebar(mode: .outline)
         defer {
             controller.window.delegate = nil
             controller.window.close()
@@ -33,10 +32,18 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
         let web = try await readyEditor(controller)
         XCTAssertEqual(controller.model.currentURL, document)
         try await wait(web, "document.body.textContent.includes('A thoughtful first visit')")
+        for _ in 0..<100 {
+            if controller.model.outlineItems.count > 5 { break }
+            pump()
+            try await Task.sleep(for: .milliseconds(100))
+        }
         XCTAssertFalse(controller.model.isDirty)
         XCTAssertGreaterThan(controller.model.outlineItems.count, 5)
+        controller.revealSidebar(mode: .outline)
+        try await Task.sleep(for: .seconds(1))
         var records: [[String: Any]] = []
         var heroText: [String: [String]] = [:]
+        var heroOCRErrors: [String: String] = [:]
         let epoch = ProcessInfo.processInfo.systemUptime
         func capture(_ scene: String, _ theme: String, _ index: Int) async throws {
             pump()
@@ -62,6 +69,9 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
                             "time": ProcessInfo.processInfo.systemUptime - epoch,
                             "width": bitmap.pixelsWide, "height": bitmap.pixelsHigh,
                             "state": state ?? NSNull(), "windowKey": controller.window.isKeyWindow,
+                            "outlineCount": controller.model.outlineItems.count,
+                            "sidebarVisible": controller.model.sidebarVisible,
+                            "nativeDirty": controller.model.isDirty,
                             "applicationActive": NSApplication.shared.isActive])
         }
         defer {
@@ -69,6 +79,7 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
                 "os": ProcessInfo.processInfo.operatingSystemVersionString,
                 "records": records,
                 "heroRecognizedBodyText": heroText,
+                "heroOCRErrors": heroOCRErrors,
                 "reduceMotion": NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,
                 "reduceTransparency": NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency,
                 "captureKind": "screencapture-owned-native-window"
@@ -88,7 +99,14 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
             let frame = web.convert(web.bounds, to: nil)
             request.regionOfInterest = CGRect(x: (frame.minX + 8) / controller.window.frame.width, y: 0.05,
                                              width: (frame.width - 16) / controller.window.frame.width, height: 0.83)
-            try VNImageRequestHandler(cgImage: try XCTUnwrap(bitmap.cgImage)).perform([request])
+            do {
+                try VNImageRequestHandler(cgImage: try XCTUnwrap(bitmap.cgImage)).perform([request])
+            } catch {
+                heroOCRErrors[theme] = String(describing: error)
+                if env["OURO_SITE_MEDIA_REQUIRE_BODY_PAINT"] == "1" {
+                    XCTFail("native document OCR verification unavailable: \(error)")
+                }
+            }
             let recognized = request.results?.compactMap { $0.topCandidates(1).first?.string } ?? []
             heroText[theme] = recognized
             if env["OURO_SITE_MEDIA_REQUIRE_BODY_PAINT"] == "1" {
