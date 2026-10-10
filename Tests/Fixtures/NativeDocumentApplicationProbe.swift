@@ -207,6 +207,13 @@ enum NativeDocumentApplicationProbe {
             guard let lock = findLock(application),
                   AXUIElementPerformAction(lock, kAXPressAction as CFString) == .success else { exit(5) }
             Thread.sleep(forTimeInterval: 1)
+            try JSONSerialization.data(withJSONObject: snapshotAX(application, depth: 9), options: [.prettyPrinted, .sortedKeys])
+                .write(to: output.appendingPathComponent("lock-\(shouldLock)-accessibility.json"))
+            guard let commitDown = CGEvent(keyboardEventSource: nil, virtualKey: 36, keyDown: true),
+                  let commitUp = CGEvent(keyboardEventSource: nil, virtualKey: 36, keyDown: false) else { exit(5) }
+            commitDown.post(tap: .cghidEventTap)
+            commitUp.post(tap: .cghidEventTap)
+            Thread.sleep(forTimeInterval: 1)
             let immutable = try FileManager.default.attributesOfItem(atPath: renamedFile.path)[.immutable] as? Bool == true
             lockResults.append(immutable)
             try JSONSerialization.data(withJSONObject: ["actualImmutableStates": lockResults], options: [.prettyPrinted])
