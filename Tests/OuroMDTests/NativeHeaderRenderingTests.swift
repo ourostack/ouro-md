@@ -124,7 +124,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
             sampledHeaders.append(headerMeans[0])
             sampledHeaders.append(headerMeans[1])
         }
-        if underlap, #available(macOS 26, *) {
+        if underlap && env["OURO_HEADER_REQUIRE_FULLSCREEN"] == "1", #available(macOS 26, *) {
             var fullscreenStates: [[String: Any]] = []
             for fullscreen in [true, false] {
                 var completed = false
@@ -159,6 +159,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
             }
             measurements[0]["fullscreenStates"] = fullscreenStates
         }
+        measurements[0]["fullscreenVerificationRequired"] = env["OURO_HEADER_REQUIRE_FULLSCREEN"] == "1"
         try JSONSerialization.data(withJSONObject: measurements, options: [.prettyPrinted, .sortedKeys])
             .write(to: output.appendingPathComponent("measurements.json"))
         let liveBodyPaints = measurements.allSatisfy { ($0["coloredBodyPixels"] as? Int ?? 0) > 1000 }

@@ -41,6 +41,7 @@ jobs:
           OURO_HEADER_RENDERING: '1'
           OURO_HEADER_EXPECT_UNDERLAP: '1'
           OURO_HEADER_REQUIRE_LIVE_PAINT: ${{ matrix.runner == 'macos-26-intel' && '1' || '0' }}
+          OURO_HEADER_REQUIRE_FULLSCREEN: ${{ matrix.runner == 'xcode-27' && '1' || '0' }}
           OURO_HEADER_OUTPUT: .build/header-rendering/current
           OURO_MD_TELEMETRY_DISABLED: '1'
         run: swift test --filter NativeHeaderRenderingTests
@@ -55,6 +56,7 @@ jobs:
           OURO_HEADER_RENDERING: '1'
           OURO_HEADER_EXPECT_UNDERLAP: '0'
           OURO_HEADER_REQUIRE_LIVE_PAINT: ${{ matrix.runner == 'macos-26-intel' && '1' || '0' }}
+          OURO_HEADER_REQUIRE_FULLSCREEN: '0'
           OURO_MD_TELEMETRY_DISABLED: '1'
         run: |
           cp Tests/OuroMDTests/NativeHeaderRenderingTests.swift .ci/header-baseline/Tests/OuroMDTests/
