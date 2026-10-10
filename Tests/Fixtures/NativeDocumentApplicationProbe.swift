@@ -233,6 +233,14 @@ enum NativeDocumentApplicationProbe {
         for shouldLock in [true, false] {
             click(point)
             Thread.sleep(forTimeInterval: 1)
+            onscreen.arguments = ["-x", "-o", "-R\(Int(x)),\(Int(y)),\(Int(width)),\(Int(height))",
+                                  output.appendingPathComponent("lock-\(shouldLock)-onscreen.png").path]
+            let lockCapture = Process()
+            lockCapture.executableURL = onscreen.executableURL
+            lockCapture.arguments = onscreen.arguments
+            try lockCapture.run()
+            lockCapture.waitUntilExit()
+            guard lockCapture.terminationStatus == 0 else { exit(5) }
             func findLock(_ element: AXUIElement) -> AXUIElement? {
                 var role: CFTypeRef?
                 if AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &role) == .success,
