@@ -91,6 +91,21 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 try capture.run()
                 capture.waitUntilExit()
                 XCTAssertEqual(capture.terminationStatus, 0, "real native composition must be captured")
+                if underlap, #available(macOS 26, *) {
+                    let insets = web.obscuredContentInsets
+                    web.obscuredContentInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+                    pumpNativeApplicationEvents()
+                    try await Task.sleep(for: .milliseconds(300))
+                    let unobscured = Process()
+                    unobscured.executableURL = capture.executableURL
+                    unobscured.arguments = ["-x", "-o", "-l", "\(controller.window.windowNumber)",
+                                            output.appendingPathComponent("\(theme)-\(name)-zero-inset-diagnostic-window.png").path]
+                    try unobscured.run()
+                    unobscured.waitUntilExit()
+                    XCTAssertEqual(unobscured.terminationStatus, 0)
+                    web.obscuredContentInsets = insets
+                    pumpNativeApplicationEvents()
+                }
                 // A separate compositor diagnostic distinguishes a missing
                 // WebKit remote surface on a GPU-less runner from native glass.
                 // It is explicitly labeled a raster proxy, never live WK proof.
