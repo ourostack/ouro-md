@@ -116,12 +116,34 @@ final class NativeDocumentMetadataTests: XCTestCase {
         XCTAssertNotNil(window.onTitleClicked,
                         "The filename text must open the document controls, not merely the small native arrow")
         XCTAssertNotNil(window.titleHitView?())
-        var presented = false
-        controller.documentControlsFromTitleClickHandler = { presented = true }
+        let title = try XCTUnwrap(window.titleHitView?())
+        let button = try XCTUnwrap(title.superview?.subviews.compactMap { $0 as? NSButton }
+            .first { $0.frame.minX >= title.frame.maxX })
+        let originalTarget = button.target
+        let originalAction = button.action
+        defer {
+            button.target = originalTarget
+            button.action = originalAction
+        }
+        let action = NativeTitleControlAction()
+        button.target = action
+        button.action = #selector(NativeTitleControlAction.clicked(_:))
+        var renameOnly = false
+        controller.renamePresentationHandler = { renameOnly = true }
         controller.presentDocumentControlsFromTitleClick()
-        XCTAssertTrue(presented)
+        XCTAssertEqual(action.clicks, 1, "Filename clicks must use the same full document controls as the native arrow")
+        XCTAssertFalse(renameOnly, "Rename is a name-only session, not the native metadata dropdown")
         XCTAssertTrue(controller.nativeDocument?.windowForSheet === window)
         XCTAssertFalse(window.isVisible)
+    }
+
+    @MainActor
+    private final class NativeTitleControlAction: NSObject {
+        var clicks = 0
+
+        @objc func clicked(_ sender: Any?) {
+            clicks += 1
+        }
     }
 
     func testMetadataCannotChangeFileIdentityWhileLiveSaveIsWaiting() throws {

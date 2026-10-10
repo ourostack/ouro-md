@@ -139,13 +139,22 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
             documentControlsFromTitleClickHandler()
             return
         }
-        presentRename()
+        guard model.currentURL != nil else { model.saveAs(); return }
+        guard let title = nativeTitleField(),
+              let button = title.superview?.subviews.compactMap({ $0 as? NSButton })
+                .first(where: { $0.frame.minX >= title.frame.maxX }) else {
+            model.reportDocumentMetadataError(NSError(
+                domain: "ouro-md", code: 28,
+                userInfo: [NSLocalizedDescriptionKey: "The document controls are unavailable. Use File > Rename to rename this document."]))
+            return
+        }
+        button.performClick(nil)
     }
 
     // MARK: - Rename
 
-    /// Uses AppKit's Name, Tags, Where and lock controls. An unsaved buffer
-    /// needs Save As before it has a file whose metadata can be edited.
+    /// The File menu requests a name-only AppKit session. Filename clicks
+    /// instead forward to the full native dropdown.
     func presentRename() {
         if let renamePresentationHandler {
             renamePresentationHandler()

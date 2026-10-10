@@ -70,7 +70,7 @@ enum NativeDocumentApplicationProbe {
         }
         try JSONSerialization.data(withJSONObject: snapshotAX(application, depth: 7), options: [.prettyPrinted, .sortedKeys])
             .write(to: output.appendingPathComponent("native-accessibility.json"))
-        let point = CGPoint(x: x + 340, y: y + 25)
+        let point = CGPoint(x: x + 240, y: y + 25)
         guard let hover = CGEvent(mouseEventSource: nil, mouseType: .mouseMoved,
                                   mouseCursorPosition: point, mouseButton: .left) else { exit(1) }
         hover.post(tap: .cghidEventTap)
