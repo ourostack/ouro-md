@@ -9,11 +9,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-26-intel, macos-26, xcode-27]
+        runner: [macos-26]
+        composition: [baseline, candidate]
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
+      - name: Restore released composition for the exact native negative control
+        if: matrix.composition == 'baseline'
+        run: |
+          git fetch --depth=1 origin tag v0.9.97
+          git show v0.9.97:Sources/OuroMD/SystemDesign.swift > Sources/OuroMD/SystemDesign.swift
+          git show v0.9.97:Sources/OuroMD/Sidebar.swift > Sources/OuroMD/Sidebar.swift
       - name: Build private actual-app diagnostic
         env:
           OURO_MD_TELEMETRY_DISABLED: '1'
@@ -82,5 +89,5 @@ jobs:
       - uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: fullscreen-glass-${{ matrix.runner }}
+          name: fullscreen-glass-${{ matrix.runner }}-${{ matrix.composition }}
           path: .build/fullscreen-proof
