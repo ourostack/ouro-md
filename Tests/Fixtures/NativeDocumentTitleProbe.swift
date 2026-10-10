@@ -1,4 +1,5 @@
 import AppKit
+import CoreGraphics
 
 @MainActor
 @objc(NativeDocumentTitleProbeDocument)
@@ -28,6 +29,44 @@ enum NativeDocumentTitleProbe {
               CommandLine.arguments.count == 3 else { exit(64) }
         let file = URL(fileURLWithPath: CommandLine.arguments[1])
         let output = URL(fileURLWithPath: CommandLine.arguments[2], isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+            try JSONSerialization.data(withJSONObject: [
+                "bundle": Bundle.main.bundlePath,
+                "documentTypes": Bundle.main.object(forInfoDictionaryKey: "CFBundleDocumentTypes") ?? [],
+                "classRegistered": NSClassFromString("NativeDocumentTitleProbeDocument") != nil
+            ], options: [.prettyPrinted, .sortedKeys])
+                .write(to: output.appendingPathComponent("startup.json"))
+        } catch {
+            fputs("Native probe startup recording failed: \(error)\n", stderr)
+            exit(1)
+        }
+        DispatchQueue.global().asyncAfter(deadline: .now() + 12) {
+            do {
+                guard let allWindows = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID)
+                        as? [[String: Any]] else {
+                    fputs("Native control watchdog could not enumerate windows\n", stderr)
+                    exit(2)
+                }
+                let windows = allWindows.filter {
+                    ($0[kCGWindowOwnerPID as String] as? Int) == Int(getpid())
+                }
+                for (index, window) in windows.enumerated() {
+                    guard let number = window[kCGWindowNumber as String] as? Int else { continue }
+                    let process = Process()
+                    process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+                    process.arguments = ["-x", "-o", "-l", "\(number)",
+                                         output.appendingPathComponent("blocked-owned-window-\(index).png").path]
+                    try process.run()
+                    process.waitUntilExit()
+                }
+                try JSONSerialization.data(withJSONObject: windows, options: [.prettyPrinted, .sortedKeys])
+                    .write(to: output.appendingPathComponent("blocked-owned-windows.json"))
+            } catch {
+                fputs("Native control watchdog capture failed: \(error)\n", stderr)
+            }
+            exit(2)
+        }
         let app = NSApplication.shared
         app.setActivationPolicy(.regular)
         let menu = NSMenu()
