@@ -1313,6 +1313,7 @@ final class AppModel: ObservableObject {
     func toggleFind() { findVisible.toggle(); if !findVisible { closeFind() } }
 
     func replaceNext() {
+        guard !isFileLocked else { findStatus = "Unlock the document to replace text."; return }
         guard !findQuery.isEmpty else { return }
         bridge?.replace(findQuery, with: replaceText, all: false, caseSensitive: findCaseSensitive, wholeWord: findWholeWord, regexp: findRegexp) { [weak self] n in
             self?.findStatus = n > 0 ? "Replaced 1" : "Not found"
@@ -1320,6 +1321,7 @@ final class AppModel: ObservableObject {
     }
 
     func replaceAll() {
+        guard !isFileLocked else { findStatus = "Unlock the document to replace text."; return }
         guard !findQuery.isEmpty else { return }
         bridge?.replace(findQuery, with: replaceText, all: true, caseSensitive: findCaseSensitive, wholeWord: findWholeWord, regexp: findRegexp) { [weak self] n in
             self?.findStatus = "Replaced \(n) occurrence\(n == 1 ? "" : "s")"

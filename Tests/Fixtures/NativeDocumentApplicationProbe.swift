@@ -23,16 +23,15 @@ enum NativeDocumentApplicationProbe {
         let pid = app.processIdentifier
         func ownedWindows() -> [[String: Any]] {
             guard let windows = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID)
-                    as? [[String: Any]] else { return [] }
+                    as? [[String: Any]] else {
+                fputs("Could not enumerate the probe application's native windows\n", stderr)
+                exit(1)
+            }
             return windows.filter { ($0[kCGWindowOwnerPID as String] as? Int) == Int(pid) }
         }
         var windows: [[String: Any]] = []
         for _ in 0..<100 {
             windows = ownedWindows()
-            guard windows.contains(where: { ($0[kCGWindowLayer as String] as? Int ?? 0) > 0 }) else {
-                fputs("Native document popover did not open\n", stderr)
-                exit(2)
-            }
             if windows.contains(where: { ($0[kCGWindowLayer as String] as? Int) == 0 }) { break }
             Thread.sleep(forTimeInterval: 0.1)
         }
@@ -52,6 +51,10 @@ enum NativeDocumentApplicationProbe {
         up.post(tap: .cghidEventTap)
         Thread.sleep(forTimeInterval: 3)
         windows = ownedWindows()
+        guard windows.contains(where: { ($0[kCGWindowLayer as String] as? Int ?? 0) > 0 }) else {
+            fputs("Native document popover did not open after the filename click\n", stderr)
+            exit(2)
+        }
         for (index, owned) in windows.enumerated() {
             guard let number = owned[kCGWindowNumber as String] as? Int else { continue }
             let capture = Process()
