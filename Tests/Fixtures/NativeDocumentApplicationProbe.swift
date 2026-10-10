@@ -231,7 +231,12 @@ enum NativeDocumentApplicationProbe {
         closeUp.post(tap: .cghidEventTap)
         Thread.sleep(forTimeInterval: 0.5)
         for shouldLock in [true, false] {
-            click(CGPoint(x: point.x, y: y + 18))
+            let openPoint = CGPoint(x: shouldLock ? point.x : x + 335, y: y + 18)
+            guard let hover = CGEvent(mouseEventSource: nil, mouseType: .mouseMoved,
+                                      mouseCursorPosition: openPoint, mouseButton: .left) else { exit(5) }
+            hover.post(tap: .cghidEventTap)
+            Thread.sleep(forTimeInterval: 0.5)
+            click(openPoint)
             Thread.sleep(forTimeInterval: 1)
             let lockCapture = Process()
             lockCapture.executableURL = onscreen.executableURL
