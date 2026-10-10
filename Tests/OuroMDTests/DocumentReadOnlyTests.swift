@@ -117,6 +117,9 @@ final class DocumentReadOnlyTests: XCTestCase {
         XCTAssertTrue(after?.contains("/destination/map.svg") == true,
                       "Where moves must resolve document-relative assets in the new folder")
         XCTAssertEqual(try String(contentsOf: destination, encoding: .utf8), markdown)
+        let liveMarkdown = try await editor.evaluateJavaScript("window.ouro.getValue()") as? String
+        XCTAssertTrue(liveMarkdown?.contains("](map.svg)") == true,
+                      "Retargeting the rendered image must preserve its authored relative Markdown link")
         XCTAssertFalse(controller.model.isDirty)
         XCTAssertFalse(controller.window.isVisible)
     }

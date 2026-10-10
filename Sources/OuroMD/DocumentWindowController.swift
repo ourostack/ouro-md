@@ -113,7 +113,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         window.title = model.windowTitle
         // VSCode-style deleted marker: a subtitle beside the filename when the
         // file has been removed/moved out from under us (the buffer is kept).
-        window.subtitle = model.deletedOnDisk ? "deleted" : ""
+        window.subtitle = model.deletedOnDisk ? "deleted" : (model.isFileLocked ? "Locked" : "")
         window.representedURL = model.currentURL
         window.isDocumentEdited = model.isDirty
         if let documentWindow = window as? DocumentWindow {

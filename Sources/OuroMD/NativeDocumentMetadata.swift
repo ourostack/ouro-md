@@ -49,6 +49,8 @@ final class NativeDocumentMetadata: NSDocument {
         } catch {
             if FileManager.default.fileExists(atPath: fileURL.path) {
                 model.reportDocumentMetadataError(error)
+            } else {
+                model.setFileLocked(false)
             }
         }
     }
@@ -86,7 +88,12 @@ final class NativeDocumentMetadata: NSDocument {
                                                userInfo: [NSLocalizedDescriptionKey: "Save your changes before locking this document."]))
                     return
                 }
-                self?.lockSavedFile(completionHandler: completionHandler)
+                guard let self else {
+                    completionHandler?(NSError(domain: "ouro-md", code: 24,
+                                               userInfo: [NSLocalizedDescriptionKey: "The document window has closed."]))
+                    return
+                }
+                self.lockSavedFile(completionHandler: completionHandler)
             }
         } else {
             lockSavedFile(completionHandler: completionHandler)

@@ -141,6 +141,33 @@ final class NativeDocumentMetadataTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: destination.path))
     }
 
+    func testSaveAsCannotReplaceIdentityWhileAnotherLiveSaveIsWaiting() throws {
+        let directory = try makeDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let original = directory.appendingPathComponent("Plan.md")
+        let destination = directory.appendingPathComponent("Copy.md")
+        try Data("original".utf8).write(to: original)
+        let model = AppModel()
+        model.autoSaveEnabled = false
+        model.presentErrorHandler = { _, _ in }
+        let bridge = MetadataBridge()
+        model.bridge = bridge
+        defer { model.teardown() }
+        model.editorDidBecomeReady()
+        XCTAssertTrue(model.loadInitialFile(original.path))
+        model.setDirty(true)
+        bridge.deferRead = true
+        model.performSave { _ in }
+        var copied: Bool?
+
+        model.performSaveAs(to: destination) { copied = $0 }
+
+        XCTAssertEqual(copied, false)
+        XCTAssertEqual(model.currentURL, original)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: destination.path))
+        bridge.pendingRead?("human feedback")
+    }
+
     func testNativeLockPreventsAssistantEditsAndUnlockRestoresEditing() throws {
         let directory = try makeDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }

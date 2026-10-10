@@ -692,6 +692,15 @@ final class AppModel: ObservableObject {
     }
 
     func performSaveAs(to url: URL, completion: @escaping (Bool) -> Void) {
+        guard pendingFileWrites == 0 else {
+            let error = NSError(domain: "ouro-md", code: 26,
+                                userInfo: [NSLocalizedDescriptionKey: "Wait for the current save to finish before saving to another location."])
+            presentError("Could not save \(url.lastPathComponent)", error)
+            captureTelemetry("ouro_md_document_save_failed",
+                             properties: ["source": .string("save_as"), "code": .string("save_in_progress")])
+            completion(false)
+            return
+        }
         let previousURL = currentURL
         currentURL = url
         let finish: (Bool) -> Void = { [weak self] ok in

@@ -47,14 +47,12 @@ enum NativeDocumentApplicationProbe {
                                  mouseCursorPosition: point, mouseButton: .left),
               let up = CGEvent(mouseEventSource: nil, mouseType: .leftMouseUp,
                                mouseCursorPosition: point, mouseButton: .left) else { exit(1) }
+        down.setIntegerValueField(.mouseEventClickState, value: 1)
+        up.setIntegerValueField(.mouseEventClickState, value: 1)
         down.post(tap: .cghidEventTap)
         up.post(tap: .cghidEventTap)
         Thread.sleep(forTimeInterval: 3)
         windows = ownedWindows()
-        guard windows.contains(where: { ($0[kCGWindowLayer as String] as? Int ?? 0) > 0 }) else {
-            fputs("Native document popover did not open after the filename click\n", stderr)
-            exit(2)
-        }
         for (index, owned) in windows.enumerated() {
             guard let number = owned[kCGWindowNumber as String] as? Int else { continue }
             let capture = Process()
@@ -64,6 +62,15 @@ enum NativeDocumentApplicationProbe {
             try capture.run()
             capture.waitUntilExit()
             guard capture.terminationStatus == 0 else { exit(1) }
+        }
+        try JSONSerialization.data(withJSONObject: [
+            "ownedWindowsAfterClick": windows, "accessibilityStatus": accessibility.rawValue,
+            "clickPoint": ["x": point.x, "y": point.y]
+        ], options: [.prettyPrinted, .sortedKeys])
+            .write(to: output.appendingPathComponent("filename-click.json"))
+        guard windows.contains(where: { ($0[kCGWindowLayer as String] as? Int ?? 0) > 0 }) else {
+            fputs("Native document popover did not open after the filename click\n", stderr)
+            exit(2)
         }
         var focused: CFTypeRef?
         let focusedStatus = AXUIElementCopyAttributeValue(application, kAXFocusedUIElementAttribute as CFString, &focused)
