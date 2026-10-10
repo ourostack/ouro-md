@@ -28,6 +28,11 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
         let frame = NSRect(x: 0, y: 0, width: 800, height: 600)
         webView = WKWebView(frame: frame, configuration: configuration)
+        if #available(macOS 26, *) {
+            // Exercise the same public layout-viewport exclusion as the real
+            // document header, not the old flat editor's zero-inset proxy.
+            webView.obscuredContentInsets = NSEdgeInsets(top: 52, left: 0, bottom: 0, right: 0)
+        }
         webView.navigationDelegate = self
         guard let indexURL = OuroResources.web("index", "html") else {
             FileHandle.standardError.write(Data("changehighlighttest: index.html not found\n".utf8)); exit(1)

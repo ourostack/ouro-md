@@ -20,30 +20,34 @@ final class DocumentWindowControllerTests: XCTestCase {
         let web = try XCTUnwrap(editor(in: content))
         waitUntil(timeout: 5) { controller.model.isReady }
         XCTAssertTrue(controller.model.isReady)
-        var result: [String: Double]?
-        waitUntil(timeout: 5) {
-            web.evaluateJavaScript("""
-            (() => {
-              const first = document.createElement("div");
-              first.style.cssText = "position:fixed;top:0;left:0;width:10px;height:10px";
-              document.documentElement.appendChild(first);
-              const result = {top:first.getBoundingClientRect().top, height:innerHeight, offset:visualViewport.offsetTop};
-              first.remove();
-              return result;
-            })()
-            """) { value, _ in
-                result = value as? [String: Double]
+        for zoom in [0.75, 1.0, 2.0] {
+            EditorZoom.apply(zoom, to: web)
+            var height = web.bounds.height
+            if #available(macOS 26, *) { height -= web.obscuredContentInsets.top }
+            let expected = height / zoom
+            var result: [String: Double]?
+            waitUntil(timeout: 5) {
+                web.evaluateJavaScript("""
+                (() => {
+                  const first = document.createElement("div");
+                  first.style.cssText = "position:fixed;top:0;left:0;width:10px;height:10px";
+                  document.documentElement.appendChild(first);
+                  const result = {top:first.getBoundingClientRect().top, height:innerHeight, offset:visualViewport.offsetTop};
+                  first.remove();
+                  return result;
+                })()
+                """) { value, _ in
+                    result = value as? [String: Double]
+                }
+                return result?["top"] != nil && abs((result?["height"] ?? 0) - expected) <= 1
             }
-            return result?["top"] != nil && !web.isLoading
+            let coordinates = try XCTUnwrap(result)
+            print("PUBLIC_HEADER_COORDINATES \(coordinates) webHeight=\(web.bounds.height) zoom=\(zoom)")
+            XCTAssertFalse(controller.window.isVisible)
+            XCTAssertEqual(try XCTUnwrap(coordinates["height"]), expected, accuracy: 1)
+            XCTAssertEqual(try XCTUnwrap(coordinates["top"]), 0, accuracy: 1,
+                           "WebKit's layout viewport already excludes the header; adding its inset again would double-offset cues")
         }
-        let coordinates = try XCTUnwrap(result)
-        print("PUBLIC_HEADER_COORDINATES \(coordinates) webHeight=\(web.bounds.height)")
-        XCTAssertFalse(controller.window.isVisible)
-        if #available(macOS 26, *) {
-            XCTAssertEqual(try XCTUnwrap(coordinates["height"]), web.bounds.height - web.obscuredContentInsets.top, accuracy: 1)
-        }
-        XCTAssertEqual(try XCTUnwrap(coordinates["top"]), 0, accuracy: 1,
-                       "WebKit's layout viewport already excludes the header; adding its inset again would double-offset cues")
     }
 
     func testDocumentBackdropUnderlapsToolbarWithMatchingPublicObscuredInsets() throws {

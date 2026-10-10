@@ -106,6 +106,18 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 try composition.run()
                 composition.waitUntilExit()
                 XCTAssertEqual(composition.terminationStatus, 0)
+                controller.window.titlebarAppearsTransparent = false
+                controller.window.displayIfNeeded()
+                CATransaction.flush()
+                try await Task.sleep(for: .milliseconds(300))
+                let nativeBackground = Process()
+                nativeBackground.executableURL = capture.executableURL
+                nativeBackground.arguments = ["-x", "-o", "-l", "\(controller.window.windowNumber)",
+                                              output.appendingPathComponent("\(theme)-\(name)-native-background-raster-proxy-window.png").path]
+                try nativeBackground.run()
+                nativeBackground.waitUntilExit()
+                XCTAssertEqual(nativeBackground.terminationStatus, 0)
+                controller.window.titlebarAppearsTransparent = true
                 proxy.removeFromSuperview()
                 let frame = web.convert(web.bounds, to: nil)
                 let top = frame.maxY - controller.window.contentLayoutRect.maxY
