@@ -101,7 +101,6 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
             let topLeft = NSPoint(x: previous.frame.minX, y: previous.frame.maxY)
             window.cascadeTopLeft(from: topLeft)
         }
-        nativeDocument?.showWindows()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
