@@ -159,6 +159,13 @@ enum NativeDocumentApplicationProbe {
         guard FileManager.default.fileExists(atPath: renamedFile.path),
               !FileManager.default.fileExists(atPath: file),
               try Data(contentsOf: renamedFile) == originalBytes else {
+            if app.isRunning {
+                let sample = Process()
+                sample.executableURL = URL(fileURLWithPath: "/usr/bin/sample")
+                sample.arguments = ["\(pid)", "2", "-file", output.appendingPathComponent("native-rename.sample.txt").path]
+                try sample.run()
+                sample.waitUntilExit()
+            }
             fputs("Native rename did not preserve the original file bytes and identity\n", stderr)
             exit(4)
         }
