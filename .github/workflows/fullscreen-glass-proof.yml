@@ -30,9 +30,23 @@ jobs:
           if #available(macOS 26, *), ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true"
             && ProcessInfo.processInfo.environment["OURO_FULLSCREEN_PROBE"] == "1" {
               MainActor.assumeIsolated {
-                  let delegate = FullscreenGlassProbe()
+                  let delegate = AppDelegate()
+                  let probe = FullscreenGlassProbe()
+                  UserDefaults.standard.set(true, forKey: "ouro.hasLaunched")
+                  delegate.initialFilePath = "\(FileManager.default.currentDirectoryPath)/.build/fullscreen-input.md"
                   NSApplication.shared.setActivationPolicy(.regular)
                   NSApplication.shared.delegate = delegate
+                  MenuBuilder.install(into: NSApplication.shared, target: delegate)
+                  Task { @MainActor in
+                      for _ in 0..<300 {
+                          if let controller = delegate.frontController {
+                              probe.start(controller: controller)
+                              return
+                          }
+                          try await Task.sleep(for: .milliseconds(100))
+                      }
+                      exit(2)
+                  }
                   NSApplication.shared.run()
               }
           }
@@ -52,6 +66,7 @@ jobs:
           PLIST
           codesign --force --deep --sign - .build/FullscreenProof.app
           /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f .build/FullscreenProof.app
+          printf '# Public fullscreen QA document\n\nNative glass verification.\n' > .build/fullscreen-input.md
       - name: Run real AppKit loop with completed fullscreen and actual native paint
         env:
           OURO_FULLSCREEN_PROBE: '1'

@@ -24,8 +24,8 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
     var rows: [[String: Any]] = []
     let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["OURO_FULLSCREEN_OUTPUT"] ?? ".build/fullscreen-proof")
 
-    func applicationDidFinishLaunching(_ notification: Notification) {
-        controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
+    func start(controller: DocumentWindowController) {
+        self.controller = controller
         presentationDelegate = FullscreenPresentationDelegate(base: controller)
         controller.window.delegate = presentationDelegate
         controller.window.collectionBehavior.insert(.fullScreenPrimary)
@@ -151,6 +151,7 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
     }
 
     func movePointer(to point: CGPoint) {
+        CGWarpMouseCursorPosition(point)
         CGEvent(mouseEventSource: nil, mouseType: .mouseMoved, mouseCursorPosition: point,
                 mouseButton: .left)?.post(tap: .cghidEventTap)
     }
@@ -208,6 +209,7 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
                          "window": window.windowNumber, "titlebarTransparent": window.titlebarAppearsTransparent,
                          "presentation": NSApp.presentationOptions.rawValue,
                          "effectivePresentation": NSApp.currentSystemPresentationOptions.rawValue,
+                         "mouse": NSStringFromPoint(NSEvent.mouseLocation),
                          "windows": NSApp.windows.map { ["number": $0.windowNumber, "frame": NSStringFromRect($0.frame),
                                                          "class": "\(type(of: $0))", "visible": $0.isVisible,
                                                          "transparent": $0.titlebarAppearsTransparent, "opaque": $0.isOpaque,
