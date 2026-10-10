@@ -27,15 +27,6 @@ final class NativeDocumentMetadata: NSDocument {
     }
     override var isDocumentEdited: Bool { false }
 
-    override func validateUserInterfaceItem(_ item: NSValidatedUserInterfaceItem) -> Bool {
-        let result = super.validateUserInterfaceItem(item)
-        if ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
-           ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil {
-            fputs("native-validation action=\(String(describing: item.action)) result=\(result)\n", stderr)
-        }
-        return result
-    }
-
     override class func canConcurrentlyReadDocuments(ofType typeName: String) -> Bool { false }
     override func read(from data: Data, ofType typeName: String) throws {}
 
@@ -86,10 +77,6 @@ final class NativeDocumentMetadata: NSDocument {
     }
 
     override func lock(completionHandler: ((Error?) -> Void)?) {
-        if ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
-           ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil {
-            fputs("native-lock-called\n", stderr)
-        }
         guard let model else {
             completionHandler?(NSError(domain: "ouro-md", code: 24,
                                        userInfo: [NSLocalizedDescriptionKey: "The document window has closed."]))
@@ -130,10 +117,6 @@ final class NativeDocumentMetadata: NSDocument {
     }
 
     override func unlock(completionHandler: ((Error?) -> Void)?) {
-        if ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
-           ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil {
-            fputs("native-unlock-called\n", stderr)
-        }
         super.unlock(completionHandler: { [weak self] (error: Error?) in
             if let self {
                 if error == nil, let url = self.fileURL {

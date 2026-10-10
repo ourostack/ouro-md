@@ -224,6 +224,11 @@ enum NativeDocumentApplicationProbe {
         ], options: [.prettyPrinted, .sortedKeys])
             .write(to: output.appendingPathComponent("application-probe.json"))
         var lockResults: [Bool] = []
+        guard let closeDown = CGEvent(keyboardEventSource: nil, virtualKey: 53, keyDown: true),
+              let closeUp = CGEvent(keyboardEventSource: nil, virtualKey: 53, keyDown: false) else { exit(5) }
+        closeDown.post(tap: .cghidEventTap)
+        closeUp.post(tap: .cghidEventTap)
+        Thread.sleep(forTimeInterval: 0.5)
         for shouldLock in [true, false] {
             click(point)
             Thread.sleep(forTimeInterval: 1)

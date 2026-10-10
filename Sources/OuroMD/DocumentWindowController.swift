@@ -56,9 +56,6 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         adoptSystemToolbar()
 
         window.delegate = self
-        // The filename text opens AppKit's document controls; the separate
-        // native dropdown arrow retains its own system event handling.
-        window.onTitleClicked = { [weak self] in self?.presentDocumentControlsFromTitleClick() }
         window.titleHitView = { [weak self] in self?.nativeTitleField() }
         // Native fixed-size title-bar document-status glyph. A SwiftUI `Menu`
         // here previously let hidden accessibility text affect title-bar layout,
@@ -106,11 +103,11 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
     }
 
     func syncChrome() {
-        if ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil,
-           ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" {
-            fputs("native-chrome-sync\n", stderr)
-        }
         nativeDocument?.synchronizeIdentity()
+        // AppKit owns saved-document title clicks. A second delayed action
+        // would close its native popover or replace it with a rename-only one.
+        (window as? DocumentWindow)?.onTitleClicked = model.currentURL == nil
+            ? { [weak self] in self?.presentDocumentControlsFromTitleClick() } : nil
         // Native document chrome: the system draws the title (and, when the file
         // exists on disk, a draggable proxy icon). Left-aligned in windowed mode
         // and full screen, matching every other macOS document app.
@@ -132,64 +129,25 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
 
     // MARK: - Document controls
 
-    /// An unsaved buffer needs naming; a saved filename opens the native
-    /// metadata popover rather than the unrelated Open panel.
+    /// Unsaved buffers use Save As; saved document controls belong to AppKit.
     func presentDocumentControlsFromTitleClick() {
-        if ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil,
-           ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" {
-            fputs("native-document-controls-entry\n", stderr)
-            if ProcessInfo.processInfo.environment["OURO_TITLE_NATIVE_ONLY"] == "1" {
-                fputs("native-document-controls-noop\n", stderr)
-                return
-            }
-        }
         if let documentControlsFromTitleClickHandler {
             documentControlsFromTitleClickHandler()
             return
         }
-        guard model.currentURL != nil else { model.saveAs(); return }
-        guard let title = nativeTitleField(),
-              let button = title.superview?.subviews.compactMap({ $0 as? NSButton })
-                .first(where: { $0.frame.minX >= title.frame.maxX }) else {
-            model.reportDocumentMetadataError(NSError(
-                domain: "ouro-md", code: 28,
-                userInfo: [NSLocalizedDescriptionKey: "The document controls are unavailable. Use File > Rename to rename this document."]))
-            return
-        }
-        if ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil,
-           ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" {
-            fputs("native-document-controls-before-click enabled=\(button.isEnabled)\n", stderr)
-        }
-        button.performClick(nil)
-        if ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil,
-           ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" {
-            fputs("native-document-controls-after-click\n", stderr)
-        }
+        if model.currentURL == nil { model.saveAs() }
     }
 
     // MARK: - Rename
 
-    /// The File menu requests a name-only AppKit session. Filename clicks
-    /// instead forward to the full native dropdown.
+    /// The File menu requests AppKit's name-only renaming session.
     func presentRename() {
         if let renamePresentationHandler {
             renamePresentationHandler()
             return
         }
         guard model.currentURL != nil else { model.saveAs(); return }
-        if ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil,
-           ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" {
-            fputs("native-rename key=\(window.isKeyWindow) associated=\(nativeDocument?.windowForSheet === window) document=\(nativeDocument != nil) class=\(NSStringFromClass(NativeDocumentMetadata.self)) registered=\(String(describing: NSDocumentController.shared.documentClass(forType: "net.daringfireball.markdown")))\n", stderr)
-            for action in [#selector(NSDocument.lock(_:)), #selector(NSDocument.unlock(_:)), #selector(NSDocument.move(_:))] {
-                let item = NSMenuItem(title: "Probe", action: action, keyEquivalent: "")
-                fputs("native-direct-validation \(NSStringFromSelector(action))=\(nativeDocument?.validateUserInterfaceItem(item) == true)\n", stderr)
-            }
-        }
         nativeDocument?.rename(nil)
-        if ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil,
-           ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" {
-            fputs("native-rename-returned\n", stderr)
-        }
     }
 
     /// Finds the AppKit-drawn title text field so the popover can anchor on the title.
@@ -520,12 +478,6 @@ final class DocumentWindow: NSWindow {
     private var titleClickGeneration = 0
 
     override func sendEvent(_ event: NSEvent) {
-        if [.leftMouseDown, .leftMouseUp].contains(event.type),
-           ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil,
-           ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" {
-            let rect = titleHitView?().map { $0.convert($0.bounds, to: nil) }
-            fputs("native-title-event type=\(event.type.rawValue) point=\(event.locationInWindow) title=\(String(describing: rect)) key=\(isKeyWindow)\n", stderr)
-        }
         var scheduleOpenAfterDispatch = false
         switch event.type {
         case .leftMouseDown:
