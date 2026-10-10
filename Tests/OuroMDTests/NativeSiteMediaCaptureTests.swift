@@ -53,6 +53,7 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
         var records: [[String: Any]] = []
         var heroText: [String: [String]] = [:]
         var heroOCRErrors: [String: String] = [:]
+        var pasteVideo: [String: Any] = [:]
         let epoch = ProcessInfo.processInfo.systemUptime
         func capture(_ scene: String, _ theme: String, _ index: Int) async throws {
             pump()
@@ -91,6 +92,7 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
                 "records": records,
                 "heroRecognizedBodyText": heroText,
                 "heroOCRErrors": heroOCRErrors,
+                "pasteVideo": pasteVideo,
                 "reduceMotion": NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,
                 "reduceTransparency": NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency,
                 "captureKind": "screencapture-owned-native-window"
@@ -196,12 +198,45 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(" Bring a notebook and leave room for discovery.", forType: .string)
         try await capture("paste", "quartz", 0)
+        // A continuous native recording retains the short glow even when a
+        // launched PNG capture takes longer than the feedback animation.
+        let recording = Process()
+        recording.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        recording.arguments = ["-x", "-v", "-V", "7", "-l", "\(controller.window.windowNumber)",
+                               output.appendingPathComponent("paste-native.mov").path]
+        let recordingStart = ProcessInfo.processInfo.systemUptime
+        try recording.run()
+        defer { if recording.isRunning { recording.terminate() } }
+        for _ in 0..<100 {
+            pump()
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertTrue(recording.isRunning, "the owned native recorder must be running before the action")
+        pasteVideo["actionAfterRecorderLaunch"] = ProcessInfo.processInfo.systemUptime - recordingStart
         let sent = NSApplication.shared.sendAction(#selector(NSText.paste(_:)), to: web, from: nil)
         XCTAssertTrue(sent, "the real WK native Paste responder must accept the action")
+        for _ in 0..<10 {
+            pump()
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        pasteVideo["glowObservedAfterNativePaste"] = try await web.evaluateJavaScript(
+            "!!(window.CSS && CSS.highlights && CSS.highlights.get('ouro-change'))"
+        ) as? Bool ?? false
+        pasteVideo["feedback"] = try await web.evaluateJavaScript("window.__ouroLastChangeFlash") ?? NSNull()
         for index in 1..<25 {
             try await Task.sleep(for: .milliseconds(70))
             try await capture("paste", "quartz", index)
         }
+        for _ in 0..<500 {
+            if !recording.isRunning { break }
+            pump()
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertFalse(recording.isRunning, "native recording must finish within its bounded duration")
+        if recording.isRunning { recording.terminate(); recording.waitUntilExit() }
+        XCTAssertEqual(recording.terminationStatus, 0)
+        pasteVideo["recordingExitStatus"] = recording.terminationStatus
+        pasteVideo["recordingFile"] = "paste-native.mov"
         try await wait(web, "window.ouro.getValue().includes('Bring a notebook')")
         for _ in 0..<100 {
             if controller.model.isDirty { break }
