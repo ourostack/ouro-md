@@ -27,6 +27,7 @@ jobs:
   fullscreen-proof:
     uses: ./.github/workflows/fullscreen-glass-proof.yml
   capture:
+    if: github.event_name != 'workflow_dispatch'
     name: Capture native header (${{ matrix.runner }})
     strategy:
       fail-fast: false

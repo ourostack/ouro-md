@@ -3,14 +3,32 @@ import WebKit
 import QuartzCore
 
 @MainActor
+final class FullscreenPresentationDelegate: NSObject, NSWindowDelegate {
+    let base: DocumentWindowController
+    var autoHideToolbar = false
+    init(base: DocumentWindowController) { self.base = base }
+    override func responds(to selector: Selector!) -> Bool { super.responds(to: selector) || base.responds(to: selector) }
+    override func forwardingTarget(for selector: Selector!) -> Any? { base }
+    func window(_ window: NSWindow, willUseFullScreenPresentationOptions options: NSApplication.PresentationOptions) -> NSApplication.PresentationOptions {
+        var result = options
+        if autoHideToolbar { result.insert(.autoHideToolbar) } else { result.remove(.autoHideToolbar) }
+        return result
+    }
+}
+
+@MainActor
 @available(macOS 26, *)
 final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
     var controller: DocumentWindowController!
+    var presentationDelegate: FullscreenPresentationDelegate!
     var rows: [[String: Any]] = []
     let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["OURO_FULLSCREEN_OUTPUT"] ?? ".build/fullscreen-proof")
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
+        presentationDelegate = FullscreenPresentationDelegate(base: controller)
+        controller.window.delegate = presentationDelegate
+        controller.window.collectionBehavior.insert(.fullScreenPrimary)
         controller.window.setContentSize(NSSize(width: 1000, height: 700))
         controller.show(cascadeFrom: nil)
         Task { @MainActor in
@@ -22,6 +40,8 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
             } catch {
                 rows.append(["error": "\(error)"])
                 try? save()
+                if let data = try? JSONSerialization.data(withJSONObject: rows, options: [.sortedKeys]),
+                   let text = String(data: data, encoding: .utf8) { print(text) }
                 print("FULLSCREEN PROBE FAILURE: \(error)")
                 exit(1)
             }
@@ -61,13 +81,15 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
             });
             """)
             try await capture(theme: theme, state: "windowed", web: web)
+            rows.append(["beforeEnterActive": NSApp.isActive, "key": controller.window.isKeyWindow,
+                         "collectionBehavior": controller.window.collectionBehavior.rawValue])
             var completed = false
             let observer = NotificationCenter.default.addObserver(forName: NSWindow.didEnterFullScreenNotification,
                                                                   object: controller.window, queue: .main) { _ in
                 MainActor.assumeIsolated { completed = true }
             }
             controller.window.toggleFullScreen(nil)
-            for _ in 0..<200 {
+            for _ in 0..<600 {
                 if completed { break }
                 try await Task.sleep(for: .milliseconds(100))
             }
@@ -81,24 +103,26 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
                 toolbarWindow.titlebarAppearsTransparent = true
             }
             try await capture(theme: theme, state: "fullscreen-transparent-titlebar", web: web)
-            var options = NSApp.currentSystemPresentationOptions
-            options.remove([.hideMenuBar, .autoHideDock])
-            options.formUnion([.fullScreen, .autoHideMenuBar, .hideDock, .autoHideToolbar])
-            NSApp.presentationOptions = options
+            try await transition(fullscreen: false)
+            presentationDelegate.autoHideToolbar = true
+            try await transition(fullscreen: true)
+            if let toolbarWindow = controller.truthToolbarItem?.view?.window, toolbarWindow !== controller.window {
+                toolbarWindow.titlebarAppearsTransparent = true
+            }
             movePointer(to: CGPoint(x: 500, y: 500))
             try await Task.sleep(for: .seconds(3))
             try await capture(theme: theme, state: "fullscreen-hidden", web: web)
             movePointer(to: CGPoint(x: 500, y: 1))
             try await Task.sleep(for: .seconds(3))
             try await capture(theme: theme, state: "fullscreen-revealed", web: web)
-            NSApplication.shared.presentationOptions.remove(.autoHideToolbar)
+            presentationDelegate.autoHideToolbar = false
             completed = false
             let exitObserver = NotificationCenter.default.addObserver(forName: NSWindow.didExitFullScreenNotification,
                                                                       object: controller.window, queue: .main) { _ in
                 MainActor.assumeIsolated { completed = true }
             }
             controller.window.toggleFullScreen(nil)
-            for _ in 0..<200 {
+            for _ in 0..<600 {
                 if completed { break }
                 try await Task.sleep(for: .milliseconds(100))
             }
@@ -108,6 +132,22 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
             guard completed else { throw NSError(domain: "Fullscreen exit never completed", code: 3) }
             try await capture(theme: theme, state: "restored", web: web)
         }
+    }
+
+    func transition(fullscreen: Bool) async throws {
+        var completed = false
+        let name = fullscreen ? NSWindow.didEnterFullScreenNotification : NSWindow.didExitFullScreenNotification
+        let observer = NotificationCenter.default.addObserver(forName: name, object: controller.window, queue: .main) { _ in
+            MainActor.assumeIsolated { completed = true }
+        }
+        controller.window.toggleFullScreen(nil)
+        for _ in 0..<200 {
+            if completed { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        NotificationCenter.default.removeObserver(observer)
+        guard completed else { throw NSError(domain: "Requested fullscreen transition did not complete", code: 6) }
+        try await Task.sleep(for: .seconds(2))
     }
 
     func movePointer(to point: CGPoint) {
@@ -171,6 +211,7 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
                          "windows": NSApp.windows.map { ["number": $0.windowNumber, "frame": NSStringFromRect($0.frame),
                                                          "class": "\(type(of: $0))", "visible": $0.isVisible,
                                                          "transparent": $0.titlebarAppearsTransparent, "opaque": $0.isOpaque,
+                                                         "alpha": $0.alphaValue, "occluded": !$0.occlusionState.contains(.visible),
                                                          "background": "\($0.backgroundColor)",
                                                          "style": $0.styleMask.rawValue] }])
             try save()
