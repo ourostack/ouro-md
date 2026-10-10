@@ -254,8 +254,9 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
     private static let fileStatusItem = NSToolbarItem.Identifier("OuroMDFileStatus")
 
     /// On macOS 26+ the window gets a real toolbar, which is what carries the
-    /// system glass. The document extends underneath it, with public WebKit
-    /// obscured insets keeping editing clear of controls. Earlier systems keep the plain
+    /// system-owned controls. The document extends underneath the native glass
+    /// header panel, with public WebKit insets keeping editing clear of controls.
+    /// Earlier systems keep the plain
     /// transparent title bar.
     private func adoptSystemToolbar() {
         guard SystemDesign.usesGlass else { return }

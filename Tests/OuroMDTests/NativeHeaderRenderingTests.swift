@@ -94,10 +94,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 // A separate compositor diagnostic distinguishes a missing
                 // WebKit remote surface on a GPU-less runner from native glass.
                 // It is explicitly labeled a raster proxy, never live WK proof.
-                let proxy = NSImageView(frame: web.convert(web.bounds, to: content))
-                proxy.image = snapshot
-                proxy.imageScaling = .scaleAxesIndependently
-                content.addSubview(proxy, positioned: .above, relativeTo: nil)
+                let proxy = try installRasterProxy(snapshot, web: web, content: content, underlap: underlap)
                 proxy.display()
                 CATransaction.flush()
                 try await Task.sleep(for: .milliseconds(300))
@@ -108,38 +105,6 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 try composition.run()
                 composition.waitUntilExit()
                 XCTAssertEqual(composition.terminationStatus, 0)
-                controller.window.titlebarAppearsTransparent = false
-                controller.window.displayIfNeeded()
-                CATransaction.flush()
-                try await Task.sleep(for: .milliseconds(300))
-                let nativeBackground = Process()
-                nativeBackground.executableURL = capture.executableURL
-                nativeBackground.arguments = ["-x", "-o", "-l", "\(controller.window.windowNumber)",
-                                              output.appendingPathComponent("\(theme)-\(name)-native-background-raster-proxy-window.png").path]
-                try nativeBackground.run()
-                nativeBackground.waitUntilExit()
-                XCTAssertEqual(nativeBackground.terminationStatus, 0)
-                controller.window.titlebarAppearsTransparent = true
-                if #available(macOS 26, *) {
-                    let band = max(0, proxy.frame.maxY - controller.window.contentLayoutRect.maxY)
-                    let glass = NSGlassEffectView(frame: NSRect(x: proxy.frame.minX, y: proxy.frame.maxY - band,
-                                                                width: proxy.frame.width, height: band))
-                    glass.style = .regular
-                    glass.cornerRadius = 0
-                    glass.contentView = NSView(frame: glass.bounds)
-                    content.addSubview(glass, positioned: .above, relativeTo: proxy)
-                    glass.display()
-                    CATransaction.flush()
-                    try await Task.sleep(for: .milliseconds(300))
-                    let nativeGlass = Process()
-                    nativeGlass.executableURL = capture.executableURL
-                    nativeGlass.arguments = ["-x", "-o", "-l", "\(controller.window.windowNumber)",
-                                            output.appendingPathComponent("\(theme)-\(name)-native-glass-raster-proxy-window.png").path]
-                    try nativeGlass.run()
-                    nativeGlass.waitUntilExit()
-                    XCTAssertEqual(nativeGlass.terminationStatus, 0)
-                    glass.removeFromSuperview()
-                }
                 proxy.removeFromSuperview()
                 let frame = web.convert(web.bounds, to: nil)
                 let top = frame.maxY - controller.window.contentLayoutRect.maxY
@@ -174,5 +139,36 @@ final class NativeHeaderRenderingTests: XCTestCase {
         // XCTest's async run loop is not NSApplication's event loop. Native
         // activation and remote-layer composition require the latter.
         app.run()
+    }
+
+    private func installRasterProxy(_ snapshot: NSImage, web: WKWebView, content: NSView,
+                                    underlap: Bool) throws -> NSImageView {
+        func backdrop(in view: NSView) -> NSView? {
+            if view.identifier?.rawValue == "OuroMDDocumentHeaderBackdrop" { return view }
+            return view.subviews.lazy.compactMap { backdrop(in: $0) }.first
+        }
+        let proxy = NSImageView()
+        proxy.image = snapshot
+        proxy.imageScaling = .scaleAxesIndependently
+        if underlap {
+            let glass = try XCTUnwrap(backdrop(in: content), "capture the production panel, never recreate it for proof")
+            var ancestor = try XCTUnwrap(web.superview)
+            var branch = glass
+            while branch.superview !== ancestor {
+                if let parent = branch.superview {
+                    branch = parent
+                } else {
+                    ancestor = try XCTUnwrap(ancestor.superview)
+                    branch = glass
+                }
+            }
+            proxy.frame = web.convert(web.bounds, to: ancestor)
+            ancestor.addSubview(proxy, positioned: .below, relativeTo: branch)
+        } else {
+            let parent = try XCTUnwrap(web.superview)
+            proxy.frame = web.convert(web.bounds, to: parent)
+            parent.addSubview(proxy, positioned: .above, relativeTo: web)
+        }
+        return proxy
     }
 }

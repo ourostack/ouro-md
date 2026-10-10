@@ -6,7 +6,7 @@ public enum OuroMDRelease {
     public static let repository = "ourostack/ouro-md"
     public static let version = "0.9.96"
     public static let userAgent = "OuroMD/\(version)"
-    public static let releaseDate = "2026-10-09"
+    public static let releaseDate = "2026-10-10"
     public static let positioningSubtitle = "Local Markdown workspace for Mac files."
     public static let releaseHighlights = [
         "Open folders as a local Markdown workspace for Mac files, with Search and Outline surfaces available from first launch.",

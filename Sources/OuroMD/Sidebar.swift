@@ -448,6 +448,15 @@ struct EditorPane: View {
                 if SystemDesign.usesGlass {
                     EditorWebView(model: model, topObscuredInset: topInset)
                         .ignoresSafeArea(.container, edges: .top)
+                    if topInset > 0 {
+                        VStack(spacing: 0) {
+                            DocumentHeaderBackdrop().frame(height: topInset)
+                            Spacer(minLength: 0)
+                        }
+                        .ignoresSafeArea(.container, edges: .top)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                    }
                 } else {
                     EditorWebView(model: model)
                 }

@@ -64,6 +64,10 @@ final class DocumentWindowControllerTests: XCTestCase {
             }
             return nil
         }
+        func nativeBackdrop(in view: NSView) -> NSView? {
+            if view.identifier?.rawValue == "OuroMDDocumentHeaderBackdrop" { return view }
+            return view.subviews.lazy.compactMap { nativeBackdrop(in: $0) }.first
+        }
 
         for size in [NSSize(width: 1080, height: 800), NSSize(width: 600, height: 420)] {
             window.setContentSize(size)
@@ -84,6 +88,19 @@ final class DocumentWindowControllerTests: XCTestCase {
                     if visible {
                         XCTAssertGreaterThan(occlusion, 0, "a visible toolbar needs document backdrop beneath it")
                     }
+                    let backdrop = try XCTUnwrap(nativeBackdrop(in: content) as? NSGlassEffectView,
+                                                 "the header needs an actual native glass panel, not raw underlap alone")
+                    let glassFrame = backdrop.convert(backdrop.bounds, to: nil)
+                    XCTAssertEqual(glassFrame.maxY, frame.maxY, accuracy: 1)
+                    XCTAssertEqual(glassFrame.minY, window.contentLayoutRect.maxY, accuracy: 1,
+                                   "glass must stop at the native header edge, never fade into readable text")
+                    XCTAssertEqual(glassFrame.width, frame.width, accuracy: 1)
+                    XCTAssertEqual(backdrop.style, .regular)
+                    XCTAssertEqual(backdrop.cornerRadius, 0)
+                    XCTAssertNil(backdrop.tintColor)
+                    XCTAssertNotNil(backdrop.contentView)
+                    XCTAssertNil(backdrop.hitTest(NSPoint(x: backdrop.bounds.midX, y: backdrop.bounds.midY)))
+                    XCTAssertFalse(backdrop.isAccessibilityElement())
                 }
                 XCTAssertFalse(window.isVisible, "geometry checks must never order a window front")
             }
