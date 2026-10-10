@@ -63,6 +63,8 @@ final class NativeDocumentMetadataTests: XCTestCase {
         XCTAssertEqual(document.fileType, "net.daringfireball.markdown")
         XCTAssertTrue(NativeDocumentMetadata.writableTypes.contains("net.daringfireball.markdown"),
                       "Native metadata eligibility must declare its class-level writable types")
+        XCTAssertTrue(NativeDocumentMetadata.isNativeType("net.daringfireball.markdown"),
+                      "The directly allocated adapter must declare its Editor-role types")
         XCTAssertTrue(document.writableTypes(for: .saveOperation).contains("net.daringfireball.markdown"),
                       "The native controls require the adapter to declare the file types it can save through AppModel")
         XCTAssertFalse(document.isDocumentEdited, "AppModel alone owns content autosave and unsaved-close prompts")

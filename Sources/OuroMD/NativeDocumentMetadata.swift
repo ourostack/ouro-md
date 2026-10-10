@@ -21,6 +21,7 @@ final class NativeDocumentMetadata: NSDocument {
     override class var preservesVersions: Bool { false }
     nonisolated override class var readableTypes: [String] { ["net.daringfireball.markdown", "public.plain-text"] }
     nonisolated override class var writableTypes: [String] { readableTypes }
+    nonisolated override class func isNativeType(_ type: String) -> Bool { writableTypes.contains(type) }
     override func writableTypes(for saveOperation: NSDocument.SaveOperationType) -> [String] {
         Self.readableTypes
     }
