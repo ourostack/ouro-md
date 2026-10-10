@@ -148,6 +148,10 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
             return
         }
         guard model.currentURL != nil else { model.saveAs(); return }
+        if ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil,
+           ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" {
+            fputs("native-rename key=\(window.isKeyWindow) associated=\(nativeDocument?.windowForSheet === window) document=\(nativeDocument != nil)\n", stderr)
+        }
         nativeDocument?.rename(nil)
     }
 
@@ -479,6 +483,12 @@ final class DocumentWindow: NSWindow {
     private var titleClickGeneration = 0
 
     override func sendEvent(_ event: NSEvent) {
+        if [.leftMouseDown, .leftMouseUp].contains(event.type),
+           ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil,
+           ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" {
+            let rect = titleHitView?().map { $0.convert($0.bounds, to: nil) }
+            fputs("native-title-event type=\(event.type.rawValue) point=\(event.locationInWindow) title=\(String(describing: rect)) key=\(isKeyWindow)\n", stderr)
+        }
         var scheduleOpenAfterDispatch = false
         switch event.type {
         case .leftMouseDown:

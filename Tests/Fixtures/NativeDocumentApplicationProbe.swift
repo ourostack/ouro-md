@@ -16,6 +16,11 @@ enum NativeDocumentApplicationProbe {
         app.executableURL = URL(fileURLWithPath: executable)
         app.arguments = [file]
         app.environment = environment
+        let applicationLog = output.appendingPathComponent("application-events.log")
+        guard FileManager.default.createFile(atPath: applicationLog.path, contents: nil) else { exit(1) }
+        let log = try FileHandle(forWritingTo: applicationLog)
+        defer { try? log.close() }
+        app.standardError = log
         try app.run()
         defer {
             if app.isRunning { app.terminate(); app.waitUntilExit() }
@@ -44,7 +49,7 @@ enum NativeDocumentApplicationProbe {
         let accessibility = AXUIElementCopyAttributeValue(application, kAXChildrenAttribute as CFString, &attributes)
         func snapshotAX(_ element: AXUIElement, depth: Int) -> [String: Any] {
             var result: [String: Any] = [:]
-            for name in [kAXRoleAttribute, kAXTitleAttribute, kAXDescriptionAttribute] {
+            for name in [kAXRoleAttribute, kAXTitleAttribute, kAXDescriptionAttribute, kAXValueAttribute] {
                 var value: CFTypeRef?
                 if AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success,
                    let string = value as? String { result[name] = string }
@@ -71,6 +76,14 @@ enum NativeDocumentApplicationProbe {
             down.post(tap: .cghidEventTap)
             Thread.sleep(forTimeInterval: 0.1)
             up.post(tap: .cghidEventTap)
+        }
+        var hit: AXUIElement?
+        let hitStatus = AXUIElementCopyElementAtPosition(application, Float(point.x), Float(point.y), &hit)
+        if let hit {
+            try JSONSerialization.data(withJSONObject: [
+                "status": hitStatus.rawValue, "element": snapshotAX(hit, depth: 2)
+            ], options: [.prettyPrinted, .sortedKeys])
+                .write(to: output.appendingPathComponent("filename-hit.json"))
         }
         click(point)
         Thread.sleep(forTimeInterval: 3)
