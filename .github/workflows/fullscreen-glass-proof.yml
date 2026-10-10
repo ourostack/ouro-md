@@ -33,7 +33,7 @@ jobs:
                   let delegate = AppDelegate()
                   let probe = FullscreenGlassProbe()
                   UserDefaults.standard.set(true, forKey: "ouro.hasLaunched")
-                  delegate.initialFilePath = "\(FileManager.default.currentDirectoryPath)/.build/fullscreen-input.md"
+                  delegate.initialFilePath = ProcessInfo.processInfo.environment["OURO_FULLSCREEN_INPUT"]
                   NSApplication.shared.setActivationPolicy(.regular)
                   NSApplication.shared.delegate = delegate
                   MenuBuilder.install(into: NSApplication.shared, target: delegate)
@@ -64,6 +64,20 @@ jobs:
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0"><dict><key>CFBundleExecutable</key><string>ouro-md</string><key>CFBundleIdentifier</key><string>bot.ouro.md.fullscreen-proof</string><key>CFBundleName</key><string>Fullscreen Proof</string><key>CFBundlePackageType</key><string>APPL</string><key>NSHighResolutionCapable</key><true/></dict></plist>
           PLIST
+          python3 - <<'PY'
+          from pathlib import Path
+          import plistlib
+          p=Path('.build/FullscreenProof.app/Contents/Info.plist')
+          info=plistlib.loads(p.read_bytes())
+          info['LSEnvironment']={
+              'GITHUB_ACTIONS':'true',
+              'OURO_FULLSCREEN_PROBE':'1',
+              'OURO_FULLSCREEN_OUTPUT':str(Path('.build/fullscreen-proof').resolve()),
+              'OURO_FULLSCREEN_INPUT':str(Path('.build/fullscreen-input.md').resolve()),
+              'OURO_MD_TELEMETRY_DISABLED':'1',
+          }
+          p.write_bytes(plistlib.dumps(info))
+          PY
           codesign --force --deep --sign - .build/FullscreenProof.app
           /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f .build/FullscreenProof.app
           printf '# Public fullscreen QA document\n\nNative glass verification.\n' > .build/fullscreen-input.md
@@ -71,7 +85,13 @@ jobs:
         env:
           OURO_FULLSCREEN_PROBE: '1'
           OURO_FULLSCREEN_OUTPUT: .build/fullscreen-proof
-        run: .build/FullscreenProof.app/Contents/MacOS/ouro-md
+          OURO_NATIVE_PREFERENCE_PROOF: '1'
+        run: ./scripts/run-hosted-native-proof.sh fullscreen
+      - name: Restore exact owned preferences
+        if: always()
+        env:
+          OURO_NATIVE_PREFERENCE_PROOF: '1'
+        run: ./scripts/run-hosted-native-proof.sh fullscreen --restore
       - uses: actions/upload-artifact@v6
         if: always()
         with:

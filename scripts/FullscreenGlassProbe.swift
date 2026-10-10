@@ -94,7 +94,11 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
                 try await Task.sleep(for: .milliseconds(100))
             }
             NotificationCenter.default.removeObserver(observer)
-            rows.append(["transition": "enter", "completed": completed, "theme": theme])
+            rows.append(["transition": "enter", "completed": completed, "theme": theme,
+                         "style": controller.window.styleMask.rawValue,
+                         "frame": NSStringFromRect(controller.window.frame),
+                         "reduceMotion": NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,
+                         "reduceTransparency": NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency])
             try save()
             guard completed else { throw NSError(domain: "Fullscreen enter never completed", code: 2) }
             try await Task.sleep(for: .seconds(2))
