@@ -106,11 +106,7 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
             if let toolbarWindow = controller.truthToolbarItem?.view?.window, toolbarWindow !== controller.window {
                 toolbarWindow.titlebarAppearsTransparent = true
                 rows.append(["toolbarViews": describe(toolbarWindow.contentView!), "theme": theme])
-                func sampleBehindWindow(_ view: NSView) {
-                    if let effect = view as? NSVisualEffectView { effect.blendingMode = .behindWindow }
-                    view.subviews.forEach(sampleBehindWindow)
-                }
-                sampleBehindWindow(toolbarWindow.contentView!)
+                toolbarWindow.styleMask.insert(.fullSizeContentView)
             }
             try await capture(theme: theme, state: "fullscreen-transparent-titlebar", web: web)
             try await transition(fullscreen: false)
