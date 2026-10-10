@@ -427,10 +427,20 @@ enum NativeDocumentApplicationProbe {
         try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
         Thread.sleep(forTimeInterval: 1)
         key(5, flags: [.maskCommand, .maskShift])
-        Thread.sleep(forTimeInterval: 0.5)
-        typeText(destination.path)
+        Thread.sleep(forTimeInterval: 1)
+        let clipboard = Process()
+        let clipboardInput = Pipe()
+        clipboard.executableURL = URL(fileURLWithPath: "/usr/bin/pbcopy")
+        clipboard.standardInput = clipboardInput
+        try clipboard.run()
+        try clipboardInput.fileHandleForWriting.write(contentsOf: Data(destination.path.utf8))
+        try clipboardInput.fileHandleForWriting.close()
+        clipboard.waitUntilExit()
+        guard clipboard.terminationStatus == 0 else { exit(7) }
+        key(9, flags: .maskCommand)
+        Thread.sleep(forTimeInterval: 1)
         key(36)
-        Thread.sleep(forTimeInterval: 0.5)
+        Thread.sleep(forTimeInterval: 1)
         key(36)
         let movedFile = destination.appendingPathComponent(renamedFile.lastPathComponent)
         for _ in 0..<100 {
