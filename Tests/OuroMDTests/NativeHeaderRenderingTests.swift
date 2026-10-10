@@ -124,6 +124,33 @@ final class NativeHeaderRenderingTests: XCTestCase {
             sampledHeaders.append(headerMeans[0])
             sampledHeaders.append(headerMeans[1])
         }
+        if underlap, #available(macOS 26, *) {
+            var fullscreenStates: [[String: Any]] = []
+            for fullscreen in [true, false] {
+                controller.window.toggleFullScreen(nil)
+                for _ in 0..<40 {
+                    pumpNativeApplicationEvents()
+                    if controller.window.styleMask.contains(.fullScreen) == fullscreen { break }
+                    try await Task.sleep(for: .milliseconds(100))
+                }
+                XCTAssertEqual(controller.window.styleMask.contains(.fullScreen), fullscreen)
+                for visible in [false, true] {
+                    controller.window.toolbar?.isVisible = visible
+                    for _ in 0..<20 {
+                        pumpNativeApplicationEvents()
+                        content.layoutSubtreeIfNeeded()
+                        if abs(web.convert(web.bounds, to: nil).maxY - controller.window.contentLayoutRect.maxY) <= 1 { break }
+                        try await Task.sleep(for: .milliseconds(100))
+                    }
+                    let top = web.convert(web.bounds, to: nil).maxY
+                    XCTAssertEqual(top, controller.window.contentLayoutRect.maxY, accuracy: 1,
+                                   "fullscreen and hidden-toolbar transitions must update real editing bounds")
+                    fullscreenStates.append(["fullscreen": fullscreen, "toolbarVisible": visible,
+                                             "webTop": top, "nativeLayoutTop": controller.window.contentLayoutRect.maxY])
+                }
+            }
+            measurements[0]["fullscreenStates"] = fullscreenStates
+        }
         try JSONSerialization.data(withJSONObject: measurements, options: [.prettyPrinted, .sortedKeys])
             .write(to: output.appendingPathComponent("measurements.json"))
         let liveBodyPaints = measurements.allSatisfy { ($0["coloredBodyPixels"] as? Int ?? 0) > 1000 }
