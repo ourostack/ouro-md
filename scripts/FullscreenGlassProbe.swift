@@ -77,6 +77,10 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
             guard completed else { throw NSError(domain: "Fullscreen enter never completed", code: 2) }
             try await Task.sleep(for: .seconds(2))
             try await capture(theme: theme, state: "fullscreen-pinned", web: web)
+            if let toolbarWindow = controller.truthToolbarItem?.view?.window, toolbarWindow !== controller.window {
+                toolbarWindow.titlebarAppearsTransparent = true
+            }
+            try await capture(theme: theme, state: "fullscreen-transparent-titlebar", web: web)
             var options = NSApp.currentSystemPresentationOptions
             options.remove([.hideMenuBar, .autoHideDock])
             options.formUnion([.fullScreen, .autoHideMenuBar, .hideDock, .autoHideToolbar])
@@ -165,7 +169,10 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
                          "presentation": NSApp.presentationOptions.rawValue,
                          "effectivePresentation": NSApp.currentSystemPresentationOptions.rawValue,
                          "windows": NSApp.windows.map { ["number": $0.windowNumber, "frame": NSStringFromRect($0.frame),
-                                                         "class": "\(type(of: $0))", "visible": $0.isVisible] }])
+                                                         "class": "\(type(of: $0))", "visible": $0.isVisible,
+                                                         "transparent": $0.titlebarAppearsTransparent, "opaque": $0.isOpaque,
+                                                         "background": "\($0.backgroundColor)",
+                                                         "style": $0.styleMask.rawValue] }])
             try save()
         }
     }
