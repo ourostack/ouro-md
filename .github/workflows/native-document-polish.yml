@@ -78,7 +78,9 @@ jobs:
           </dict></array>
           </dict></plist>
           PLIST
-          "$APP/Contents/MacOS/NativeDocumentTitleProbe" "$PWD/Tests/Fixtures/Harbor field notes.md" "$PWD/.build/registered-native-title"
+          OURO_TITLE_PROBE_FILE="$PWD/Tests/Fixtures/Harbor field notes.md" \
+          OURO_TITLE_PROBE_OUTPUT="$PWD/.build/registered-native-title" \
+          "$APP/Contents/MacOS/NativeDocumentTitleProbe"
       - uses: actions/upload-artifact@v6
         if: always()
         with:

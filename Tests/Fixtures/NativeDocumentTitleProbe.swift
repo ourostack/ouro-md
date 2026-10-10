@@ -25,10 +25,12 @@ final class NativeDocumentTitleProbeDocument: NSDocument {
 @main
 enum NativeDocumentTitleProbe {
     static func main() {
-        guard ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
-              CommandLine.arguments.count == 3 else { exit(64) }
-        let file = URL(fileURLWithPath: CommandLine.arguments[1])
-        let output = URL(fileURLWithPath: CommandLine.arguments[2], isDirectory: true)
+        let environment = ProcessInfo.processInfo.environment
+        guard environment["GITHUB_ACTIONS"] == "true",
+              let filePath = environment["OURO_TITLE_PROBE_FILE"],
+              let outputPath = environment["OURO_TITLE_PROBE_OUTPUT"] else { exit(64) }
+        let file = URL(fileURLWithPath: filePath)
+        let output = URL(fileURLWithPath: outputPath, isDirectory: true)
         do {
             try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
             try JSONSerialization.data(withJSONObject: [
