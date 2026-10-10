@@ -6,13 +6,22 @@ final class DocumentTruthTests: XCTestCase {
     func testShortLabelsNameTheGitStateInAWord() {
         let expected: [(DocumentTruthState, String)] = [
             (.untitled, "Not saved"), (.unavailable, "Unavailable"), (.gitUnavailable, "No Git"),
-            (.notInGit, "Not in Git"), (.untracked, "New"), (.trackedClean, "Committed"),
+            (.notInGit, "Not versioned"), (.untracked, "New"), (.trackedClean, "Committed"),
             (.trackedModified, "Modified"), (.trackedStaged, "Staged"), (.trackedMixed, "Partly staged"),
         ]
         for (state, word) in expected {
             let snapshot = DocumentTruthSnapshot(state: state, absolutePath: nil, repositoryRoot: nil, relativePath: nil)
             XCTAssertEqual(snapshot.shortLabel, word)
         }
+
+    }
+
+    func testNonVersionControlledCopyNamesTheFileStateWithoutGitJargon() {
+        let snapshot = DocumentTruthSnapshot(state: .notInGit, absolutePath: "/public/Launch plan.md",
+                                             repositoryRoot: nil, relativePath: nil)
+        XCTAssertEqual(snapshot.shortLabel, "Not versioned")
+        XCTAssertEqual(snapshot.label, "Not version controlled")
+        XCTAssertFalse(snapshot.canCopyGitDiffCommand)
     }
 
     func testUntitledAndNonFileURLsHaveHonestUnavailableState() {
@@ -62,7 +71,7 @@ final class DocumentTruthTests: XCTestCase {
         XCTAssertEqual(gitUnavailable.snapshot(for: url).state, .gitUnavailable)
         XCTAssertEqual(gitUnavailable.snapshot(for: url).label, "Git unavailable")
         XCTAssertEqual(local.snapshot(for: url).state, .notInGit)
-        XCTAssertEqual(local.snapshot(for: url).label, "Local file")
+        XCTAssertEqual(local.snapshot(for: url).label, "Not version controlled")
 
         let failedGit = DocumentTruthProvider(
             gitRunner: FakeGitRunner { command, _ in
@@ -172,7 +181,7 @@ final class DocumentTruthTests: XCTestCase {
         XCTAssertEqual(untracked.snapshot(for: fileURL).label, "Not tracked")
         XCTAssertTrue(untracked.snapshot(for: fileURL).canCopyGitDiffCommand)
         XCTAssertEqual(ignored.snapshot(for: fileURL).state, .notInGit)
-        XCTAssertEqual(ignored.snapshot(for: fileURL).label, "Local file")
+        XCTAssertEqual(ignored.snapshot(for: fileURL).label, "Not version controlled")
     }
 
     func testShellEscapesDiffCommandComponents() {

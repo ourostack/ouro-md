@@ -6,7 +6,7 @@ ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
 in careful typography on a centered page. Type Markdown and watch it render in
 place — switch themes live, and read the same document four different ways.
 
-> **Status:** v0.9.96. Reads and edits Markdown today. Release tooling produces
+> **Status:** v0.9.97. Reads and edits Markdown today. Release tooling produces
 > Developer-ID signed/notarized public artifacts — see [First launch](#first-launch).
 
 ---
@@ -157,12 +157,15 @@ open OuroMD.app
 
 The **Window chrome** workflow captures the real native header with a released
 flat-layout negative control. The **Native site media and accessibility**
-workflow opens `Tests/Fixtures/Harbor field notes.md` and captures real window
-frames for light/dark heroes, scrolling, external-file reload with margin marks,
-Next change, and native Paste. Its Intel job requires OCR-readable document
-content in the native capture—not just editor readiness or a WK snapshot.
+workflow opens `Tests/Fixtures/Launch plan.md` in a real committed sample
+repository, with the sidebar closed and larger native editor text. It captures
+reading, native human feedback with autosave, then an external agent-style edit
+of that same saved file with margin marks and Next change. Committed and Modified
+are asserted against both the real Git provider and native toolbar text. The
+Intel job requires the published release's production source and OCR-readable
+document content—not just editor readiness or a WK snapshot.
 Per-frame timestamps and UI state accompany the PNGs for authentic GIF export.
-The field guide's original fictional route sketch is ordinary document imagery,
+The plan's original fictional route sketch is ordinary document imagery,
 not replacement app UI. The media job selects non-reduced motion/transparency
 settings on its disposable runner and verifies the actual native signals;
 `scripts/run-hosted-native-proof.sh` restores the original keys afterwards.

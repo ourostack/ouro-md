@@ -23,26 +23,32 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-26-intel, xcode-27]
+        runner: [macos-26-intel]
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - name: Toolchain and renderer provenance
         run: |
-          if [[ '${{ matrix.runner }}' == 'xcode-27' ]]; then
-            sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
-          fi
           sw_vers
           xcodebuild -version
           system_profiler SPDisplaysDataType
+      - name: Require the published copy release and identical production source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(./scripts/verify-release-version.sh --print)" = '0.9.97'
+          test "$(gh api repos/ourostack/ouro-md/releases/tags/v0.9.97 --jq 'select(.draft == false).tag_name')" = 'v0.9.97'
+          git diff --exit-code v0.9.97 HEAD -- Sources
+          echo "OURO_SITE_MEDIA_RELEASE_COMMIT=$(git rev-parse 'v0.9.97^{commit}')" >> "$GITHUB_ENV"
       - name: Capture real public-document action frames
         env:
           OURO_SITE_MEDIA: '1'
           OURO_NATIVE_PREFERENCE_PROOF: '1'
           OURO_SITE_MEDIA_OUTPUT: .build/site-media
-          OURO_SITE_MEDIA_RENDERER_DIAGNOSTICS: ${{ matrix.runner == 'xcode-27' && '1' || '0' }}
-          OURO_SITE_MEDIA_REQUIRE_BODY_PAINT: ${{ matrix.runner == 'macos-26-intel' && '1' || '0' }}
+          OURO_SITE_MEDIA_REQUIRE_BODY_PAINT: '1'
           OURO_MD_TELEMETRY_DISABLED: '1'
         run: ./scripts/run-hosted-native-proof.sh media
       - name: Restore owned preferences after interrupted capture
