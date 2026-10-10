@@ -1,0 +1,41 @@
+name: Native document polish investigation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-document-polish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-26-intel, xcode-27]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Record native environment
+        run: |
+          if [[ '${{ matrix.runner }}' == 'xcode-27' ]]; then
+            sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
+          fi
+          xcodebuild -version
+          sw_vers
+          system_profiler SPDisplaysDataType
+      - name: Run actual AppKit-loop characterization
+        env:
+          OURO_NATIVE_POLISH_PROBE: '1'
+          OURO_MD_TELEMETRY_DISABLED: '1'
+        run: swift test --filter NativeDocumentPolishProbeTests
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: native-document-polish-${{ matrix.runner }}
+          path: .build/native-document-polish
+          if-no-files-found: error
