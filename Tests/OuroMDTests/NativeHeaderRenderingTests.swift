@@ -128,17 +128,13 @@ final class NativeHeaderRenderingTests: XCTestCase {
 
     private func pumpNativeApplicationEvents() {
         let app = NSApplication.shared
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            app.stop(nil)
-            if let wake = NSEvent.otherEvent(with: .applicationDefined, location: .zero,
-                                            modifierFlags: [], timestamp: 0, windowNumber: 0,
-                                            context: nil, subtype: 0, data1: 0, data2: 0) {
-                app.postEvent(wake, atStart: true)
+        for _ in 0..<10 {
+            if let event = app.nextEvent(matching: .any, until: Date(timeIntervalSinceNow: 0.05),
+                                         inMode: .default, dequeue: true) {
+                app.sendEvent(event)
             }
+            app.updateWindows()
         }
-        // XCTest's async run loop is not NSApplication's event loop. Native
-        // activation and remote-layer composition require the latter.
-        app.run()
     }
 
     private func installRasterProxy(_ snapshot: NSImage, web: WKWebView, content: NSView,
