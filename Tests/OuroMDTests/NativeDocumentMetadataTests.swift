@@ -117,7 +117,7 @@ final class NativeDocumentMetadataTests: XCTestCase {
                         "The filename text must open the document controls, not merely the small native arrow")
         XCTAssertNotNil(window.titleHitView?())
         var presented = false
-        controller.renamePresentationHandler = { presented = true }
+        controller.documentControlsFromTitleClickHandler = { presented = true }
         controller.presentDocumentControlsFromTitleClick()
         XCTAssertTrue(presented)
         XCTAssertTrue(controller.nativeDocument?.windowForSheet === window)

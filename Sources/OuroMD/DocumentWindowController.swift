@@ -139,7 +139,13 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
             documentControlsFromTitleClickHandler()
             return
         }
-        presentRename()
+        guard model.currentURL != nil else { model.saveAs(); return }
+        let button = window.standardWindowButton(.documentVersionsButton)
+        if ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil,
+           ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" {
+            fputs("native-document-button present=\(button != nil) enabled=\(button?.isEnabled == true) action=\(String(describing: button?.action))\n", stderr)
+        }
+        button?.performClick(nil)
     }
 
     // MARK: - Rename
