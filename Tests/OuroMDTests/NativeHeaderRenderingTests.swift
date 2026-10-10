@@ -1,0 +1,93 @@
+import AppKit
+import QuartzCore
+import WebKit
+import XCTest
+@testable import OuroMD
+
+/// Interactive rendering is strictly confined to the dedicated hosted job.
+@MainActor
+final class NativeHeaderRenderingTests: XCTestCase {
+    func testHostedMovingDocumentBackdropBehindNativeHeader() async throws {
+        let env = ProcessInfo.processInfo.environment
+        try XCTSkipUnless(env["GITHUB_ACTIONS"] == "true" && env["OURO_HEADER_RENDERING"] == "1",
+                          "never present test windows on an operator's Mac")
+        try XCTSkipUnless(SystemDesign.usesGlass)
+        let output = URL(fileURLWithPath: env["OURO_HEADER_OUTPUT"] ?? ".build/header-rendering",
+                         isDirectory: true)
+        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        let underlap = env["OURO_HEADER_EXPECT_UNDERLAP"] != "0"
+        let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
+        defer { controller.window.close() }
+        controller.window.setContentSize(NSSize(width: 1000, height: 700))
+        controller.show(cascadeFrom: nil)
+        let content = try XCTUnwrap(controller.window.contentView)
+        func editor(in view: NSView) -> WKWebView? {
+            if let web = view as? WKWebView { return web }
+            return view.subviews.lazy.compactMap { editor(in: $0) }.first
+        }
+        for _ in 0..<200 {
+            if controller.model.isReady && editor(in: content) != nil { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertTrue(controller.model.isReady, "must prove real editor readiness, not capture a blank body")
+        let web = try XCTUnwrap(editor(in: content))
+        var measurements: [[String: Any]] = []
+        for theme in ["quartz", "graphite"] {
+            controller.model.setTheme(id: theme)
+            controller.syncChrome()
+            let document = (1...30).map {
+                "## Passage \($0)\n\nMoving document backdrop \($0). Native title and toolbar controls must remain readable."
+            }.joined(separator: "\n\n")
+            controller.model.bridge?.setMarkdown(document)
+            try await Task.sleep(for: .seconds(1))
+            let preparation = try await web.evaluateJavaScript("""
+            (() => {
+              const root = document.querySelector(".vditor-ir .vditor-reset");
+              if (!root || !root.textContent.includes("Moving document backdrop")) { return false; }
+              Array.from(root.children).forEach((node, i) => {
+                node.style.minHeight = "100px";
+                node.style.background = i % 4 < 2 ? "#ee6655" : "#3388ee";
+              });
+              return true;
+            })()
+            """)
+            XCTAssertEqual(preparation as? Bool, true, "capture requires actual rendered document text")
+            for (name, scroll) in [("warm", 140), ("cool", 360)] {
+                _ = try await web.evaluateJavaScript("window.scrollTo(0,\(scroll))")
+                try await Task.sleep(for: .seconds(1))
+                let geometry = try await web.evaluateJavaScript("""
+                ({scroll:scrollY, viewport:innerHeight, text:document.querySelector(".vditor-ir .vditor-reset").innerText,
+                  firstTop:document.querySelector(".vditor-ir .vditor-reset").firstElementChild.getBoundingClientRect().top})
+                """)
+                let values = try XCTUnwrap(geometry as? [String: Any])
+                XCTAssertGreaterThan(values["scroll"] as? Double ?? 0, 0, "the document must really scroll")
+                let snapshot = try await web.takeSnapshot(configuration: nil)
+                let bitmap = try XCTUnwrap(NSBitmapImageRep(data: try XCTUnwrap(snapshot.tiffRepresentation)))
+                try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+                    .write(to: output.appendingPathComponent("\(theme)-\(name)-web.png"))
+                content.displayIfNeeded()
+                CATransaction.flush()
+                let capture = Process()
+                capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+                capture.arguments = ["-x", "-o", "-l", "\(controller.window.windowNumber)",
+                                     output.appendingPathComponent("\(theme)-\(name)-window.png").path]
+                try capture.run()
+                capture.waitUntilExit()
+                XCTAssertEqual(capture.terminationStatus, 0, "real native composition must be captured")
+                let frame = web.convert(web.bounds, to: nil)
+                let top = frame.maxY - controller.window.contentLayoutRect.maxY
+                if underlap {
+                    XCTAssertGreaterThan(top, 0)
+                } else {
+                    XCTAssertLessThanOrEqual(top, 1, "negative control must be the flat released layout")
+                }
+                measurements.append(["theme": theme, "state": name, "underlap": top,
+                                     "webWidth": web.bounds.width, "webHeight": web.bounds.height,
+                                     "layout": values, "title": controller.window.title,
+                                     "toolbarVisible": controller.window.toolbar?.isVisible ?? false])
+            }
+        }
+        try JSONSerialization.data(withJSONObject: measurements, options: [.prettyPrinted, .sortedKeys])
+            .write(to: output.appendingPathComponent("measurements.json"))
+    }
+}

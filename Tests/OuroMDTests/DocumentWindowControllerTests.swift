@@ -5,7 +5,48 @@ import WebKit
 
 @MainActor
 final class DocumentWindowControllerTests: XCTestCase {
-    func testEditorRespectsNativeToolbarContentBoundsWhenToolbarChanges() throws {
+    func testPublicObscuredInsetCoordinatesForDocumentCues() throws {
+        try XCTSkipUnless(SystemDesign.usesGlass)
+        let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
+        defer { controller.window.close() }
+        let content = try XCTUnwrap(controller.window.contentView)
+        controller.window.layoutIfNeeded()
+        content.layoutSubtreeIfNeeded()
+        func editor(in view: NSView) -> WKWebView? {
+            if let web = view as? WKWebView { return web }
+            return view.subviews.lazy.compactMap { editor(in: $0) }.first
+        }
+        waitUntil(timeout: 2) { editor(in: content) != nil }
+        let web = try XCTUnwrap(editor(in: content))
+        waitUntil(timeout: 5) { controller.model.isReady }
+        XCTAssertTrue(controller.model.isReady)
+        var result: [String: Double]?
+        waitUntil(timeout: 5) {
+            web.evaluateJavaScript("""
+            (() => {
+              const first = document.createElement("div");
+              first.style.cssText = "position:fixed;top:0;left:0;width:10px;height:10px";
+              document.documentElement.appendChild(first);
+              const result = {top:first.getBoundingClientRect().top, height:innerHeight, offset:visualViewport.offsetTop};
+              first.remove();
+              return result;
+            })()
+            """) { value, _ in
+                result = value as? [String: Double]
+            }
+            return result?["top"] != nil && !web.isLoading
+        }
+        let coordinates = try XCTUnwrap(result)
+        print("PUBLIC_HEADER_COORDINATES \(coordinates) webHeight=\(web.bounds.height)")
+        XCTAssertFalse(controller.window.isVisible)
+        if #available(macOS 26, *) {
+            XCTAssertEqual(try XCTUnwrap(coordinates["height"]), web.bounds.height - web.obscuredContentInsets.top, accuracy: 1)
+        }
+        XCTAssertEqual(try XCTUnwrap(coordinates["top"]), 0, accuracy: 1,
+                       "WebKit's layout viewport already excludes the header; adding its inset again would double-offset cues")
+    }
+
+    func testDocumentBackdropUnderlapsToolbarWithMatchingPublicObscuredInsets() throws {
         try XCTSkipUnless(SystemDesign.usesGlass, "native toolbar geometry is for the system design")
         let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
         defer { controller.window.close() }
@@ -30,10 +71,17 @@ final class DocumentWindowControllerTests: XCTestCase {
                 let webView = try XCTUnwrap(editor(in: content))
                 let frame = webView.convert(webView.bounds, to: nil)
                 XCTAssertGreaterThan(frame.height, 0)
-                XCTAssertLessThanOrEqual(frame.maxY, window.contentLayoutRect.maxY + 1, "the editor must not render beneath native toolbar controls")
+                XCTAssertEqual(frame.maxY, content.convert(content.bounds, to: nil).maxY, accuracy: 1,
+                               "moving document content must reach behind the native header, not stop at contentLayoutRect")
                 if #available(macOS 26, *) {
-                    XCTAssertEqual(webView.obscuredContentInsets.top, 0, "native bounds need no custom WebKit obscured inset")
+                    let occlusion = max(0, frame.maxY - window.contentLayoutRect.maxY)
+                    XCTAssertEqual(webView.obscuredContentInsets.top, occlusion, accuracy: 1,
+                                   "WebKit must keep the first line and caret below the same native header band")
+                    if visible {
+                        XCTAssertGreaterThan(occlusion, 0, "a visible toolbar needs document backdrop beneath it")
+                    }
                 }
+                XCTAssertFalse(window.isVisible, "geometry checks must never order a window front")
             }
         }
         XCTAssertFalse(window.isVisible, "this geometry test must never order a test window front")

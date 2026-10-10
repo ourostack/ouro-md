@@ -1,8 +1,7 @@
 name: Window chrome
 
-# Captures the packaged app's real window chrome on macOS 27 so system design
-# changes (title bar, toolbar, sidebar, floating bars) can be reviewed from
-# screenshots. Informational: it uploads images and does not gate merges.
+# Captures real moving editor content plus native chrome, with a released
+# flat-layout negative control. Interactive tests run only on the hosted Mac.
 
 on:
   pull_request:
@@ -13,6 +12,7 @@ on:
       - 'scripts/capture-window-chrome.sh'
       - 'scripts/lib/window-id.swift'
       - '.github/workflows/window-chrome.yml'
+      - 'Tests/OuroMDTests/NativeHeaderRenderingTests.swift'
   workflow_dispatch:
 
 permissions:
@@ -30,27 +30,32 @@ jobs:
           sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
           xcodebuild -version
           sw_vers
-      - name: Build the app bundle
+      - name: Render the live native header over moving document content
         env:
-          OURO_MD_DISTRIBUTION_CHANNEL: local
+          OURO_HEADER_RENDERING: '1'
+          OURO_HEADER_EXPECT_UNDERLAP: '1'
+          OURO_HEADER_OUTPUT: .build/header-rendering/current
           OURO_MD_TELEMETRY_DISABLED: '1'
-        run: ./make-app.sh
-      - name: Capture window chrome
-        run: ./scripts/capture-window-chrome.sh OuroMD.app .build/window-chrome
-      - name: Capture the latest release on the same runner, for comparison
+        run: swift test --filter NativeHeaderRenderingTests
+      - name: Checkout the flat released negative control
+        uses: actions/checkout@v5
+        with:
+          ref: v0.9.95
+          path: .ci/header-baseline
+      - name: Render the same document in the released flat layout
         if: always()
         env:
-          GH_TOKEN: ${{ github.token }}
+          OURO_HEADER_RENDERING: '1'
+          OURO_HEADER_EXPECT_UNDERLAP: '0'
+          OURO_MD_TELEMETRY_DISABLED: '1'
         run: |
-          mkdir -p .build/baseline
-          tag="$(gh release view -R "$GITHUB_REPOSITORY" --json tagName -q .tagName)"
-          gh release download "$tag" -R "$GITHUB_REPOSITORY" -p 'Ouro-MD-*.zip' -D .build/baseline
-          ditto -x -k .build/baseline/Ouro-MD-*.zip .build/baseline
-          baseline="$(find .build/baseline -maxdepth 2 -name '*.app' -print -quit)"
-          ./scripts/capture-window-chrome.sh "$baseline" .build/window-chrome "release-${tag}-"
+          cp Tests/OuroMDTests/NativeHeaderRenderingTests.swift .ci/header-baseline/Tests/OuroMDTests/
+          export OURO_HEADER_OUTPUT="$PWD/.build/header-rendering/flat-v0.9.95"
+          cd .ci/header-baseline
+          swift test --filter NativeHeaderRenderingTests
       - uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: window-chrome
-          path: .build/window-chrome
-          if-no-files-found: warn
+          name: native-header-rendering
+          path: .build/header-rendering
+          if-no-files-found: error

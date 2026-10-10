@@ -434,15 +434,23 @@ struct EditorPane: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
-        editor.frame(minWidth: 400, minHeight: 320)
+        GeometryReader { geometry in
+            editor(topInset: geometry.safeAreaInsets.top)
+        }
+        .frame(minWidth: 400, minHeight: 320)
     }
 
-    /// The editor respects the native toolbar's safe area. On the new design,
-    /// document status floats over the page instead of sitting in a bar.
-    @ViewBuilder private var editor: some View {
+    /// Only the document backdrop extends under native chrome. Floating editor
+    /// controls stay in the safe area; WebKit owns first-line/caret avoidance.
+    @ViewBuilder private func editor(topInset: CGFloat) -> some View {
         VStack(spacing: 0) {
             ZStack {
-                EditorWebView(model: model).clipped()
+                if SystemDesign.usesGlass {
+                    EditorWebView(model: model, topObscuredInset: topInset)
+                        .ignoresSafeArea(.container, edges: .top)
+                } else {
+                    EditorWebView(model: model)
+                }
                 if SystemDesign.usesGlass && model.statusBarVisible && !model.focusMode {
                     VStack {
                         Spacer()

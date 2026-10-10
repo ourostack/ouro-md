@@ -3,7 +3,7 @@ import SwiftUI
 
 /// The system design (Liquid Glass) seams, in one place. On macOS 26 and later,
 /// with Ouro MD linked against the current SDK, floating controls use system
-/// glass while the editor respects the toolbar's native content boundary;
+/// glass while the document backdrop extends beneath the native toolbar;
 /// earlier systems keep the material look they had.
 enum SystemDesign {
     static var usesGlass: Bool {
