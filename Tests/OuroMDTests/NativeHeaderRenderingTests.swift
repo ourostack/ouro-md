@@ -120,6 +120,26 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 nativeBackground.waitUntilExit()
                 XCTAssertEqual(nativeBackground.terminationStatus, 0)
                 controller.window.titlebarAppearsTransparent = true
+                if #available(macOS 26, *) {
+                    let band = max(0, proxy.frame.maxY - controller.window.contentLayoutRect.maxY)
+                    let glass = NSGlassEffectView(frame: NSRect(x: proxy.frame.minX, y: proxy.frame.maxY - band,
+                                                                width: proxy.frame.width, height: band))
+                    glass.style = .regular
+                    glass.cornerRadius = 0
+                    glass.contentView = NSView(frame: glass.bounds)
+                    content.addSubview(glass, positioned: .above, relativeTo: proxy)
+                    glass.display()
+                    CATransaction.flush()
+                    try await Task.sleep(for: .milliseconds(300))
+                    let nativeGlass = Process()
+                    nativeGlass.executableURL = capture.executableURL
+                    nativeGlass.arguments = ["-x", "-o", "-l", "\(controller.window.windowNumber)",
+                                            output.appendingPathComponent("\(theme)-\(name)-native-glass-raster-proxy-window.png").path]
+                    try nativeGlass.run()
+                    nativeGlass.waitUntilExit()
+                    XCTAssertEqual(nativeGlass.terminationStatus, 0)
+                    glass.removeFromSuperview()
+                }
                 proxy.removeFromSuperview()
                 let frame = web.convert(web.bounds, to: nil)
                 let top = frame.maxY - controller.window.contentLayoutRect.maxY
