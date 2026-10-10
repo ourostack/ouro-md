@@ -125,8 +125,21 @@ enum NativeDocumentApplicationProbe {
         let renamedFile = URL(fileURLWithPath: file).deletingLastPathComponent()
             .appendingPathComponent("Revised field notes.md")
         let originalBytes = try Data(contentsOf: URL(fileURLWithPath: file))
-        guard AXUIElementSetAttributeValue(field, kAXValueAttribute as CFString,
-                                          "Revised field notes.md" as CFString) == .success else { exit(3) }
+        guard let selectDown = CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: true),
+              let selectUp = CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: false),
+              let textDown = CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: true),
+              let textUp = CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: false) else { exit(3) }
+        selectDown.flags = .maskCommand
+        selectUp.flags = .maskCommand
+        selectDown.post(tap: .cghidEventTap)
+        selectUp.post(tap: .cghidEventTap)
+        Thread.sleep(forTimeInterval: 0.2)
+        let name = Array("Revised field notes.md".utf16)
+        textDown.keyboardSetUnicodeString(stringLength: name.count, unicodeString: name)
+        textUp.keyboardSetUnicodeString(stringLength: name.count, unicodeString: name)
+        textDown.post(tap: .cghidEventTap)
+        textUp.post(tap: .cghidEventTap)
+        Thread.sleep(forTimeInterval: 0.2)
         guard let enterDown = CGEvent(keyboardEventSource: nil, virtualKey: 36, keyDown: true),
               let enterUp = CGEvent(keyboardEventSource: nil, virtualKey: 36, keyDown: false) else { exit(3) }
         enterDown.post(tap: .cghidEventTap)
@@ -135,6 +148,11 @@ enum NativeDocumentApplicationProbe {
             if FileManager.default.fileExists(atPath: renamedFile.path) { break }
             Thread.sleep(forTimeInterval: 0.1)
         }
+        try JSONSerialization.data(withJSONObject: [
+            "directory": try FileManager.default.contentsOfDirectory(atPath: renamedFile.deletingLastPathComponent().path),
+            "accessibility": snapshotAX(application, depth: 9)
+        ], options: [.prettyPrinted, .sortedKeys])
+            .write(to: output.appendingPathComponent("rename-outcome.json"))
         guard FileManager.default.fileExists(atPath: renamedFile.path),
               !FileManager.default.fileExists(atPath: file),
               try Data(contentsOf: renamedFile) == originalBytes else {
@@ -161,11 +179,23 @@ enum NativeDocumentApplicationProbe {
         for shouldLock in [true, false] {
             click(point)
             Thread.sleep(forTimeInterval: 1)
-            guard let popover = ownedWindows().first(where: { ($0[kCGWindowLayer as String] as? Int ?? 0) > 0 }),
-                  let rect = popover[kCGWindowBounds as String] as? [String: Any],
-                  let px = rect["X"] as? Double, let py = rect["Y"] as? Double,
-                  let width = rect["Width"] as? Double, let height = rect["Height"] as? Double else { exit(5) }
-            click(CGPoint(x: px + width - 25, y: py + height - 25))
+            func findLock(_ element: AXUIElement) -> AXUIElement? {
+                var role: CFTypeRef?
+                if AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &role) == .success,
+                   role as? String == kAXCheckBoxRole {
+                    var description: CFTypeRef?
+                    if AXUIElementCopyAttributeValue(element, kAXDescriptionAttribute as CFString, &description) == .success,
+                       ["lock", "unlock"].contains(description as? String ?? "") { return element }
+                }
+                var children: CFTypeRef?
+                if AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &children) == .success,
+                   let list = children as? [AXUIElement] {
+                    for child in list { if let found = findLock(child) { return found } }
+                }
+                return nil
+            }
+            guard let lock = findLock(application),
+                  AXUIElementPerformAction(lock, kAXPressAction as CFString) == .success else { exit(5) }
             Thread.sleep(forTimeInterval: 1)
             let immutable = try FileManager.default.attributesOfItem(atPath: renamedFile.path)[.immutable] as? Bool == true
             lockResults.append(immutable)
