@@ -103,10 +103,6 @@ enum NativeDocumentApplicationProbe {
             "clickPoint": ["x": point.x, "y": point.y]
         ], options: [.prettyPrinted, .sortedKeys])
             .write(to: output.appendingPathComponent("filename-click.json"))
-        guard windows.contains(where: { ($0[kCGWindowLayer as String] as? Int ?? 0) > 0 }) else {
-            fputs("Native document popover did not open after the filename click\n", stderr)
-            exit(2)
-        }
         var focused: CFTypeRef?
         let focusedStatus = AXUIElementCopyAttributeValue(application, kAXFocusedUIElementAttribute as CFString, &focused)
         guard focusedStatus == .success, let focused,
@@ -115,6 +111,17 @@ enum NativeDocumentApplicationProbe {
             exit(3)
         }
         let field = unsafeBitCast(focused, to: AXUIElement.self)
+        var focusedRole: CFTypeRef?
+        var focusedValue: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(field, kAXRoleAttribute as CFString, &focusedRole) == .success,
+              focusedRole as? String == kAXTextFieldRole,
+              AXUIElementCopyAttributeValue(field, kAXValueAttribute as CFString, &focusedValue) == .success,
+              focusedValue as? String == URL(fileURLWithPath: file).lastPathComponent else {
+            fputs("Native Name field did not open after the filename click\n", stderr)
+            exit(2)
+        }
+        try JSONSerialization.data(withJSONObject: snapshotAX(application, depth: 9), options: [.prettyPrinted, .sortedKeys])
+            .write(to: output.appendingPathComponent("native-popover-accessibility.json"))
         let renamedFile = URL(fileURLWithPath: file).deletingLastPathComponent()
             .appendingPathComponent("Revised field notes.md")
         let originalBytes = try Data(contentsOf: URL(fileURLWithPath: file))
