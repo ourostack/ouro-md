@@ -231,7 +231,7 @@ enum NativeDocumentApplicationProbe {
         closeUp.post(tap: .cghidEventTap)
         Thread.sleep(forTimeInterval: 0.5)
         for shouldLock in [true, false] {
-            click(point)
+            click(CGPoint(x: point.x, y: y + 18))
             Thread.sleep(forTimeInterval: 1)
             let lockCapture = Process()
             lockCapture.executableURL = onscreen.executableURL
