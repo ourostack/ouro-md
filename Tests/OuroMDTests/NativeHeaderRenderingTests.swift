@@ -33,6 +33,27 @@ final class NativeHeaderRenderingTests: XCTestCase {
         }
         XCTAssertTrue(controller.model.isReady, "must prove real editor readiness, not capture a blank body")
         let web = try XCTUnwrap(editor(in: content))
+        if underlap, #available(macOS 26, *) {
+            func panel(in view: NSView) -> NSGlassEffectView? {
+                if let glass = view as? NSGlassEffectView,
+                   glass.identifier?.rawValue == "OuroMDDocumentHeaderBackdrop" { return glass }
+                return view.subviews.lazy.compactMap { panel(in: $0) }.first
+            }
+            let glass = try XCTUnwrap(panel(in: content), "capture the actual production glass, not raw extended content")
+            let band = glass.convert(glass.bounds, to: nil)
+            XCTAssertEqual(band.minY, controller.window.contentLayoutRect.maxY, accuracy: 1)
+            XCTAssertEqual(band.maxY, content.convert(content.bounds, to: nil).maxY, accuracy: 1)
+            XCTAssertEqual(glass.style, .regular)
+            XCTAssertNil(glass.hitTest(NSPoint(x: glass.bounds.midX, y: glass.bounds.midY)))
+            XCTAssertFalse(glass.isAccessibilityElement())
+            let sidebar = try XCTUnwrap(controller.window.toolbar?.items.first)
+            let action = try XCTUnwrap(sidebar.action)
+            let before = controller.model.sidebarVisible
+            XCTAssertTrue(NSApplication.shared.sendAction(action, to: sidebar.target, from: sidebar))
+            XCTAssertNotEqual(controller.model.sidebarVisible, before, "native toolbar action must not be intercepted by the panel")
+            XCTAssertTrue(NSApplication.shared.sendAction(action, to: sidebar.target, from: sidebar))
+            XCTAssertEqual(controller.model.sidebarVisible, before)
+        }
         var measurements: [[String: Any]] = []
         var sampledHeaders: [[Double]] = []
         for theme in ["quartz", "graphite"] {

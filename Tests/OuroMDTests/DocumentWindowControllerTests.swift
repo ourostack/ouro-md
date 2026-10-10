@@ -5,7 +5,7 @@ import WebKit
 
 @MainActor
 final class DocumentWindowControllerTests: XCTestCase {
-    func testPublicObscuredInsetCoordinatesForDocumentCues() throws {
+    func testNativeEditingViewportCoordinatesAcrossZoom() throws {
         try XCTSkipUnless(SystemDesign.usesGlass)
         let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
         defer { controller.window.close() }
@@ -50,7 +50,7 @@ final class DocumentWindowControllerTests: XCTestCase {
         }
     }
 
-    func testDocumentBackdropUnderlapsToolbarWithMatchingPublicObscuredInsets() throws {
+    func testNativeExtensionAndGlassUnderlapWhileEditingStaysInSafeArea() throws {
         try XCTSkipUnless(SystemDesign.usesGlass, "native toolbar geometry is for the system design")
         let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
         defer { controller.window.close() }

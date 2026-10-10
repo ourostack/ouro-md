@@ -29,8 +29,9 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
         let frame = NSRect(x: 0, y: 0, width: 800, height: 600)
         webView = WKWebView(frame: frame, configuration: configuration)
         if #available(macOS 26, *) {
-            // Exercise the same public layout-viewport exclusion as the real
-            // document header, not the old flat editor's zero-inset proxy.
+            // Also exercise WebKit's layout-viewport exclusion. Like the
+            // production extension's safe-area placement, its viewport starts
+            // below chrome and must not receive a second JavaScript offset.
             webView.obscuredContentInsets = NSEdgeInsets(top: 52, left: 0, bottom: 0, right: 0)
         }
         webView.navigationDelegate = self
