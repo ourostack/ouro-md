@@ -47,25 +47,25 @@ enum NativeDocumentTitleProbe {
             app.activate(ignoringOtherApps: true)
             document.windowForSheet?.makeKeyAndOrderFront(nil)
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                document.rename(rename)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                guard let window = document.windowForSheet, let screen = window.screen else { exit(1) }
+                let frame = window.frame
+                let region = "\(Int(frame.minX)),\(Int(screen.frame.maxY - frame.maxY)),\(Int(frame.width)),\(Int(frame.height))"
+                let documentClass = String(describing: type(of: document))
+                // A native renaming session can track events synchronously.
+                // Capture its owned region independently of that modal loop.
+                DispatchQueue.global().asyncAfter(deadline: .now() + 3) {
                     do {
                         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
-                        let windows = app.windows.filter(\.isVisible)
-                        var records: [[String: Any]] = []
-                        for (index, window) in windows.enumerated() {
-                            let process = Process()
-                            process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-                            process.arguments = ["-x", "-o", "-l", "\(window.windowNumber)",
-                                                 output.appendingPathComponent("native-window-\(index).png").path]
-                            try process.run()
-                            process.waitUntilExit()
-                            guard process.terminationStatus == 0 else { exit(1) }
-                            records.append(["title": window.title, "frame": NSStringFromRect(window.frame)])
-                        }
+                        let process = Process()
+                        process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+                        process.arguments = ["-x", "-R", region,
+                                             output.appendingPathComponent("native-title-region.png").path]
+                        try process.run()
+                        process.waitUntilExit()
+                        guard process.terminationStatus == 0 else { exit(1) }
                         try JSONSerialization.data(withJSONObject: [
-                            "registeredDocumentClass": String(describing: type(of: document)),
-                            "windows": records, "applicationActive": app.isActive
+                            "registeredDocumentClass": documentClass,
+                            "ownedWindowRegion": region, "captureIndependentOfRenameReturn": true
                         ], options: [.prettyPrinted, .sortedKeys])
                             .write(to: output.appendingPathComponent("packaged-title-probe.json"))
                         exit(0)
@@ -74,6 +74,7 @@ enum NativeDocumentTitleProbe {
                         exit(1)
                     }
                 }
+                document.rename(rename)
             }
         }
         app.run()
