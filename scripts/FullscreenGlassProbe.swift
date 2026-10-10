@@ -112,6 +112,12 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
                         foreground = parent
                     }
                     if let host = foreground.superview {
+                        let material = NSVisualEffectView(frame: host.bounds)
+                        material.material = .titlebar
+                        material.blendingMode = .behindWindow
+                        material.state = .active
+                        material.autoresizingMask = [.width, .height]
+                        host.addSubview(material, positioned: .below, relativeTo: foreground)
                         let glass = NSGlassEffectView(frame: host.bounds)
                         glass.style = .regular
                         glass.contentView = NSView()
