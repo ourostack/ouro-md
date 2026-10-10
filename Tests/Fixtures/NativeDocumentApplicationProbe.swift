@@ -132,6 +132,23 @@ enum NativeDocumentApplicationProbe {
             exit(3)
         }
         let field = unsafeBitCast(focused, to: AXUIElement.self)
+        func containingWindow(of element: AXUIElement) -> AXUIElement {
+            var current = element
+            for _ in 0..<16 {
+                var role: CFTypeRef?
+                if AXUIElementCopyAttributeValue(current, kAXRoleAttribute as CFString, &role) == .success,
+                   [kAXWindowRole, "AXPopover"].contains(role as? String ?? "") { return current }
+                var parent: CFTypeRef?
+                guard AXUIElementCopyAttributeValue(current, kAXParentAttribute as CFString, &parent) == .success,
+                      let parent, CFGetTypeID(parent) == AXUIElementGetTypeID() else {
+                    fputs("Native focused controls have no accessible containing window\n", stderr)
+                    exit(5)
+                }
+                current = unsafeBitCast(parent, to: AXUIElement.self)
+            }
+            fputs("Native focused control ancestry did not reach a window\n", stderr)
+            exit(5)
+        }
         var focusedRole: CFTypeRef?
         var focusedValue: CFTypeRef?
         guard AXUIElementCopyAttributeValue(field, kAXRoleAttribute as CFString, &focusedRole) == .success,
@@ -141,7 +158,7 @@ enum NativeDocumentApplicationProbe {
             fputs("Native Name field did not open after the filename click\n", stderr)
             exit(2)
         }
-        try JSONSerialization.data(withJSONObject: snapshotAX(application, depth: 9), options: [.prettyPrinted, .sortedKeys])
+        try JSONSerialization.data(withJSONObject: snapshotAX(containingWindow(of: field), depth: 9), options: [.prettyPrinted, .sortedKeys])
             .write(to: output.appendingPathComponent("native-popover-accessibility.json"))
         let renamedFile = URL(fileURLWithPath: file).deletingLastPathComponent()
             .appendingPathComponent("Revised field notes.md")
@@ -225,7 +242,16 @@ enum NativeDocumentApplicationProbe {
                 }
                 return nil
             }
-            guard let lock = findLock(application) else { exit(5) }
+            var currentFocus: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(application, kAXFocusedUIElementAttribute as CFString, &currentFocus) == .success,
+                  let currentFocus, CFGetTypeID(currentFocus) == AXUIElementGetTypeID() else { exit(5) }
+            let controls = containingWindow(of: unsafeBitCast(currentFocus, to: AXUIElement.self))
+            try JSONSerialization.data(withJSONObject: snapshotAX(controls, depth: 9), options: [.prettyPrinted, .sortedKeys])
+                .write(to: output.appendingPathComponent("lock-\(shouldLock)-controls.json"))
+            guard let lock = findLock(controls) else {
+                fputs("Native focused document controls have no lock affordance\n", stderr)
+                exit(5)
+            }
             try JSONSerialization.data(withJSONObject: snapshotAX(lock, depth: 1), options: [.prettyPrinted, .sortedKeys])
                 .write(to: output.appendingPathComponent("lock-\(shouldLock)-before.json"))
             var position: CFTypeRef?
