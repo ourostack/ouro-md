@@ -35,7 +35,7 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
 
     func find<T: NSView>(_ type: T.Type, in view: NSView) -> T? {
         if let value = view as? T { return value }
-        return view.subviews.lazy.compactMap { find(type, in: $0) }.first
+        return view.subviews.lazy.compactMap { self.find(type, in: $0) }.first
     }
 
     func probe() async throws {
@@ -77,11 +77,14 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
             guard completed else { throw NSError(domain: "Fullscreen enter never completed", code: 2) }
             try await Task.sleep(for: .seconds(2))
             try await capture(theme: theme, state: "fullscreen-pinned", web: web)
-            NSApplication.shared.presentationOptions.insert(.autoHideToolbar)
-            CGWarpMouseCursorPosition(CGPoint(x: 500, y: 500))
+            var options = NSApp.currentSystemPresentationOptions
+            options.remove([.hideMenuBar, .autoHideDock])
+            options.formUnion([.fullScreen, .autoHideMenuBar, .hideDock, .autoHideToolbar])
+            NSApp.presentationOptions = options
+            movePointer(to: CGPoint(x: 500, y: 500))
             try await Task.sleep(for: .seconds(3))
             try await capture(theme: theme, state: "fullscreen-hidden", web: web)
-            CGWarpMouseCursorPosition(CGPoint(x: 500, y: 0))
+            movePointer(to: CGPoint(x: 500, y: 1))
             try await Task.sleep(for: .seconds(3))
             try await capture(theme: theme, state: "fullscreen-revealed", web: web)
             NSApplication.shared.presentationOptions.remove(.autoHideToolbar)
@@ -103,6 +106,11 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
         }
     }
 
+    func movePointer(to point: CGPoint) {
+        CGEvent(mouseEventSource: nil, mouseType: .mouseMoved, mouseCursorPosition: point,
+                mouseButton: .left)?.post(tap: .cghidEventTap)
+    }
+
     func capture(theme: String, state: String, web: WKWebView) async throws {
         for (color, index) in [("warm", 1), ("cool", 3)] {
             let geometry = try await web.evaluateJavaScript("""
@@ -121,6 +129,19 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
             process.arguments = ["-x", "-o", "-l", "\(window.windowNumber)", image.path]
             try process.run()
             process.waitUntilExit()
+            guard process.terminationStatus == 0 else { throw NSError(domain: "Window capture failed", code: 4) }
+            if window.styleMask.contains(.fullScreen), let screen = window.screen {
+                let region = "\(Int(window.frame.minX)),\(Int(screen.frame.maxY-window.frame.maxY)),\(Int(window.frame.width)),\(Int(window.frame.height))"
+                let onscreen = Process()
+                onscreen.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+                onscreen.arguments = ["-x", "-R", region, output.appendingPathComponent("\(theme)-\(state)-\(color)-onscreen.png").path]
+                try onscreen.run()
+                onscreen.waitUntilExit()
+                guard onscreen.terminationStatus == 0,
+                      NSBitmapImageRep(data: try Data(contentsOf: output.appendingPathComponent("\(theme)-\(state)-\(color)-onscreen.png"))) != nil else {
+                    throw NSError(domain: "Composited capture failed", code: 5)
+                }
+            }
             let bitmap = NSBitmapImageRep(data: try Data(contentsOf: image))!
             var rgb = [Double](repeating: 0, count: 3), count = 0.0, colored = 0
             for y in 0..<bitmap.pixelsHigh {
@@ -142,6 +163,7 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
                          "glassWindow": glass?.window?.windowNumber ?? -1,
                          "window": window.windowNumber, "titlebarTransparent": window.titlebarAppearsTransparent,
                          "presentation": NSApp.presentationOptions.rawValue,
+                         "effectivePresentation": NSApp.currentSystemPresentationOptions.rawValue,
                          "windows": NSApp.windows.map { ["number": $0.windowNumber, "frame": NSStringFromRect($0.frame),
                                                          "class": "\(type(of: $0))", "visible": $0.isVisible] }])
             try save()
