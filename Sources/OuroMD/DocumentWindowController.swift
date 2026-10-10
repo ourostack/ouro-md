@@ -135,6 +135,14 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
     /// An unsaved buffer needs naming; a saved filename opens the native
     /// metadata popover rather than the unrelated Open panel.
     func presentDocumentControlsFromTitleClick() {
+        if ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil,
+           ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" {
+            fputs("native-document-controls-entry\n", stderr)
+            if ProcessInfo.processInfo.environment["OURO_TITLE_NATIVE_ONLY"] == "1" {
+                fputs("native-document-controls-noop\n", stderr)
+                return
+            }
+        }
         if let documentControlsFromTitleClickHandler {
             documentControlsFromTitleClickHandler()
             return
@@ -148,7 +156,15 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
                 userInfo: [NSLocalizedDescriptionKey: "The document controls are unavailable. Use File > Rename to rename this document."]))
             return
         }
+        if ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil,
+           ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" {
+            fputs("native-document-controls-before-click enabled=\(button.isEnabled)\n", stderr)
+        }
         button.performClick(nil)
+        if ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil,
+           ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" {
+            fputs("native-document-controls-after-click\n", stderr)
+        }
     }
 
     // MARK: - Rename

@@ -46,6 +46,7 @@ jobs:
           mkdir -p .build/document-application-fixture
           cp 'Tests/Fixtures/Harbor field notes.md' 'Tests/Fixtures/Harbor route.svg' .build/document-application-fixture/
           OURO_DOCUMENT_PROBE_EXECUTABLE="$PWD/OuroMD.app/Contents/MacOS/ouro-md" \
+          OURO_TITLE_NATIVE_ONLY=1 \
           OURO_DOCUMENT_PROBE_FILE="$PWD/.build/document-application-fixture/Harbor field notes.md" \
           OURO_DOCUMENT_PROBE_OUTPUT="$PWD/.build/document-application-controls" \
           .build/native-document-application-probe

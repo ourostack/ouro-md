@@ -97,6 +97,16 @@ enum NativeDocumentApplicationProbe {
         click(point)
         Thread.sleep(forTimeInterval: 3)
         windows = ownedWindows()
+        let onscreen = Process()
+        onscreen.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        let width = bounds["Width"] as? Double ?? 0
+        let height = bounds["Height"] as? Double ?? 0
+        guard width > 0, height > 0 else { exit(1) }
+        onscreen.arguments = ["-x", "-o", "-R\(Int(x)),\(Int(y)),\(Int(width)),\(Int(height))",
+                              output.appendingPathComponent("document-controls-onscreen.png").path]
+        try onscreen.run()
+        onscreen.waitUntilExit()
+        guard onscreen.terminationStatus == 0 else { exit(1) }
         for (index, owned) in windows.enumerated() {
             guard let number = owned[kCGWindowNumber as String] as? Int else { continue }
             let capture = Process()
