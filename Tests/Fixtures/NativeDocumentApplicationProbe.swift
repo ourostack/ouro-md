@@ -359,6 +359,19 @@ enum NativeDocumentApplicationProbe {
             }
             return nil
         }
+        func findMenuItem(_ element: AXUIElement, title: String) -> AXUIElement? {
+            let info = snapshotAX(element, depth: 0)
+            if info[kAXRoleAttribute] as? String == kAXMenuItemRole,
+               info[kAXTitleAttribute] as? String == title { return element }
+            var children: CFTypeRef?
+            if AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &children) == .success,
+               let children = children as? [AXUIElement] {
+                for child in children {
+                    if let match = findMenuItem(child, title: title) { return match }
+                }
+            }
+            return nil
+        }
         func key(_ code: CGKeyCode, flags: CGEventFlags = []) {
             guard let down = CGEvent(keyboardEventSource: nil, virtualKey: code, keyDown: true),
                   let up = CGEvent(keyboardEventSource: nil, virtualKey: code, keyDown: false) else { exit(6) }
@@ -408,6 +421,33 @@ enum NativeDocumentApplicationProbe {
         Thread.sleep(forTimeInterval: 1)
         try JSONSerialization.data(withJSONObject: snapshotAX(metadataControls, depth: 12), options: [.prettyPrinted, .sortedKeys])
             .write(to: output.appendingPathComponent("native-where-menu.json"))
-        key(53)
+        guard let other = findMenuItem(metadataControls, title: "Other…"),
+              AXUIElementPerformAction(other, kAXPressAction as CFString) == .success else { exit(7) }
+        let destination = renamedFile.deletingLastPathComponent().appendingPathComponent("Moved", isDirectory: true)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        Thread.sleep(forTimeInterval: 1)
+        key(5, flags: [.maskCommand, .maskShift])
+        Thread.sleep(forTimeInterval: 0.5)
+        typeText(destination.path)
+        key(36)
+        Thread.sleep(forTimeInterval: 0.5)
+        key(36)
+        let movedFile = destination.appendingPathComponent(renamedFile.lastPathComponent)
+        for _ in 0..<100 {
+            if FileManager.default.fileExists(atPath: movedFile.path) { break }
+            Thread.sleep(forTimeInterval: 0.1)
+        }
+        let moveSucceeded = FileManager.default.fileExists(atPath: movedFile.path) &&
+            !FileManager.default.fileExists(atPath: renamedFile.path)
+        try JSONSerialization.data(withJSONObject: [
+            "movedFile": movedFile.path, "moved": moveSucceeded, "windows": ownedWindows(),
+            "accessibility": snapshotAX(application, depth: 9)
+        ], options: [.prettyPrinted, .sortedKeys])
+            .write(to: output.appendingPathComponent("native-where-results.json"))
+        guard moveSucceeded, try Data(contentsOf: movedFile) == originalBytes,
+              try movedFile.resourceValues(forKeys: [.tagNamesKey]).tagNames?.contains("Ouro sample") == true else {
+            fputs("Native Where action did not preserve bytes and tags at the selected folder\n", stderr)
+            exit(7)
+        }
     }
 }
