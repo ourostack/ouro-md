@@ -43,14 +43,17 @@ enum NativeDocumentApplicationProbe {
         var attributes: CFTypeRef?
         let accessibility = AXUIElementCopyAttributeValue(application, kAXChildrenAttribute as CFString, &attributes)
         let point = CGPoint(x: x + 240, y: y + 25)
-        guard let down = CGEvent(mouseEventSource: nil, mouseType: .leftMouseDown,
-                                 mouseCursorPosition: point, mouseButton: .left),
-              let up = CGEvent(mouseEventSource: nil, mouseType: .leftMouseUp,
-                               mouseCursorPosition: point, mouseButton: .left) else { exit(1) }
-        down.setIntegerValueField(.mouseEventClickState, value: 1)
-        up.setIntegerValueField(.mouseEventClickState, value: 1)
-        down.post(tap: .cghidEventTap)
-        up.post(tap: .cghidEventTap)
+        func click(_ point: CGPoint) {
+            guard let down = CGEvent(mouseEventSource: nil, mouseType: .leftMouseDown,
+                                     mouseCursorPosition: point, mouseButton: .left),
+                  let up = CGEvent(mouseEventSource: nil, mouseType: .leftMouseUp,
+                                   mouseCursorPosition: point, mouseButton: .left) else { exit(1) }
+            down.setIntegerValueField(.mouseEventClickState, value: 1)
+            up.setIntegerValueField(.mouseEventClickState, value: 1)
+            down.post(tap: .cghidEventTap)
+            up.post(tap: .cghidEventTap)
+        }
+        click(point)
         Thread.sleep(forTimeInterval: 3)
         windows = ownedWindows()
         for (index, owned) in windows.enumerated() {
@@ -115,5 +118,29 @@ enum NativeDocumentApplicationProbe {
             "renamedWindows": renamedWindows, "nativeRenamePreservedBytes": true
         ], options: [.prettyPrinted, .sortedKeys])
             .write(to: output.appendingPathComponent("application-probe.json"))
+        var lockResults: [Bool] = []
+        for shouldLock in [true, false] {
+            click(point)
+            Thread.sleep(forTimeInterval: 1)
+            guard let popover = ownedWindows().first(where: { ($0[kCGWindowLayer as String] as? Int ?? 0) > 0 }),
+                  let rect = popover[kCGWindowBounds as String] as? [String: Any],
+                  let px = rect["X"] as? Double, let py = rect["Y"] as? Double,
+                  let width = rect["Width"] as? Double, let height = rect["Height"] as? Double else { exit(5) }
+            click(CGPoint(x: px + width - 25, y: py + height - 25))
+            Thread.sleep(forTimeInterval: 1)
+            let immutable = try FileManager.default.attributesOfItem(atPath: renamedFile.path)[.immutable] as? Bool == true
+            lockResults.append(immutable)
+            try JSONSerialization.data(withJSONObject: ["actualImmutableStates": lockResults], options: [.prettyPrinted])
+                .write(to: output.appendingPathComponent("native-lock-results.json"))
+            guard immutable == shouldLock else {
+                fputs("Native popover lock action did not produce the expected file protection state\n", stderr)
+                exit(5)
+            }
+            guard let escapeDown = CGEvent(keyboardEventSource: nil, virtualKey: 53, keyDown: true),
+                  let escapeUp = CGEvent(keyboardEventSource: nil, virtualKey: 53, keyDown: false) else { exit(5) }
+            escapeDown.post(tap: .cghidEventTap)
+            escapeUp.post(tap: .cghidEventTap)
+            Thread.sleep(forTimeInterval: 0.5)
+        }
     }
 }
