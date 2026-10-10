@@ -82,6 +82,7 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
         func capture(_ scene: String, _ theme: String, _ index: Int) async throws {
             pump()
             XCTAssertFalse(controller.model.sidebarVisible, "no empty Outline sidebar in any website scene")
+            XCTAssertEqual(controller.window.appearance?.name, theme == "graphite" ? .darkAqua : .aqua)
             let split = try XCTUnwrap(controller.window.contentViewController as? NSSplitViewController)
             XCTAssertTrue(split.splitViewItems[0].isCollapsed, "actual native sidebar must be closed")
             XCTAssertFalse(controller.model.statusBarVisible, "no redundant floating status clutter")
@@ -151,6 +152,7 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
         controller.model.setTheme(id: "quartz")
         controller.syncChrome()
         _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
+        await pumpUntil(ProcessInfo.processInfo.systemUptime + 1)
         for index in 0..<24 {
             _ = try await web.evaluateJavaScript("window.scrollTo(0,\(index * 20))")
             try await Task.sleep(for: .milliseconds(100))
