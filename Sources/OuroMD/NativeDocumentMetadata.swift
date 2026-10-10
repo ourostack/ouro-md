@@ -26,6 +26,15 @@ final class NativeDocumentMetadata: NSDocument {
     }
     override var isDocumentEdited: Bool { false }
 
+    override func validateUserInterfaceItem(_ item: NSValidatedUserInterfaceItem) -> Bool {
+        let result = super.validateUserInterfaceItem(item)
+        if ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
+           ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil {
+            fputs("native-validation action=\(String(describing: item.action)) result=\(result)\n", stderr)
+        }
+        return result
+    }
+
     override class func canConcurrentlyReadDocuments(ofType typeName: String) -> Bool { false }
     override func read(from data: Data, ofType typeName: String) throws {}
 

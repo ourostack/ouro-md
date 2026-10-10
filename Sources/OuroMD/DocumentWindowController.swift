@@ -155,6 +155,10 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         if ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil,
            ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" {
             fputs("native-rename key=\(window.isKeyWindow) associated=\(nativeDocument?.windowForSheet === window) document=\(nativeDocument != nil) class=\(NSStringFromClass(NativeDocumentMetadata.self)) registered=\(String(describing: NSDocumentController.shared.documentClass(forType: "net.daringfireball.markdown")))\n", stderr)
+            for action in [#selector(NSDocument.lock(_:)), #selector(NSDocument.unlock(_:)), #selector(NSDocument.move(_:))] {
+                let item = NSMenuItem(title: "Probe", action: action, keyEquivalent: "")
+                fputs("native-direct-validation \(NSStringFromSelector(action))=\(nativeDocument?.validateUserInterfaceItem(item) == true)\n", stderr)
+            }
         }
         nativeDocument?.rename(nil)
         if ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil,
