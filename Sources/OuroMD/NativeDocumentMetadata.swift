@@ -66,7 +66,7 @@ final class NativeDocumentMetadata: NSDocument {
             return
         }
         do {
-            try model.moveCurrentFile(to: url)
+            try model.moveCurrentFile(to: url, filePresenter: self)
             synchronizeIdentity()
             completionHandler?(nil)
         } catch {

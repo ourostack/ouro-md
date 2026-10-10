@@ -631,7 +631,7 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func moveCurrentFile(to destination: URL) throws {
+    func moveCurrentFile(to destination: URL, filePresenter: NSFilePresenter? = nil) throws {
         guard let source = currentURL else {
             throw NSError(domain: "ouro-md", code: 20,
                           userInfo: [NSLocalizedDescriptionKey: "Save this document before moving it."])
@@ -651,7 +651,9 @@ final class AppModel: ObservableObject {
         }
         stopWatching()
         defer { startWatching() }
-        let coordinator = NSFileCoordinator()
+        // Native Rename already owns this document's file-access session.
+        // Excluding its presenter avoids waiting for that same session to yield.
+        let coordinator = NSFileCoordinator(filePresenter: filePresenter)
         var coordinationError: NSError?
         var moveError: Error?
         coordinator.coordinate(writingItemAt: source, options: .forMoving,
