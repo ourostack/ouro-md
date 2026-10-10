@@ -80,7 +80,7 @@ enum NativeDocumentTitleProbe {
         menu.addItem(fileItem)
         app.mainMenu = menu
         app.finishLaunching()
-        NSDocumentController.shared.openDocument(withContentsOf: file, display: true) { document, _, error in
+        let captureDocument: (NSDocument?, Error?) -> Void = { document, error in
             guard let document, error == nil else {
                 fputs("Native document open failed: \(String(describing: error))\n", stderr)
                 exit(1)
@@ -92,20 +92,31 @@ enum NativeDocumentTitleProbe {
                 let frame = window.frame
                 let region = "\(Int(frame.minX)),\(Int(screen.frame.maxY - frame.maxY)),\(Int(frame.width)),\(Int(frame.height))"
                 let documentClass = String(describing: type(of: document))
+                let documentType = document.fileType ?? ""
                 // A native renaming session can track events synchronously.
                 // Capture its owned region independently of that modal loop.
                 DispatchQueue.global().asyncAfter(deadline: .now() + 3) {
                     do {
                         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
-                        let process = Process()
-                        process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-                        process.arguments = ["-x", "-R", region,
-                                             output.appendingPathComponent("native-title-region.png").path]
-                        try process.run()
-                        process.waitUntilExit()
-                        guard process.terminationStatus == 0 else { exit(1) }
+                        guard let allWindows = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID)
+                                as? [[String: Any]] else { exit(1) }
+                        let ownedWindows = allWindows.filter {
+                            ($0[kCGWindowOwnerPID as String] as? Int) == Int(getpid())
+                        }
+                        for (index, owned) in ownedWindows.enumerated() {
+                            guard let number = owned[kCGWindowNumber as String] as? Int else { continue }
+                            let process = Process()
+                            process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+                            process.arguments = ["-x", "-o", "-l", "\(number)",
+                                                 output.appendingPathComponent("native-title-window-\(index).png").path]
+                            try process.run()
+                            process.waitUntilExit()
+                            guard process.terminationStatus == 0 else { exit(1) }
+                        }
                         try JSONSerialization.data(withJSONObject: [
                             "registeredDocumentClass": documentClass,
+                            "fileType": documentType,
+                            "adoption": environment["OURO_TITLE_PROBE_ADOPTION"] ?? "canonical",
                             "ownedWindowRegion": region, "captureIndependentOfRenameReturn": true
                         ], options: [.prettyPrinted, .sortedKeys])
                             .write(to: output.appendingPathComponent("packaged-title-probe.json"))
@@ -116,6 +127,25 @@ enum NativeDocumentTitleProbe {
                     }
                 }
                 document.rename(rename)
+            }
+        }
+        if environment["OURO_TITLE_PROBE_ADOPTION"] == "manual" {
+            do {
+                let document = NativeDocumentTitleProbeDocument()
+                let type = try NSDocumentController.shared.typeForContents(of: file)
+                try document.read(from: Data(contentsOf: file), ofType: type)
+                document.fileURL = file
+                document.fileType = type
+                document.makeWindowControllers()
+                NSDocumentController.shared.addDocument(document)
+                document.showWindows()
+                captureDocument(document, nil)
+            } catch {
+                captureDocument(nil, error)
+            }
+        } else {
+            NSDocumentController.shared.openDocument(withContentsOf: file, display: true) { document, _, error in
+                captureDocument(document, error)
             }
         }
         app.run()

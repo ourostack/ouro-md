@@ -47,7 +47,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-26-intel, xcode-27]
+        runner: [xcode-27]
+        adoption: [canonical, manual]
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 5
     steps:
@@ -80,10 +81,11 @@ jobs:
           PLIST
           OURO_TITLE_PROBE_FILE="$PWD/Tests/Fixtures/Harbor field notes.md" \
           OURO_TITLE_PROBE_OUTPUT="$PWD/.build/registered-native-title" \
+          OURO_TITLE_PROBE_ADOPTION='${{ matrix.adoption }}' \
           "$APP/Contents/MacOS/NativeDocumentTitleProbe"
       - uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: registered-native-title-${{ matrix.runner }}
+          name: registered-native-title-${{ matrix.runner }}-${{ matrix.adoption }}
           path: .build/registered-native-title
           if-no-files-found: error
