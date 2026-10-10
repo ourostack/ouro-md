@@ -333,5 +333,69 @@ enum NativeDocumentApplicationProbe {
             escapeUp.post(tap: .cghidEventTap)
             Thread.sleep(forTimeInterval: 0.5)
         }
+        click(point)
+        Thread.sleep(forTimeInterval: 1)
+        var tagFocus: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(application, kAXFocusedUIElementAttribute as CFString, &tagFocus) == .success,
+              let tagFocus, CFGetTypeID(tagFocus) == AXUIElementGetTypeID() else { exit(6) }
+        let metadataControls = containingWindow(of: unsafeBitCast(tagFocus, to: AXUIElement.self))
+        func findControl(_ element: AXUIElement, role wantedRole: String, description wantedDescription: String? = nil) -> AXUIElement? {
+            var role: CFTypeRef?
+            if AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &role) == .success,
+               role as? String == wantedRole {
+                if let wantedDescription {
+                    var description: CFTypeRef?
+                    if AXUIElementCopyAttributeValue(element, kAXDescriptionAttribute as CFString, &description) == .success,
+                       description as? String == wantedDescription { return element }
+                } else { return element }
+            }
+            var children: CFTypeRef?
+            if AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &children) == .success,
+               let children = children as? [AXUIElement] {
+                for child in children {
+                    if let match = findControl(child, role: wantedRole, description: wantedDescription) { return match }
+                }
+            }
+            return nil
+        }
+        func key(_ code: CGKeyCode, flags: CGEventFlags = []) {
+            guard let down = CGEvent(keyboardEventSource: nil, virtualKey: code, keyDown: true),
+                  let up = CGEvent(keyboardEventSource: nil, virtualKey: code, keyDown: false) else { exit(6) }
+            down.flags = flags
+            up.flags = flags
+            down.post(tap: .cghidEventTap)
+            up.post(tap: .cghidEventTap)
+        }
+        func typeText(_ text: String) {
+            guard let down = CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: true),
+                  let up = CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: false) else { exit(6) }
+            let utf16 = Array(text.utf16)
+            down.keyboardSetUnicodeString(stringLength: utf16.count, unicodeString: utf16)
+            up.keyboardSetUnicodeString(stringLength: utf16.count, unicodeString: utf16)
+            down.post(tap: .cghidEventTap)
+            up.post(tap: .cghidEventTap)
+        }
+        guard let tags = findControl(metadataControls, role: kAXTextFieldRole, description: "tag editor"),
+              AXUIElementSetAttributeValue(tags, kAXFocusedAttribute as CFString, kCFBooleanTrue) == .success else {
+            fputs("Native Tags field was not focusable\n", stderr)
+            exit(6)
+        }
+        typeText("Ouro sample")
+        key(36)
+        key(48)
+        Thread.sleep(forTimeInterval: 1)
+        let tagNames = try renamedFile.resourceValues(forKeys: [.tagNamesKey]).tagNames ?? []
+        try JSONSerialization.data(withJSONObject: ["actualTags": tagNames], options: [.prettyPrinted])
+            .write(to: output.appendingPathComponent("native-tags-results.json"))
+        guard tagNames.contains("Ouro sample") else {
+            fputs("Native Tags action did not update the actual file tags\n", stderr)
+            exit(6)
+        }
+        guard let location = findControl(metadataControls, role: kAXPopUpButtonRole),
+              AXUIElementPerformAction(location, kAXPressAction as CFString) == .success else { exit(7) }
+        Thread.sleep(forTimeInterval: 1)
+        try JSONSerialization.data(withJSONObject: snapshotAX(metadataControls, depth: 12), options: [.prettyPrinted, .sortedKeys])
+            .write(to: output.appendingPathComponent("native-where-menu.json"))
+        key(53)
     }
 }
