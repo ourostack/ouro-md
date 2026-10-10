@@ -106,6 +106,10 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
     }
 
     func syncChrome() {
+        if ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil,
+           ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" {
+            fputs("native-chrome-sync\n", stderr)
+        }
         nativeDocument?.synchronizeIdentity()
         // Native document chrome: the system draws the title (and, when the file
         // exists on disk, a draggable proxy icon). Left-aligned in windowed mode
@@ -153,6 +157,10 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
             fputs("native-rename key=\(window.isKeyWindow) associated=\(nativeDocument?.windowForSheet === window) document=\(nativeDocument != nil) class=\(NSStringFromClass(NativeDocumentMetadata.self)) registered=\(String(describing: NSDocumentController.shared.documentClass(forType: "net.daringfireball.markdown")))\n", stderr)
         }
         nativeDocument?.rename(nil)
+        if ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil,
+           ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" {
+            fputs("native-rename-returned\n", stderr)
+        }
     }
 
     /// Finds the AppKit-drawn title text field so the popover can anchor on the title.

@@ -20,16 +20,20 @@ concurrency:
 
 jobs:
   application-controls:
-    runs-on: xcode-27
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-26, xcode-27]
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - name: Build actual app and isolated UI driver
         run: |
-          sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
+          if [[ '${{ matrix.runner }}' == 'xcode-27' ]]; then
+            sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
+          fi
           OURO_MD_TELEMETRY_DISABLED=1 bash make-app.sh
-          /usr/libexec/PlistBuddy -c 'Add :CFBundleDocumentTypes:0:NSDocumentClass string OuroMD.NativeDocumentMetadata' OuroMD.app/Contents/Info.plist
-          codesign --force --deep --sign - OuroMD.app
           swiftc -parse-as-library Tests/Fixtures/NativeDocumentApplicationProbe.swift -o .build/native-document-application-probe
       - name: Click filename and rename in actual packaged app
         env:
@@ -44,6 +48,6 @@ jobs:
       - uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: native-document-application-controls
+          name: native-document-application-controls-${{ matrix.runner }}
           path: .build/document-application-controls
           if-no-files-found: error
