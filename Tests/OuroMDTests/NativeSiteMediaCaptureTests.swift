@@ -53,7 +53,7 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
             ({scroll:scrollY, viewport:innerHeight, theme:document.body.className,
               marks:document.querySelectorAll('.ouro-change-mark').length,
               nextVisible:!!document.getElementById('ouro-next-change') && !document.getElementById('ouro-next-change').hidden,
-              glow:!!document.querySelector('.ouro-edit-highlight'),
+              glow:!!(window.CSS && CSS.highlights && CSS.highlights.get('ouro-change')),
               text:document.querySelector('.vditor-ir .vditor-reset').textContent})
             """)
             let bitmap = try XCTUnwrap(NSBitmapImageRep(data: Data(contentsOf: url)))

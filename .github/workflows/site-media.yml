@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'Tests/OuroMDTests/NativeSiteMediaCaptureTests.swift'
+      - 'Tests/OuroMDTests/NativeAccessibilityPreferenceTests.swift'
       - 'Tests/Fixtures/**'
       - '.github/workflows/site-media.yml'
   workflow_dispatch:
@@ -41,4 +42,63 @@ jobs:
         with:
           name: public-document-native-${{ matrix.runner }}
           path: .build/site-media
+          if-no-files-found: error
+
+  accessibility:
+    name: Native accessibility preferences (${{ matrix.state }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - state: baseline
+            motion: '0'
+            transparency: '0'
+          - state: reduce-motion
+            motion: '1'
+            transparency: '0'
+          - state: reduce-transparency
+            motion: '0'
+            transparency: '1'
+          - state: both
+            motion: '1'
+            transparency: '1'
+    runs-on: macos-26-intel
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - name: Dedicated hosted preference probe with exact key restoration
+        env:
+          OURO_ACCESSIBILITY_PROOF: '1'
+          OURO_ACCESSIBILITY_OUTPUT: .build/accessibility-proof
+          OURO_EXPECT_REDUCE_MOTION: ${{ matrix.motion }}
+          OURO_EXPECT_REDUCE_TRANSPARENCY: ${{ matrix.transparency }}
+          OURO_MD_TELEMETRY_DISABLED: '1'
+        run: |
+          mkdir -p .build/accessibility-proof
+          for key in reduceMotion reduceTransparency; do
+            if defaults read com.apple.universalaccess "$key" > ".build/accessibility-proof/$key.before" 2>/dev/null; then
+              touch ".build/accessibility-proof/$key.existed"
+            fi
+          done
+          restore() {
+            for key in reduceMotion reduceTransparency; do
+              if [[ -f ".build/accessibility-proof/$key.existed" ]]; then
+                defaults write com.apple.universalaccess "$key" -bool "$(cat ".build/accessibility-proof/$key.before")"
+                defaults read com.apple.universalaccess "$key" > ".build/accessibility-proof/$key.restored"
+                cmp ".build/accessibility-proof/$key.before" ".build/accessibility-proof/$key.restored"
+              else
+                defaults delete com.apple.universalaccess "$key" 2>/dev/null || true
+                if defaults read com.apple.universalaccess "$key" 2>/dev/null; then return 1; fi
+              fi
+            done
+          }
+          trap restore EXIT
+          defaults write com.apple.universalaccess reduceMotion -bool "$OURO_EXPECT_REDUCE_MOTION"
+          defaults write com.apple.universalaccess reduceTransparency -bool "$OURO_EXPECT_REDUCE_TRANSPARENCY"
+          swift test --filter NativeAccessibilityPreferenceTests
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: accessibility-${{ matrix.state }}
+          path: .build/accessibility-proof
           if-no-files-found: error
