@@ -107,7 +107,7 @@ final class NativeAccessibilityPreferenceTests: XCTestCase {
         func setPreference(_ key: String, _ value: Bool) throws {
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/usr/bin/defaults")
-            process.arguments = ["write", "com.apple.universalaccess", key, "-bool", value ? "1" : "0"]
+            process.arguments = ["write", "com.apple.universalaccess", key, "-bool", value ? "true" : "false"]
             try process.run()
             process.waitUntilExit()
             guard process.terminationStatus == 0 else { throw NSError(domain: "AccessibilityPreferences", code: 1) }

@@ -63,12 +63,19 @@ jobs:
               touch ".build/accessibility-proof/$key.existed"
             fi
           done
+          bool_value() {
+            case "$1" in
+              1|true|TRUE|yes|YES) printf true ;;
+              0|false|FALSE|no|NO) printf false ;;
+              *) return 1 ;;
+            esac
+          }
           restore() {
             local test_status=$? failures=0
             set +e
             for key in reduceMotion reduceTransparency; do
               if [[ -f ".build/accessibility-proof/$key.existed" ]]; then
-                defaults write com.apple.universalaccess "$key" -bool "$(cat ".build/accessibility-proof/$key.before")" || failures=1
+                defaults write com.apple.universalaccess "$key" -bool "$(bool_value "$(cat ".build/accessibility-proof/$key.before")")" || failures=1
                 defaults read com.apple.universalaccess "$key" > ".build/accessibility-proof/$key.restored" || failures=1
                 cmp ".build/accessibility-proof/$key.before" ".build/accessibility-proof/$key.restored" || failures=1
               else
@@ -90,8 +97,8 @@ jobs:
               both) export OURO_EXPECT_REDUCE_MOTION=1 OURO_EXPECT_REDUCE_TRANSPARENCY=1 ;;
             esac
             export OURO_ACCESSIBILITY_OUTPUT=".build/accessibility-proof/$state"
-            defaults write com.apple.universalaccess reduceMotion -bool "$OURO_EXPECT_REDUCE_MOTION"
-            defaults write com.apple.universalaccess reduceTransparency -bool "$OURO_EXPECT_REDUCE_TRANSPARENCY"
+            defaults write com.apple.universalaccess reduceMotion -bool "$(bool_value "$OURO_EXPECT_REDUCE_MOTION")"
+            defaults write com.apple.universalaccess reduceTransparency -bool "$(bool_value "$OURO_EXPECT_REDUCE_TRANSPARENCY")"
             swift test --filter NativeAccessibilityPreferenceTests || test_status=1
           done
           exit "$test_status"
