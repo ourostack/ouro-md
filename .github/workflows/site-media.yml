@@ -1,0 +1,44 @@
+name: Native site media and accessibility
+
+on:
+  pull_request:
+    paths:
+      - 'Tests/OuroMDTests/NativeSiteMediaCaptureTests.swift'
+      - 'Tests/Fixtures/**'
+      - '.github/workflows/site-media.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    name: Public fixture native capture (${{ matrix.runner }})
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-26-intel, xcode-27]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - name: Toolchain and renderer provenance
+        run: |
+          if [[ '${{ matrix.runner }}' == 'xcode-27' ]]; then
+            sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
+          fi
+          sw_vers
+          xcodebuild -version
+          system_profiler SPDisplaysDataType
+      - name: Capture real public-document action frames
+        env:
+          OURO_SITE_MEDIA: '1'
+          OURO_SITE_MEDIA_OUTPUT: .build/site-media
+          OURO_MD_TELEMETRY_DISABLED: '1'
+        run: swift test --filter NativeSiteMediaCaptureTests
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: public-document-native-${{ matrix.runner }}
+          path: .build/site-media
+          if-no-files-found: error
