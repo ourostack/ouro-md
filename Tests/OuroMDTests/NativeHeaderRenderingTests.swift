@@ -105,6 +105,28 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 try composition.run()
                 composition.waitUntilExit()
                 XCTAssertEqual(composition.terminationStatus, 0)
+                if underlap, #available(macOS 26, *) {
+                    let panel = try XCTUnwrap(findBackdrop(in: content))
+                    let originalParent = try XCTUnwrap(panel.superview)
+                    let originalFrame = panel.frame
+                    let rootFrame = panel.convert(panel.bounds, to: content)
+                    panel.removeFromSuperview()
+                    panel.frame = rootFrame
+                    content.addSubview(panel, positioned: .above, relativeTo: nil)
+                    panel.display()
+                    CATransaction.flush()
+                    try await Task.sleep(for: .milliseconds(300))
+                    let rootComposition = Process()
+                    rootComposition.executableURL = capture.executableURL
+                    rootComposition.arguments = ["-x", "-o", "-l", "\(controller.window.windowNumber)",
+                                                 output.appendingPathComponent("\(theme)-\(name)-root-panel-diagnostic-window.png").path]
+                    try rootComposition.run()
+                    rootComposition.waitUntilExit()
+                    panel.removeFromSuperview()
+                    originalParent.addSubview(panel)
+                    panel.frame = originalFrame
+                    XCTAssertEqual(rootComposition.terminationStatus, 0)
+                }
                 proxy.removeFromSuperview()
                 let frame = web.convert(web.bounds, to: nil)
                 let top = frame.maxY - controller.window.contentLayoutRect.maxY
@@ -139,15 +161,11 @@ final class NativeHeaderRenderingTests: XCTestCase {
 
     private func installRasterProxy(_ snapshot: NSImage, web: WKWebView, content: NSView,
                                     underlap: Bool) throws -> NSImageView {
-        func backdrop(in view: NSView) -> NSView? {
-            if view.identifier?.rawValue == "OuroMDDocumentHeaderBackdrop" { return view }
-            return view.subviews.lazy.compactMap { backdrop(in: $0) }.first
-        }
         let proxy = NSImageView()
         proxy.image = snapshot
         proxy.imageScaling = .scaleAxesIndependently
         if underlap {
-            let glass = try XCTUnwrap(backdrop(in: content), "capture the production panel, never recreate it for proof")
+            let glass = try XCTUnwrap(findBackdrop(in: content), "capture the production panel, never recreate it for proof")
             var ancestor = try XCTUnwrap(web.superview)
             var branch = glass
             while branch.superview !== ancestor {
@@ -166,5 +184,10 @@ final class NativeHeaderRenderingTests: XCTestCase {
             parent.addSubview(proxy, positioned: .above, relativeTo: web)
         }
         return proxy
+    }
+
+    private func findBackdrop(in view: NSView) -> NSView? {
+        if view.identifier?.rawValue == "OuroMDDocumentHeaderBackdrop" { return view }
+        return view.subviews.lazy.compactMap { self.findBackdrop(in: $0) }.first
     }
 }

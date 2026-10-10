@@ -99,6 +99,8 @@ final class DocumentWindowControllerTests: XCTestCase {
                     XCTAssertEqual(backdrop.cornerRadius, 0)
                     XCTAssertNil(backdrop.tintColor)
                     XCTAssertNotNil(backdrop.contentView)
+                    XCTAssertEqual(try XCTUnwrap(backdrop.contentView).frame.size, backdrop.bounds.size,
+                                   "native glass must have a laid-out content container, not an empty zero-sized effect")
                     XCTAssertNil(backdrop.hitTest(NSPoint(x: backdrop.bounds.midX, y: backdrop.bounds.midY)))
                     XCTAssertFalse(backdrop.isAccessibilityElement())
                 }
