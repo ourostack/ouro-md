@@ -47,23 +47,7 @@ jobs:
           if-no-files-found: error
 
   accessibility:
-    name: Native accessibility preferences (${{ matrix.state }})
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - state: baseline
-            motion: '0'
-            transparency: '0'
-          - state: reduce-motion
-            motion: '1'
-            transparency: '0'
-          - state: reduce-transparency
-            motion: '0'
-            transparency: '1'
-          - state: both
-            motion: '1'
-            transparency: '1'
+    name: Native accessibility preferences and live transitions
     runs-on: macos-26-intel
     timeout-minutes: 25
     steps:
@@ -71,9 +55,6 @@ jobs:
       - name: Dedicated hosted preference probe with exact key restoration
         env:
           OURO_ACCESSIBILITY_PROOF: '1'
-          OURO_ACCESSIBILITY_OUTPUT: .build/accessibility-proof
-          OURO_EXPECT_REDUCE_MOTION: ${{ matrix.motion }}
-          OURO_EXPECT_REDUCE_TRANSPARENCY: ${{ matrix.transparency }}
           OURO_MD_TELEMETRY_DISABLED: '1'
         run: |
           mkdir -p .build/accessibility-proof
@@ -83,24 +64,40 @@ jobs:
             fi
           done
           restore() {
+            local test_status=$? failures=0
+            set +e
             for key in reduceMotion reduceTransparency; do
               if [[ -f ".build/accessibility-proof/$key.existed" ]]; then
-                defaults write com.apple.universalaccess "$key" -bool "$(cat ".build/accessibility-proof/$key.before")"
-                defaults read com.apple.universalaccess "$key" > ".build/accessibility-proof/$key.restored"
-                cmp ".build/accessibility-proof/$key.before" ".build/accessibility-proof/$key.restored"
+                defaults write com.apple.universalaccess "$key" -bool "$(cat ".build/accessibility-proof/$key.before")" || failures=1
+                defaults read com.apple.universalaccess "$key" > ".build/accessibility-proof/$key.restored" || failures=1
+                cmp ".build/accessibility-proof/$key.before" ".build/accessibility-proof/$key.restored" || failures=1
               else
                 defaults delete com.apple.universalaccess "$key" 2>/dev/null || true
-                if defaults read com.apple.universalaccess "$key" 2>/dev/null; then return 1; fi
+                if defaults read com.apple.universalaccess "$key" 2>/dev/null; then failures=1; fi
               fi
             done
+            echo "test_status=$test_status restoration_failures=$failures" > .build/accessibility-proof/restoration.txt
+            if [[ "$test_status" != '0' ]]; then exit "$test_status"; fi
+            exit "$failures"
           }
           trap restore EXIT
-          defaults write com.apple.universalaccess reduceMotion -bool "$OURO_EXPECT_REDUCE_MOTION"
-          defaults write com.apple.universalaccess reduceTransparency -bool "$OURO_EXPECT_REDUCE_TRANSPARENCY"
-          swift test --filter NativeAccessibilityPreferenceTests
+          test_status=0
+          for state in baseline reduce-motion reduce-transparency both; do
+            export OURO_EXPECT_REDUCE_MOTION=0 OURO_EXPECT_REDUCE_TRANSPARENCY=0
+            case "$state" in
+              reduce-motion) export OURO_EXPECT_REDUCE_MOTION=1 ;;
+              reduce-transparency) export OURO_EXPECT_REDUCE_TRANSPARENCY=1 ;;
+              both) export OURO_EXPECT_REDUCE_MOTION=1 OURO_EXPECT_REDUCE_TRANSPARENCY=1 ;;
+            esac
+            export OURO_ACCESSIBILITY_OUTPUT=".build/accessibility-proof/$state"
+            defaults write com.apple.universalaccess reduceMotion -bool "$OURO_EXPECT_REDUCE_MOTION"
+            defaults write com.apple.universalaccess reduceTransparency -bool "$OURO_EXPECT_REDUCE_TRANSPARENCY"
+            swift test --filter NativeAccessibilityPreferenceTests || test_status=1
+          done
+          exit "$test_status"
       - uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: accessibility-${{ matrix.state }}
+          name: accessibility-preferences
           path: .build/accessibility-proof
           if-no-files-found: error

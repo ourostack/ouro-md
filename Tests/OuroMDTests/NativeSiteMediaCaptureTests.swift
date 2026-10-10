@@ -12,7 +12,7 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
         let env = ProcessInfo.processInfo.environment
         try XCTSkipUnless(env["GITHUB_ACTIONS"] == "true" && env["OURO_SITE_MEDIA"] == "1",
                           "interactive capture is forbidden on the operator's Mac")
-        let output = URL(fileURLWithPath: env["OURO_SITE_MEDIA_OUTPUT"] ?? ".build/site-media")
+        let output = URL(fileURLWithPath: env["OURO_SITE_MEDIA_OUTPUT"] ?? ".build/site-media").standardizedFileURL
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
             .deletingLastPathComponent().appendingPathComponent("Fixtures/Harbor field notes.md")
@@ -156,7 +156,7 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
           window.scrollTo(0,0);
           const p = [...document.querySelectorAll('.vditor-ir .vditor-reset p')]
             .find(p => p.textContent.startsWith('Begin at the old lighthouse.'));
-          p.focus();
+          document.querySelector('.vditor-ir .vditor-reset').focus();
           const range = document.createRange(); range.selectNodeContents(p); range.collapse(false);
           getSelection().removeAllRanges(); getSelection().addRange(range);
         })()
@@ -168,6 +168,11 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
         let sent = NSApplication.shared.sendAction(#selector(NSText.paste(_:)), to: web, from: nil)
         XCTAssertTrue(sent, "the real WK native Paste responder must accept the action")
         try await wait(web, "window.ouro.getValue().includes('Bring a notebook')")
+        for _ in 0..<100 {
+            if controller.model.isDirty { break }
+            pump()
+            try await Task.sleep(for: .milliseconds(20))
+        }
         XCTAssertTrue(controller.model.isDirty)
         for index in 1..<25 {
             try await Task.sleep(for: .milliseconds(70))

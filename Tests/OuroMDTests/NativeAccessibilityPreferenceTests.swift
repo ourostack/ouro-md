@@ -68,13 +68,24 @@ final class NativeAccessibilityPreferenceTests: XCTestCase {
             let role = reference.accessibilityRole?()?.rawValue ?? ""
             let label = reference.accessibilityLabel?() ?? ""
             let title = reference.accessibilityTitle?() ?? ""
-            nodes.append(["role": role, "label": label, "title": title])
+            let value: String
+            if let object = reference as? NSObject, object.responds(to: #selector(NSAccessibilityProtocol.accessibilityValue)) {
+                value = object.perform(#selector(NSAccessibilityProtocol.accessibilityValue))?.takeUnretainedValue() as? String ?? ""
+            } else { value = "" }
+            nodes.append(["role": role, "label": label, "title": title, "value": value])
             for child in reference.accessibilityChildren?() ?? [] { visit(child, depth: depth + 1) }
         }
         visit(controller.window, depth: 0)
         evidence["nativeAXNodes"] = nodes
-        XCTAssertTrue(nodes.contains { $0["role"] == NSAccessibility.Role.button.rawValue },
-                      "native controls must be in the actual accessibility hierarchy")
+        let strings = nodes.flatMap { [$0["label"] ?? "", $0["title"] ?? "", $0["value"] ?? ""] }
+        XCTAssertTrue(strings.contains { $0.contains("Sidebar") },
+                      "the app's real sidebar control must be exposed, not just traffic lights")
+        XCTAssertTrue(strings.contains { $0.contains("Filter outline") },
+                      "the actual SwiftUI outline control must be exposed")
+        let editorExposed = nodes.contains { $0["role"] == "AXWebArea" }
+            && strings.contains { $0.contains("thoughtful first visit") }
+        evidence["editorContentAXExposed"] = editorExposed
+        evidence["editorAXVerdict"] = editorExposed ? "exposed in native AX hierarchy" : "not established by in-process hierarchy; not qualified"
         let application = AXUIElementCreateApplication(ProcessInfo.processInfo.processIdentifier)
         var windows: CFTypeRef?
         let status = AXUIElementCopyAttributeValue(application, kAXWindowsAttribute as CFString, &windows)
@@ -88,6 +99,53 @@ final class NativeAccessibilityPreferenceTests: XCTestCase {
         try capture.run()
         capture.waitUntilExit()
         XCTAssertEqual(capture.terminationStatus, 0)
-        evidence["verdict"] = "native preference propagation, WK media query and native AX exposure checked; not VoiceOver traversal"
+        var notifications = 0
+        let observer = workspace.notificationCenter.addObserver(
+            forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification,
+            object: nil, queue: .main
+        ) { _ in MainActor.assumeIsolated { notifications += 1 } }
+        func setPreference(_ key: String, _ value: Bool) throws {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/defaults")
+            process.arguments = ["write", "com.apple.universalaccess", key, "-bool", value ? "1" : "0"]
+            try process.run()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 else { throw NSError(domain: "AccessibilityPreferences", code: 1) }
+        }
+        defer {
+            workspace.notificationCenter.removeObserver(observer)
+            try? setPreference("reduceMotion", expectedMotion)
+            try? setPreference("reduceTransparency", expectedTransparency)
+        }
+        try setPreference("reduceMotion", !expectedMotion)
+        try setPreference("reduceTransparency", !expectedTransparency)
+        for _ in 0..<50 {
+            if workspace.accessibilityDisplayShouldReduceMotion == !expectedMotion
+                && workspace.accessibilityDisplayShouldReduceTransparency == !expectedTransparency { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        let livePropagated = workspace.accessibilityDisplayShouldReduceMotion == !expectedMotion
+            && workspace.accessibilityDisplayShouldReduceTransparency == !expectedTransparency
+        evidence["liveTogglePropagated"] = livePropagated
+        evidence["liveDisplayChangeNotifications"] = notifications
+        evidence["liveNativeMotion"] = workspace.accessibilityDisplayShouldReduceMotion
+        evidence["liveNativeTransparency"] = workspace.accessibilityDisplayShouldReduceTransparency
+        if livePropagated {
+            for _ in 0..<50 {
+                if try await editor.evaluateJavaScript("matchMedia('(prefers-reduced-motion: reduce)').matches") as? Bool == !expectedMotion { break }
+                try await Task.sleep(for: .milliseconds(100))
+            }
+            let liveQuery = try await editor.evaluateJavaScript("matchMedia('(prefers-reduced-motion: reduce)').matches") as? Bool
+            evidence["liveWebReducedMotion"] = liveQuery ?? false
+            XCTAssertEqual(liveQuery, !expectedMotion, "actual WebKit must track the live OS toggle")
+            let liveCapture = Process()
+            liveCapture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+            liveCapture.arguments = ["-x", "-o", "-l", "\(controller.window.windowNumber)",
+                                     output.appendingPathComponent("live-toggled-window.png").path]
+            try liveCapture.run()
+            liveCapture.waitUntilExit()
+            XCTAssertEqual(liveCapture.terminationStatus, 0)
+        }
+        evidence["verdict"] = "native preference propagation, WK media query and app-specific native controls checked; editor AX availability separately reported; not VoiceOver traversal"
     }
 }

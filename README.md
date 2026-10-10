@@ -153,6 +153,26 @@ swift test
 open OuroMD.app
 ```
 
+### Hosted native rendering evidence
+
+The **Window chrome** workflow captures the real native header with a released
+flat-layout negative control. The **Native site media and accessibility**
+workflow opens `Tests/Fixtures/Harbor field notes.md` and captures real window
+frames for light/dark heroes, scrolling, external-file reload with margin marks,
+Next change, and native Paste. Its Intel job requires OCR-readable document
+content in the native capture—not just editor readiness or a WK snapshot.
+Per-frame timestamps and UI state accompany the PNGs for authentic GIF export.
+
+These interactive tests require both `GITHUB_ACTIONS=true` and their explicit
+workflow opt-in. They skip before presenting a window on an ordinary developer
+Mac. The accessibility job restores the original preference keys, records
+actual NSWorkspace/WebKit propagation and live-change attempts, and distinguishes
+native AX exposure from VoiceOver traversal. Failed propagation is reported as
+unverified, never replaced with a synthetic media-query override. macOS 27
+on-screen/per-window capture comparisons are diagnostics until the native
+document body demonstrably paints; blank bodies are not publication assets or
+platform glass qualification.
+
 ## Usage
 
 ### As an app
