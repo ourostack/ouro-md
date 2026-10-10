@@ -6,7 +6,7 @@ ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
 in careful typography on a centered page. Type Markdown and watch it render in
 place — switch themes live, and read the same document four different ways.
 
-> **Status:** v0.9.98. Reads and edits Markdown today. Release tooling produces
+> **Status:** v0.9.99. Reads and edits Markdown today. Release tooling produces
 > Developer-ID signed/notarized public artifacts — see [First launch](#first-launch).
 
 ---
@@ -22,7 +22,8 @@ place — switch themes live, and read the same document four different ways.
 - **Full Markdown.** CommonMark + GFM: tables, task lists, strikethrough,
   fenced code with highlighting, math (KaTeX), footnotes, and diagrams.
 - **Native macOS.** A real `.app` with a transparent titlebar + clickable
-  filename, the standard menu bar, Open Recent, unsaved-changes prompts,
+  filename opening the system's Name, Tags, Where and lock controls,
+  the standard menu bar, Open Recent, unsaved-changes prompts,
   drag-to-open, and **auto-save** for titled files.
 - **Sidebar.** A collapsible sidebar (**⇧⌘L**) with a live document **Outline**
   (**⌃⌘1**) and a **File Tree** (**⌃⌘3**) of the current folder.
