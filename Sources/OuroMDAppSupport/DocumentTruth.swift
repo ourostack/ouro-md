@@ -39,7 +39,7 @@ public struct DocumentTruthSnapshot: Equatable {
         case .gitUnavailable:
             return "Git unavailable"
         case .notInGit:
-            return "Local file"
+            return "Not version controlled"
         case .untracked:
             return "Not tracked"
         case .trackedClean:
@@ -63,7 +63,7 @@ public struct DocumentTruthSnapshot: Equatable {
         case .gitUnavailable:
             return "No Git"
         case .notInGit:
-            return "Not in Git"
+            return "Not versioned"
         case .untracked:
             return "New"
         case .trackedClean:

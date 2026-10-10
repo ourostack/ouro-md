@@ -4,7 +4,7 @@ public enum OuroMDRelease {
     public static let appName = "Ouro MD"
     public static let bundleIdentifier = "bot.ouro.md"
     public static let repository = "ourostack/ouro-md"
-    public static let version = "0.9.96"
+    public static let version = "0.9.97"
     public static let userAgent = "OuroMD/\(version)"
     public static let releaseDate = "2026-10-10"
     public static let positioningSubtitle = "Local Markdown workspace for Mac files."
@@ -20,7 +20,7 @@ public enum OuroMDRelease {
         "Siri, Shortcuts and Spotlight can open, read and add to your Markdown documents, including recent ones and unsaved edits.",
         "Moving document content extends behind the native glass header, with system-managed editing bounds and no custom fade.",
         "Pastes and Siri edits glow briefly; agent changes get quiet margin marks that clear as you scroll past, with Next change for off-screen edits.",
-        "The file status in the toolbar now says where the file stands in Git in a word, such as Modified or Committed.",
+        "The file status uses plain language: Not versioned for local files outside version control, and Committed or Modified for versioned files.",
         "What's New scrolls inside the About window, keeping its action buttons reachable as the release notes grow.",
     ]
 }
