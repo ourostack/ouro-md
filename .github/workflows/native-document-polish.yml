@@ -2,6 +2,8 @@ name: Native document polish investigation
 
 on:
   workflow_dispatch:
+  push:
+    branches: [fix-native-document-polish]
 
 permissions:
   contents: read
