@@ -24,6 +24,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  fullscreen-proof:
+    uses: ./.github/workflows/fullscreen-glass-proof.yml
   capture:
     name: Capture native header (${{ matrix.runner }})
     strategy:
