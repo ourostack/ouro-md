@@ -31,6 +31,7 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
         let controller = DocumentWindowController(filePath: document.path, selfTest: false, useAutosave: false)
         controller.model.autoSaveEnabled = false
         defer {
+            controller.model.teardown()
             controller.window.delegate = nil
             controller.window.close()
         }
