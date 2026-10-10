@@ -6,7 +6,7 @@ ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
 in careful typography on a centered page. Type Markdown and watch it render in
 place — switch themes live, and read the same document four different ways.
 
-> **Status:** v0.9.97. Reads and edits Markdown today. Release tooling produces
+> **Status:** v0.9.98. Reads and edits Markdown today. Release tooling produces
 > Developer-ID signed/notarized public artifacts — see [First launch](#first-launch).
 
 ---
@@ -154,6 +154,11 @@ open OuroMD.app
 ```
 
 ### Hosted native rendering evidence
+
+On macOS 26 and later, the native header samples scrolling document content in
+windowed and full-screen mode. Full-screen toolbar controls stay system-owned;
+their detached native window receives a behind-window material and regular
+glass backdrop, without extending the editing bounds beneath pinned chrome.
 
 The **Window chrome** workflow captures the real native header with a released
 flat-layout negative control. The **Native site media and accessibility**
