@@ -1,0 +1,63 @@
+name: Fullscreen glass diagnostic
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  proof:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-26-intel, xcode-27]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build private actual-app diagnostic
+        env:
+          OURO_MD_TELEMETRY_DISABLED: '1'
+        run: |
+          if [[ '${{ matrix.runner }}' == xcode-27 ]]; then
+            sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
+          fi
+          cp scripts/FullscreenGlassProbe.swift Sources/OuroMD/
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('Sources/OuroMD/main.swift')
+          s=p.read_text()
+          s=s.replace('// GUI launch.', '''
+          if #available(macOS 26, *), ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true"
+            && ProcessInfo.processInfo.environment["OURO_FULLSCREEN_PROBE"] == "1" {
+              MainActor.assumeIsolated {
+                  let delegate = FullscreenGlassProbe()
+                  NSApplication.shared.setActivationPolicy(.regular)
+                  NSApplication.shared.delegate = delegate
+                  NSApplication.shared.run()
+              }
+          }
+          // GUI launch.
+          ''')
+          p.write_text(s)
+          PY
+          SDK="$(xcrun --sdk macosx --show-sdk-version)"
+          swift build -c release -Xlinker -platform_version -Xlinker macos -Xlinker 13.0 -Xlinker "$SDK"
+          mkdir -p .build/FullscreenProof.app/Contents/{MacOS,Resources}
+          cp .build/release/ouro-md .build/FullscreenProof.app/Contents/MacOS/
+          cp -R .build/release/ouro-md_OuroMD.bundle .build/FullscreenProof.app/Contents/Resources/
+          cat > .build/FullscreenProof.app/Contents/Info.plist <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict><key>CFBundleExecutable</key><string>ouro-md</string><key>CFBundleIdentifier</key><string>bot.ouro.md.fullscreen-proof</string><key>CFBundleName</key><string>Fullscreen Proof</string><key>CFBundlePackageType</key><string>APPL</string><key>NSHighResolutionCapable</key><true/></dict></plist>
+          PLIST
+          codesign --force --deep --sign - .build/FullscreenProof.app
+          /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f .build/FullscreenProof.app
+      - name: Run real AppKit loop with completed fullscreen and actual native paint
+        env:
+          OURO_FULLSCREEN_PROBE: '1'
+          OURO_FULLSCREEN_OUTPUT: .build/fullscreen-proof
+        run: .build/FullscreenProof.app/Contents/MacOS/ouro-md
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: fullscreen-glass-${{ matrix.runner }}
+          path: .build/fullscreen-proof
