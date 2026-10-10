@@ -105,6 +105,12 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
             try await capture(theme: theme, state: "fullscreen-pinned", web: web)
             if let toolbarWindow = controller.truthToolbarItem?.view?.window, toolbarWindow !== controller.window {
                 toolbarWindow.titlebarAppearsTransparent = true
+                rows.append(["toolbarViews": describe(toolbarWindow.contentView!), "theme": theme])
+                func sampleBehindWindow(_ view: NSView) {
+                    if let effect = view as? NSVisualEffectView { effect.blendingMode = .behindWindow }
+                    view.subviews.forEach(sampleBehindWindow)
+                }
+                sampleBehindWindow(toolbarWindow.contentView!)
             }
             try await capture(theme: theme, state: "fullscreen-transparent-titlebar", web: web)
             try await transition(fullscreen: false)
@@ -136,6 +142,17 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
             guard completed else { throw NSError(domain: "Fullscreen exit never completed", code: 3) }
             try await capture(theme: theme, state: "restored", web: web)
         }
+    }
+
+    func describe(_ view: NSView) -> [String: Any] {
+        var result: [String: Any] = ["class": "\(type(of: view))", "frame": NSStringFromRect(view.frame),
+                                     "opaque": view.isOpaque, "alpha": view.alphaValue,
+                                     "children": view.subviews.map { self.describe($0) }]
+        if let effect = view as? NSVisualEffectView {
+            result["material"] = effect.material.rawValue
+            result["blending"] = effect.blendingMode.rawValue
+        }
+        return result
     }
 
     func transition(fullscreen: Bool) async throws {
