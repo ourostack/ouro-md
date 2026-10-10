@@ -64,19 +64,7 @@ if [[ "$mode" != accessibility ]]; then
     export OURO_SITE_MEDIA=1 OURO_SITE_MEDIA_STANDARD_PROFILE=1
     swift test --filter NativeSiteMediaCaptureTests
   elif [[ "$mode" == fullscreen ]]; then
-    open -n -W \
-      --env GITHUB_ACTIONS=true --env OURO_FULLSCREEN_PROBE=1 \
-      --env "OURO_FULLSCREEN_OUTPUT=$PWD/$root" \
-      --env "OURO_FULLSCREEN_INPUT=$PWD/.build/fullscreen-input.md" \
-      --stdout "$PWD/$root/app.stdout.log" --stderr "$PWD/$root/app.stderr.log" \
-      .build/FullscreenProof.app
-    python3 - <<'PY'
-import json
-from pathlib import Path
-rows=json.loads(Path('.build/fullscreen-proof/measurements.json').read_text())
-assert not any('error' in r for r in rows), rows[-1]
-assert len([r for r in rows if 'state' in r]) == 24, 'Incomplete native capture matrix'
-PY
+    python3 scripts/run-fullscreen-app-proof.py "$root"
   else
     export OURO_HEADER_RENDERING=1 OURO_HEADER_STANDARD_PROFILE=1
     swift test --filter NativeHeaderRenderingTests

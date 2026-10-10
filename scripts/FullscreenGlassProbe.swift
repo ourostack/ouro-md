@@ -160,6 +160,27 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
                 mouseButton: .left)?.post(tap: .cghidEventTap)
     }
 
+    func captureImage(destination: URL, kind: String, window: Int, region: String = "") async throws {
+        let id = UUID().uuidString
+        let request: [String: Any] = ["id": id, "pid": ProcessInfo.processInfo.processIdentifier,
+                                     "kind": kind, "window": window, "region": region,
+                                     "destination": destination.path]
+        try JSONSerialization.data(withJSONObject: request)
+            .write(to: output.appendingPathComponent("capture-request.json"), options: .atomic)
+        for _ in 0..<600 {
+            if let data = try? Data(contentsOf: output.appendingPathComponent("capture-response.json")),
+               let response = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               response["id"] as? String == id {
+                guard response["status"] as? Int == 0 else {
+                    throw NSError(domain: "Native runner capture failed: \(response["stderr"] ?? "")", code: 4)
+                }
+                return
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        throw NSError(domain: "Native runner capture timed out", code: 5)
+    }
+
     func capture(theme: String, state: String, web: WKWebView) async throws {
         for (color, index) in [("warm", 1), ("cool", 3)] {
             let geometry = try await web.evaluateJavaScript("""
@@ -173,21 +194,12 @@ final class FullscreenGlassProbe: NSObject, NSApplicationDelegate {
             let window = controller.window
             let glass = find(NSGlassEffectView.self, in: window.contentView!)
             let image = output.appendingPathComponent("\(theme)-\(state)-\(color).png")
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-            process.arguments = ["-x", "-o", "-l", "\(window.windowNumber)", image.path]
-            try process.run()
-            process.waitUntilExit()
-            guard process.terminationStatus == 0 else { throw NSError(domain: "Window capture failed", code: 4) }
+            try await captureImage(destination: image, kind: "window", window: window.windowNumber)
             if window.styleMask.contains(.fullScreen), let screen = window.screen {
                 let region = "\(Int(window.frame.minX)),\(Int(screen.frame.maxY-window.frame.maxY)),\(Int(window.frame.width)),\(Int(window.frame.height))"
-                let onscreen = Process()
-                onscreen.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-                onscreen.arguments = ["-x", "-R", region, output.appendingPathComponent("\(theme)-\(state)-\(color)-onscreen.png").path]
-                try onscreen.run()
-                onscreen.waitUntilExit()
-                guard onscreen.terminationStatus == 0,
-                      NSBitmapImageRep(data: try Data(contentsOf: output.appendingPathComponent("\(theme)-\(state)-\(color)-onscreen.png"))) != nil else {
+                let onscreen = output.appendingPathComponent("\(theme)-\(state)-\(color)-onscreen.png")
+                try await captureImage(destination: onscreen, kind: "region", window: window.windowNumber, region: region)
+                guard NSBitmapImageRep(data: try Data(contentsOf: onscreen)) != nil else {
                     throw NSError(domain: "Composited capture failed", code: 5)
                 }
             }
