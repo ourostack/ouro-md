@@ -127,12 +127,20 @@ final class NativeHeaderRenderingTests: XCTestCase {
         if underlap, #available(macOS 26, *) {
             var fullscreenStates: [[String: Any]] = []
             for fullscreen in [true, false] {
+                var completed = false
+                let notification = fullscreen ? NSWindow.didEnterFullScreenNotification : NSWindow.didExitFullScreenNotification
+                let observer = NotificationCenter.default.addObserver(forName: notification,
+                                                                      object: controller.window, queue: .main) { _ in
+                    MainActor.assumeIsolated { completed = true }
+                }
                 controller.window.toggleFullScreen(nil)
                 for _ in 0..<40 {
                     pumpNativeApplicationEvents()
-                    if controller.window.styleMask.contains(.fullScreen) == fullscreen { break }
+                    if completed { break }
                     try await Task.sleep(for: .milliseconds(100))
                 }
+                NotificationCenter.default.removeObserver(observer)
+                XCTAssertTrue(completed, "wait for AppKit's completed transition, not its early style-mask change")
                 XCTAssertEqual(controller.window.styleMask.contains(.fullScreen), fullscreen)
                 for visible in [false, true] {
                     controller.window.toolbar?.isVisible = visible
