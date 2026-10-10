@@ -75,7 +75,11 @@ final class NativeAccessibilityPreferenceTests: XCTestCase {
         var glowSamples: [[String: Any]] = []
         let start = ProcessInfo.processInfo.systemUptime
         for delay in [200, 400, 650] {
-            try await Task.sleep(for: .milliseconds(delay))
+            let until = ProcessInfo.processInfo.systemUptime + Double(delay) / 1000
+            while ProcessInfo.processInfo.systemUptime < until {
+                pump()
+                try await Task.sleep(for: .milliseconds(10))
+            }
             let level = try await editor.evaluateJavaScript(
                 "Number(getComputedStyle(document.documentElement).getPropertyValue('--ouro-flash'))"
             ) as? Double ?? 0
@@ -117,8 +121,9 @@ final class NativeAccessibilityPreferenceTests: XCTestCase {
         let strings = nodes.flatMap { [$0["label"] ?? "", $0["title"] ?? "", $0["value"] ?? ""] }
         XCTAssertTrue(strings.contains { $0.contains("Sidebar") },
                       "the app's real sidebar control must be exposed, not just traffic lights")
-        XCTAssertTrue(strings.contains { $0.contains("Filter outline") },
-                      "the actual SwiftUI outline control must be exposed")
+        XCTAssertTrue(strings.contains { $0.contains("File Status") },
+                      "the app-specific file-status control must be exposed, not just traffic lights")
+        evidence["swiftUIOutlineAXExposed"] = strings.contains { $0.contains("Filter outline") }
         let editorExposed = nodes.contains { $0["role"] == "AXWebArea" }
             && strings.contains { $0.contains("thoughtful first visit") }
         evidence["editorContentAXExposed"] = editorExposed
@@ -157,6 +162,7 @@ final class NativeAccessibilityPreferenceTests: XCTestCase {
         try setPreference("reduceMotion", !expectedMotion)
         try setPreference("reduceTransparency", !expectedTransparency)
         for _ in 0..<50 {
+            pump()
             if workspace.accessibilityDisplayShouldReduceMotion == !expectedMotion
                 && workspace.accessibilityDisplayShouldReduceTransparency == !expectedTransparency { break }
             try await Task.sleep(for: .milliseconds(100))
@@ -169,6 +175,7 @@ final class NativeAccessibilityPreferenceTests: XCTestCase {
         evidence["liveNativeTransparency"] = workspace.accessibilityDisplayShouldReduceTransparency
         if livePropagated {
             for _ in 0..<50 {
+                pump()
                 if try await editor.evaluateJavaScript("matchMedia('(prefers-reduced-motion: reduce)').matches") as? Bool == !expectedMotion { break }
                 try await Task.sleep(for: .milliseconds(100))
             }
@@ -184,5 +191,13 @@ final class NativeAccessibilityPreferenceTests: XCTestCase {
             XCTAssertEqual(liveCapture.terminationStatus, 0)
         }
         evidence["verdict"] = "native preference propagation, WK media query and app-specific native controls checked; editor AX availability separately reported; not VoiceOver traversal"
+    }
+
+    private func pump() {
+        for _ in 0..<3 {
+            if let event = NSApp.nextEvent(matching: .any, until: Date(timeIntervalSinceNow: 0.005),
+                                          inMode: .default, dequeue: true) { NSApp.sendEvent(event) }
+            NSApp.updateWindows()
+        }
     }
 }

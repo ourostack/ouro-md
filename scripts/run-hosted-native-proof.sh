@@ -55,18 +55,8 @@ if [[ "$mode" != accessibility ]]; then
     swift test --filter NativeHeaderRenderingTests
   fi
 else
-  test_status=0
-  for state in baseline reduce-motion reduce-transparency both; do
-    export OURO_EXPECT_REDUCE_MOTION=0 OURO_EXPECT_REDUCE_TRANSPARENCY=0
-    case "$state" in
-      reduce-motion) export OURO_EXPECT_REDUCE_MOTION=1 ;;
-      reduce-transparency) export OURO_EXPECT_REDUCE_TRANSPARENCY=1 ;;
-      both) export OURO_EXPECT_REDUCE_MOTION=1 OURO_EXPECT_REDUCE_TRANSPARENCY=1 ;;
-    esac
-    export OURO_ACCESSIBILITY_OUTPUT="$root/$state"
-    defaults write com.apple.universalaccess reduceMotion -bool "$(bool_value "$OURO_EXPECT_REDUCE_MOTION")"
-    defaults write com.apple.universalaccess reduceTransparency -bool "$(bool_value "$OURO_EXPECT_REDUCE_TRANSPARENCY")"
-    swift test --filter NativeAccessibilityPreferenceTests || test_status=1
-  done
-  exit "$test_status"
+  export OURO_ACCESSIBILITY_OUTPUT="$root/${OURO_ACCESSIBILITY_STATE:?}"
+  defaults write com.apple.universalaccess reduceMotion -bool "$(bool_value "${OURO_EXPECT_REDUCE_MOTION:?}")"
+  defaults write com.apple.universalaccess reduceTransparency -bool "$(bool_value "${OURO_EXPECT_REDUCE_TRANSPARENCY:?}")"
+  swift test --filter NativeAccessibilityPreferenceTests
 fi

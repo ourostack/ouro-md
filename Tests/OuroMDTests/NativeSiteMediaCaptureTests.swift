@@ -198,6 +198,10 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
         try await capture("paste", "quartz", 0)
         let sent = NSApplication.shared.sendAction(#selector(NSText.paste(_:)), to: web, from: nil)
         XCTAssertTrue(sent, "the real WK native Paste responder must accept the action")
+        for index in 1..<25 {
+            try await Task.sleep(for: .milliseconds(70))
+            try await capture("paste", "quartz", index)
+        }
         try await wait(web, "window.ouro.getValue().includes('Bring a notebook')")
         for _ in 0..<100 {
             if controller.model.isDirty { break }
@@ -205,10 +209,6 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(20))
         }
         XCTAssertTrue(controller.model.isDirty)
-        for index in 1..<25 {
-            try await Task.sleep(for: .milliseconds(70))
-            try await capture("paste", "quartz", index)
-        }
     }
 
     private func readyEditor(_ controller: DocumentWindowController) async throws -> WKWebView {
