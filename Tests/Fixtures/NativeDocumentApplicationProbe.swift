@@ -236,6 +236,16 @@ enum NativeDocumentApplicationProbe {
                                       mouseCursorPosition: openPoint, mouseButton: .left) else { exit(5) }
             hover.post(tap: .cghidEventTap)
             Thread.sleep(forTimeInterval: 0.5)
+            var openHit: AXUIElement?
+            let openHitStatus = AXUIElementCopyElementAtPosition(application, Float(openPoint.x), Float(openPoint.y), &openHit)
+            if let openHit {
+                try JSONSerialization.data(withJSONObject: [
+                    "hitStatus": openHitStatus.rawValue,
+                    "point": ["x": openPoint.x, "y": openPoint.y],
+                    "element": snapshotAX(openHit, depth: 4), "windows": ownedWindows()
+                ], options: [.prettyPrinted, .sortedKeys])
+                    .write(to: output.appendingPathComponent("lock-\(shouldLock)-open-hit.json"))
+            }
             click(openPoint)
             Thread.sleep(forTimeInterval: 1)
             let lockCapture = Process()
