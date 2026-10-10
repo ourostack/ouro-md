@@ -56,8 +56,8 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         adoptSystemToolbar()
 
         window.delegate = self
-        // Unsaved documents need Save As; saved documents use AppKit's native
-        // document-title controls through their NSDocument association.
+        // The filename text opens AppKit's document controls; the separate
+        // native dropdown arrow retains its own system event handling.
         window.onTitleClicked = { [weak self] in self?.presentDocumentControlsFromTitleClick() }
         window.titleHitView = { [weak self] in self?.nativeTitleField() }
         // Native fixed-size title-bar document-status glyph. A SwiftUI `Menu`
@@ -116,10 +116,6 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         window.subtitle = model.deletedOnDisk ? "deleted" : (model.isFileLocked ? "Locked" : "")
         window.representedURL = model.currentURL
         window.isDocumentEdited = model.isDirty
-        if let documentWindow = window as? DocumentWindow {
-            documentWindow.onTitleClicked = model.currentURL == nil
-                ? { [weak self] in self?.presentDocumentControlsFromTitleClick() } : nil
-        }
         window.appearance = NSAppearance(named: model.theme.uiMode == "dark" ? .darkAqua : .aqua)
         if let background = NSColor(hex: model.theme.backgroundHex) { window.backgroundColor = background }
         truthButton?.refresh()
@@ -132,8 +128,8 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
 
     // MARK: - Document controls
 
-    /// The title of an unsaved buffer routes to naming it; saved document
-    /// titles are handled by AppKit without an additional click observer.
+    /// An unsaved buffer needs naming; a saved filename opens the native
+    /// metadata popover rather than the unrelated Open panel.
     func presentDocumentControlsFromTitleClick() {
         if let documentControlsFromTitleClickHandler {
             documentControlsFromTitleClickHandler()

@@ -61,6 +61,8 @@ final class NativeDocumentMetadataTests: XCTestCase {
                       "Native document association must not replace the app's close/teardown delegate")
         XCTAssertEqual(document.fileURL, file)
         XCTAssertEqual(document.fileType, "net.daringfireball.markdown")
+        XCTAssertTrue(document.writableTypes(for: .saveOperation).contains("net.daringfireball.markdown"),
+                      "The native controls require the adapter to declare the file types it can save through AppModel")
         XCTAssertFalse(document.isDocumentEdited, "AppModel alone owns content autosave and unsaved-close prompts")
         XCTAssertFalse(controller.window.isVisible)
         XCTAssertThrowsError(try document.data(ofType: "net.daringfireball.markdown"),
@@ -97,7 +99,7 @@ final class NativeDocumentMetadataTests: XCTestCase {
         XCTAssertFalse(controller.window.isVisible)
     }
 
-    func testSavedTitleDefersToNativeControlsWithoutSchedulingAnotherAction() throws {
+    func testSavedFilenameClickRoutesToNativeDocumentControls() throws {
         let directory = try makeDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         let file = directory.appendingPathComponent("Plan.md")
@@ -106,8 +108,14 @@ final class NativeDocumentMetadataTests: XCTestCase {
         defer { controller.window.close() }
         let window = try XCTUnwrap(controller.window as? DocumentWindow)
 
-        XCTAssertNil(window.onTitleClicked,
-                     "AppKit's title click must not trigger a second delayed popover or an Open panel")
+        window.layoutIfNeeded()
+        XCTAssertNotNil(window.onTitleClicked,
+                        "The filename text must open the document controls, not merely the small native arrow")
+        XCTAssertNotNil(window.titleHitView?())
+        var presented = false
+        controller.renamePresentationHandler = { presented = true }
+        controller.presentDocumentControlsFromTitleClick()
+        XCTAssertTrue(presented)
         XCTAssertTrue(controller.nativeDocument?.windowForSheet === window)
         XCTAssertFalse(window.isVisible)
     }
