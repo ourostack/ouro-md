@@ -158,6 +158,7 @@ final class AppModel: ObservableObject {
     private var externalContentDuringWritingTools: (disk: String, url: URL)?
     private var pendingAnchorFragment: String?
     private var autosaveItem: DispatchWorkItem?
+    private var pendingFileWrites = 0
     /// The content currently on disk (last loaded or saved). Lets the file
     /// watcher distinguish a genuine external edit from our own save echo.
     private var lastLoadedContent: String?
@@ -596,25 +597,58 @@ final class AppModel: ObservableObject {
             captureTelemetry("ouro_md_document_rename_failed", properties: ["code": .string("collision")])
             return "“\(name)” already exists in this folder."
         }
-        stopWatching()
         do {
-            try FileManager.default.moveItem(at: url, to: dest)
-            currentURL = dest
-            DocumentAccess.noteRecent(dest)
-            refreshFolder()
-            startWatching()
-            refreshDocumentTruth()
-            onChromeUpdate?()
+            try moveCurrentFile(to: dest)
             captureTelemetry(
                 "ouro_md_document_renamed",
                 properties: ["markdown_type": .bool(Self.isMarkdownURL(dest))]
             )
             return nil
         } catch {
-            startWatching()
             captureTelemetry("ouro_md_document_rename_failed", properties: ["code": .string("move_failed")])
             return error.localizedDescription
         }
+    }
+
+    func moveCurrentFile(to destination: URL) throws {
+        guard let source = currentURL else {
+            throw NSError(domain: "ouro-md", code: 20,
+                          userInfo: [NSLocalizedDescriptionKey: "Save this document before moving it."])
+        }
+        if source.standardizedFileURL == destination.standardizedFileURL { return }
+        guard !writingToolsActive else {
+            throw NSError(domain: "ouro-md", code: 21,
+                          userInfo: [NSLocalizedDescriptionKey: "Wait for Writing Tools to finish before moving this document."])
+        }
+        guard pendingFileWrites == 0 else {
+            throw NSError(domain: "ouro-md", code: 26,
+                          userInfo: [NSLocalizedDescriptionKey: "Wait for the current save to finish before moving this document."])
+        }
+        guard !FileManager.default.fileExists(atPath: destination.path) || isSameFile(source, destination) else {
+            throw NSError(domain: "ouro-md", code: 22,
+                          userInfo: [NSLocalizedDescriptionKey: "“\(destination.lastPathComponent)” already exists in this folder."])
+        }
+        stopWatching()
+        defer { startWatching() }
+        let coordinator = NSFileCoordinator()
+        var coordinationError: NSError?
+        var moveError: Error?
+        coordinator.coordinate(writingItemAt: source, options: .forMoving,
+                               writingItemAt: destination, options: [],
+                               error: &coordinationError) { coordinatedSource, coordinatedDestination in
+            do {
+                try FileManager.default.moveItem(at: coordinatedSource, to: coordinatedDestination)
+                coordinator.item(at: coordinatedSource, didMoveTo: coordinatedDestination)
+            } catch { moveError = error }
+        }
+        if let coordinationError { throw coordinationError }
+        if let moveError { throw moveError }
+        currentURL = destination
+        bridge?.setDocBase(destination.deletingLastPathComponent().path)
+        DocumentAccess.noteRecent(destination)
+        refreshFolder()
+        refreshDocumentTruth()
+        onChromeUpdate?()
     }
 
     func save() { performSave { _ in } }
@@ -714,8 +748,10 @@ final class AppModel: ObservableObject {
             completion(false)
             return
         }
+        pendingFileWrites += 1
         bridge.getMarkdown { [weak self] markdown in
             guard let self else { completion(false); return }
+            defer { self.pendingFileWrites -= 1 }
             guard let markdown else {
                 self.captureTelemetry(
                     "ouro_md_document_save_failed",

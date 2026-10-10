@@ -7,15 +7,14 @@ import SwiftUI
 /// centered title, chrome sync, the status bar, and unsaved-close
 /// handling. Multiple instances give independent windows.
 @MainActor
-final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate, NSToolbarDelegate {
+final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDelegate {
     let model = AppModel()
     let window: NSWindow
     private var sidebarItem: NSSplitViewItem?
     private var truthAccessory: NSTitlebarAccessoryViewController?
     private var truthButton: DocumentTruthTitleButton?
     private(set) var truthToolbarItem: NSToolbarItem?
-    private var renamePopover: NSPopover?
-    private var renameField: NSTextField?
+    private(set) var nativeDocument: NativeDocumentMetadata?
     var renamePresentationHandler: (() -> Void)?
     /// Test seam: overrides what a title click does (defaults to the Open panel).
     var openDocumentFromTitleClickHandler: (() -> Void)?
@@ -56,10 +55,14 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         self.truthButton = truthButton
         super.init()
         adoptSystemToolbar()
+        let nativeDocument = NativeDocumentMetadata(model: model)
+        nativeDocument.addWindowController(NSWindowController(window: window))
+        NSDocumentController.shared.addDocument(nativeDocument)
+        self.nativeDocument = nativeDocument
 
         window.delegate = self
-        // Click the filename to open a document (same as File ▸ Open), while the
-        // window subclass still distinguishes a click from a title-bar drag.
+        // Unsaved documents need Save As; saved documents use AppKit's native
+        // document-title controls through their NSDocument association.
         window.onTitleClicked = { [weak self] in self?.openDocumentFromTitleClick() }
         window.titleHitView = { [weak self] in self?.nativeTitleField() }
         // Native fixed-size title-bar document-status glyph. A SwiftUI `Menu`
@@ -100,6 +103,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
     }
 
     func syncChrome() {
+        nativeDocument?.synchronizeIdentity()
         // Native document chrome: the system draws the title (and, when the file
         // exists on disk, a draggable proxy icon). Left-aligned in windowed mode
         // and full screen, matching every other macOS document app.
@@ -109,6 +113,10 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         window.subtitle = model.deletedOnDisk ? "deleted" : ""
         window.representedURL = model.currentURL
         window.isDocumentEdited = model.isDirty
+        if let documentWindow = window as? DocumentWindow {
+            documentWindow.onTitleClicked = model.currentURL == nil
+                ? { [weak self] in self?.openDocumentFromTitleClick() } : nil
+        }
         window.appearance = NSAppearance(named: model.theme.uiMode == "dark" ? .darkAqua : .aqua)
         if let background = NSColor(hex: model.theme.backgroundHex) { window.backgroundColor = background }
         truthButton?.refresh()
@@ -119,95 +127,29 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
         MenuBuilder.refreshDynamicState(model: model)
     }
 
-    // MARK: - Title click / open
+    // MARK: - Document controls
 
-    /// A plain click on the filename opens the standard Open panel (same as
-    /// File ▸ Open), reusing the existing unsaved-changes guard. Rename stays a
-    /// menu command so a title click can never risk an accidental rename.
+    /// The title of an unsaved buffer routes to naming it; saved document
+    /// titles are handled by AppKit without an additional click observer.
     func openDocumentFromTitleClick() {
         if let openDocumentFromTitleClickHandler {
             openDocumentFromTitleClickHandler()
             return
         }
-        model.openPanel()
+        presentRename()
     }
 
     // MARK: - Rename
 
-    /// Presents an inline rename popover anchored on the title. Untitled
-    /// documents have no file yet, so we route to Save As — that panel is the
-    /// "name this document" affordance for an unsaved buffer.
+    /// Uses AppKit's Name, Tags, Where and lock controls. An unsaved buffer
+    /// needs Save As before it has a file whose metadata can be edited.
     func presentRename() {
         if let renamePresentationHandler {
             renamePresentationHandler()
             return
         }
         guard model.currentURL != nil else { model.saveAs(); return }
-        if let existing = renamePopover { existing.close(); return }
-
-        let field = NSTextField(string: model.windowTitle)
-        field.frame = NSRect(x: 12, y: 11, width: 256, height: 22)
-        field.lineBreakMode = .byTruncatingMiddle
-        field.usesSingleLineMode = true
-        field.bezelStyle = .roundedBezel
-        field.target = self
-        field.action = #selector(renameFieldCommitted(_:))
-
-        let container = NSView(frame: NSRect(x: 0, y: 0, width: 280, height: 44))
-        container.addSubview(field)
-        let vc = NSViewController()
-        vc.view = container
-
-        let popover = NSPopover()
-        popover.behavior = .transient
-        popover.contentViewController = vc
-        popover.delegate = self
-        renamePopover = popover
-        renameField = field
-
-        let anchor = nativeTitleField() ?? window.standardWindowButton(.closeButton)?.superview ?? window.contentView!
-        popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .maxY)
-
-        window.makeFirstResponder(field)
-        // Pre-select the base name (without the extension), like Finder's rename.
-        if let editor = field.currentEditor() {
-            let full = field.stringValue as NSString
-            let ext = full.pathExtension as NSString
-            let baseLength = full.length - (ext.length == 0 ? 0 : ext.length + 1)
-            editor.selectedRange = NSRange(location: 0, length: max(0, baseLength))
-        }
-    }
-
-    @objc private func renameFieldCommitted(_ sender: NSTextField) {
-        applyRename(sender.stringValue)
-    }
-
-    private func applyRename(_ newName: String) {
-        guard renameField != nil else { return }
-        cancelRename()
-        guard newName != model.windowTitle else { return }
-        if let message = model.renameCurrentFile(to: newName) {
-            let alert = NSAlert()
-            alert.messageText = "Couldn’t rename the file"
-            alert.informativeText = message
-            alert.beginSheetModal(for: window) { _ in }
-        }
-    }
-
-    /// Tears down the rename popover without renaming. Used for Escape, clicking
-    /// away, or the app deactivating — only Return (renameFieldCommitted) renames,
-    /// so an unfinished edit can never silently rename the user's file.
-    private func cancelRename() {
-        let popover = renamePopover
-        renameField = nil
-        renamePopover = nil
-        popover?.delegate = nil
-        popover?.close()
-    }
-
-    func popoverDidClose(_ notification: Notification) {
-        // Any dismissal that wasn't Return is a cancel.
-        if renameField != nil { cancelRename() }
+        nativeDocument?.rename(nil)
     }
 
     /// Finds the AppKit-drawn title text field so the popover can anchor on the title.
@@ -320,6 +262,14 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSPopoverDeleg
     }
 
     func windowWillClose(_ notification: Notification) {
+        if let nativeDocument {
+            for controller in nativeDocument.windowControllers {
+                nativeDocument.removeWindowController(controller)
+            }
+            NSDocumentController.shared.removeDocument(nativeDocument)
+            nativeDocument.close()
+            self.nativeDocument = nil
+        }
         model.teardown()
         onClose?(self)
     }
