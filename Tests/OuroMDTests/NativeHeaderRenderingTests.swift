@@ -22,6 +22,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
         defer { controller.window.close() }
         controller.window.setContentSize(NSSize(width: 1000, height: 700))
         controller.show(cascadeFrom: nil)
+        pumpNativeApplicationEvents()
         let content = try XCTUnwrap(controller.window.contentView)
         func editor(in view: NSView) -> WKWebView? {
             if let web = view as? WKWebView { return web }
@@ -42,6 +43,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
             }.joined(separator: "\n\n")
             controller.model.bridge?.setMarkdown(document)
             try await Task.sleep(for: .seconds(1))
+            pumpNativeApplicationEvents()
             let preparation = try await web.evaluateJavaScript("""
             (() => {
               const root = document.querySelector(".vditor-ir .vditor-reset");
@@ -129,10 +131,28 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 measurements.append(["theme": theme, "state": name, "underlap": top,
                                      "webWidth": web.bounds.width, "webHeight": web.bounds.height,
                                      "layout": values, "title": controller.window.title,
+                                     "applicationActive": NSApplication.shared.isActive,
+                                     "windowKey": controller.window.isKeyWindow,
                                      "toolbarVisible": controller.window.toolbar?.isVisible ?? false])
             }
+
         }
         try JSONSerialization.data(withJSONObject: measurements, options: [.prettyPrinted, .sortedKeys])
             .write(to: output.appendingPathComponent("measurements.json"))
+    }
+
+    private func pumpNativeApplicationEvents() {
+        let app = NSApplication.shared
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            app.stop(nil)
+            if let wake = NSEvent.otherEvent(with: .applicationDefined, location: .zero,
+                                            modifierFlags: [], timestamp: 0, windowNumber: 0,
+                                            context: nil, subtype: 0, data1: 0, data2: 0) {
+                app.postEvent(wake, atStart: true)
+            }
+        }
+        // XCTest's async run loop is not NSApplication's event loop. Native
+        // activation and remote-layer composition require the latter.
+        app.run()
     }
 }

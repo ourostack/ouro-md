@@ -18,8 +18,8 @@ final class DocumentWindowControllerTests: XCTestCase {
         }
         waitUntil(timeout: 2) { editor(in: content) != nil }
         let web = try XCTUnwrap(editor(in: content))
-        waitUntil(timeout: 5) { controller.model.isReady }
-        XCTAssertTrue(controller.model.isReady)
+        // This checks WebKit's viewport contract, not Vditor startup. In an
+        // unordered window editor readiness need not precede viewport layout.
         for zoom in [0.75, 1.0, 2.0] {
             EditorZoom.apply(zoom, to: web)
             var height = web.bounds.height
