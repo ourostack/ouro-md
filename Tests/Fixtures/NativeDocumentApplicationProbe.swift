@@ -345,14 +345,10 @@ enum NativeDocumentApplicationProbe {
               let tagFocus, CFGetTypeID(tagFocus) == AXUIElementGetTypeID() else { exit(6) }
         let metadataControls = containingWindow(of: unsafeBitCast(tagFocus, to: AXUIElement.self))
         func findControl(_ element: AXUIElement, role wantedRole: String, description wantedDescription: String? = nil) -> AXUIElement? {
-            var role: CFTypeRef?
-            if AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &role) == .success,
-               role as? String == wantedRole {
-                if let wantedDescription {
-                    var description: CFTypeRef?
-                    if AXUIElementCopyAttributeValue(element, kAXDescriptionAttribute as CFString, &description) == .success,
-                       description as? String == wantedDescription { return element }
-                } else { return element }
+            let info = snapshotAX(element, depth: 0)
+            if info[kAXRoleAttribute] as? String == wantedRole,
+               wantedDescription == nil || info[kAXDescriptionAttribute] as? String == wantedDescription {
+                return element
             }
             var children: CFTypeRef?
             if AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &children) == .success,
@@ -382,8 +378,20 @@ enum NativeDocumentApplicationProbe {
         }
         try JSONSerialization.data(withJSONObject: snapshotAX(metadataControls, depth: 10), options: [.prettyPrinted, .sortedKeys])
             .write(to: output.appendingPathComponent("native-tags-controls.json"))
-        key(48)
-        Thread.sleep(forTimeInterval: 0.2)
+        guard let tags = findControl(metadataControls, role: kAXTextFieldRole, description: "tag editor") else {
+            fputs("Native Tags field was not found\n", stderr)
+            exit(6)
+        }
+        var tagPosition: CFTypeRef?
+        var tagSize: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(tags, kAXPositionAttribute as CFString, &tagPosition) == .success,
+              AXUIElementCopyAttributeValue(tags, kAXSizeAttribute as CFString, &tagSize) == .success,
+              let tagPosition, let tagSize else { exit(6) }
+        var tagOrigin = CGPoint.zero
+        var tagExtent = CGSize.zero
+        guard AXValueGetValue(unsafeBitCast(tagPosition, to: AXValue.self), .cgPoint, &tagOrigin),
+              AXValueGetValue(unsafeBitCast(tagSize, to: AXValue.self), .cgSize, &tagExtent) else { exit(6) }
+        click(CGPoint(x: tagOrigin.x + tagExtent.width / 2, y: tagOrigin.y + tagExtent.height / 2))
         typeText("Ouro sample")
         key(36)
         key(48)
