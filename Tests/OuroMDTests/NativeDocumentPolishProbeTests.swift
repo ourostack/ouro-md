@@ -141,6 +141,46 @@ final class NativeDocumentPolishProbeTests: XCTestCase {
                             "documentEdited": document.isDocumentEdited,
                             "documentLocked": document.isLocked])
         }
+        // A native-only positive control avoids inferring a system limitation
+        // from our existing SwiftUI/document-window composition.
+        do {
+            let document = try AutosavingProbeDocument(contentsOf: url, ofType: "net.daringfireball.markdown")
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 700, height: 500),
+                                  styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+            window.contentView = NSTextField(labelWithString: "Public fictional Harbor document — native NSDocument control")
+            let nativeController = NSWindowController(window: window)
+            document.addWindowController(nativeController)
+            NSDocumentController.shared.addDocument(document)
+            defer {
+                NSApp.sendAction(#selector(NSResponder.cancelOperation(_:)), to: nil, from: nil)
+                document.removeWindowController(nativeController)
+                NSDocumentController.shared.removeDocument(document)
+                window.close()
+                document.close()
+                controller.window.makeKeyAndOrderFront(nil)
+            }
+            window.center()
+            nativeController.showWindow(nil)
+            window.makeKeyAndOrderFront(nil)
+            document.rename(nil)
+            try await Task.sleep(for: .seconds(2))
+            for (index, owned) in NSApp.windows.filter({ $0.isVisible && $0 !== controller.window }).enumerated() {
+                let process = Process()
+                process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+                process.arguments = ["-x", "-o", "-l", "\(owned.windowNumber)",
+                                     output.appendingPathComponent("native-positive-control-\(index).png").path]
+                try process.run()
+                process.waitUntilExit()
+                XCTAssertEqual(process.terminationStatus, 0)
+            }
+            records.append(["name": "native-positive-control",
+                            "windowForSheetMatches": document.windowForSheet === window,
+                            "documentURL": document.fileURL?.path ?? "",
+                            "visibleWindows": NSApp.windows.filter(\.isVisible).map {
+                                ["title": $0.title, "frame": NSStringFromRect($0.frame),
+                                 "number": $0.windowNumber, "key": $0.isKeyWindow] as [String: Any]
+                            }])
+        }
         for theme in ["quartz", "graphite"] {
             controller.model.setTheme(id: theme)
             controller.syncChrome()
@@ -209,6 +249,11 @@ private class ProbeDocument: NSDocument {
         ["net.daringfireball.markdown"]
     }
     override func data(ofType typeName: String) throws -> Data { contents }
+    override func read(from data: Data, ofType typeName: String) throws {
+        // This characterization invokes init(contentsOf:) on the main actor;
+        // it never opts into NSDocument concurrent reading.
+        MainActor.assumeIsolated { contents = data }
+    }
 }
 
 @MainActor
