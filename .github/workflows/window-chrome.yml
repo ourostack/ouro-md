@@ -72,6 +72,13 @@ jobs:
           export OURO_PROOF_RUNNER="$PWD/scripts/run-hosted-native-proof.sh"
           cd .ci/header-baseline
           "$OURO_PROOF_RUNNER" header
+      - name: Restore owned preferences after interrupted native capture
+        if: always()
+        env:
+          OURO_NATIVE_PREFERENCE_PROOF: '1'
+        run: |
+          OURO_HEADER_OUTPUT=.build/header-rendering/current ./scripts/run-hosted-native-proof.sh header --restore
+          OURO_HEADER_OUTPUT=.build/header-rendering/flat-v0.9.95 ./scripts/run-hosted-native-proof.sh header --restore
       - uses: actions/upload-artifact@v6
         if: always()
         with:

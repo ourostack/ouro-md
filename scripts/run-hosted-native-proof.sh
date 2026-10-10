@@ -14,11 +14,14 @@ case "$mode" in
 esac
 backup="$root/preferences"
 mkdir -p "$backup"
-for key in reduceMotion reduceTransparency; do
-  if defaults read com.apple.universalaccess "$key" > "$backup/$key.before" 2>/dev/null; then
-    touch "$backup/$key.existed"
-  fi
-done
+if [[ "${2:-}" != --restore ]]; then
+  for key in reduceMotion reduceTransparency; do
+    if defaults read com.apple.universalaccess "$key" > "$backup/$key.before" 2>/dev/null; then
+      touch "$backup/$key.existed"
+    fi
+  done
+  touch "$backup/initialized"
+fi
 bool_value() {
   case "$1" in
     1|true|TRUE|yes|YES) printf true ;;
@@ -43,7 +46,16 @@ restore() {
   if [[ "$test_status" != 0 ]]; then exit "$test_status"; fi
   exit "$failures"
 }
+if [[ "${2:-}" == --restore ]]; then
+  if [[ ! -f "$backup/initialized" ]]; then
+    echo "No owned preference changes initialized; nothing to restore."
+    exit 0
+  fi
+  restore
+fi
 trap restore EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 if [[ "$mode" != accessibility ]]; then
   defaults write com.apple.universalaccess reduceMotion -bool false
   defaults write com.apple.universalaccess reduceTransparency -bool false

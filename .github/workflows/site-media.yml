@@ -45,6 +45,12 @@ jobs:
           OURO_SITE_MEDIA_REQUIRE_BODY_PAINT: ${{ matrix.runner == 'macos-26-intel' && '1' || '0' }}
           OURO_MD_TELEMETRY_DISABLED: '1'
         run: ./scripts/run-hosted-native-proof.sh media
+      - name: Restore owned preferences after interrupted capture
+        if: always()
+        env:
+          OURO_NATIVE_PREFERENCE_PROOF: '1'
+          OURO_SITE_MEDIA_OUTPUT: .build/site-media
+        run: ./scripts/run-hosted-native-proof.sh media --restore
       - uses: actions/upload-artifact@v6
         if: always()
         with:
@@ -83,6 +89,11 @@ jobs:
           OURO_EXPECT_REDUCE_TRANSPARENCY: ${{ matrix.transparency }}
           OURO_MD_TELEMETRY_DISABLED: '1'
         run: ./scripts/run-hosted-native-proof.sh accessibility
+      - name: Restore owned preferences after interrupted accessibility test
+        if: always()
+        env:
+          OURO_NATIVE_PREFERENCE_PROOF: '1'
+        run: ./scripts/run-hosted-native-proof.sh accessibility --restore
       - uses: actions/upload-artifact@v6
         if: always()
         with:
