@@ -246,7 +246,14 @@ enum NativeDocumentApplicationProbe {
                 ], options: [.prettyPrinted, .sortedKeys])
                     .write(to: output.appendingPathComponent("lock-\(shouldLock)-open-hit.json"))
             }
-            click(openPoint)
+            let hasDocumentPopover = ownedWindows().contains { owned in
+                guard let rect = owned[kCGWindowBounds as String] as? [String: Any],
+                      let popoverHeight = rect["Height"] as? Double,
+                      let popoverWidth = rect["Width"] as? Double else { return false }
+                return (owned[kCGWindowName as String] as? String ?? "").isEmpty &&
+                    popoverHeight >= 100 && popoverHeight < 250 && popoverWidth > 300
+            }
+            if !hasDocumentPopover { click(openPoint) }
             Thread.sleep(forTimeInterval: 1)
             let lockCapture = Process()
             lockCapture.executableURL = onscreen.executableURL
