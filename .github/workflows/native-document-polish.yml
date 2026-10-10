@@ -28,6 +28,8 @@ jobs:
         run: |
           sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
           OURO_MD_TELEMETRY_DISABLED=1 bash make-app.sh
+          /usr/libexec/PlistBuddy -c 'Add :CFBundleDocumentTypes:0:NSDocumentClass string OuroMD.NativeDocumentMetadata' OuroMD.app/Contents/Info.plist
+          codesign --force --deep --sign - OuroMD.app
           swiftc -parse-as-library Tests/Fixtures/NativeDocumentApplicationProbe.swift -o .build/native-document-application-probe
       - name: Click filename and rename in actual packaged app
         env:

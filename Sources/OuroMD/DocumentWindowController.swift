@@ -150,7 +150,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         guard model.currentURL != nil else { model.saveAs(); return }
         if ProcessInfo.processInfo.environment["OURO_DOCUMENT_PROBE_OUTPUT"] != nil,
            ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" {
-            fputs("native-rename key=\(window.isKeyWindow) associated=\(nativeDocument?.windowForSheet === window) document=\(nativeDocument != nil)\n", stderr)
+            fputs("native-rename key=\(window.isKeyWindow) associated=\(nativeDocument?.windowForSheet === window) document=\(nativeDocument != nil) class=\(NSStringFromClass(NativeDocumentMetadata.self)) registered=\(String(describing: NSDocumentController.shared.documentClass(forType: "net.daringfireball.markdown")))\n", stderr)
         }
         nativeDocument?.rename(nil)
     }
