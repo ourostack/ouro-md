@@ -12,6 +12,10 @@ final class NativeHeaderRenderingTests: XCTestCase {
         try XCTSkipUnless(env["GITHUB_ACTIONS"] == "true" && env["OURO_HEADER_RENDERING"] == "1",
                           "never present test windows on an operator's Mac")
         try XCTSkipUnless(SystemDesign.usesGlass)
+        if env["OURO_HEADER_STANDARD_PROFILE"] == "1" {
+            XCTAssertFalse(NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
+            XCTAssertFalse(NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency)
+        }
         NSApplication.shared.setActivationPolicy(.regular)
         NSApplication.shared.finishLaunching()
         let output = URL(fileURLWithPath: env["OURO_HEADER_OUTPUT"] ?? ".build/header-rendering", isDirectory: true)
@@ -120,6 +124,21 @@ final class NativeHeaderRenderingTests: XCTestCase {
                                      "contentLayoutTop": controller.window.contentLayoutRect.maxY,
                                      "layout": values, "applicationActive": NSApplication.shared.isActive,
                                      "windowKey": controller.window.isKeyWindow])
+                if env["OURO_HEADER_ONSCREEN_DIAGNOSTIC"] == "1" {
+                    let screen = try XCTUnwrap(controller.window.screen)
+                    let rect = controller.window.frame
+                    let region = "\(Int(rect.minX)),\(Int(screen.frame.maxY - rect.maxY)),\(Int(rect.width)),\(Int(rect.height))"
+                    let regionURL = output.appendingPathComponent("\(theme)-\(name)-onscreen.png")
+                    let onscreen = Process()
+                    onscreen.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+                    onscreen.arguments = ["-x", "-R", region, regionURL.path]
+                    try onscreen.run()
+                    onscreen.waitUntilExit()
+                    XCTAssertEqual(onscreen.terminationStatus, 0)
+                    let pixels = try XCTUnwrap(NSBitmapImageRep(data: Data(contentsOf: regionURL)))
+                    measurements[measurements.count - 1]["onscreenColoredBodyPixels"] = coloredPixels(pixels)
+                    measurements[measurements.count - 1]["onscreenHeaderRGB"] = meanRGB(pixels, region: NSRect(x: 320, y: 12, width: 480, height: 26))
+                }
             }
             sampledHeaders.append(headerMeans[0])
             sampledHeaders.append(headerMeans[1])
@@ -160,6 +179,8 @@ final class NativeHeaderRenderingTests: XCTestCase {
             measurements[0]["fullscreenStates"] = fullscreenStates
         }
         measurements[0]["fullscreenVerificationRequired"] = env["OURO_HEADER_REQUIRE_FULLSCREEN"] == "1"
+        measurements[0]["nativeReduceMotion"] = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        measurements[0]["nativeReduceTransparency"] = NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
         try JSONSerialization.data(withJSONObject: measurements, options: [.prettyPrinted, .sortedKeys])
             .write(to: output.appendingPathComponent("measurements.json"))
         let liveBodyPaints = measurements.allSatisfy { ($0["coloredBodyPixels"] as? Int ?? 0) > 1000 }

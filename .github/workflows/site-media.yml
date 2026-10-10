@@ -1,0 +1,102 @@
+name: Native site media and accessibility
+
+on:
+  pull_request:
+    paths:
+      - 'Tests/OuroMDTests/NativeSiteMediaCaptureTests.swift'
+      - 'Tests/OuroMDTests/NativeAccessibilityPreferenceTests.swift'
+      - 'Tests/Fixtures/**'
+      - 'scripts/run-hosted-native-proof.sh'
+      - '.github/workflows/site-media.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-site-media-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    name: Public fixture native capture (${{ matrix.runner }})
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-26-intel, xcode-27]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - name: Toolchain and renderer provenance
+        run: |
+          if [[ '${{ matrix.runner }}' == 'xcode-27' ]]; then
+            sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
+          fi
+          sw_vers
+          xcodebuild -version
+          system_profiler SPDisplaysDataType
+      - name: Capture real public-document action frames
+        env:
+          OURO_SITE_MEDIA: '1'
+          OURO_NATIVE_PREFERENCE_PROOF: '1'
+          OURO_SITE_MEDIA_OUTPUT: .build/site-media
+          OURO_SITE_MEDIA_RENDERER_DIAGNOSTICS: ${{ matrix.runner == 'xcode-27' && '1' || '0' }}
+          OURO_SITE_MEDIA_REQUIRE_BODY_PAINT: ${{ matrix.runner == 'macos-26-intel' && '1' || '0' }}
+          OURO_MD_TELEMETRY_DISABLED: '1'
+        run: ./scripts/run-hosted-native-proof.sh media
+      - name: Restore owned preferences after interrupted capture
+        if: always()
+        env:
+          OURO_NATIVE_PREFERENCE_PROOF: '1'
+          OURO_SITE_MEDIA_OUTPUT: .build/site-media
+        run: ./scripts/run-hosted-native-proof.sh media --restore
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: public-document-native-${{ matrix.runner }}
+          path: .build/site-media
+          if-no-files-found: error
+
+  accessibility:
+    name: Native accessibility (${{ matrix.state }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - state: baseline
+            motion: '0'
+            transparency: '0'
+          - state: reduce-motion
+            motion: '1'
+            transparency: '0'
+          - state: reduce-transparency
+            motion: '0'
+            transparency: '1'
+          - state: both
+            motion: '1'
+            transparency: '1'
+    runs-on: macos-26-intel
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - name: Dedicated hosted preference probe with exact key restoration
+        env:
+          OURO_ACCESSIBILITY_PROOF: '1'
+          OURO_NATIVE_PREFERENCE_PROOF: '1'
+          OURO_ACCESSIBILITY_STATE: ${{ matrix.state }}
+          OURO_EXPECT_REDUCE_MOTION: ${{ matrix.motion }}
+          OURO_EXPECT_REDUCE_TRANSPARENCY: ${{ matrix.transparency }}
+          OURO_MD_TELEMETRY_DISABLED: '1'
+        run: ./scripts/run-hosted-native-proof.sh accessibility
+      - name: Restore owned preferences after interrupted accessibility test
+        if: always()
+        env:
+          OURO_NATIVE_PREFERENCE_PROOF: '1'
+        run: ./scripts/run-hosted-native-proof.sh accessibility --restore
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: accessibility-${{ matrix.state }}
+          path: .build/accessibility-proof
+          if-no-files-found: error

@@ -10,6 +10,7 @@ on:
       - 'make-app.sh'
       - 'Package.swift'
       - 'scripts/capture-window-chrome.sh'
+      - 'scripts/run-hosted-native-proof.sh'
       - 'scripts/lib/window-id.swift'
       - '.github/workflows/window-chrome.yml'
       - 'Tests/OuroMDTests/NativeHeaderRenderingTests.swift'
@@ -17,6 +18,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: native-window-chrome-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   capture:
@@ -39,12 +44,14 @@ jobs:
       - name: Render the live native header over moving document content
         env:
           OURO_HEADER_RENDERING: '1'
+          OURO_NATIVE_PREFERENCE_PROOF: '1'
           OURO_HEADER_EXPECT_UNDERLAP: '1'
           OURO_HEADER_REQUIRE_LIVE_PAINT: ${{ matrix.runner == 'macos-26-intel' && '1' || '0' }}
           OURO_HEADER_REQUIRE_FULLSCREEN: ${{ matrix.runner == 'xcode-27' && '1' || '0' }}
+          OURO_HEADER_ONSCREEN_DIAGNOSTIC: ${{ matrix.runner == 'xcode-27' && '1' || '0' }}
           OURO_HEADER_OUTPUT: .build/header-rendering/current
           OURO_MD_TELEMETRY_DISABLED: '1'
-        run: swift test --filter NativeHeaderRenderingTests
+        run: ./scripts/run-hosted-native-proof.sh header
       - name: Checkout the flat released negative control
         uses: actions/checkout@v5
         with:
@@ -54,6 +61,7 @@ jobs:
         if: always()
         env:
           OURO_HEADER_RENDERING: '1'
+          OURO_NATIVE_PREFERENCE_PROOF: '1'
           OURO_HEADER_EXPECT_UNDERLAP: '0'
           OURO_HEADER_REQUIRE_LIVE_PAINT: ${{ matrix.runner == 'macos-26-intel' && '1' || '0' }}
           OURO_HEADER_REQUIRE_FULLSCREEN: '0'
@@ -61,8 +69,16 @@ jobs:
         run: |
           cp Tests/OuroMDTests/NativeHeaderRenderingTests.swift .ci/header-baseline/Tests/OuroMDTests/
           export OURO_HEADER_OUTPUT="$PWD/.build/header-rendering/flat-v0.9.95"
+          export OURO_PROOF_RUNNER="$PWD/scripts/run-hosted-native-proof.sh"
           cd .ci/header-baseline
-          swift test --filter NativeHeaderRenderingTests
+          "$OURO_PROOF_RUNNER" header
+      - name: Restore owned preferences after interrupted native capture
+        if: always()
+        env:
+          OURO_NATIVE_PREFERENCE_PROOF: '1'
+        run: |
+          OURO_HEADER_OUTPUT=.build/header-rendering/flat-v0.9.95 ./scripts/run-hosted-native-proof.sh header --restore
+          OURO_HEADER_OUTPUT=.build/header-rendering/current ./scripts/run-hosted-native-proof.sh header --restore
       - uses: actions/upload-artifact@v6
         if: always()
         with:
