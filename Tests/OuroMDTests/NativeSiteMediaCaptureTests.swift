@@ -13,7 +13,7 @@ final class NativeSiteMediaCaptureTests: XCTestCase {
         let env = ProcessInfo.processInfo.environment
         try XCTSkipUnless(env["GITHUB_ACTIONS"] == "true" && env["OURO_SITE_MEDIA"] == "1",
                           "never present windows or capture an operator's desktop")
-        XCTAssertEqual(OuroMDRelease.version, "0.9.97")
+        XCTAssertEqual(OuroMDRelease.version, "0.9.99")
         let releasedCommit = try XCTUnwrap(env["OURO_SITE_MEDIA_RELEASE_COMMIT"])
         let output = URL(fileURLWithPath: env["OURO_SITE_MEDIA_OUTPUT"] ?? ".build/site-media").standardizedFileURL
         let sample = output.appendingPathComponent("shared-plan", isDirectory: true)
