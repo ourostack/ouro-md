@@ -35,20 +35,20 @@ jobs:
           sw_vers
           xcodebuild -version
           system_profiler SPDisplaysDataType
-      - name: Require the published copy release and identical production source
+      - name: Require the final published native release and identical production source
         id: release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [[ "$(./scripts/verify-release-version.sh --print)" != '0.9.97' ]]; then
+          if [[ "$(./scripts/verify-release-version.sh --print)" != '0.9.99' ]]; then
             echo 'capture=false' >> "$GITHUB_OUTPUT"
             echo '::notice::Publication capture skipped: this candidate is not the pinned published media release. Recapture after its release is verified.'
             exit 0
           fi
-          test "$(./scripts/verify-release-version.sh --print)" = '0.9.97'
-          test "$(gh api repos/ourostack/ouro-md/releases/tags/v0.9.97 --jq 'select(.draft == false).tag_name')" = 'v0.9.97'
-          git diff --exit-code v0.9.97 HEAD -- Sources
-          echo "OURO_SITE_MEDIA_RELEASE_COMMIT=$(git rev-parse 'v0.9.97^{commit}')" >> "$GITHUB_ENV"
+          test "$(./scripts/verify-release-version.sh --print)" = '0.9.99'
+          test "$(gh api repos/ourostack/ouro-md/releases/tags/v0.9.99 --jq 'select(.draft == false).tag_name')" = 'v0.9.99'
+          git diff --exit-code v0.9.99 HEAD -- Sources
+          echo "OURO_SITE_MEDIA_RELEASE_COMMIT=$(git rev-parse 'v0.9.99^{commit}')" >> "$GITHUB_ENV"
           echo 'capture=true' >> "$GITHUB_OUTPUT"
       - name: Capture real public-document action frames
         if: steps.release.outputs.capture == 'true'
