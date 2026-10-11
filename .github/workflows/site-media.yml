@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'Tests/OuroMDTests/NativeSiteMediaCaptureTests.swift'
+      - 'Tests/OuroMDTests/NativeSiteMediaPeriscopeTests.swift'
       - 'Tests/OuroMDTests/NativeAccessibilityPreferenceTests.swift'
       - 'Tests/Fixtures/**'
       - 'scripts/run-hosted-native-proof.sh'
