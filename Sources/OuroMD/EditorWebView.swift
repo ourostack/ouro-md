@@ -269,6 +269,10 @@ struct EditorWebView: NSViewRepresentable {
             eval("window.ouro && window.ouro.setAutoPair(\(on ? "true" : "false"))")
         }
 
+        func setEditable(_ editable: Bool) {
+            eval("window.ouro && window.ouro.setEditable(\(editable ? "true" : "false"))")
+        }
+
         func scrollToHeading(_ index: Int) {
             eval("window.ouro && window.ouro.scrollToHeading(\(index))")
         }

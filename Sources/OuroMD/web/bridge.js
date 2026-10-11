@@ -21,7 +21,7 @@
   var resetTableScrollPending = false;
   var resetTablesSeen = (typeof WeakSet === "function") ? new WeakSet() : null;
   var initialTheme = window.__ouroInitialTheme || {};
-  var state = { mode: "ir", value: "", outline: false, uiTheme: initialTheme.uiMode || "classic", focus: false, typewriter: false, codeTheme: initialTheme.codeTheme || "github" };
+  var state = { mode: "ir", value: "", outline: false, editable: true, uiTheme: initialTheme.uiMode || "classic", focus: false, typewriter: false, codeTheme: initialTheme.codeTheme || "github" };
   var changeMarks = window.OuroChangeMarks.create({
     root: function () { return ready ? changeRoot() : null; },
     text: changeText,
@@ -2056,14 +2056,18 @@
     }
   }
 
+  var relativeImageSources = new WeakMap();
   function rewriteRelativeImages() {
     if (!docBase) { return; }
     var imgs = document.querySelectorAll(".vditor-reset img");
     for (var i = 0; i < imgs.length; i++) {
       var src = imgs[i].getAttribute("src") || "";
+      var previous = relativeImageSources.get(imgs[i]);
+      if (previous && src === previous.resolved) { src = previous.original; }
       if (!src || /^(https?:|data:|file:|blob:)/i.test(src)) { continue; }
-      var resolved = (src.charAt(0) === "/") ? ("file://" + src) : ("file://" + docBase + "/" + src);
+      var resolved = new URL(src, "file://" + docBase + "/").href;
       if (imgs[i].src !== resolved) { imgs[i].src = resolved; }
+      relativeImageSources.set(imgs[i], { original: src, resolved: imgs[i].getAttribute("src") });
     }
   }
 
@@ -2108,6 +2112,7 @@
   }
 
   function insertAtCursor(text) {
+    if (!state.editable) { return; }
     document.execCommand("insertText", false, text);
   }
 
@@ -2234,6 +2239,7 @@
 
   // Replaces the current line's text via fn(oldLine) -> newLine.
   function transformLine(fn) {
+    if (!state.editable) { return; }
     var sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) { return; }
     sel.modify("move", "backward", "lineboundary");
@@ -2490,6 +2496,7 @@
     },
     isWritingToolsActive: function () { return writingToolsActive; },
     exec: function (cmd) {
+      if (!state.editable) { return; }
       switch (cmd) {
         case "bold": wrapSelection("**", "**"); break;
         case "italic": wrapSelection("*", "*"); break;
@@ -2520,8 +2527,15 @@
         default: break;
       }
     },
+    setEditable: function (editable) {
+      state.editable = !!editable;
+      if (vditor) {
+        if (state.editable) { vditor.enable(); } else { vditor.disabled(); }
+      }
+    },
     markSaved: function () { dirty = false; },
     undo: function () {
+      if (!state.editable) { return; }
       if (!vditor || !vditor.vditor || !vditor.vditor.undo) { return; }
       try {
         var undoState = vditor.vditor.undo[vditor.vditor.currentMode || state.mode];
@@ -2533,6 +2547,7 @@
       } catch (e) { /* ignore */ }
     },
     redo: function () {
+      if (!state.editable) { return; }
       if (!vditor || !vditor.vditor || !vditor.vditor.undo) { return; }
       try {
         var undoState = vditor.vditor.undo[vditor.vditor.currentMode || state.mode];
@@ -2610,7 +2625,7 @@
   // Replace on the markdown source (correct for a markdown editor), preserving
   // scroll and marking the buffer dirty so auto-save picks it up. Returns count.
   function doReplace(query, replacement, opts, all) {
-    if (!query || !vditor) { return 0; }
+    if (!query || !vditor || !state.editable) { return 0; }
     var re = buildSearchRegex(query, opts, all);
     if (!re) { return 0; }
     var md = vditor.getValue();

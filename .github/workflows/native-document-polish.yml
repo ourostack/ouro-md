@@ -1,0 +1,62 @@
+name: Native document controls
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [fix-native-document-polish]
+  pull_request:
+    paths:
+      - 'Sources/OuroMD/NativeDocumentMetadata.swift'
+      - 'Sources/OuroMD/DocumentWindowController.swift'
+      - 'Tests/Fixtures/NativeDocumentApplicationProbe.swift'
+      - '.github/workflows/native-document-polish.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-document-polish-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  application-controls:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-26, xcode-27]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build actual app and isolated UI driver
+        run: |
+          if [[ '${{ matrix.runner }}' == 'xcode-27' ]]; then
+            sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
+          else
+            # Xcode 26 uses SwiftPM's classic target directory, not Xcode 27's
+            # Intermediates layout. This changes only diagnostic packaging.
+            sed -i '' 's|^CONST_DIR=.*|CONST_DIR=".build/$(uname -m)-apple-macosx/${CONFIG}/OuroMD.build"|' make-app.sh
+          fi
+          OURO_MD_TELEMETRY_DISABLED=1 bash make-app.sh
+          swiftc -parse-as-library Tests/Fixtures/NativeDocumentApplicationProbe.swift -o .build/native-document-application-probe
+      - name: Click filename and rename in actual packaged app
+        env:
+          OURO_MD_TELEMETRY_DISABLED: '1'
+        run: |
+          mkdir -p .build/document-application-fixture
+          cp 'Tests/Fixtures/Harbor field notes.md' 'Tests/Fixtures/Harbor route.svg' .build/document-application-fixture/
+          OURO_DOCUMENT_PROBE_EXECUTABLE="$PWD/OuroMD.app/Contents/MacOS/ouro-md" \
+          OURO_DOCUMENT_PROBE_FILE="$PWD/.build/document-application-fixture/Harbor field notes.md" \
+          OURO_DOCUMENT_PROBE_OUTPUT="$PWD/.build/document-application-controls" \
+          .build/native-document-application-probe
+      - name: Preserve owned crash diagnostics
+        if: always()
+        run: |
+          mkdir -p .build/document-application-controls
+          find "$HOME/Library/Logs/DiagnosticReports" -maxdepth 1 -name 'ouro-md*' -type f -exec cp '{}' .build/document-application-controls/ \;
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: native-document-application-controls-${{ matrix.runner }}
+          path: .build/document-application-controls
+          if-no-files-found: error

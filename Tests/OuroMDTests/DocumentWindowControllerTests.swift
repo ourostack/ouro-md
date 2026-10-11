@@ -122,7 +122,7 @@ final class DocumentWindowControllerTests: XCTestCase {
         XCTAssertFalse(window.isVisible, "this geometry test must never order a test window front")
     }
 
-    func testRealTitleClickEventsRouteToOpenPanelWithoutConsumingNativeChrome() throws {
+    func testUnsavedTitleClickEventsRouteToDocumentControlsWithoutConsumingNativeChrome() throws {
         let controller = DocumentWindowController(filePath: nil, selfTest: true, useAutosave: false)
         defer { controller.window.close() }
 
@@ -133,14 +133,14 @@ final class DocumentWindowControllerTests: XCTestCase {
         XCTAssertFalse(controller.window.isDocumentEdited)
 
         // Send real NSEvents through AppKit's actual native title text field.
-        // The old test only called openDocumentFromTitleClick() directly, so it
+        // Calling the title action directly would miss that the window must
         // could not catch that NSWindow.mouseDown never receives these clicks.
         waitUntil(timeout: 1) { window.titleHitView?() != nil }
         let hitView = try XCTUnwrap(window.titleHitView?())
         let point = hitView.convert(NSPoint(x: 20, y: 12), to: nil)
 
         var opened = false
-        controller.openDocumentFromTitleClickHandler = { opened = true }
+        controller.documentControlsFromTitleClickHandler = { opened = true }
         window.sendEvent(try XCTUnwrap(mouseEvent(.leftMouseDown, at: point, in: window)))
         window.sendEvent(try XCTUnwrap(mouseEvent(.leftMouseUp, at: point, in: window)))
         waitUntil(timeout: 0.2) { opened }

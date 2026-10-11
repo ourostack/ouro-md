@@ -20,6 +20,7 @@ protocol EditorBridge: AnyObject {
     func setFocusMode(_ on: Bool)
     func setTypewriter(_ on: Bool)
     func setAutoPair(_ on: Bool)
+    func setEditable(_ editable: Bool)
     func scrollToHeading(_ index: Int)
     func scrollToAnchor(_ fragment: String)
     func find(_ query: String, backward: Bool, caseSensitive: Bool, wholeWord: Bool, regexp: Bool)
@@ -57,6 +58,7 @@ extension EditorBridge {
     // WKWebView coordinator provides the actual implementation.
     func copyAs(_ mode: String) {}
     func scrollToAnchor(_ fragment: String) {}
+    func setEditable(_ editable: Bool) {}
 }
 
 /// Owns document state (current file, dirty flag, theme/mode) and orchestrates
@@ -70,6 +72,7 @@ final class AppModel: ObservableObject {
     /// the file, so the in-memory copy is never lost silently.
     private(set) var deletedOnDisk = false
     private(set) var isReady = false
+    private(set) var isFileLocked = false
     private(set) var themeID: String
     private(set) var lastLightThemeID: String
     private(set) var lastDarkThemeID: String
@@ -158,6 +161,7 @@ final class AppModel: ObservableObject {
     private var externalContentDuringWritingTools: (disk: String, url: URL)?
     private var pendingAnchorFragment: String?
     private var autosaveItem: DispatchWorkItem?
+    private var pendingFileWrites = 0
     /// The content currently on disk (last loaded or saved). Lets the file
     /// watcher distinguish a genuine external edit from our own save echo.
     private var lastLoadedContent: String?
@@ -282,6 +286,7 @@ final class AppModel: ObservableObject {
         bridge?.setMode(mode)
         bridge?.setOutline(showOutline)
         bridge?.setAutoPair(autoPairEnabled)
+        bridge?.setEditable(!isFileLocked)
         bridge?.setZoom(zoom)
         // A newly opened document window should be ready to type into
         // immediately, without a stray click to place the caret first.
@@ -301,6 +306,22 @@ final class AppModel: ObservableObject {
     func setCounts(words: Int, chars: Int) {
         wordCount = words
         charCount = chars
+    }
+
+    func setFileLocked(_ locked: Bool) {
+        guard locked != isFileLocked else { return }
+        isFileLocked = locked
+        if locked { autosaveItem?.cancel() }
+        bridge?.setEditable(!locked)
+        onChromeUpdate?()
+    }
+
+    var hasPendingFileWrites: Bool { pendingFileWrites > 0 }
+
+    func reportDocumentMetadataError(_ error: Error) {
+        presentError("Could not prepare document controls", error)
+        captureTelemetry("ouro_md_document_metadata_failed",
+                         properties: ["code": .string("metadata_initialization_failed")])
     }
 
     /// Auto-save silently persists a titled document a moment after the last
@@ -323,7 +344,11 @@ final class AppModel: ObservableObject {
     /// false, changing nothing, while a Writing Tools session owns the text.
     @discardableResult
     func applyAssistantEdit(_ markdown: String) -> Bool {
-        guard !writingToolsActive else { return false }
+        guard !writingToolsActive, !isFileLocked else {
+            captureTelemetry("ouro_md_document_assistant_edit_rejected",
+                             properties: ["code": .string(isFileLocked ? "document_locked" : "writing_tools_active")])
+            return false
+        }
         if isReady, let bridge {
             bridge.applyEdit(markdown)
         } else {
@@ -338,6 +363,11 @@ final class AppModel: ObservableObject {
     /// whether Writing Tools changed the text; its input events were held from
     /// the model during the session, so the model learns of the change here.
     func setWritingToolsActive(_ active: Bool, editorChanged: Bool = false) {
+        guard !active || !isFileLocked else {
+            captureTelemetry("ouro_md_document_assistant_edit_rejected",
+                             properties: ["code": .string("document_locked")])
+            return
+        }
         guard active != writingToolsActive else { return }
         writingToolsActive = active
         if active {
@@ -358,10 +388,10 @@ final class AppModel: ObservableObject {
     }
 
     private func scheduleAutosave() {
-        guard autoSaveEnabled, currentURL != nil, !writingToolsActive else { return }
+        guard autoSaveEnabled, currentURL != nil, !writingToolsActive, !isFileLocked else { return }
         autosaveItem?.cancel()
         let item = DispatchWorkItem { [weak self] in
-            guard let self, self.isDirty, self.currentURL != nil, !self.writingToolsActive else { return }
+            guard let self, self.isDirty, self.currentURL != nil, !self.writingToolsActive, !self.isFileLocked else { return }
             self.performSave(source: "autosave") { _ in }
         }
         autosaveItem = item
@@ -596,25 +626,60 @@ final class AppModel: ObservableObject {
             captureTelemetry("ouro_md_document_rename_failed", properties: ["code": .string("collision")])
             return "“\(name)” already exists in this folder."
         }
-        stopWatching()
         do {
-            try FileManager.default.moveItem(at: url, to: dest)
-            currentURL = dest
-            DocumentAccess.noteRecent(dest)
-            refreshFolder()
-            startWatching()
-            refreshDocumentTruth()
-            onChromeUpdate?()
+            try moveCurrentFile(to: dest)
             captureTelemetry(
                 "ouro_md_document_renamed",
                 properties: ["markdown_type": .bool(Self.isMarkdownURL(dest))]
             )
             return nil
         } catch {
-            startWatching()
             captureTelemetry("ouro_md_document_rename_failed", properties: ["code": .string("move_failed")])
             return error.localizedDescription
         }
+    }
+
+    func moveCurrentFile(to destination: URL, filePresenter: NSFilePresenter? = nil) throws {
+        guard let source = currentURL else {
+            throw NSError(domain: "ouro-md", code: 20,
+                          userInfo: [NSLocalizedDescriptionKey: "Save this document before moving it."])
+        }
+        if source.standardizedFileURL == destination.standardizedFileURL { return }
+        guard !writingToolsActive else {
+            throw NSError(domain: "ouro-md", code: 21,
+                          userInfo: [NSLocalizedDescriptionKey: "Wait for Writing Tools to finish before moving this document."])
+        }
+        guard pendingFileWrites == 0 else {
+            throw NSError(domain: "ouro-md", code: 26,
+                          userInfo: [NSLocalizedDescriptionKey: "Wait for the current save to finish before moving this document."])
+        }
+        guard !FileManager.default.fileExists(atPath: destination.path) || isSameFile(source, destination) else {
+            throw NSError(domain: "ouro-md", code: 22,
+                          userInfo: [NSLocalizedDescriptionKey: "“\(destination.lastPathComponent)” already exists in this folder."])
+        }
+        stopWatching()
+        defer { startWatching() }
+        // Native Rename already owns this document's file-access session.
+        // Excluding its presenter avoids waiting for that same session to yield.
+        let coordinator = NSFileCoordinator(filePresenter: filePresenter)
+        var coordinationError: NSError?
+        var moveError: Error?
+        coordinator.coordinate(writingItemAt: source, options: .forMoving,
+                               writingItemAt: destination, options: [],
+                               error: &coordinationError) { coordinatedSource, coordinatedDestination in
+            do {
+                try FileManager.default.moveItem(at: coordinatedSource, to: coordinatedDestination)
+                coordinator.item(at: coordinatedSource, didMoveTo: coordinatedDestination)
+            } catch { moveError = error }
+        }
+        if let coordinationError { throw coordinationError }
+        if let moveError { throw moveError }
+        currentURL = destination
+        bridge?.setDocBase(destination.deletingLastPathComponent().path)
+        DocumentAccess.noteRecent(destination)
+        refreshFolder()
+        refreshDocumentTruth()
+        onChromeUpdate?()
     }
 
     func save() { performSave { _ in } }
@@ -637,6 +702,15 @@ final class AppModel: ObservableObject {
     }
 
     func performSaveAs(to url: URL, completion: @escaping (Bool) -> Void) {
+        guard pendingFileWrites == 0 else {
+            let error = NSError(domain: "ouro-md", code: 26,
+                                userInfo: [NSLocalizedDescriptionKey: "Wait for the current save to finish before saving to another location."])
+            presentError("Could not save \(url.lastPathComponent)", error)
+            captureTelemetry("ouro_md_document_save_failed",
+                             properties: ["source": .string("save_as"), "code": .string("save_in_progress")])
+            completion(false)
+            return
+        }
         let previousURL = currentURL
         currentURL = url
         let finish: (Bool) -> Void = { [weak self] ok in
@@ -714,8 +788,10 @@ final class AppModel: ObservableObject {
             completion(false)
             return
         }
+        pendingFileWrites += 1
         bridge.getMarkdown { [weak self] markdown in
             guard let self else { completion(false); return }
+            defer { self.pendingFileWrites -= 1 }
             guard let markdown else {
                 self.captureTelemetry(
                     "ouro_md_document_save_failed",
@@ -1256,6 +1332,7 @@ final class AppModel: ObservableObject {
     func toggleFind() { findVisible.toggle(); if !findVisible { closeFind() } }
 
     func replaceNext() {
+        guard !isFileLocked else { findStatus = "Unlock the document to replace text."; return }
         guard !findQuery.isEmpty else { return }
         bridge?.replace(findQuery, with: replaceText, all: false, caseSensitive: findCaseSensitive, wholeWord: findWholeWord, regexp: findRegexp) { [weak self] n in
             self?.findStatus = n > 0 ? "Replaced 1" : "Not found"
@@ -1263,6 +1340,7 @@ final class AppModel: ObservableObject {
     }
 
     func replaceAll() {
+        guard !isFileLocked else { findStatus = "Unlock the document to replace text."; return }
         guard !findQuery.isEmpty else { return }
         bridge?.replace(findQuery, with: replaceText, all: true, caseSensitive: findCaseSensitive, wholeWord: findWholeWord, regexp: findRegexp) { [weak self] n in
             self?.findStatus = "Replaced \(n) occurrence\(n == 1 ? "" : "s")"
