@@ -15,6 +15,40 @@ final class AppModelDocumentTruthTests: XCTestCase {
         XCTAssertEqual(events, ["ouro_md_print_failed"])
     }
 
+    func testPDFExportUsesSharedPrintLayoutAndDoesNotCallCancellationSuccess() {
+        let model = AppModel()
+        let bridge = TruthBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+        var events: [String] = []
+        model.telemetryHandler = { event, _ in events.append(event) }
+        let url = URL(fileURLWithPath: "/tmp/reading-print-proof.pdf")
+        var written = false
+        model.exportPDF(to: url) { written = $0 }
+        XCTAssertTrue(written)
+        XCTAssertEqual(bridge.pdfRequests, [url])
+        XCTAssertEqual(events, ["ouro_md_export_completed"])
+        bridge.pdfResult = .success(false)
+        model.exportPDF(to: url) { written = $0 }
+        XCTAssertFalse(written)
+        XCTAssertEqual(events, ["ouro_md_export_completed", "ouro_md_export_cancelled"])
+    }
+
+    func testPDFExportFailureIsVisibleWithoutSuccessTelemetry() {
+        let model = AppModel()
+        let bridge = TruthBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+        var messages: [String] = []
+        var events: [String] = []
+        model.presentErrorHandler = { message, _ in messages.append(message) }
+        model.telemetryHandler = { event, _ in events.append(event) }
+        bridge.pdfResult = .failure(CocoaError(.fileWriteNoPermission))
+        model.exportPDF(to: URL(fileURLWithPath: "/tmp/reading-print-proof.pdf")) { XCTAssertFalse($0) }
+        XCTAssertEqual(messages, ["Could not export PDF"])
+        XCTAssertEqual(events, ["ouro_md_export_failed"])
+    }
+
     func testFirstReadIsUnmarkedAndOfflineChangesCompareWithRetainedBaseline() throws {
         let root = tempDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
@@ -335,6 +369,14 @@ private final class TruthBridge: EditorBridge {
     var reviewClears = 0
     var deferMarkdown = false
     var markdownCompletion: ((String?) -> Void)?
+    var pdfRequests: [URL] = []
+    var pdfResult: Result<Bool, Error> = .success(true)
+
+    func exportPDF(to url: URL, settings: PrintLayoutSettings?, completion: @escaping (Result<Bool, Error>) -> Void) {
+        XCTAssertNil(settings)
+        pdfRequests.append(url)
+        completion(pdfResult)
+    }
 
     func showChanges(since markdown: String) { reviewComparisons.append(markdown) }
     func clearChangeReview() { reviewClears += 1 }
