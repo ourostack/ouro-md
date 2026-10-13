@@ -1,5 +1,6 @@
 import AppKit
 import OuroMDCore
+import PDFKit
 import WebKit
 
 /// Headless `--editorsurfacetest`: exercises WebKit/editor behaviors that unit
@@ -13,6 +14,7 @@ final class EditorSurfaceTester: NSObject {
     private var window: NSWindow!
     private var root: URL!
     private var markdownFile: URL!
+    private let printPreferences = ScratchUserDefaults(label: "print-journey")
 
     func run() -> Never {
         let app = NSApplication.shared
@@ -22,7 +24,7 @@ final class EditorSurfaceTester: NSObject {
             self.cleanup()
             exit(ok ? 0 : 1)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 30) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 60) {
             FileHandle.standardError.write(Data("editorsurfacetest: timed out\n".utf8))
             exit(1)
         }
@@ -41,6 +43,7 @@ final class EditorSurfaceTester: NSObject {
             let htmlOK = try verifyHTMLExports()
             let printOK = verifyPrintDryRun()
             let pdfOK = await verifyPDFExport()
+            let sharedPDFOK = try await verifySharedPDFJourney()
 
             print("markdown file drop classification: \(dropFileOK ? "ok" : "FAIL")")
             print("image paste data-uri insertion: \(imagePasteOK ? "ok" : "FAIL")")
@@ -49,7 +52,8 @@ final class EditorSurfaceTester: NSObject {
             print("html exports all themes: \(htmlOK ? "ok" : "FAIL")")
             print("print dry-run operation: \(printOK ? "ok" : "FAIL")")
             print("pdf export probe: \(pdfOK ? "ok" : "FAIL")")
-            return dropFileOK && imagePasteOK && imageDropOK && recoveryOK && htmlOK && printOK && pdfOK
+            print("shared print layout controls, export and cancellation: \(sharedPDFOK ? "ok" : "FAIL")")
+            return dropFileOK && imagePasteOK && imageDropOK && recoveryOK && htmlOK && printOK && pdfOK && sharedPDFOK
         } catch {
             FileHandle.standardError.write(Data("editorsurfacetest: \(error.localizedDescription)\n".utf8))
             return false
@@ -73,7 +77,7 @@ final class EditorSurfaceTester: NSObject {
 
         let configuration = WKWebViewConfiguration()
         let controller = WKUserContentController()
-        coordinator = EditorWebView.Coordinator(model: model)
+        coordinator = EditorWebView.Coordinator(model: model, printSettingsStore: PrintLayoutSettingsStore(preferences: printPreferences.defaults))
         controller.add(coordinator, name: "ouro")
         configuration.userContentController = controller
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
@@ -183,6 +187,71 @@ final class EditorSurfaceTester: NSObject {
         await evaluate("window.ouro ? window.ouro.getValue() : null") as? String
     }
 
+    private func verifySharedPDFJourney() async throws -> Bool {
+        let originalBytes = try Data(contentsOf: markdownFile)
+        let output = root.appendingPathComponent("shared-layout.pdf")
+        var result: Result<Bool, Error>?
+        coordinator.exportPDF(to: output) { result = $0 }
+        guard await waitUntil(timeout: 8, condition: { self.window.attachedSheet?.title == "Export PDF Layout" }),
+              let panel = window.attachedSheet,
+              let content = panel.contentView else { return false }
+        panel.alphaValue = 0
+        let views = descendants(of: content)
+        guard let font = views.compactMap({ $0 as? NSTextField }).first(where: { $0.accessibilityLabel() == "Font size (pt)" }),
+              let export = views.compactMap({ $0 as? NSButton }).first(where: { $0.title == "Export PDF" }),
+              let cancel = views.compactMap({ $0 as? NSButton }).first(where: { $0.title == "Cancel" }),
+              await waitUntil(timeout: 8, condition: { export.isEnabled }) else { return false }
+        font.stringValue = "not a number"
+        _ = font.sendAction(font.action, to: font.target)
+        let invalidDisabled = !export.isEnabled
+        for value in ["14", "16", "18"] {
+            font.stringValue = value
+            _ = font.sendAction(font.action, to: font.target)
+        }
+        guard await waitUntil(timeout: 10, condition: { export.isEnabled }) else {
+            cancel.performClick(nil)
+            return false
+        }
+        export.performClick(nil)
+        guard await waitUntil(timeout: 8, condition: { result != nil }),
+              case .success(true)? = result,
+              let pdf = PDFDocument(url: output),
+              pdf.string?.contains("Recovered After Crash") == true,
+              await waitUntil(timeout: 2, condition: { PrintLayoutSession.activeCountForTesting == 0 && PreparedPrintDocument.retainedCountForTesting == 0 }) else { return false }
+        let settingsSaved = PrintLayoutSettingsStore(preferences: printPreferences.defaults).load().fontSize == 18
+        let unchangedSource = try Data(contentsOf: markdownFile) == originalBytes
+
+        var cancelled: Result<Bool, Error>?
+        let cancelledOutput = root.appendingPathComponent("cancelled-layout.pdf")
+        coordinator.exportPDF(to: cancelledOutput) { cancelled = $0 }
+        guard await waitUntil(timeout: 8, condition: { self.window.attachedSheet?.title == "Export PDF Layout" }),
+              let cancelPanel = window.attachedSheet,
+              let cancelView = cancelPanel.contentView,
+              let cancelButton = descendants(of: cancelView).compactMap({ $0 as? NSButton }).first(where: { $0.title == "Cancel" }) else { return false }
+        cancelPanel.alphaValue = 0
+        cancelButton.performClick(nil)
+        guard await waitUntil(timeout: 2, condition: { cancelled != nil }),
+              case .success(false)? = cancelled,
+              !FileManager.default.fileExists(atPath: cancelledOutput.path) else { return false }
+
+        var closed: Result<Bool, Error>?
+        coordinator.exportPDF(to: cancelledOutput) { closed = $0 }
+        guard await waitUntil(timeout: 8, condition: { self.window.attachedSheet?.title == "Export PDF Layout" }),
+              let closePanel = window.attachedSheet else { return false }
+        closePanel.alphaValue = 0
+        closePanel.close()
+        let closedCancelled = await waitUntil(timeout: 2, condition: {
+            if case .success(false)? = closed { return true }
+            return false
+        })
+        return invalidDisabled && settingsSaved && unchangedSource && closedCancelled
+            && PrintLayoutSession.activeCountForTesting == 0 && PreparedPrintDocument.retainedCountForTesting == 0
+    }
+
+    private func descendants(of view: NSView) -> [NSView] {
+        [view] + view.subviews.flatMap { descendants(of: $0) }
+    }
+
     private func waitForMarkdown(containing needle: String, timeout: TimeInterval) async -> Bool {
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
@@ -213,6 +282,7 @@ final class EditorSurfaceTester: NSObject {
     }
 
     private func cleanup() {
+        printPreferences.remove()
         model?.teardown()
         window?.orderOut(nil)
         try? FileManager.default.removeItem(at: root)
