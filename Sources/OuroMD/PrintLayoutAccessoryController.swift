@@ -110,11 +110,12 @@ final class PrintLayoutAccessoryController: NSViewController {
     func applyCurrentValues() -> Bool {
         do {
             let updated = try validatedSettingsFromFields().normalized
+            let changed = updated != currentSettings
             currentSettings = updated
             settingsStore.save(updated)
             syncView(from: updated)
             updateValidationMessage(nil)
-            onSettingsChanged?(updated)
+            if changed { onSettingsChanged?(updated) }
             return true
         } catch {
             updateValidationMessage((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)

@@ -15,6 +15,9 @@ final class EditorSurfaceTester: NSObject {
     private var root: URL!
     private var markdownFile: URL!
     private let printPreferences = ScratchUserDefaults(label: "print-journey")
+    private var acceptanceInput: URL? {
+        ProcessInfo.processInfo.environment["OURO_PRINT_ACCEPTANCE_FILE"].map { URL(fileURLWithPath: $0) }
+    }
 
     func run() -> Never {
         let app = NSApplication.shared
@@ -24,7 +27,7 @@ final class EditorSurfaceTester: NSObject {
             self.cleanup()
             exit(ok ? 0 : 1)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 60) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + (acceptanceInput == nil ? 60 : 600)) {
             FileHandle.standardError.write(Data("editorsurfacetest: timed out\n".utf8))
             exit(1)
         }
@@ -36,6 +39,7 @@ final class EditorSurfaceTester: NSObject {
         do {
             try prepareFixture()
             try await loadEditor()
+            if acceptanceInput != nil { return try await verifyLocalDocumentPrint() }
             let dropFileOK = try verifyMarkdownFileDropClassification()
             let imagePasteOK = await verifyImageTransfer(kind: "paste", fileName: "pasted.png")
             let imageDropOK = await verifyImageTransfer(kind: "drop", fileName: "dropped.png")
@@ -65,7 +69,11 @@ final class EditorSurfaceTester: NSObject {
             .appendingPathComponent("ouro-editor-surface-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         markdownFile = root.appendingPathComponent("surface.md")
-        try Self.initialMarkdown.write(to: markdownFile, atomically: true, encoding: .utf8)
+        if let input = acceptanceInput {
+            markdownFile = input
+        } else {
+            try Self.initialMarkdown.write(to: markdownFile, atomically: true, encoding: .utf8)
+        }
     }
 
     private func loadEditor() async throws {
@@ -99,9 +107,47 @@ final class EditorSurfaceTester: NSObject {
         guard await waitUntil(timeout: 8, condition: { self.model.isReady }) else {
             throw SurfaceError("editor did not become ready")
         }
-        guard await waitForMarkdown(containing: "Surface Probe", timeout: 8) else {
-            throw SurfaceError("initial markdown did not load")
+        if acceptanceInput == nil {
+            guard await waitForMarkdown(containing: "Surface Probe", timeout: 8) else {
+                throw SurfaceError("initial markdown did not load")
+            }
         }
+    }
+
+    private func verifyLocalDocumentPrint() async throws -> Bool {
+        guard let outputPath = ProcessInfo.processInfo.environment["OURO_PRINT_ACCEPTANCE_PDF"] else {
+            throw SurfaceError("A private output path is required for local print acceptance.")
+        }
+        let before = try Data(contentsOf: markdownFile)
+        let output = URL(fileURLWithPath: outputPath)
+        var settings = PrintLayoutSettings.default
+        settings.includeExternalLinkReferences = true
+        PrintLayoutSettingsStore(preferences: printPreferences.defaults).save(settings)
+        FileHandle.standardError.write(Data("local print acceptance: requesting product export\n".utf8))
+        var exported: Bool?
+        model.exportPDF(to: output) { exported = $0 }
+        guard await waitUntil(timeout: 240, condition: { self.window.attachedSheet?.title == "Export PDF Layout" }),
+              let panel = window.attachedSheet, let view = panel.contentView,
+              let button = descendants(of: view).compactMap({ $0 as? NSButton }).first(where: { $0.title == "Export PDF" }) else {
+            throw SurfaceError("Product print layout did not open for the local document.")
+        }
+        panel.alphaValue = 0
+        FileHandle.standardError.write(Data("local print acceptance: waiting for full preview\n".utf8))
+        guard await waitUntil(timeout: 240, condition: { button.isEnabled }) else {
+            throw SurfaceError("Full document print preview did not finish.")
+        }
+        button.performClick(nil)
+        guard await waitUntil(timeout: 30, condition: { exported != nil }), exported == true,
+              let pdf = PDFDocument(url: output) else {
+            throw SurfaceError("Product print export did not produce a readable PDF.")
+        }
+        var emptyPages = 0
+        for index in 0..<pdf.pageCount {
+            if (pdf.page(at: index)?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { emptyPages += 1 }
+        }
+        let unchanged = try Data(contentsOf: markdownFile) == before
+        FileHandle.standardError.write(Data("local print acceptance: bytes=\(before.count) pages=\(pdf.pageCount) emptyPages=\(emptyPages) sourceUnchanged=\(unchanged)\n".utf8))
+        return pdf.pageCount > 1 && emptyPages == 0 && unchanged
     }
 
     private func verifyMarkdownFileDropClassification() throws -> Bool {
@@ -212,13 +258,16 @@ final class EditorSurfaceTester: NSObject {
             cancel.performClick(nil)
             return false
         }
+        font.stringValue = "20"
         export.performClick(nil)
         guard await waitUntil(timeout: 8, condition: { result != nil }),
               case .success(true)? = result,
               let pdf = PDFDocument(url: output),
               pdf.string?.contains("Recovered After Crash") == true,
               await waitUntil(timeout: 2, condition: { PrintLayoutSession.activeCountForTesting == 0 && PreparedPrintDocument.retainedCountForTesting == 0 }) else { return false }
-        let settingsSaved = PrintLayoutSettingsStore(preferences: printPreferences.defaults).load().fontSize == 18
+        let settingsSaved = PrintLayoutSettingsStore(preferences: printPreferences.defaults).load().fontSize == 20
+        let printedFontMatches = pdf.page(at: 0)?.attributedString?.attributes(at: 0, effectiveRange: nil)[.font] as? NSFont
+        let finalSettingsPrinted = abs((printedFontMatches?.pointSize ?? 0) - 40) < 1
         let unchangedSource = try Data(contentsOf: markdownFile) == originalBytes
 
         var cancelled: Result<Bool, Error>?
@@ -244,7 +293,7 @@ final class EditorSurfaceTester: NSObject {
             if case .success(false)? = closed { return true }
             return false
         })
-        return invalidDisabled && settingsSaved && unchangedSource && closedCancelled
+        return invalidDisabled && settingsSaved && finalSettingsPrinted && unchangedSource && closedCancelled
             && PrintLayoutSession.activeCountForTesting == 0 && PreparedPrintDocument.retainedCountForTesting == 0
     }
 

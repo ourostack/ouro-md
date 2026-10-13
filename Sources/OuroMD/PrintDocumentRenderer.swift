@@ -276,7 +276,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     }
 
     private func loadHTML(using settings: PrintLayoutSettings) async throws {
-        let html = PrintLayoutHTMLDocument.wrap(body: bodyHTML, title: title, settings: settings, script: script)
+        let html = PrintLayoutHTMLDocument.wrap(body: bodyHTML, title: title, settings: settings, script: script, paperSize: printInfo.paperSize)
         loadGeneration += 1
         let generation = loadGeneration
         if let continuation = loadContinuation {

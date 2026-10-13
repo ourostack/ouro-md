@@ -46,6 +46,7 @@ protocol EditorBridge: AnyObject {
     func redo()
     func focusEditor()
     func printDocument()
+    func exportPDF(to url: URL, settings: PrintLayoutSettings?, completion: @escaping (Result<Bool, Error>) -> Void)
     func setZoom(_ factor: Double)
 }
 
@@ -59,6 +60,9 @@ extension EditorBridge {
     func copyAs(_ mode: String) {}
     func scrollToAnchor(_ fragment: String) {}
     func setEditable(_ editable: Bool) {}
+    func exportPDF(to url: URL, settings: PrintLayoutSettings?, completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.failure(NSError(domain: "ouro-md", code: 1, userInfo: [NSLocalizedDescriptionKey: "PDF export is not available in this editor."])))
+    }
 }
 
 /// Owns document state (current file, dirty flag, theme/mode) and orchestrates
@@ -1048,26 +1052,27 @@ final class AppModel: ObservableObject {
     func exportPDF() {
         runSavePanel(defaultName: exportBaseName() + ".pdf", types: [.pdf]) { [weak self] url in
             guard let self, let url else { return }
-            self.bridge?.getHTML { body in
-                guard let body else {
-                    self.captureTelemetry(
-                        "ouro_md_export_failed",
-                        properties: ["format": .string("pdf"), "code": .string("editor_html_unavailable")]
-                    )
-                    return
-                }
-                let doc = HTMLDocument.wrap(body: body, css: self.theme.css, title: url.lastPathComponent)
-                PDFExporter().export(html: doc, to: url) { ok in
-                    if !ok {
-                        self.presentError("Could not export PDF",
-                                          NSError(domain: "ouro-md", code: 1,
-                                                  userInfo: [NSLocalizedDescriptionKey: "PDF rendering failed."]))
-                    }
-                    self.captureTelemetry(
-                        ok ? "ouro_md_export_completed" : "ouro_md_export_failed",
-                        properties: ["format": .string("pdf")]
-                    )
-                }
+            self.exportPDF(to: url)
+        }
+    }
+
+    func exportPDF(to url: URL, completion: @escaping (Bool) -> Void = { _ in }) {
+        guard isReady, let bridge else {
+            presentError("Could not export PDF", NSError(domain: "ouro-md", code: 1, userInfo: [NSLocalizedDescriptionKey: "Wait for the editor to finish loading."]))
+            captureTelemetry("ouro_md_export_failed", properties: ["format": .string("pdf")])
+            completion(false)
+            return
+        }
+        bridge.exportPDF(to: url, settings: nil) { [weak self] result in
+            guard let self else { completion(false); return }
+            switch result {
+            case .success(let written):
+                self.captureTelemetry(written ? "ouro_md_export_completed" : "ouro_md_export_cancelled", properties: ["format": .string("pdf")])
+                completion(written)
+            case .failure(let error):
+                self.presentError("Could not export PDF", error)
+                self.captureTelemetry("ouro_md_export_failed", properties: ["format": .string("pdf")])
+                completion(false)
             }
         }
     }

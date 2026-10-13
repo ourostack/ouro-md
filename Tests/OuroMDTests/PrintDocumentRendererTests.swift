@@ -5,6 +5,20 @@ import XCTest
 
 @MainActor
 final class PrintDocumentRendererTests: XCTestCase {
+    func testA4PaperFlowsThroughLayoutAndPDFGeometry() async throws {
+        let info = NSPrintInfo()
+        info.paperSize = NSSize(width: 595, height: 842)
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<h1>A4 proof</h1><p>Paper-aware layout</p>", title: "A4", baseURL: nil, settings: .default, printInfo: info)
+        defer { prepared.releaseHold() }
+        XCTAssertEqual(prepared.layoutMetrics.contentWidth, 487, accuracy: 1)
+        XCTAssertEqual(prepared.layoutMetrics.contentHeight, 734, accuracy: 1)
+        let data = try await prepared.createPDFData()
+        let document = try XCTUnwrap(PDFDocument(data: data))
+        let page = try XCTUnwrap(document.page(at: 0))
+        XCTAssertEqual(page.bounds(for: .mediaBox).width, 595, accuracy: 1)
+        XCTAssertEqual(page.bounds(for: .mediaBox).height, 842, accuracy: 1)
+    }
+
     func testRenderedPDFUsesPagedLayoutPreservesWholeRowsAndClickableEndnotes() async throws {
         let scratch = try PrintLayoutTestPaths.makeScratchDirectory(label: "print-renderer")
         defer { try? FileManager.default.removeItem(at: scratch) }

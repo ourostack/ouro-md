@@ -1,10 +1,11 @@
+import AppKit
 import Foundation
 import OuroMDCore
 
 enum PrintLayoutHTMLDocument {
-    static func wrap(body: String, title: String, settings: PrintLayoutSettings, script: String) -> String {
+    static func wrap(body: String, title: String, settings: PrintLayoutSettings, script: String, paperSize: NSSize = NSSize(width: 612, height: 792)) -> String {
         let normalized = settings.normalized
-        let config = printLayoutConfiguration(for: normalized)
+        let config = printLayoutConfiguration(for: normalized, paperSize: paperSize)
         return """
         <!DOCTYPE html>
         <html lang="en">
@@ -13,7 +14,7 @@ enum PrintLayoutHTMLDocument {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>\(HTMLDocument.escape(title))</title>
         <style>
-        \(baseCSS(for: normalized))
+        \(baseCSS(for: normalized, paperSize: paperSize))
         </style>
         <script>
         window.__ouroPrintLayoutConfig = \(config);
@@ -37,12 +38,12 @@ enum PrintLayoutHTMLDocument {
         """
     }
 
-    private static func printLayoutConfiguration(for settings: PrintLayoutSettings) -> String {
+    private static func printLayoutConfiguration(for settings: PrintLayoutSettings, paperSize: NSSize) -> String {
         let payload: [String: Any] = [
-            "pageWidth": 612.0,
-            "pageHeight": 792.0,
-            "pageContentWidth": contentWidth(for: settings),
-            "pageContentHeight": contentHeight(for: settings),
+            "pageWidth": paperSize.width,
+            "pageHeight": paperSize.height,
+            "pageContentWidth": paperSize.width - settings.margins.left - settings.margins.right,
+            "pageContentHeight": paperSize.height - settings.margins.top - settings.margins.bottom,
             "marginTop": settings.margins.top,
             "marginRight": settings.margins.right,
             "marginBottom": settings.margins.bottom,
@@ -57,10 +58,10 @@ enum PrintLayoutHTMLDocument {
         return json
     }
 
-    private static func baseCSS(for settings: PrintLayoutSettings) -> String {
+    private static func baseCSS(for settings: PrintLayoutSettings, paperSize: NSSize) -> String {
         let normalized = settings.normalized
-        let contentWidth = contentWidth(for: normalized)
-        let contentHeight = contentHeight(for: normalized)
+        let contentWidth = paperSize.width - normalized.margins.left - normalized.margins.right
+        let contentHeight = paperSize.height - normalized.margins.top - normalized.margins.bottom
         return """
         html {
           -webkit-text-size-adjust: 100%;
@@ -69,8 +70,8 @@ enum PrintLayoutHTMLDocument {
           background: #ffffff;
         }
         :root {
-          --ouro-page-width: 612px;
-          --ouro-page-height: 792px;
+          --ouro-page-width: \(cssLength(paperSize.width))px;
+          --ouro-page-height: \(cssLength(paperSize.height))px;
           --ouro-page-content-width: \(cssLength(contentWidth))px;
           --ouro-page-content-height: \(cssLength(contentHeight))px;
           --ouro-page-gap: 24px;
@@ -283,14 +284,6 @@ enum PrintLayoutHTMLDocument {
           display: none !important;
         }
         """
-    }
-
-    private static func contentWidth(for settings: PrintLayoutSettings) -> Double {
-        612 - settings.margins.left - settings.margins.right
-    }
-
-    private static func contentHeight(for settings: PrintLayoutSettings) -> Double {
-        792 - settings.margins.top - settings.margins.bottom
     }
 
     private static func cssLength(_ value: Double) -> String {

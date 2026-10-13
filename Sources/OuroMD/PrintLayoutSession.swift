@@ -42,6 +42,8 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     private let cancelButton = NSButton(title: "Cancel", target: nil, action: nil)
     private var previewTask: Task<Void, Never>?
     private var currentPreviewData: Data?
+    private var currentPreviewSettings: PrintLayoutSettings?
+    private var submitWhenPreviewReady = false
     private var completionDelivered = false
     private var sessionFinished = false
     private var printOperationRunning = false
@@ -193,6 +195,8 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
 
     private func schedulePreviewRefresh(using settings: PrintLayoutSettings) {
         previewTask?.cancel()
+        currentPreviewData = nil
+        currentPreviewSettings = nil
         updateStatus("Rendering preview…")
         updatePrimaryEnabled(false)
         previewTask = Task { [weak self] in
@@ -202,14 +206,20 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                 let pdfData = try await self.prepared.createPDFData()
                 guard !Task.isCancelled else { return }
                 self.currentPreviewData = pdfData
+                self.currentPreviewSettings = settings
                 self.previewView.document = PDFDocument(data: pdfData)
                 self.updateStatus("Preview ready")
                 self.updatePrimaryEnabled(true)
+                if self.submitWhenPreviewReady {
+                    self.submitWhenPreviewReady = false
+                    self.performOutput(using: pdfData)
+                }
             } catch {
                 if Task.isCancelled { return }
                 if case PrintDocumentRenderer.RenderError.superseded = error { return }
                 if error is CancellationError { return }
                 self.currentPreviewData = nil
+                self.submitWhenPreviewReady = false
                 self.previewView.document = nil
                 self.updateStatus(error.localizedDescription)
                 self.updatePrimaryEnabled(false)
@@ -224,15 +234,22 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     }
 
     @objc private func primaryPressed(_ sender: Any?) {
+        submitWhenPreviewReady = true
         panel.makeFirstResponder(nil)
         guard controls.applyCurrentValues() else {
+            submitWhenPreviewReady = false
             NSSound.beep()
             return
         }
-        guard let pdfData = currentPreviewData else {
-            reportError("Could not prepare print preview", SessionError.missingPreview)
+        guard let pdfData = currentPreviewData, currentPreviewSettings == controls.currentSettings else {
             return
         }
+        submitWhenPreviewReady = false
+        performOutput(using: pdfData)
+    }
+
+    private func performOutput(using pdfData: Data) {
+        guard !sessionFinished else { return }
         endSheet()
         switch action {
         case .print:
@@ -260,10 +277,8 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                 do {
                     try pdfData.write(to: url, options: .atomic)
                     self.deliverExportCompletion(.success(true))
-                    self.telemetry("ouro_md_export_completed", ["format": .string("pdf")])
                 } catch {
                     self.deliverExportCompletion(.failure(error))
-                    self.telemetry("ouro_md_export_failed", ["format": .string("pdf")])
                 }
                 self.finishSession()
             }

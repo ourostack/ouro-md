@@ -158,6 +158,7 @@
   }
 
   function splitTablesForPages() {
+    var replacements = [];
     Array.prototype.forEach.call(article().querySelectorAll("table"), function (table) {
       if (table.dataset.ouroPrintSplit === "true") { return; }
       if (table.querySelector("table") || table.querySelector("tbody [rowspan], tbody [colspan], thead [rowspan], thead [colspan]")) { return; }
@@ -217,8 +218,11 @@
         wrapper.appendChild(cloneTableFragment(table, group, index === groups.length - 1));
         container.appendChild(wrapper);
       });
-      table.parentNode.insertBefore(container, table);
-      table.remove();
+      replacements.push({ table: table, container: container });
+    });
+    replacements.forEach(function (replacement) {
+      replacement.table.parentNode.insertBefore(replacement.container, replacement.table);
+      replacement.table.remove();
     });
   }
 
