@@ -186,7 +186,7 @@ final class PrintDocumentRendererTests: XCTestCase {
         XCTAssertTrue(annotationURLs.contains("https://example.com/image-only"))
         XCTAssertTrue(Self.containsInternalLink(in: document))
         let text = (0..<document.pageCount).compactMap { document.page(at: $0)?.string ?? "" }.joined(separator: "\n")
-        XCTAssertFalse(text.contains("External links"))
+        XCTAssertFalse(text.contains("Link sources (endnotes)"))
     }
 
     func testRenderedPDFPreservesAuthoredAndGeneratedLinksWhenReferencesAreOn() async throws {
@@ -215,7 +215,7 @@ final class PrintDocumentRendererTests: XCTestCase {
         XCTAssertTrue(annotationURLs.contains("https://example.com/image-only"))
         XCTAssertTrue(Self.containsInternalLink(in: document))
         let text = (0..<document.pageCount).compactMap { document.page(at: $0)?.string ?? "" }.joined(separator: "\n")
-        XCTAssertTrue(text.contains("External links"))
+        XCTAssertTrue(text.contains("Link sources (endnotes)"))
     }
 
     private static func bounds(of needle: String, in page: PDFPage?) -> CGRect? {

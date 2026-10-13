@@ -21,7 +21,7 @@ final class PrintPageFootnotesTests: XCTestCase {
             XCTAssertTrue(text.contains(token))
             XCTAssertEqual(text.components(separatedBy: "https://example.com/shared").count - 1, 1)
             XCTAssertEqual(text.components(separatedBy: "[S1]").count - 1, index == 0 ? 4 : 2, "Every linked label/image needs its own source marker")
-            XCTAssertFalse(text.contains("External links"))
+            XCTAssertFalse(text.contains("Link sources (endnotes)"))
             let range = try XCTUnwrap(text.range(of: "https://example.com/shared"))
             let bounds = try XCTUnwrap(page.selection(for: NSRange(range, in: text))?.bounds(for: page))
             XCTAssertGreaterThanOrEqual(bounds.minY, 54)
@@ -53,7 +53,7 @@ final class PrintPageFootnotesTests: XCTestCase {
 
     func testSplitTableAndRepeatedAuthoredNotesHaveUniqueDestinationIDs() async throws {
         let rows = (1...70).map { "<tr><td>ROW-\($0)</td><td>Evidence that wraps across lines.</td></tr>" }.joined()
-        let body = "<p><a id=\"ref-one\" href=\"#fn-note\">1</a></p><table id=\"table\"><thead><tr><th id=\"column-heading\">Row</th><th>Evidence</th></tr></thead><tbody>\(rows)</tbody></table><div class=\"page-break\"></div><p><a id=\"ref-two\" href=\"#fn-note\">1</a></p><section class=\"footnotes\"><ol><li id=\"fn-note\">AUTHORED-TEXT <a href=\"#ref-one\">↩</a></li></ol></section>"
+        let body = "<h2 id=\"overview\">Overview</h2><p><a id=\"ref-earlier\" href=\"#fn-note\">1</a> EARLIER-REFERENCE</p><p><a id=\"ref-one\" href=\"#fn-note\">1</a> ORIGINAL-REFERENCE</p><table id=\"table\"><thead><tr><th id=\"column-heading\">Row</th><th>Evidence</th></tr></thead><tbody>\(rows)</tbody></table><div class=\"page-break\"></div><p><a id=\"ref-two\" href=\"#fn-note\">1</a></p><section class=\"footnotes\"><ol><li id=\"fn-note\">AUTHORED-TEXT <a href=\"#ref-one\" class=\"footnote-backref\">↩</a> <a href=\"#overview\">Other section</a> <a href=\"#ref-one\">See original reference</a></li></ol></section>"
         let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: body, title: "Unique destinations", baseURL: nil, settings: .default)
         defer { prepared.releaseHold() }
         let duplicates = try await prepared.webView.evaluateJavaScript("(function(){var ids=Array.from(document.querySelectorAll('[id]')).map(n=>n.id); return ids.length-new Set(ids).size;})()") as? Int
@@ -64,14 +64,31 @@ final class PrintPageFootnotesTests: XCTestCase {
         let last = try XCTUnwrap(pdf.page(at: pdf.pageCount - 1))
         XCTAssertTrue(first.string?.contains("AUTHORED-TEXT") == true)
         XCTAssertTrue(last.string?.contains("AUTHORED-TEXT") == true)
-        XCTAssertTrue(first.annotations.contains {
-            guard let destination = $0.destination?.page, let document = destination.document else { return false }
-            return document.index(for: destination) == 0
-        })
-        XCTAssertTrue(last.annotations.contains {
-            guard let destination = $0.destination?.page, let document = destination.document else { return false }
-            return document.index(for: destination) == pdf.pageCount - 1
-        })
+        for index in [0, pdf.pageCount - 1] {
+            let page = try XCTUnwrap(pdf.page(at: index))
+            let text = try XCTUnwrap(page.string)
+            let backlinkRange = try XCTUnwrap(text.range(of: "↩"))
+            let backlinkBounds = try XCTUnwrap(page.selection(for: NSRange(backlinkRange, in: text))?.bounds(for: page))
+            let backlinks = page.annotations.filter { $0.destination != nil && $0.bounds.intersects(backlinkBounds) }
+            XCTAssertEqual(backlinks.count, 1, "Locate the footer BACKLINK, not merely any same-page destination")
+            let backlinkPage = try XCTUnwrap(backlinks.first?.destination?.page)
+            let backlinkDocument = try XCTUnwrap(backlinkPage.document)
+            XCTAssertEqual(backlinkDocument.index(for: backlinkPage), index, "The repeated note's backlink must return to its reference page")
+            if index == 0 {
+                let originalRange = try XCTUnwrap(text.range(of: "ORIGINAL-REFERENCE"))
+                let originalBounds = try XCTUnwrap(page.selection(for: NSRange(originalRange, in: text))?.bounds(for: page))
+                XCTAssertEqual(try XCTUnwrap(backlinks.first?.destination).point.y, originalBounds.maxY, accuracy: 6, "Prefer the authored backlink's original target when it is on this page")
+            }
+
+            for label in ["Other section", "See original reference"] {
+                let otherRange = try XCTUnwrap(text.range(of: label))
+                let otherBounds = try XCTUnwrap(page.selection(for: NSRange(otherRange, in: text))?.bounds(for: page))
+                let otherLink = try XCTUnwrap(page.annotations.first { $0.destination != nil && $0.bounds.intersects(otherBounds) })
+                let otherPage = try XCTUnwrap(otherLink.destination?.page)
+                let otherDocument = try XCTUnwrap(otherPage.document)
+                XCTAssertEqual(otherDocument.index(for: otherPage), 0, "A genuine authored internal link must retain its original destination")
+            }
+        }
     }
 
     func testAuthoredNotesLocalSourcesAndCommentBreakRemainOnReferencePage() async throws {

@@ -144,6 +144,9 @@ struct PrintLayoutSettingsStore {
 
     func load() -> PrintLayoutSettings {
         let defaults = PrintLayoutSettings.default
+        let legacyReferences = preferences.bool(forKey: Key.includeExternalLinks)
+        let storedCitationMode = preferences.double(forKey: Key.citationMode).flatMap { $0.isFinite && (0...2).contains($0) ? PrintLayoutSettings.CitationMode(rawValue: Int($0)) : nil }
+        let citationMode = storedCitationMode ?? legacyReferences.map { $0 ? .endnotes : .originalLinks } ?? .pageFootnotes
         return PrintLayoutSettings(
             margins: PrintPageMargins(
                 top: preferences.double(forKey: Key.topMargin) ?? defaults.margins.top,
@@ -153,8 +156,8 @@ struct PrintLayoutSettingsStore {
             ),
             fontSize: preferences.double(forKey: Key.fontSize) ?? defaults.fontSize,
             lineSpacing: preferences.double(forKey: Key.lineSpacing) ?? defaults.lineSpacing,
-            includeExternalLinkReferences: preferences.bool(forKey: Key.includeExternalLinks) ?? defaults.includeExternalLinkReferences,
-            citationMode: preferences.double(forKey: Key.citationMode).flatMap { $0.isFinite && (0...2).contains($0) ? PrintLayoutSettings.CitationMode(rawValue: Int($0)) : nil } ?? .pageFootnotes,
+            includeExternalLinkReferences: legacyReferences ?? defaults.includeExternalLinkReferences,
+            citationMode: citationMode,
             headingBreakLevel: Int(preferences.double(forKey: Key.headingBreakLevel).map { $0.isFinite && (0...6).contains($0) ? $0 : 0 } ?? 0)
         ).normalized
     }

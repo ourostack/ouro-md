@@ -2,6 +2,46 @@ import XCTest
 @testable import OuroMD
 
 final class PrintLayoutSettingsTests: XCTestCase {
+    func testExplicitLegacyReferencesOnMigratesToEndnotes() {
+        let preferences = InMemoryPrintLayoutPreferenceStore()
+        preferences.set(true, forKey: "ouro.printLayout.includeExternalLinks")
+
+        let settings = PrintLayoutSettingsStore(preferences: preferences).load()
+
+        XCTAssertEqual(settings.effectiveCitationMode, .endnotes)
+    }
+
+    func testExplicitLegacyReferencesOffMigratesToOriginalLinks() {
+        let preferences = InMemoryPrintLayoutPreferenceStore()
+        preferences.set(false, forKey: "ouro.printLayout.includeExternalLinks")
+
+        let settings = PrintLayoutSettingsStore(preferences: preferences).load()
+
+        XCTAssertEqual(settings.effectiveCitationMode, .originalLinks)
+    }
+
+    func testNewUsersWithoutCitationPreferencesDefaultToPageFootnotes() {
+        let preferences = InMemoryPrintLayoutPreferenceStore()
+
+        let settings = PrintLayoutSettingsStore(preferences: preferences).load()
+
+        XCTAssertEqual(settings.effectiveCitationMode, .pageFootnotes)
+    }
+
+    func testNewCitationPreferenceTakesPriorityOverEitherLegacyFlag() {
+        for legacy in [true, false] {
+            for mode in [PrintLayoutSettings.CitationMode.originalLinks, .endnotes, .pageFootnotes] {
+                let preferences = InMemoryPrintLayoutPreferenceStore()
+                preferences.set(legacy, forKey: "ouro.printLayout.includeExternalLinks")
+                preferences.set(Double(mode.rawValue), forKey: "ouro.printLayout.citationMode")
+
+                let settings = PrintLayoutSettingsStore(preferences: preferences).load()
+
+                XCTAssertEqual(settings.effectiveCitationMode, mode, "The new citation choice must override legacy \(legacy)")
+            }
+        }
+    }
+
     func testPrinterImageableAreaRejectsMarginsThatWouldClipOutput() throws {
         let settings = PrintLayoutSettings.default
         XCTAssertNoThrow(try settings.validatePrintableArea(paperSize: NSSize(width: 612, height: 792), imageableBounds: CGRect(x: 18, y: 18, width: 576, height: 756)))
