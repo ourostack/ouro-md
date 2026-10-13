@@ -23,9 +23,13 @@ enum PrintLayoutHTMLDocument {
         </script>
         </head>
         <body>
-        <article class="markdown-body">
-        \(body)
-        </article>
+        <div class="ouro-print-viewport">
+          <div class="ouro-print-root">
+            <article class="markdown-body ouro-print-pages">
+            \(body)
+            </article>
+          </div>
+        </div>
         </body>
         </html>
         """
@@ -33,27 +37,42 @@ enum PrintLayoutHTMLDocument {
 
     private static func printLayoutConfiguration(for settings: PrintLayoutSettings) -> String {
         let payload: [String: Any] = [
+            "pageWidth": 612.0,
+            "pageHeight": 792.0,
+            "pageContentWidth": contentWidth(for: settings),
+            "pageContentHeight": contentHeight(for: settings),
+            "marginTop": settings.margins.top,
+            "marginRight": settings.margins.right,
+            "marginBottom": settings.margins.bottom,
+            "marginLeft": settings.margins.left,
+            "pageGap": 24.0,
             "includeExternalLinkReferences": settings.includeExternalLinkReferences
         ]
         guard let data = try? JSONSerialization.data(withJSONObject: payload),
               let json = String(data: data, encoding: .utf8) else {
-            return "{\"includeExternalLinkReferences\":true}"
+            return "{\"includeExternalLinkReferences\":false}"
         }
         return json
     }
 
     private static func baseCSS(for settings: PrintLayoutSettings) -> String {
         let normalized = settings.normalized
+        let contentWidth = contentWidth(for: normalized)
+        let contentHeight = contentHeight(for: normalized)
         return """
-        @page {
-          size: auto;
-          margin: \(cssLength(normalized.margins.top))pt \(cssLength(normalized.margins.right))pt \(cssLength(normalized.margins.bottom))pt \(cssLength(normalized.margins.left))pt;
-        }
         html {
           -webkit-text-size-adjust: 100%;
           print-color-adjust: exact;
           -webkit-print-color-adjust: exact;
           background: #ffffff;
+        }
+        :root {
+          --ouro-page-width: 612pt;
+          --ouro-page-height: 792pt;
+          --ouro-page-content-width: \(cssLength(contentWidth))pt;
+          --ouro-page-content-height: \(cssLength(contentHeight))pt;
+          --ouro-page-gap: 24pt;
+          --ouro-active-page: 0;
         }
         body {
           margin: 0;
@@ -61,13 +80,32 @@ enum PrintLayoutHTMLDocument {
           color: #111111;
           font: \(cssLength(normalized.fontSize))pt/\(cssNumber(normalized.lineSpacing)) Georgia, "Times New Roman", serif;
         }
+        .ouro-print-viewport {
+          width: var(--ouro-page-width);
+          height: var(--ouro-page-height);
+          overflow: hidden;
+          background: #ffffff;
+        }
+        .ouro-print-root {
+          width: max-content;
+          background: #ffffff;
+          transform: translateX(calc(-1 * var(--ouro-active-page-offset, 0px)));
+          transform-origin: top left;
+        }
         .markdown-body {
+          box-sizing: border-box;
           color: #111111;
-          max-width: none;
+          width: var(--ouro-page-width);
+          max-width: var(--ouro-page-width);
           margin: 0;
+          padding: \(cssLength(normalized.margins.top))pt \(cssLength(normalized.margins.right))pt \(cssLength(normalized.margins.bottom))pt \(cssLength(normalized.margins.left))pt;
           overflow-wrap: break-word;
           word-break: normal;
           hanging-punctuation: first last;
+          column-width: var(--ouro-page-width);
+          column-gap: var(--ouro-page-gap);
+          column-fill: auto;
+          height: var(--ouro-page-height);
         }
         .markdown-body > :first-child { margin-top: 0; }
         .markdown-body > :last-child { margin-bottom: 0; }
@@ -81,6 +119,7 @@ enum PrintLayoutHTMLDocument {
           break-after: avoid-page;
           break-inside: avoid;
           page-break-after: avoid;
+          -webkit-column-break-inside: avoid;
         }
         .markdown-body p,
         .markdown-body li,
@@ -90,11 +129,47 @@ enum PrintLayoutHTMLDocument {
           orphans: 3;
           widows: 3;
         }
+        .markdown-body p,
+        .markdown-body blockquote,
+        .markdown-body pre,
+        .markdown-body table,
+        .markdown-body .ouro-print-keep-together,
+        .markdown-body img,
+        .markdown-body svg,
+        .markdown-body figure,
+        .markdown-body ul,
+        .markdown-body ol,
+        .markdown-body li,
+        .markdown-body tr,
+        .markdown-body thead,
+        .markdown-body tbody,
+        .markdown-body section {
+          break-inside: avoid;
+          page-break-inside: avoid;
+          -webkit-column-break-inside: avoid;
+        }
+        .markdown-body .ouro-print-keep-together {
+          display: block;
+        }
         .markdown-body pre,
         .markdown-body code,
         .markdown-body samp,
         .markdown-body kbd {
           font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+        }
+        .markdown-body .katex {
+          white-space: nowrap;
+        }
+        .markdown-body .katex-display {
+          display: block;
+          text-align: center;
+          margin: 1em 0;
+        }
+        .markdown-body .katex .base,
+        .markdown-body .katex .mord,
+        .markdown-body .katex .mrel,
+        .markdown-body .katex .mspace {
+          display: inline-block;
         }
         .markdown-body pre {
           white-space: pre-wrap;
@@ -123,8 +198,6 @@ enum PrintLayoutHTMLDocument {
           border-collapse: collapse;
           table-layout: fixed;
           margin: 1.1em 0;
-          page-break-inside: auto;
-          break-inside: auto;
         }
         .markdown-body thead {
           display: table-header-group;
@@ -132,8 +205,6 @@ enum PrintLayoutHTMLDocument {
         .markdown-body tr,
         .markdown-body th,
         .markdown-body td {
-          page-break-inside: avoid;
-          break-inside: avoid;
           vertical-align: top;
         }
         .markdown-body th,
@@ -201,6 +272,14 @@ enum PrintLayoutHTMLDocument {
           display: none !important;
         }
         """
+    }
+
+    private static func contentWidth(for settings: PrintLayoutSettings) -> Double {
+        612 - settings.margins.left - settings.margins.right
+    }
+
+    private static func contentHeight(for settings: PrintLayoutSettings) -> Double {
+        792 - settings.margins.top - settings.margins.bottom
     }
 
     private static func cssLength(_ value: Double) -> String {

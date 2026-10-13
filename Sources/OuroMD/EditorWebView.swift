@@ -350,54 +350,92 @@ struct EditorWebView: NSViewRepresentable {
         }
 
         func printDocument() {
-            guard let webView, let window = webView.window else { return }
-            exportPreparedPrintDocument(for: window) { result in
-                guard case .success(let prepared) = result else { return }
-                let settingsStore = PrintLayoutSettingsStore()
-                let accessory = PrintLayoutAccessoryController(
-                    settings: prepared.settings,
-                    settingsStore: settingsStore
-                )
-                accessory.onSettingsChanged = { [weak prepared] updated in
-                    prepared?.reload(with: updated)
+            guard let webView, let window = webView.window else {
+                reportPrintError(PrintLayoutSession.SessionError.unavailable("No editor window is available for printing."))
+                return
+            }
+            preparePrintDocument { [weak self] result in
+                guard let self else { return }
+                switch result {
+                case .failure(let error):
+                    self.reportPrintError(error)
+                case .success(let prepared):
+                    let session = PrintLayoutSession(
+                        prepared: prepared,
+                        parentWindow: window,
+                        action: .print,
+                        settingsStore: PrintLayoutSettingsStore(),
+                        reportError: { [weak self] _, error in
+                            self?.reportPrintError(error)
+                        },
+                        telemetry: { [weak self] event, properties in
+                            self?.model.telemetryHandler?(event, properties)
+                        }
+                    )
+                    session.begin()
                 }
-                let operation = prepared.makePrintOperation()
-                operation.printPanel.options.insert(.showsPreview)
-                operation.printPanel.addAccessoryController(accessory)
-                operation.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
-                prepared.releaseHold()
             }
         }
 
         func exportPDF(
             to url: URL,
             settings: PrintLayoutSettings? = nil,
-            completion: @escaping (Result<Void, Error>) -> Void
+            completion: @escaping (Result<Bool, Error>) -> Void
         ) {
-            exportPreparedPrintDocument(for: nil, settings: settings) { result in
+            if let settings {
+                preparePrintDocument(settings: settings) { result in
+                    switch result {
+                    case .failure(let error):
+                        completion(.failure(error))
+                    case .success(let prepared):
+                        Task { @MainActor in
+                            defer { prepared.releaseHold() }
+                            do {
+                                try await prepared.writePDF(to: url)
+                                completion(.success(true))
+                            } catch {
+                                completion(.failure(error))
+                            }
+                        }
+                    }
+                }
+                return
+            }
+            guard let webView, let window = webView.window else {
+                completion(.failure(PrintLayoutSession.SessionError.unavailable("No editor window is available for interactive PDF export.")))
+                return
+            }
+            preparePrintDocument { [weak self] result in
+                guard let self else { return }
                 switch result {
                 case .failure(let error):
                     completion(.failure(error))
                 case .success(let prepared):
-                    Task { @MainActor in
-                        defer { prepared.releaseHold() }
-                        do {
-                            try await prepared.writePDF(to: url)
-                            completion(.success(()))
-                        } catch {
-                            completion(.failure(error))
+                    let session = PrintLayoutSession(
+                        prepared: prepared,
+                        parentWindow: window,
+                        action: .export(url, completion),
+                        settingsStore: PrintLayoutSettingsStore(),
+                        reportError: { [weak self] _, error in
+                            self?.reportPrintError(error)
+                        },
+                        telemetry: { [weak self] event, properties in
+                            self?.model.telemetryHandler?(event, properties)
                         }
-                    }
+                    )
+                    session.begin()
                 }
             }
         }
 
-        private func exportPreparedPrintDocument(
-            for window: NSWindow?,
+        private func preparePrintDocument(
             settings: PrintLayoutSettings? = nil,
             completion: @escaping (Result<PreparedPrintDocument, Error>) -> Void
         ) {
-            guard webView != nil else { return }
+            guard webView != nil else {
+                completion(.failure(PrintLayoutSession.SessionError.unavailable("The editor web view is unavailable.")))
+                return
+            }
             getHTML { [weak self] body in
                 guard let self else { return }
                 guard let body else {
@@ -425,6 +463,13 @@ struct EditorWebView: NSViewRepresentable {
                     }
                 }
             }
+        }
+
+        private func reportPrintError(_ error: Error) {
+            if case PrintLayoutSession.SessionError.cancelled = error {
+                return
+            }
+            model.reportPrintError(error)
         }
 
         private var writingToolsObservation: NSKeyValueObservation?

@@ -2,11 +2,30 @@ import AppKit
 import Foundation
 
 @MainActor
-final class PrintLayoutAccessoryController: NSViewController, NSPrintPanelAccessorizing {
+final class PrintLayoutAccessoryController: NSViewController {
+    enum ValidationError: LocalizedError, Equatable {
+        case invalidNumber(String)
+        case outOfRange(String, ClosedRange<Double>)
+
+        var errorDescription: String? {
+            switch self {
+            case .invalidNumber(let label):
+                return "\(label) must be a finite number."
+            case .outOfRange(let label, let range):
+                return "\(label) must be between \(Self.display(range.lowerBound)) and \(Self.display(range.upperBound))."
+            }
+        }
+
+        private static func display(_ value: Double) -> String {
+            String(format: value.rounded() == value ? "%.0f" : "%.2f", value)
+        }
+    }
+
     var onSettingsChanged: ((PrintLayoutSettings) -> Void)?
 
     private let settingsStore: PrintLayoutSettingsStore
     private(set) var currentSettings: PrintLayoutSettings
+    private(set) var validationMessage: String?
 
     private let topField = NSTextField(string: "")
     private let rightField = NSTextField(string: "")
@@ -15,12 +34,12 @@ final class PrintLayoutAccessoryController: NSViewController, NSPrintPanelAccess
     private let fontSizeField = NSTextField(string: "")
     private let lineSpacingField = NSTextField(string: "")
     private let externalLinksCheckbox = NSButton(checkboxWithTitle: "Number external links at the end", target: nil, action: nil)
+    private let validationLabel = NSTextField(labelWithString: "")
 
     init(settings: PrintLayoutSettings, settingsStore: PrintLayoutSettingsStore = PrintLayoutSettingsStore()) {
         self.currentSettings = settings.normalized
         self.settingsStore = settingsStore
         super.init(nibName: nil, bundle: nil)
-        representedObject = self.currentSettings.applying(to: .shared)
     }
 
     @available(*, unavailable)
@@ -40,6 +59,11 @@ final class PrintLayoutAccessoryController: NSViewController, NSPrintPanelAccess
         externalLinksCheckbox.action = #selector(checkboxChanged(_:))
         externalLinksCheckbox.setAccessibilityLabel("Number external links at the end")
 
+        validationLabel.textColor = .systemRed
+        validationLabel.lineBreakMode = .byWordWrapping
+        validationLabel.maximumNumberOfLines = 0
+        validationLabel.setAccessibilityLabel("Print layout validation")
+
         let grid = NSGridView(views: [
             [labeled("Top margin (pt)"), topField],
             [labeled("Right margin (pt)"), rightField],
@@ -55,7 +79,7 @@ final class PrintLayoutAccessoryController: NSViewController, NSPrintPanelAccess
         grid.column(at: 0).xPlacement = .trailing
         grid.column(at: 1).xPlacement = .fill
 
-        let stack = NSStackView(views: [grid, externalLinksCheckbox])
+        let stack = NSStackView(views: [grid, externalLinksCheckbox, validationLabel])
         stack.orientation = .vertical
         stack.spacing = 12
         stack.alignment = .leading
@@ -69,15 +93,50 @@ final class PrintLayoutAccessoryController: NSViewController, NSPrintPanelAccess
             stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             stack.topAnchor.constraint(equalTo: container.topAnchor),
             stack.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-            topField.widthAnchor.constraint(equalToConstant: 72),
-            rightField.widthAnchor.constraint(equalToConstant: 72),
-            bottomField.widthAnchor.constraint(equalToConstant: 72),
-            leftField.widthAnchor.constraint(equalToConstant: 72),
-            fontSizeField.widthAnchor.constraint(equalToConstant: 72),
-            lineSpacingField.widthAnchor.constraint(equalToConstant: 72),
+            topField.widthAnchor.constraint(equalToConstant: 80),
+            rightField.widthAnchor.constraint(equalToConstant: 80),
+            bottomField.widthAnchor.constraint(equalToConstant: 80),
+            leftField.widthAnchor.constraint(equalToConstant: 80),
+            fontSizeField.widthAnchor.constraint(equalToConstant: 80),
+            lineSpacingField.widthAnchor.constraint(equalToConstant: 80),
+            validationLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 220),
         ])
         view = container
         syncView(from: currentSettings)
+        updateValidationMessage(nil)
+    }
+
+    func applyCurrentValues() -> Bool {
+        do {
+            let updated = try validatedSettingsFromFields().normalized
+            currentSettings = updated
+            settingsStore.save(updated)
+            syncView(from: updated)
+            updateValidationMessage(nil)
+            onSettingsChanged?(updated)
+            return true
+        } catch {
+            updateValidationMessage((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+            return false
+        }
+    }
+
+    func setFieldValues(
+        top: String,
+        right: String,
+        bottom: String,
+        left: String,
+        fontSize: String,
+        lineSpacing: String,
+        includeExternalLinks: Bool
+    ) {
+        topField.stringValue = top
+        rightField.stringValue = right
+        bottomField.stringValue = bottom
+        leftField.stringValue = left
+        fontSizeField.stringValue = fontSize
+        lineSpacingField.stringValue = lineSpacing
+        externalLinksCheckbox.state = includeExternalLinks ? .on : .off
     }
 
     private func configureField(_ field: NSTextField, title: String) {
@@ -103,56 +162,42 @@ final class PrintLayoutAccessoryController: NSViewController, NSPrintPanelAccess
         externalLinksCheckbox.state = settings.includeExternalLinkReferences ? .on : .off
     }
 
+    private func updateValidationMessage(_ message: String?) {
+        validationMessage = message
+        validationLabel.stringValue = message ?? ""
+        validationLabel.isHidden = (message == nil)
+    }
+
     @objc private func fieldChanged(_ sender: NSTextField) {
-        applyCurrentValues()
+        _ = applyCurrentValues()
     }
 
     @objc private func checkboxChanged(_ sender: NSButton) {
-        applyCurrentValues()
+        _ = applyCurrentValues()
     }
 
-    private func applyCurrentValues() {
-        let updated = PrintLayoutSettings(
+    private func validatedSettingsFromFields() throws -> PrintLayoutSettings {
+        PrintLayoutSettings(
             margins: PrintPageMargins(
-                top: parsedNumber(topField.stringValue, fallback: currentSettings.margins.top),
-                right: parsedNumber(rightField.stringValue, fallback: currentSettings.margins.right),
-                bottom: parsedNumber(bottomField.stringValue, fallback: currentSettings.margins.bottom),
-                left: parsedNumber(leftField.stringValue, fallback: currentSettings.margins.left)
+                top: try parseField(topField.stringValue, label: "Top margin", range: 18...144),
+                right: try parseField(rightField.stringValue, label: "Right margin", range: 18...144),
+                bottom: try parseField(bottomField.stringValue, label: "Bottom margin", range: 18...144),
+                left: try parseField(leftField.stringValue, label: "Left margin", range: 18...144)
             ),
-            fontSize: parsedNumber(fontSizeField.stringValue, fallback: currentSettings.fontSize),
-            lineSpacing: parsedNumber(lineSpacingField.stringValue, fallback: currentSettings.lineSpacing),
+            fontSize: try parseField(fontSizeField.stringValue, label: "Font size", range: 8...24),
+            lineSpacing: try parseField(lineSpacingField.stringValue, label: "Line spacing", range: 1...3),
             includeExternalLinkReferences: externalLinksCheckbox.state == .on
-        ).normalized
-        currentSettings = updated
-        settingsStore.save(updated)
-        representedObject = updated.applying(to: .shared)
-        syncView(from: updated)
-        onSettingsChanged?(updated)
+        )
     }
 
-    func localizedSummaryItems() -> [[NSPrintPanel.AccessorySummaryKey: String]] {
-        [[
-            .itemName: "Print layout",
-            .itemDescription: summaryDescription(for: currentSettings)
-        ]]
-    }
-
-    func keyPathsForValuesAffectingPreview() -> Set<String> {
-        [
-            "representedObject.topMargin",
-            "representedObject.rightMargin",
-            "representedObject.bottomMargin",
-            "representedObject.leftMargin"
-        ]
-    }
-
-    private func summaryDescription(for settings: PrintLayoutSettings) -> String {
-        let margins = settings.margins
-        return "Margins \(numberString(margins.top))/\(numberString(margins.right))/\(numberString(margins.bottom))/\(numberString(margins.left)) pt, font \(numberString(settings.fontSize)) pt, line spacing \(lineSpacingString(settings.lineSpacing))"
-    }
-
-    private func parsedNumber(_ value: String, fallback: Double) -> Double {
-        Double(value.trimmingCharacters(in: .whitespacesAndNewlines)) ?? fallback
+    private func parseField(_ value: String, label: String, range: ClosedRange<Double>) throws -> Double {
+        guard let parsed = Double(value.trimmingCharacters(in: .whitespacesAndNewlines)), parsed.isFinite else {
+            throw ValidationError.invalidNumber(label)
+        }
+        guard range.contains(parsed) else {
+            throw ValidationError.outOfRange(label, range)
+        }
+        return parsed
     }
 
     private func numberString(_ value: Double) -> String {
