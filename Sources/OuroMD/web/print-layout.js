@@ -138,50 +138,35 @@
     var contentWidth = toFiniteNumber(Number(config.pageContentWidth), pageWidth);
     var contentHeight = toFiniteNumber(Number(config.pageContentHeight), pageHeight);
     var pageGap = toFiniteNumber(Number(config.pageGap), DEFAULT_GAP);
-    var rootRect = root.getBoundingClientRect();
     var stride = contentWidth + pageGap;
-    var maxRight = 0;
-    Array.prototype.forEach.call(root.querySelectorAll("*"), function (node) {
+    var rootRect = root.getBoundingClientRect();
+    var maxAssignedPage = 0;
+    var fragmentedProofIDs = [];
+    Array.prototype.forEach.call(root.children, function (node, index) {
       if (!node.getBoundingClientRect) { return; }
-      var rect = node.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) { return; }
-      maxRight = Math.max(maxRight, rect.right - rootRect.left);
-    });
-    var totalWidth = Math.max(pageWidth, maxRight);
-    var pageCount = Math.max(1, Math.ceil((totalWidth + 1) / stride));
-    var pageOffsets = Array.apply(null, Array(pageCount)).map(function (_, index) { return index * stride; });
-    var fragmentedProofIDs = Array.prototype.map.call(root.querySelectorAll("[data-proof-id]"), function (node) {
+      node.style.removeProperty("display");
       var fragments = Array.prototype.filter.call(node.getClientRects(), function (rect) { return rect.width > 0 && rect.height > 0; });
-      return fragments.length > 1 ? node.getAttribute("data-proof-id") : null;
-    }).filter(Boolean);
-    var endnoteLinks = Array.prototype.map.call(root.querySelectorAll(".ouro-print-external-links a.ouro-print-reference-url"), function (anchor) {
-      var rect = anchor.getBoundingClientRect();
-      var localX = rect.left - rootRect.left;
-      var localY = rect.top - rootRect.top;
-      var pageIndex = pageOffsets.findIndex(function (offset, index) {
-        var nextOffset = index + 1 < pageOffsets.length ? pageOffsets[index + 1] : Number.POSITIVE_INFINITY;
-        return localX >= offset && localX < nextOffset;
-      });
-      if (pageIndex < 0) { pageIndex = Math.max(0, pageCount - 1); }
-      return {
-        url: anchor.href,
-        pageIndex: pageIndex,
-        x: localX - pageOffsets[pageIndex],
-        y: ((localY % pageHeight) + pageHeight) % pageHeight,
-        width: rect.width,
-        height: rect.height
-      };
+      if (!fragments.length) { return; }
+      var pages = Array.from(new Set(fragments.map(function (rect) {
+        return Math.max(0, Math.floor((rect.left - rootRect.left + 0.5) / stride));
+      }))).sort(function (a, b) { return a - b; });
+      var assignedPage = pages[0];
+      node.dataset.ouroPrintPage = String(assignedPage);
+      maxAssignedPage = Math.max(maxAssignedPage, assignedPage);
+      if (pages.length > 1) {
+        fragmentedProofIDs.push(node.getAttribute("data-proof-id") || (node.tagName.toLowerCase() + "-" + index));
+      }
     });
+    var pageCount = maxAssignedPage + 1;
     cachedMetrics = {
       contentWidth: contentWidth,
       contentHeight: contentHeight,
       pageGap: pageGap,
       pageStride: stride,
-      totalWidth: totalWidth,
+      totalWidth: root.scrollWidth,
       pageCount: pageCount,
-      pageOffsets: pageOffsets,
       fragmentedProofIDs: fragmentedProofIDs,
-      endnoteLinks: endnoteLinks
+      endnoteLinks: []
     };
     return cachedMetrics;
   }
@@ -197,7 +182,23 @@
   function showPage(index) {
     var metrics = pageMetrics();
     var normalizedIndex = Math.max(0, Math.min(metrics.pageCount - 1, index || 0));
-    document.documentElement.style.setProperty("--ouro-active-page-offset", String(metrics.pageOffsets[normalizedIndex] || 0) + "px");
+    document.documentElement.style.setProperty("--ouro-active-page-offset", "0px");
+    Array.prototype.forEach.call(article().children, function (node) {
+      node.style.display = Number(node.dataset.ouroPrintPage || "0") === normalizedIndex ? "" : "none";
+    });
+    var root = article();
+    var rootRect = root.getBoundingClientRect();
+    metrics.endnoteLinks = Array.prototype.map.call(root.querySelectorAll(".ouro-print-external-links a.ouro-print-reference-url"), function (anchor) {
+      var rect = anchor.getBoundingClientRect();
+      return {
+        url: anchor.href,
+        pageIndex: normalizedIndex,
+        x: rect.left - rootRect.left,
+        y: rect.top - rootRect.top,
+        width: rect.width,
+        height: rect.height
+      };
+    });
     return metrics;
   }
 

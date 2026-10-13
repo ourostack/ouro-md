@@ -48,7 +48,7 @@ enum PrintPDFPaginator {
         sourcePages: [Data],
         paperSize: NSSize,
         margins: PrintPageMargins,
-        metrics: PrintLayoutMetrics
+        pageLinks: [[PrintLayoutMetrics.EndnoteLink]]
     ) throws -> Data {
         _ = margins
         let document = PDFDocument()
@@ -62,14 +62,14 @@ enum PrintPDFPaginator {
         guard let combined = document.dataRepresentation() else {
             throw PaginationError.contextCreationFailed
         }
-        return try addEndnoteAnnotations(to: combined, paperSize: paperSize, margins: margins, metrics: metrics)
+        return try addEndnoteAnnotations(to: combined, paperSize: paperSize, margins: margins, pageLinks: pageLinks)
     }
 
     private static func addEndnoteAnnotations(
         to data: Data,
         paperSize: NSSize,
         margins: PrintPageMargins,
-        metrics: PrintLayoutMetrics
+        pageLinks: [[PrintLayoutMetrics.EndnoteLink]]
     ) throws -> Data {
         guard let document = PDFDocument(data: data) else {
             throw PaginationError.unreadableOutput
@@ -80,19 +80,21 @@ enum PrintPDFPaginator {
                 page.removeAnnotation(annotation)
             }
         }
-        for link in metrics.endnoteLinks {
-            guard let url = URL(string: link.url),
-                  let page = document.page(at: link.pageIndex) else { continue }
-            let bounds = CGRect(
-                x: link.x,
-                y: paperSize.height - link.y - link.height,
-                width: link.width,
-                height: link.height
-            ).intersection(page.bounds(for: .mediaBox))
-            guard !bounds.isEmpty else { continue }
-            let annotation = PDFAnnotation(bounds: bounds, forType: .link, withProperties: nil)
-            annotation.url = url
-            page.addAnnotation(annotation)
+        for (pageIndex, links) in pageLinks.enumerated() {
+            guard let page = document.page(at: pageIndex) else { continue }
+            for link in links {
+                guard let url = URL(string: link.url) else { continue }
+                let bounds = CGRect(
+                    x: margins.left + link.x,
+                    y: paperSize.height - margins.top - link.y - link.height,
+                    width: link.width,
+                    height: link.height
+                ).intersection(page.bounds(for: .mediaBox))
+                guard !bounds.isEmpty else { continue }
+                let annotation = PDFAnnotation(bounds: bounds, forType: .link, withProperties: nil)
+                annotation.url = url
+                page.addAnnotation(annotation)
+            }
         }
         guard let annotated = document.dataRepresentation() else {
             throw PaginationError.unreadableOutput

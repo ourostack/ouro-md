@@ -35,10 +35,6 @@ final class PrintDocumentRendererTests: XCTestCase {
         XCTAssertEqual(try XCTUnwrap(Self.fontSize(of: "Printable proof", in: document.page(at: 0))), 24, accuracy: 0.75)
         XCTAssertEqual(try XCTUnwrap(Self.bounds(of: "Printable proof", in: document.page(at: 0))).minX, 54, accuracy: 0.75)
         XCTAssertEqual(prepared.layoutMetrics.fragmentedProofIDs, [])
-        XCTAssertEqual(prepared.layoutMetrics.endnoteLinks.map(\.url).sorted(), [
-            "https://example.com/code-link",
-            "https://example.com/repeated?query=1&value=2"
-        ])
 
         let annotationURLs = Set((0..<document.pageCount).flatMap { index in
             document.page(at: index)?.annotations.compactMap { $0.url?.absoluteString } ?? []

@@ -25,9 +25,11 @@ enum PrintLayoutHTMLDocument {
         <body>
         <div class="ouro-print-viewport">
           <div class="ouro-print-root">
-            <article class="markdown-body ouro-print-pages">
-            \(body)
-            </article>
+            <div class="ouro-print-content-frame">
+              <article class="markdown-body ouro-print-pages">
+              \(body)
+              </article>
+            </div>
           </div>
         </div>
         </body>
@@ -87,25 +89,34 @@ enum PrintLayoutHTMLDocument {
           background: #ffffff;
         }
         .ouro-print-root {
-          width: max-content;
+          position: relative;
+          width: var(--ouro-page-width);
+          height: var(--ouro-page-height);
           background: #ffffff;
-          transform: translateX(calc(-1 * var(--ouro-active-page-offset, 0px)));
-          transform-origin: top left;
+        }
+        .ouro-print-content-frame {
+          position: absolute;
+          left: \(cssLength(normalized.margins.left))px;
+          top: \(cssLength(normalized.margins.top))px;
+          width: var(--ouro-page-content-width);
+          height: var(--ouro-page-content-height);
+          overflow: hidden;
         }
         .markdown-body {
           box-sizing: border-box;
           color: #111111;
-          width: var(--ouro-page-width);
-          max-width: var(--ouro-page-width);
+          width: var(--ouro-page-content-width);
+          max-width: var(--ouro-page-content-width);
           margin: 0;
-          padding: \(cssLength(normalized.margins.top))px \(cssLength(normalized.margins.right))px \(cssLength(normalized.margins.bottom))px \(cssLength(normalized.margins.left))px;
+          transform: translateX(calc(-1 * var(--ouro-active-page-offset, 0px)));
+          transform-origin: top left;
           overflow-wrap: break-word;
           word-break: normal;
           hanging-punctuation: first last;
-          column-width: var(--ouro-page-width);
+          column-width: var(--ouro-page-content-width);
           column-gap: var(--ouro-page-gap);
           column-fill: auto;
-          height: var(--ouro-page-height);
+          height: var(--ouro-page-content-height);
         }
         .markdown-body > :first-child { margin-top: 0; }
         .markdown-body > :last-child { margin-bottom: 0; }
