@@ -65,9 +65,10 @@ final class EditorSurfaceTester: NSObject {
     }
 
     private func prepareFixture() throws {
-        root = FileManager.default.temporaryDirectory
+        root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true).appendingPathComponent(".build", isDirectory: true)
             .appendingPathComponent("ouro-editor-surface-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        print("editor surface owned scratch: \(root.path)")
         markdownFile = root.appendingPathComponent("surface.md")
         if let input = acceptanceInput {
             markdownFile = input
@@ -124,7 +125,8 @@ final class EditorSurfaceTester: NSObject {
         let before = try Data(contentsOf: markdownFile)
         let output = URL(fileURLWithPath: outputPath)
         var settings = PrintLayoutSettings.default
-        settings.includeExternalLinkReferences = true
+        settings.citationMode = .pageFootnotes
+        settings.headingBreakLevel = Int(ProcessInfo.processInfo.environment["OURO_PRINT_HEADING_BREAK_LEVEL"] ?? "0") ?? 0
         PrintLayoutSettingsStore(preferences: printPreferences.defaults).save(settings)
         FileHandle.standardError.write(Data("local print acceptance: requesting product export\n".utf8))
         var exported: Bool?
@@ -247,10 +249,17 @@ final class EditorSurfaceTester: NSObject {
         panel.alphaValue = 0
         let views = descendants(of: content)
         guard let font = views.compactMap({ $0 as? NSTextField }).first(where: { $0.accessibilityLabel() == "Font size (pt)" }),
+              let citations = views.compactMap({ $0 as? NSPopUpButton }).first(where: { $0.accessibilityLabel() == "Citations" }),
+              let headings = views.compactMap({ $0 as? NSPopUpButton }).first(where: { $0.accessibilityLabel() == "New page before heading" }),
               let export = views.compactMap({ $0 as? NSButton }).first(where: { $0.title == "Export PDF" }),
               let cancel = views.compactMap({ $0 as? NSButton }).first(where: { $0.title == "Cancel" }),
               let pageSetup = views.compactMap({ $0 as? NSButton }).first(where: { $0.title == "Page Setup…" }),
               await waitUntil(timeout: 8, condition: { export.isEnabled }) else { return false }
+        let footnotesDefault = citations.titleOfSelectedItem == "Page-bottom footnotes"
+        headings.selectItem(withTitle: "Heading 2")
+        _ = headings.sendAction(headings.action, to: headings.target)
+        guard await waitUntil(timeout: 8, condition: { export.isEnabled }) else { return false }
+        let pageCountVisible = descendants(of: content).compactMap { $0 as? NSTextField }.contains { $0.stringValue.contains("Preview ready —") && $0.stringValue.contains("pages") }
         pageSetup.performClick(nil)
         guard await waitUntil(timeout: 8, condition: { export.isEnabled }) else { return false }
         font.stringValue = "not a number"
@@ -277,6 +286,8 @@ final class EditorSurfaceTester: NSObject {
         let selectedPaperPrinted = abs((pdf.page(at: 0)?.bounds(for: .mediaBox).width ?? 0) - 595) < 1
             && abs((pdf.page(at: 0)?.bounds(for: .mediaBox).height ?? 0) - 842) < 1
         let unchangedSource = try Data(contentsOf: markdownFile) == originalBytes
+        let citationPrinted = pdf.page(at: 0)?.string?.contains("https://example.com/native-citation") == true
+        let authoredPrinted = pdf.page(at: 0)?.string?.contains("NATIVE-AUTHORED-NOTE") == true
 
         var cancelled: Result<Bool, Error>?
         let cancelledOutput = root.appendingPathComponent("cancelled-layout.pdf")
@@ -313,7 +324,8 @@ final class EditorSurfaceTester: NSObject {
         printPanel.alphaValue = 0
         continueButton.performClick(nil)
         let finalPrintCancelled = await waitUntil(timeout: 2, condition: { printCancelled && PrintLayoutSession.activeCountForTesting == 0 })
-        return invalidDisabled && settingsSaved && finalSettingsPrinted && selectedPaperPrinted && unchangedSource && closedCancelled && finalPrintCancelled
+        print("print slice checks: default=\(footnotesDefault) pageCount=\(pageCountVisible) citation=\(citationPrinted) authored=\(authoredPrinted) invalid=\(invalidDisabled) saved=\(settingsSaved) finalFont=\(finalSettingsPrinted) paper=\(selectedPaperPrinted) source=\(unchangedSource) closed=\(closedCancelled) printCancel=\(finalPrintCancelled)")
+        return footnotesDefault && pageCountVisible && citationPrinted && authoredPrinted && invalidDisabled && settingsSaved && finalSettingsPrinted && selectedPaperPrinted && unchangedSource && closedCancelled && finalPrintCancelled
             && PrintLayoutSession.activeCountForTesting == 0 && PreparedPrintDocument.retainedCountForTesting == 0
     }
 
@@ -391,6 +403,18 @@ final class EditorSurfaceTester: NSObject {
     # Surface Probe
 
     Recovered After Crash.
+
+    Native [citation](https://example.com/native-citation) and authored note.[^native]
+
+    ## Company Alpha
+
+    First company.
+
+    ## Company Beta
+
+    Second company.
+
+    [^native]: NATIVE-AUTHORED-NOTE
     """
 
     private static let exportMarkdown = """

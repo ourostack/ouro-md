@@ -35,7 +35,8 @@ final class PrintLayoutAccessoryController: NSViewController {
     private let leftField = NSTextField(string: "")
     private let fontSizeField = NSTextField(string: "")
     private let lineSpacingField = NSTextField(string: "")
-    private let externalLinksCheckbox = NSButton(checkboxWithTitle: "Endnotes for links, including local paths", target: nil, action: nil)
+    private let citationSelector = NSPopUpButton(frame: .zero, pullsDown: false)
+    private let headingSelector = NSPopUpButton(frame: .zero, pullsDown: false)
     private let validationLabel = NSTextField(labelWithString: "")
     private let pageSetupButton = NSButton(title: "Page Setup…", target: nil, action: nil)
 
@@ -62,9 +63,15 @@ final class PrintLayoutAccessoryController: NSViewController {
         configureField(fontSizeField, title: "Font size (pt)")
         configureField(lineSpacingField, title: "Line spacing")
 
-        externalLinksCheckbox.target = self
-        externalLinksCheckbox.action = #selector(checkboxChanged(_:))
-        externalLinksCheckbox.setAccessibilityLabel("Endnotes for links, including local paths")
+        citationSelector.addItems(withTitles: ["Original links", "Endnotes", "Page-bottom footnotes"])
+        citationSelector.target = self
+        citationSelector.action = #selector(choiceChanged(_:))
+        citationSelector.setAccessibilityLabel("Citations")
+        citationSelector.toolTip = "Generated link sources include web, email, phone and local or relative file paths."
+        headingSelector.addItems(withTitles: ["None"] + (1...6).map { "Heading \($0)" })
+        headingSelector.target = self
+        headingSelector.action = #selector(choiceChanged(_:))
+        headingSelector.setAccessibilityLabel("New page before heading")
 
         validationLabel.textColor = .systemRed
         validationLabel.lineBreakMode = .byWordWrapping
@@ -78,6 +85,8 @@ final class PrintLayoutAccessoryController: NSViewController {
             [labeled("Left margin (pt)"), leftField],
             [labeled("Font size (pt)"), fontSizeField],
             [labeled("Line spacing"), lineSpacingField],
+            [labeled("Citations"), citationSelector],
+            [labeled("New page before"), headingSelector],
         ])
         grid.rowSpacing = 8
         grid.columnSpacing = 12
@@ -86,7 +95,7 @@ final class PrintLayoutAccessoryController: NSViewController {
         grid.column(at: 0).xPlacement = .trailing
         grid.column(at: 1).xPlacement = .fill
 
-        let stack = NSStackView(views: [pageSetupButton, grid, externalLinksCheckbox, validationLabel])
+        let stack = NSStackView(views: [pageSetupButton, grid, validationLabel])
         stack.orientation = .vertical
         stack.spacing = 12
         stack.alignment = .leading
@@ -136,7 +145,9 @@ final class PrintLayoutAccessoryController: NSViewController {
         left: String,
         fontSize: String,
         lineSpacing: String,
-        includeExternalLinks: Bool
+        includeExternalLinks: Bool,
+        citationMode: PrintLayoutSettings.CitationMode? = nil,
+        headingBreakLevel: Int? = nil
     ) {
         topField.stringValue = top
         rightField.stringValue = right
@@ -144,7 +155,8 @@ final class PrintLayoutAccessoryController: NSViewController {
         leftField.stringValue = left
         fontSizeField.stringValue = fontSize
         lineSpacingField.stringValue = lineSpacing
-        externalLinksCheckbox.state = includeExternalLinks ? .on : .off
+        citationSelector.selectItem(at: (citationMode ?? (includeExternalLinks ? .endnotes : .originalLinks)).rawValue)
+        if let headingBreakLevel { headingSelector.selectItem(at: headingBreakLevel) }
     }
 
     private func configureField(_ field: NSTextField, title: String) {
@@ -167,7 +179,8 @@ final class PrintLayoutAccessoryController: NSViewController {
         leftField.stringValue = decimalString(settings.margins.left)
         fontSizeField.stringValue = decimalString(settings.fontSize)
         lineSpacingField.stringValue = decimalString(settings.lineSpacing)
-        externalLinksCheckbox.state = settings.includeExternalLinkReferences ? .on : .off
+        citationSelector.selectItem(at: settings.effectiveCitationMode.rawValue)
+        headingSelector.selectItem(at: settings.headingBreakLevel)
     }
 
     private func updateValidationMessage(_ message: String?) {
@@ -185,7 +198,7 @@ final class PrintLayoutAccessoryController: NSViewController {
         onPageSetupRequested?()
     }
 
-    @objc private func checkboxChanged(_ sender: NSButton) {
+    @objc private func choiceChanged(_ sender: NSPopUpButton) {
         _ = applyCurrentValues()
     }
 
@@ -199,7 +212,9 @@ final class PrintLayoutAccessoryController: NSViewController {
             ),
             fontSize: try parseField(fontSizeField.stringValue, label: "Font size", range: 8...24),
             lineSpacing: try parseField(lineSpacingField.stringValue, label: "Line spacing", range: 1...3),
-            includeExternalLinkReferences: externalLinksCheckbox.state == .on
+            includeExternalLinkReferences: citationSelector.indexOfSelectedItem == 1,
+            citationMode: PrintLayoutSettings.CitationMode(rawValue: citationSelector.indexOfSelectedItem),
+            headingBreakLevel: headingSelector.indexOfSelectedItem
         )
     }
 

@@ -3,6 +3,11 @@
   var DEFAULT_GAP = Number(config.pageGap || 24);
   var GENERATED_PREFIX = "ouro-print-generated";
   var cachedMetrics = null;
+  var applied = false;
+  var noteDefinitions = Object.create(null);
+  var sources = Object.create(null);
+  var noteLayer = null;
+  var pageVisibilityStyle = null;
 
   function article() {
     return document.querySelector(".markdown-body") || document.body;
@@ -58,6 +63,17 @@
     });
   }
 
+  function uniquifyClonedIDs(root) {
+    var seen = new Set();
+    Array.prototype.forEach.call(root.querySelectorAll("[id]"), function (node) {
+      var id = node.id;
+      if (seen.has(id)) {
+        node.id = reserveID(id + "-ouro-copy");
+      }
+      seen.add(node.id);
+    });
+  }
+
   function applyReferences() {
     var root = article();
     removeExistingReferences(root);
@@ -78,45 +94,179 @@
       marker.className = "ouro-print-reference-marker";
       marker.dataset.ouroPrintGenerated = "true";
       marker.setAttribute("aria-label", "Reference " + number);
-      marker.textContent = "[" + number + "]";
+      marker.textContent = "[S" + number + "]";
       anchor.insertAdjacentElement("afterend", marker);
     });
-
     if (!referenceRecords.length) { return; }
-
     var section = document.createElement("section");
     section.className = "ouro-print-external-links";
     section.dataset.ouroPrintGenerated = "true";
-
-    var headingID = reserveID(GENERATED_PREFIX + "-external-links-heading");
-    section.setAttribute("aria-labelledby", headingID);
-
-    var rule = document.createElement("hr");
-    rule.dataset.ouroPrintGenerated = "true";
-    section.appendChild(rule);
-
     var heading = document.createElement("h2");
-    heading.id = headingID;
-    heading.dataset.ouroPrintGenerated = "true";
-    heading.textContent = "Link sources (endnotes)";
+    heading.id = reserveID(GENERATED_PREFIX + "-external-links-heading");
+    heading.textContent = "External links";
+    section.setAttribute("aria-labelledby", heading.id);
     section.appendChild(heading);
-
     var list = document.createElement("ol");
-    list.dataset.ouroPrintGenerated = "true";
     referenceRecords.forEach(function (reference) {
       var item = document.createElement("li");
       item.id = reserveID(GENERATED_PREFIX + "-reference-" + reference.number);
-      item.dataset.ouroPrintGenerated = "true";
       var link = document.createElement("a");
       link.className = "ouro-print-reference-url";
       link.href = reference.url;
-      link.textContent = reference.url;
-      link.dataset.ouroPrintGenerated = "true";
+      link.textContent = "[S" + reference.number + "] " + reference.url;
       item.appendChild(link);
       list.appendChild(item);
     });
     section.appendChild(list);
     root.appendChild(section);
+  }
+
+  function applySectionBreaks() {
+    var root = article();
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_COMMENT);
+    var comments = [];
+    while (walker.nextNode()) {
+      if (/^\s*pagebreak\s*$/i.test(walker.currentNode.nodeValue)) { comments.push(walker.currentNode); }
+    }
+    comments.forEach(function (comment) {
+      var marker = document.createElement("div");
+      marker.className = "page-break";
+      comment.parentNode.replaceChild(marker, comment);
+    });
+    var selector = ".page-break";
+    var level = Number(config.headingBreakLevel);
+    if (level >= 1 && level <= 6) { selector += ", h" + level; }
+    var first = root.firstElementChild;
+    Array.prototype.forEach.call(root.querySelectorAll(selector), function (node) {
+      if (node.closest(".footnotes, .footnotes-defs-div, .ouro-print-external-links") || node.dataset.ouroPrintGenerated) { return; }
+      if (node === first) { return; }
+      if (node.classList.contains("page-break")) {
+        var next = node.nextElementSibling;
+        if (next) { next.classList.add("ouro-print-section-break"); }
+        node.style.display = "none";
+      } else {
+        node.classList.add("ouro-print-section-break");
+      }
+    });
+  }
+
+  function preparePageFootnotes() {
+    var root = article();
+    var numbers = Object.create(null);
+    var next = 1;
+    Array.prototype.forEach.call(root.querySelectorAll("a[href]"), function (anchor) {
+      var url = normalizedExternalURL(anchor);
+      if (!url) { return; }
+      var key = numbers[url];
+      if (!key) {
+        key = "S" + next++;
+        numbers[url] = key;
+        sources[key] = url;
+      }
+      var marker = document.createElement("sup");
+      marker.className = "ouro-print-reference-marker";
+      marker.dataset.ouroSource = key;
+      marker.textContent = "[" + key + "]";
+      anchor.dataset.ouroSource = key;
+      anchor.insertAdjacentElement("afterend", marker);
+    });
+    Array.prototype.forEach.call(root.querySelectorAll(".footnotes li[id], .footnotes-defs-div li[id]"), function (note) {
+      var id = note.id;
+      var refs = Array.prototype.filter.call(root.querySelectorAll("a[href]"), function (anchor) {
+        return anchor.getAttribute("href") === "#" + id && !anchor.closest(".footnotes, .footnotes-defs-div");
+      });
+      if (!refs.length) { return; } // Unreferenced authored definitions remain in the body.
+      refs.forEach(function (ref) { ref.dataset.ouroNote = id; });
+      noteDefinitions[id] = note.cloneNode(true);
+      note.remove();
+    });
+    Array.prototype.forEach.call(root.querySelectorAll(".footnotes, .footnotes-defs-div"), function (section) {
+      if (!section.querySelector("li")) { section.remove(); }
+    });
+  }
+
+  function buildPageFootnotes() {
+    var root = article();
+    var fullHeight = Number(config.pageContentHeight);
+    var stride = Number(config.pageContentWidth) + Number(config.pageGap || DEFAULT_GAP);
+    var reserved = 0;
+    noteLayer = document.createElement("div");
+    noteLayer.className = "ouro-print-note-layer";
+    root.parentNode.appendChild(noteLayer);
+    for (var round = 0; round < 16; round++) {
+      noteLayer.replaceChildren();
+      root.style.height = (fullHeight - reserved) + "px";
+      var rootRect = root.getBoundingClientRect();
+      var pages = Object.create(null);
+      // Batch geometry reads before attaching any of the footer DOM.
+      Array.prototype.forEach.call(root.querySelectorAll("[data-ouro-source], [data-ouro-note]"), function (marker) {
+        Array.prototype.forEach.call(marker.getClientRects(), function (rect) {
+          if (rect.width <= 0 || rect.height <= 0) { return; }
+          var page = pageIndexForRect(rect, rootRect, stride);
+          if (!pages[page]) { pages[page] = { sources: new Set(), notes: new Set() }; }
+          var record = pages[page];
+          if (marker.dataset.ouroSource) { record.sources.add(marker.dataset.ouroSource); }
+          if (marker.dataset.ouroNote) {
+            record.notes.add(marker.dataset.ouroNote);
+            Array.prototype.forEach.call(noteDefinitions[marker.dataset.ouroNote].querySelectorAll("[data-ouro-source]"), function (nested) {
+              record.sources.add(nested.dataset.ouroSource);
+            });
+          }
+        });
+      });
+      var footers = [];
+      Object.keys(pages).forEach(function (page) {
+        var record = pages[page];
+        var footer = document.createElement("aside");
+        footer.className = "ouro-print-page-notes";
+        footer.style.left = (Number(page) * stride) + "px";
+        footer.style.top = "0px";
+        footer.dataset.ouroNotePage = page;
+        record.notes.forEach(function (id) {
+          var entry = document.createElement("div");
+          entry.className = "ouro-print-authored-note";
+          var definition = noteDefinitions[id];
+          entry.innerHTML = definition.innerHTML;
+          entry.id = id + "-ouro-page-" + page;
+          var label = document.createElement("span");
+          var ref = root.querySelector('[data-ouro-note="' + CSS.escape(id) + '"]');
+          label.textContent = "Note " + (ref ? ref.textContent : id) + ". ";
+          entry.prepend(label);
+          Array.prototype.forEach.call(entry.querySelectorAll("[id]"), function (node) {
+            node.id += "-ouro-page-" + page;
+          });
+          footer.appendChild(entry);
+        });
+        record.sources.forEach(function (key) {
+          var entry = document.createElement("p");
+          entry.appendChild(document.createTextNode("[" + key + "] "));
+          var link = document.createElement("a");
+          link.href = sources[key];
+          link.textContent = sources[key];
+          entry.appendChild(link);
+          footer.appendChild(entry);
+        });
+        footers.push(footer);
+      });
+      footers.forEach(function (footer) { noteLayer.appendChild(footer); });
+      var heights = footers.map(function (footer) { return Math.ceil(footer.getBoundingClientRect().height); });
+      var required = heights.reduce(function (max, height) { return Math.max(max, height + 12); }, 0);
+      if (required > fullHeight - 96) {
+        throw new Error("Page footnotes leave less than 96 pt for body text. Choose Endnotes or Original links, reduce text size, or use wider paper/margins.");
+      }
+      if (required <= reserved || required === 0) {
+        footers.forEach(function (footer, index) {
+          footer.style.top = (fullHeight - heights[index]) + "px";
+        });
+        Array.prototype.forEach.call(root.querySelectorAll("[data-ouro-note]"), function (ref) {
+          var page = pageIndexForRect(ref.getBoundingClientRect(), rootRect, stride);
+          ref.setAttribute("href", "#" + ref.dataset.ouroNote + "-ouro-page-" + page);
+        });
+        return;
+      }
+      reserved = required;
+    }
+    throw new Error("Page footnote layout did not converge. Choose Endnotes or Original links, or adjust the page geometry.");
   }
 
   function wrapTablesForPagination() {
@@ -227,8 +377,10 @@
     var rootRect = root.getBoundingClientRect();
     var usedPages = new Set([0]);
     var fragmentedProofIDs = [];
+    var visibilityRecords = [];
     var destinations = {};
-    Array.prototype.forEach.call(root.querySelectorAll("[id]"), function (node) {
+    var geometryRoot = root.parentNode;
+    Array.prototype.forEach.call(geometryRoot.querySelectorAll("[id]"), function (node) {
       if (!node.getBoundingClientRect) { return; }
       var rect = node.getBoundingClientRect();
       if (rect.width <= 0 && rect.height <= 0) { return; }
@@ -240,7 +392,8 @@
         y: local.y
       };
     });
-    Array.prototype.forEach.call(root.querySelectorAll("*"), function (node, index) {
+    Array.prototype.forEach.call(geometryRoot.querySelectorAll("*"), function (node, index) {
+      if (node === root || node === noteLayer) { return; }
       if (!node.getBoundingClientRect) { return; }
       var fragments = Array.prototype.filter.call(node.getClientRects(), function (rect) { return rect.width > 0 && rect.height > 0; });
       if (!fragments.length) { return; }
@@ -248,9 +401,13 @@
         return pageIndexForRect(rect, rootRect, stride);
       }))).sort(function (a, b) { return a - b; });
       pages.forEach(function (page) { usedPages.add(page); });
+      if (pages.length === 1) { visibilityRecords.push({ node: node, page: pages[0] }); }
       if (pages.length > 1) {
         fragmentedProofIDs.push(node.getAttribute("data-proof-id") || (node.tagName.toLowerCase() + "-" + index));
       }
+    });
+    visibilityRecords.forEach(function (record) {
+      record.node.dataset.ouroPrintPage = String(record.page);
     });
     var sortedPages = Array.from(usedPages).sort(function (a, b) { return a - b; });
     var pageCount = (sortedPages.length ? sortedPages[sortedPages.length - 1] : 0) + 1;
@@ -269,11 +426,17 @@
   }
 
   function applyLayout() {
+    if (applied) { return pageMetrics(); }
     cachedMetrics = null;
     document.documentElement.style.setProperty("--ouro-active-page-offset", "0px");
+    if (config.pageFootnotes) { preparePageFootnotes(); }
     splitTablesForPages();
     wrapTablesForPagination();
-    applyReferences();
+    uniquifyClonedIDs(article());
+    if (!config.pageFootnotes) { applyReferences(); }
+    applySectionBreaks();
+    if (config.pageFootnotes) { buildPageFootnotes(); }
+    applied = true;
     return pageMetrics();
   }
 
@@ -281,11 +444,18 @@
     var metrics = pageMetrics();
     var normalizedIndex = Math.max(0, Math.min(metrics.pageCount - 1, index || 0));
     document.documentElement.style.setProperty("--ouro-active-page-offset", String(normalizedIndex * metrics.pageStride) + "px");
+    if (!pageVisibilityStyle) {
+      pageVisibilityStyle = document.createElement("style");
+      document.head.appendChild(pageVisibilityStyle);
+    }
+    // WebKit's PDF text extraction can expose clipped neighboring columns. Hide
+    // whole off-page elements without reflowing the fragmented body.
+    pageVisibilityStyle.textContent = '.ouro-print-content-frame [data-ouro-print-page]:not([data-ouro-print-page="' + normalizedIndex + '"]) { visibility: hidden; }';
     var root = article();
     var frame = document.querySelector(".ouro-print-content-frame");
     var frameRect = frame ? frame.getBoundingClientRect() : root.getBoundingClientRect();
-    metrics.links = Array.prototype.map.call(root.querySelectorAll("a[href]"), function (anchor) {
-      var rect = anchor.getBoundingClientRect();
+    metrics.links = Array.prototype.flatMap.call(root.parentNode.querySelectorAll("a[href]"), function (anchor) {
+      return Array.prototype.map.call(anchor.getClientRects(), function (rect) {
       var x = rect.left - frameRect.left;
       var y = rect.top - frameRect.top;
       if (x + rect.width < 0 || x > metrics.contentWidth || y + rect.height < 0 || y > metrics.contentHeight) {
@@ -316,7 +486,8 @@
         destinationX: null,
         destinationY: null
       };
-    }).filter(Boolean);
+      }).filter(Boolean);
+    });
     return metrics;
   }
 
@@ -326,9 +497,4 @@
     showPage: showPage
   };
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", applyLayout, { once: true });
-  } else {
-    applyLayout();
-  }
 })();
