@@ -127,16 +127,19 @@ struct EditorWebView: NSViewRepresentable {
         let model: AppModel
         let externalURLOpener: (URL) -> Void
         let anchorScroller: ((String) -> Void)?
+        let printSettingsStore: PrintLayoutSettingsStore
         weak var webView: WKWebView?
 
         init(
             model: AppModel,
             externalURLOpener: @escaping (URL) -> Void = { _ = NSWorkspace.shared.open($0) },
-            anchorScroller: ((String) -> Void)? = nil
+            anchorScroller: ((String) -> Void)? = nil,
+            printSettingsStore: PrintLayoutSettingsStore = PrintLayoutSettingsStore()
         ) {
             self.model = model
             self.externalURLOpener = externalURLOpener
             self.anchorScroller = anchorScroller
+            self.printSettingsStore = printSettingsStore
         }
 
         // MARK: JS -> native
@@ -364,7 +367,7 @@ struct EditorWebView: NSViewRepresentable {
                         prepared: prepared,
                         parentWindow: window,
                         action: .print,
-                        settingsStore: PrintLayoutSettingsStore(),
+                        settingsStore: self.printSettingsStore,
                         reportError: { [weak self] _, error in
                             self?.reportPrintError(error)
                         },
@@ -415,7 +418,7 @@ struct EditorWebView: NSViewRepresentable {
                         prepared: prepared,
                         parentWindow: window,
                         action: .export(url, completion),
-                        settingsStore: PrintLayoutSettingsStore(),
+                        settingsStore: self.printSettingsStore,
                         reportError: { [weak self] _, error in
                             self?.reportPrintError(error)
                         },
@@ -449,7 +452,7 @@ struct EditorWebView: NSViewRepresentable {
                 Task { @MainActor in
                     do {
                         let renderer = PrintDocumentRenderer()
-                        let settingsStore = PrintLayoutSettingsStore()
+                        let settingsStore = self.printSettingsStore
                         let prepared = try await renderer.prepareDocument(
                             bodyHTML: body,
                             title: self.model.windowTitle,
