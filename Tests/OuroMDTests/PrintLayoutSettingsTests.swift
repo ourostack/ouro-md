@@ -13,7 +13,7 @@ final class PrintLayoutSettingsTests: XCTestCase {
         XCTAssertEqual(settings.margins.left, 54)
         XCTAssertEqual(settings.fontSize, 12)
         XCTAssertEqual(settings.lineSpacing, 1.45)
-        XCTAssertTrue(settings.includeExternalLinkReferences)
+        XCTAssertFalse(settings.includeExternalLinkReferences)
     }
 
     func testStoreRoundsTripAndClampsInvalidValues() {
@@ -23,7 +23,7 @@ final class PrintLayoutSettingsTests: XCTestCase {
             margins: PrintPageMargins(top: -12, right: 720, bottom: 0, left: 36),
             fontSize: 4,
             lineSpacing: 9,
-            includeExternalLinkReferences: false
+            includeExternalLinkReferences: true
         )
 
         settingsStore.save(saved)
@@ -35,6 +35,33 @@ final class PrintLayoutSettingsTests: XCTestCase {
         XCTAssertEqual(reloaded.margins.left, 36)
         XCTAssertEqual(reloaded.fontSize, 8)
         XCTAssertEqual(reloaded.lineSpacing, 3)
-        XCTAssertFalse(reloaded.includeExternalLinkReferences)
+        XCTAssertTrue(reloaded.includeExternalLinkReferences)
+    }
+
+    func testNormalizationFallsBackForNonFiniteValues() {
+        let settings = PrintLayoutSettings(
+            margins: PrintPageMargins(top: .infinity, right: 72, bottom: .nan, left: 36),
+            fontSize: .nan,
+            lineSpacing: .infinity,
+            includeExternalLinkReferences: false
+        ).normalized
+
+        XCTAssertEqual(settings.margins.top, 54)
+        XCTAssertEqual(settings.margins.bottom, 54)
+        XCTAssertEqual(settings.fontSize, 12)
+        XCTAssertEqual(settings.lineSpacing, 1.45)
+    }
+
+    func testValidateRejectsMarginsWithoutPrintableArea() {
+        let settings = PrintLayoutSettings(
+            margins: PrintPageMargins(top: 200, right: 200, bottom: 200, left: 200),
+            fontSize: 12,
+            lineSpacing: 1.45,
+            includeExternalLinkReferences: false
+        )
+
+        XCTAssertThrowsError(try settings.validate(for: NSSize(width: 250, height: 250))) { error in
+            XCTAssertEqual(error as? PrintLayoutSettings.LayoutError, .noPrintableArea)
+        }
     }
 }

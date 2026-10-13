@@ -9,19 +9,28 @@ struct PrintPageMargins: Equatable, Sendable {
 
     func clamped() -> Self {
         Self(
-            top: Self.clamp(top),
-            right: Self.clamp(right),
-            bottom: Self.clamp(bottom),
-            left: Self.clamp(left)
+            top: Self.clamp(top, fallback: PrintLayoutSettings.default.margins.top),
+            right: Self.clamp(right, fallback: PrintLayoutSettings.default.margins.right),
+            bottom: Self.clamp(bottom, fallback: PrintLayoutSettings.default.margins.bottom),
+            left: Self.clamp(left, fallback: PrintLayoutSettings.default.margins.left)
         )
     }
 
-    private static func clamp(_ value: Double) -> Double {
-        min(144, max(18, value))
+    static func clamp(_ value: Double, fallback: Double) -> Double {
+        guard value.isFinite else { return fallback }
+        return min(144, max(18, value))
     }
 }
 
 struct PrintLayoutSettings: Equatable, Sendable {
+    enum LayoutError: LocalizedError, Equatable {
+        case noPrintableArea
+
+        var errorDescription: String? {
+            "The selected paper size and margins leave no printable area."
+        }
+    }
+
     var margins: PrintPageMargins
     var fontSize: Double
     var lineSpacing: Double
@@ -31,14 +40,15 @@ struct PrintLayoutSettings: Equatable, Sendable {
         margins: PrintPageMargins(top: 54, right: 54, bottom: 54, left: 54),
         fontSize: 12,
         lineSpacing: 1.45,
-        includeExternalLinkReferences: true
+        includeExternalLinkReferences: false
     )
 
     var normalized: Self {
-        Self(
+        let defaults = Self.default
+        return Self(
             margins: margins.clamped(),
-            fontSize: min(24, max(8, fontSize)),
-            lineSpacing: min(3, max(1, lineSpacing)),
+            fontSize: Self.clamp(fontSize, range: 8...24, fallback: defaults.fontSize),
+            lineSpacing: Self.clamp(lineSpacing, range: 1...3, fallback: defaults.lineSpacing),
             includeExternalLinkReferences: includeExternalLinkReferences
         )
     }
@@ -53,6 +63,20 @@ struct PrintLayoutSettings: Equatable, Sendable {
         copy.isHorizontallyCentered = false
         copy.isVerticallyCentered = false
         return copy
+    }
+
+    func validate(for paperSize: NSSize) throws {
+        let normalized = normalized
+        let printableWidth = paperSize.width - normalized.margins.left - normalized.margins.right
+        let printableHeight = paperSize.height - normalized.margins.top - normalized.margins.bottom
+        guard printableWidth > 0, printableHeight > 0 else {
+            throw LayoutError.noPrintableArea
+        }
+    }
+
+    private static func clamp(_ value: Double, range: ClosedRange<Double>, fallback: Double) -> Double {
+        guard value.isFinite else { return fallback }
+        return min(range.upperBound, max(range.lowerBound, value))
     }
 }
 
@@ -115,14 +139,4 @@ extension UserDefaults: PrintLayoutPreferenceStore {
     func bool(forKey key: String) -> Bool? {
         object(forKey: key) as? Bool
     }
-}
-
-final class InMemoryPrintLayoutPreferenceStore: PrintLayoutPreferenceStore {
-    private var doubles: [String: Double] = [:]
-    private var bools: [String: Bool] = [:]
-
-    func double(forKey key: String) -> Double? { doubles[key] }
-    func bool(forKey key: String) -> Bool? { bools[key] }
-    func set(_ value: Double, forKey key: String) { doubles[key] = value }
-    func set(_ value: Bool, forKey key: String) { bools[key] = value }
 }

@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import PDFKit
 import WebKit
 
 @MainActor
@@ -37,6 +38,7 @@ final class PrintDocumentRenderer {
         let script = scriptProvider()
         guard !script.isEmpty else { throw RenderError.missingScript }
         let normalized = settings.normalized
+        try normalized.validate(for: printInfo.paperSize)
         let sizedPrintInfo = normalized.applying(to: printInfo)
         let document = PreparedPrintDocument(
             bodyHTML: bodyHTML,
@@ -54,7 +56,7 @@ final class PrintDocumentRenderer {
 
 @MainActor
 final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
-    private static var inFlight: Set<ObjectIdentifier> = []
+    private static var inFlight: [ObjectIdentifier: PreparedPrintDocument] = [:]
 
     private let bodyHTML: String
     private let title: String
@@ -65,6 +67,16 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     let webView: WKWebView
     private let hostWindow: NSWindow
     private var loadContinuation: CheckedContinuation<Void, Error>?
+    private(set) var layoutMetrics = PrintLayoutMetrics(
+        contentWidth: 0,
+        contentHeight: 0,
+        pageGap: 0,
+        pageStride: 0,
+        totalWidth: 0,
+        pageCount: 1,
+        fragmentedProofIDs: [],
+        endnoteLinks: []
+    )
 
     init(
         bodyHTML: String,
@@ -100,21 +112,17 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
 
     func load() async throws {
         retainHold()
-        let html = PrintLayoutHTMLDocument.wrap(body: bodyHTML, title: title, settings: settings, script: script)
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            loadContinuation = continuation
-            webView.loadHTMLString(html, baseURL: baseURL)
-        }
+        try await loadHTML(using: settings)
     }
 
-    func reload(with updated: PrintLayoutSettings) {
+    func reload(with updated: PrintLayoutSettings) async throws {
         settings = updated.normalized
+        try settings.validate(for: printInfo.paperSize)
         printInfo = settings.applying(to: printInfo)
         let canvasSize = Self.editorCanvasSize(for: settings, paperSize: printInfo.paperSize)
         webView.frame = NSRect(origin: .zero, size: canvasSize)
         hostWindow.setContentSize(canvasSize)
-        let html = PrintLayoutHTMLDocument.wrap(body: bodyHTML, title: title, settings: settings, script: script)
-        webView.loadHTMLString(html, baseURL: baseURL)
+        try await loadHTML(using: settings)
     }
 
     func writePDF(to url: URL) async throws {
@@ -122,19 +130,13 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         try data.write(to: url, options: .atomic)
     }
 
-    func makePrintOperation() -> NSPrintOperation {
-        let operation = webView.printOperation(with: printInfo)
-        operation.view?.frame = webView.bounds
-        return operation
-    }
-
     func releaseHold() {
         hostWindow.orderOut(nil)
-        Self.inFlight.remove(ObjectIdentifier(self))
+        Self.inFlight.removeValue(forKey: ObjectIdentifier(self))
     }
 
     private func retainHold() {
-        Self.inFlight.insert(ObjectIdentifier(self))
+        Self.inFlight[ObjectIdentifier(self)] = self
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -161,7 +163,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     private func finishLoadAfterLayout() {
         guard let continuation = loadContinuation else { return }
         webView.evaluateJavaScript(
-            "(function(){ if (window.OuroPrintLayout && typeof window.OuroPrintLayout.apply === 'function') { window.OuroPrintLayout.apply(); } var article = document.querySelector('.markdown-body'); return Math.max(document.documentElement.scrollHeight || 0, document.body.scrollHeight || 0, article ? article.scrollHeight : 0); })();"
+            "(function(){ if (!window.OuroPrintLayout || typeof window.OuroPrintLayout.apply !== 'function') { return null; } return window.OuroPrintLayout.apply(); })();"
         ) { [weak self] result, error in
             guard let self else { return }
             if let error {
@@ -169,13 +171,17 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
                 continuation.resume(throwing: PrintDocumentRenderer.RenderError.loadFailed(error))
                 return
             }
-            let measuredHeight = (result as? NSNumber)?.doubleValue ?? Double(self.printInfo.paperSize.height)
-            let height = max(self.webView.frame.height, CGFloat(measuredHeight))
+            guard let metrics = Self.decodeMetrics(result) else {
+                self.loadContinuation = nil
+                continuation.resume(throwing: PrintDocumentRenderer.RenderError.pdfFailed)
+                return
+            }
+            self.layoutMetrics = metrics
             self.webView.frame = NSRect(
                 x: 0,
                 y: 0,
-                width: self.webView.frame.width,
-                height: height
+                width: printInfo.paperSize.width,
+                height: printInfo.paperSize.height
             )
             self.hostWindow.setContentSize(self.webView.frame.size)
             self.loadContinuation = nil
@@ -184,15 +190,42 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     }
 
     func createPDFData() async throws -> Data {
-        let source = try await snapshotSourcePDF()
+        var pagePDFs: [Data] = []
+        for index in 0..<layoutMetrics.pageCount {
+            try await activatePage(index)
+            pagePDFs.append(try await snapshotVisiblePagePDF())
+        }
         return try PrintPDFPaginator.paginate(
-            sourcePDF: source,
+            sourcePages: pagePDFs,
             paperSize: printInfo.paperSize,
-            margins: settings.margins
+            margins: settings.margins,
+            metrics: layoutMetrics
         )
     }
 
-    private func snapshotSourcePDF() async throws -> Data {
+    func makePrintOperation(with pdf: PDFDocument) -> NSPrintOperation {
+        pdf.printOperation(for: printInfo, scalingMode: .pageScaleNone, autoRotate: false)
+            ?? NSPrintOperation(view: NSView(), printInfo: printInfo)
+    }
+
+    static var retainedCountForTesting: Int { inFlight.count }
+
+    private func activatePage(_ index: Int) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            webView.evaluateJavaScript(
+                "(function(){ return window.OuroPrintLayout && typeof window.OuroPrintLayout.showPage === 'function' ? window.OuroPrintLayout.showPage(\(index)) : null; })();"
+            ) { _, error in
+                if let error {
+                    continuation.resume(throwing: PrintDocumentRenderer.RenderError.loadFailed(error))
+                } else {
+                    continuation.resume(returning: ())
+                }
+            }
+        }
+        try await Task.sleep(nanoseconds: 30_000_000)
+    }
+
+    private func snapshotVisiblePagePDF() async throws -> Data {
         let configuration = WKPDFConfiguration()
         configuration.rect = webView.bounds
         return try await withCheckedThrowingContinuation { continuation in
@@ -209,11 +242,51 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         }
     }
 
+    private func loadHTML(using settings: PrintLayoutSettings) async throws {
+        let html = PrintLayoutHTMLDocument.wrap(body: bodyHTML, title: title, settings: settings, script: script)
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            loadContinuation = continuation
+            webView.loadHTMLString(html, baseURL: baseURL)
+        }
+    }
+
     private static func editorCanvasSize(for settings: PrintLayoutSettings, paperSize: NSSize) -> NSSize {
-        let margins = settings.normalized.margins
-        return NSSize(
-            width: max(72, paperSize.width - margins.left - margins.right),
-            height: max(72, paperSize.height - margins.top - margins.bottom)
+        paperSize
+    }
+
+    private static func decodeMetrics(_ result: Any?) -> PrintLayoutMetrics? {
+        guard let dictionary = result as? [String: Any],
+              let contentWidth = dictionary["contentWidth"] as? NSNumber,
+              let contentHeight = dictionary["contentHeight"] as? NSNumber,
+              let pageGap = dictionary["pageGap"] as? NSNumber,
+              let pageStride = dictionary["pageStride"] as? NSNumber,
+              let totalWidth = dictionary["totalWidth"] as? NSNumber,
+              let pageCount = dictionary["pageCount"] as? NSNumber else { return nil }
+        let links = (dictionary["endnoteLinks"] as? [[String: Any]] ?? []).compactMap { link -> PrintLayoutMetrics.EndnoteLink? in
+            guard let url = link["url"] as? String,
+                  let pageIndex = link["pageIndex"] as? NSNumber,
+                  let x = link["x"] as? NSNumber,
+                  let y = link["y"] as? NSNumber,
+                  let width = link["width"] as? NSNumber,
+                  let height = link["height"] as? NSNumber else { return nil }
+            return PrintLayoutMetrics.EndnoteLink(
+                url: url,
+                pageIndex: pageIndex.intValue,
+                x: x.doubleValue,
+                y: y.doubleValue,
+                width: width.doubleValue,
+                height: height.doubleValue
+            )
+        }
+        return PrintLayoutMetrics(
+            contentWidth: contentWidth.doubleValue,
+            contentHeight: contentHeight.doubleValue,
+            pageGap: pageGap.doubleValue,
+            pageStride: pageStride.doubleValue,
+            totalWidth: totalWidth.doubleValue,
+            pageCount: pageCount.intValue,
+            fragmentedProofIDs: dictionary["fragmentedProofIDs"] as? [String] ?? [],
+            endnoteLinks: links
         )
     }
 }
