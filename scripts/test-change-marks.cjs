@@ -18,6 +18,11 @@ function reconcile(before, after, external = true) {
 const rows = (values) => values.map((signature) => ({ signature, marked: false, deletion: false, seen: false }));
 const marked = (values) => values.flatMap((value, index) => value.marked ? [index] : []);
 
+function compare(before, after) {
+  assert.equal(typeof context.window.OuroChangeMarks?.compare, "function", "passage comparison exists");
+  return JSON.parse(JSON.stringify(context.window.OuroChangeMarks.compare(before, after)));
+}
+
 test("independent external edits leave unchanged passages unmarked", () => {
   const result = reconcile(rows(["one", "two", "three", "four"]), ["ONE", "two", "THREE", "four"]);
   assert.deepEqual(marked(result), [0, 2]);
@@ -60,6 +65,17 @@ test("deletions mark their gap at the start, end and empty document", () => {
 test("duplicate passages remain matched in order", () => {
   const after = reconcile(rows(["same", "old", "same", "tail"]), ["same", "new", "same", "tail"]);
   assert.deepEqual(marked(after), [1]);
+});
+
+test("known baseline comparison marks only changed passages", () => {
+  const result = compare(["one", "two", "three", "four"], ["one", "TWO", "three", "four"]);
+  assert.deepEqual(marked(result), [1]);
+  assert.equal(result[0].marked, false);
+  assert.equal(result[2].marked, false);
+});
+
+test("identical baseline comparison clears review with no marks", () => {
+  assert.deepEqual(compare(["same", "two"], ["same", "two"]), []);
 });
 
 test("large documents retain unchanged passages between distant edits", () => {

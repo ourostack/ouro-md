@@ -1,5 +1,5 @@
 // Bridge between the native app and the Vditor instant-rendering editor.
-// Native -> JS: window.ouro.{setValue,getValue,getHTML,setTheme,setMode,setOutline,exec,markSaved,focus}
+// Native -> JS: window.ouro.{setValue,reloadValue,applyEdit,showChangesSince,clearChangeReview,getValue,getHTML,setTheme,setMode,setOutline,exec,markSaved,focus}
 // JS -> Native: window.webkit.messageHandlers.ouro.postMessage({type,...})
 (function () {
   "use strict";
@@ -38,6 +38,12 @@
       if (extra) { for (var k in extra) { msg[k] = extra[k]; } }
       window.webkit.messageHandlers.ouro.postMessage(msg);
     } catch (e) { /* not running inside the app */ }
+  }
+
+  function perfEvent(name, detail) {
+    var hooks = window.__ouroPerfHooks;
+    if (!hooks || typeof hooks.event !== "function") { return; }
+    try { hooks.event(name, detail || {}); } catch (e) { /* measurement must stay optional */ }
   }
 
   function themeBackgroundCSS(background) {
@@ -1584,6 +1590,7 @@
   }
 
   function postRender() {
+    var started = Date.now();
     if (writingToolsActive) { return; }
     try { restoreTableCellSpaces(true); } catch (e) { /* never block a render */ }
     rewriteRelativeImages();
@@ -1596,6 +1603,7 @@
     resetTableScrollIfNeeded();
     resetNewTableScroll(document);
     changeMarks.update();
+    perfEvent("postRender", { durationMs: Date.now() - started });
   }
 
   // Mark the break as already rendered so Vditor neither re-renders nor serializes it.
@@ -2004,10 +2012,21 @@
   }
 
 
+  var postRenderQueued = false, postRenderNeedsSecondPass = false;
   function schedulePostRender() {
+    perfEvent("schedulePostRender", { alreadyQueued: postRenderQueued });
+    postRenderNeedsSecondPass = true;
+    if (postRenderQueued) { return; }
+    postRenderQueued = true;
     requestAnimationFrame(function () {
       postRender();
-      requestAnimationFrame(postRender);
+      requestAnimationFrame(function () {
+        if (postRenderNeedsSecondPass) {
+          postRenderNeedsSecondPass = false;
+          postRender();
+        }
+        postRenderQueued = false;
+      });
     });
   }
 
@@ -2421,6 +2440,13 @@
         restore();
         try { if (beforeText) { flashChange(beforeText, true); } } catch (e) { /* never break an edit */ }
       });
+    },
+    showChangesSince: function (md) {
+      if (md == null) { return false; }
+      return changeMarks.compareMarkdown(md);
+    },
+    clearChangeReview: function () {
+      changeMarks.clearReview();
     },
     getValue: function () {
       // Repair lute's dropped table-cell boundary spaces before serializing, so
