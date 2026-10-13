@@ -214,6 +214,13 @@
       return retainMarked(reconcile(trackedRows(beforeSignatures), afterSignatures, true));
     }
 
+    function seedRows(current) {
+      if (rows.length) {
+        return rows.map(function (row) { return Object.assign({}, row); });
+      }
+      return current ? trackedRows(current.signatures) : [];
+    }
+
     function update(scrolled) {
       var started = Date.now();
       if (!overlay || !nextButton || pending) { return; }
@@ -297,8 +304,8 @@
     return {
       update: function () { schedule(false); },
       begin: function (md) {
+        var current = passages();
         if (pending && activeTicket) {
-          var current = passages();
           if (current && activeTicket.target !== null) {
             rows = retainMarked(reconcile(activeTicket.rows, activeTicket.target, true));
             if (rows.length) { rows = retainMarked(reconcile(rows, current.signatures, false)); }
@@ -309,7 +316,7 @@
         pending = true;
         activeTicket = {
           generation: ++generation,
-          rows: rows.map(function (row) { return Object.assign({}, row); }),
+          rows: seedRows(current),
           target: options.renderMarkdown ? markdownSignatures(md) : null
         };
         return activeTicket;
