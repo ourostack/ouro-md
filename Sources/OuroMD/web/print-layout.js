@@ -37,7 +37,7 @@
     if (!anchor || shouldSkipReference(anchor)) { return null; }
     try {
       var url = new URL(anchor.getAttribute("href"), document.baseURI || window.location.href);
-      if (!["http:", "https:"].includes(url.protocol)) { return null; }
+      if (!["http:", "https:", "file:", "mailto:", "tel:"].includes(url.protocol)) { return null; }
       return url.href;
     } catch (error) {
       return null;

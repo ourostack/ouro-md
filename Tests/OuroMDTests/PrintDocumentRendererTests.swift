@@ -5,6 +5,20 @@ import XCTest
 
 @MainActor
 final class PrintDocumentRendererTests: XCTestCase {
+    func testEndnotesIncludeLocalAndRelativeCitationTargets() async throws {
+        let body = "<p>Sources: <a href=\"https://example.com/source\">Web source</a>, <a href=\"file:///tmp/local-source.md\">Local source</a>, <a href=\"relative-source.md\">Relative source</a>.</p>"
+        var settings = PrintLayoutSettings.default
+        settings.includeExternalLinkReferences = true
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: body, title: "Source references", baseURL: URL(fileURLWithPath: "/tmp/citation-fixture/", isDirectory: true), settings: settings)
+        defer { prepared.releaseHold() }
+        let data = try await prepared.createPDFData()
+        let pdf = try XCTUnwrap(PDFDocument(data: data))
+        let text = (0..<pdf.pageCount).compactMap { pdf.page(at: $0)?.string }.joined(separator: "\n")
+        XCTAssertTrue(text.contains("https://example.com/source"))
+        XCTAssertTrue(text.contains("file:///tmp/local-source.md"))
+        XCTAssertTrue(text.contains("file:///tmp/citation-fixture/relative-source.md"))
+    }
+
     func testA4PaperFlowsThroughLayoutAndPDFGeometry() async throws {
         let info = NSPrintInfo()
         info.paperSize = NSSize(width: 595, height: 842)
