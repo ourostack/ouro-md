@@ -129,7 +129,10 @@ if hasFlag("--renderprobe") {
 
 if hasFlag("--performanceprobe") {
     MainActor.assumeIsolated {
-        PerformanceProbe().run()
+        PerformanceProbe(
+            markdownPath: argValue("--performanceprobe-file"),
+            webRootPath: argValue("--performanceprobe-web-root")
+        ).run()
     }
 }
 

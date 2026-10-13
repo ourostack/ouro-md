@@ -74,6 +74,11 @@
   applyThemeBackground(initialTheme.background || "");
 
   function setDirty(d) {
+    if (d === true) {
+      dirty = true;
+      post("dirty", { dirty: true });
+      return;
+    }
     if (d === dirty) { return; }
     dirty = d;
     post("dirty", { dirty: d });
@@ -2012,21 +2017,11 @@
   }
 
 
-  var postRenderQueued = false, postRenderNeedsSecondPass = false;
   function schedulePostRender() {
-    perfEvent("schedulePostRender", { alreadyQueued: postRenderQueued });
-    postRenderNeedsSecondPass = true;
-    if (postRenderQueued) { return; }
-    postRenderQueued = true;
+    perfEvent("schedulePostRender", { alreadyQueued: false });
     requestAnimationFrame(function () {
       postRender();
-      requestAnimationFrame(function () {
-        if (postRenderNeedsSecondPass) {
-          postRenderNeedsSecondPass = false;
-          postRender();
-        }
-        postRenderQueued = false;
-      });
+      requestAnimationFrame(postRender);
     });
   }
 
