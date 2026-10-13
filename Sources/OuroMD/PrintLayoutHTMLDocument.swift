@@ -67,18 +67,18 @@ enum PrintLayoutHTMLDocument {
           background: #ffffff;
         }
         :root {
-          --ouro-page-width: 612pt;
-          --ouro-page-height: 792pt;
-          --ouro-page-content-width: \(cssLength(contentWidth))pt;
-          --ouro-page-content-height: \(cssLength(contentHeight))pt;
-          --ouro-page-gap: 24pt;
+          --ouro-page-width: 612px;
+          --ouro-page-height: 792px;
+          --ouro-page-content-width: \(cssLength(contentWidth))px;
+          --ouro-page-content-height: \(cssLength(contentHeight))px;
+          --ouro-page-gap: 24px;
           --ouro-active-page: 0;
         }
         body {
           margin: 0;
           background: #ffffff;
           color: #111111;
-          font: \(cssLength(normalized.fontSize))pt/\(cssNumber(normalized.lineSpacing)) Georgia, "Times New Roman", serif;
+          font: \(cssLength(normalized.fontSize))px/\(cssNumber(normalized.lineSpacing)) Georgia, "Times New Roman", serif;
         }
         .ouro-print-viewport {
           width: var(--ouro-page-width);
@@ -98,7 +98,7 @@ enum PrintLayoutHTMLDocument {
           width: var(--ouro-page-width);
           max-width: var(--ouro-page-width);
           margin: 0;
-          padding: \(cssLength(normalized.margins.top))pt \(cssLength(normalized.margins.right))pt \(cssLength(normalized.margins.bottom))pt \(cssLength(normalized.margins.left))pt;
+          padding: \(cssLength(normalized.margins.top))px \(cssLength(normalized.margins.right))px \(cssLength(normalized.margins.bottom))px \(cssLength(normalized.margins.left))px;
           overflow-wrap: break-word;
           word-break: normal;
           hanging-punctuation: first last;

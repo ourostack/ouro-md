@@ -22,6 +22,7 @@ final class PrintLayoutAccessoryController: NSViewController {
     }
 
     var onSettingsChanged: ((PrintLayoutSettings) -> Void)?
+    var onValidationChanged: ((String?) -> Void)?
 
     private let settingsStore: PrintLayoutSettingsStore
     private(set) var currentSettings: PrintLayoutSettings
@@ -153,12 +154,12 @@ final class PrintLayoutAccessoryController: NSViewController {
     }
 
     private func syncView(from settings: PrintLayoutSettings) {
-        topField.stringValue = numberString(settings.margins.top)
-        rightField.stringValue = numberString(settings.margins.right)
-        bottomField.stringValue = numberString(settings.margins.bottom)
-        leftField.stringValue = numberString(settings.margins.left)
-        fontSizeField.stringValue = numberString(settings.fontSize)
-        lineSpacingField.stringValue = lineSpacingString(settings.lineSpacing)
+        topField.stringValue = decimalString(settings.margins.top)
+        rightField.stringValue = decimalString(settings.margins.right)
+        bottomField.stringValue = decimalString(settings.margins.bottom)
+        leftField.stringValue = decimalString(settings.margins.left)
+        fontSizeField.stringValue = decimalString(settings.fontSize)
+        lineSpacingField.stringValue = decimalString(settings.lineSpacing)
         externalLinksCheckbox.state = settings.includeExternalLinkReferences ? .on : .off
     }
 
@@ -166,6 +167,7 @@ final class PrintLayoutAccessoryController: NSViewController {
         validationMessage = message
         validationLabel.stringValue = message ?? ""
         validationLabel.isHidden = (message == nil)
+        onValidationChanged?(message)
     }
 
     @objc private func fieldChanged(_ sender: NSTextField) {
@@ -200,11 +202,12 @@ final class PrintLayoutAccessoryController: NSViewController {
         return parsed
     }
 
-    private func numberString(_ value: Double) -> String {
-        String(format: "%.0f", value)
-    }
-
-    private func lineSpacingString(_ value: Double) -> String {
-        String(format: "%.2f", value)
+    private func decimalString(_ value: Double) -> String {
+        if value.rounded() == value {
+            return String(format: "%.0f", value)
+        }
+        let raw = String(format: "%.2f", value)
+        return raw.replacingOccurrences(of: #"(\.\d*?)0+$"#, with: "$1", options: .regularExpression)
+            .replacingOccurrences(of: #"\.$"#, with: "", options: .regularExpression)
     }
 }

@@ -28,6 +28,12 @@ final class PrintDocumentRendererTests: XCTestCase {
         }
 
         XCTAssertGreaterThan(document.pageCount, 2)
+        let pageStrings = (0..<document.pageCount).compactMap { document.page(at: $0)?.string ?? "" }
+        XCTAssertEqual(pageStrings.count, document.pageCount)
+        XCTAssertTrue(pageStrings.allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
+        XCTAssertEqual(try XCTUnwrap(Self.fontSize(of: "Overview with", in: document.page(at: 0))), 12, accuracy: 0.5)
+        XCTAssertEqual(try XCTUnwrap(Self.fontSize(of: "Printable proof", in: document.page(at: 0))), 24, accuracy: 0.75)
+        XCTAssertEqual(try XCTUnwrap(Self.bounds(of: "Printable proof", in: document.page(at: 0))).minX, 54, accuracy: 0.75)
         XCTAssertEqual(prepared.layoutMetrics.fragmentedProofIDs, [])
         XCTAssertEqual(prepared.layoutMetrics.endnoteLinks.map(\.url).sorted(), [
             "https://example.com/code-link",
@@ -40,7 +46,7 @@ final class PrintDocumentRendererTests: XCTestCase {
         XCTAssertTrue(annotationURLs.contains("https://example.com/repeated?query=1&value=2"))
         XCTAssertTrue(annotationURLs.contains("https://example.com/code-link"))
         XCTAssertFalse(annotationURLs.contains("https://example.com/image-only"))
-        let fullText = (0..<document.pageCount).compactMap { document.page(at: $0)?.string }.joined(separator: "\n")
+        let fullText = pageStrings.joined(separator: "\n")
         XCTAssertTrue(fullText.contains("x"))
         XCTAssertTrue(fullText.contains("y + z"))
         XCTAssertTrue(fullText.contains("Rendered diagram"))
@@ -90,8 +96,13 @@ final class PrintDocumentRendererTests: XCTestCase {
         let spaciousDocument = try XCTUnwrap(PDFDocument(data: spaciousData))
         let compactTitleBounds = try XCTUnwrap(Self.bounds(of: "Printable proof", in: compactDocument.page(at: 0)))
         let spaciousTitleBounds = try XCTUnwrap(Self.bounds(of: "Printable proof", in: spaciousDocument.page(at: 0)))
+        let spaciousBodyFont = try XCTUnwrap(Self.fontSize(of: "Overview with", in: spaciousDocument.page(at: 0)))
+        let spaciousHeadingFont = try XCTUnwrap(Self.fontSize(of: "Printable proof", in: spaciousDocument.page(at: 0)))
 
         XCTAssertGreaterThan(spaciousTitleBounds.minX, compactTitleBounds.minX)
+        XCTAssertEqual(spaciousTitleBounds.minX, 96, accuracy: 1.0)
+        XCTAssertEqual(spaciousBodyFont, 16, accuracy: 0.75)
+        XCTAssertEqual(spaciousHeadingFont, 32, accuracy: 0.75)
         XCTAssertGreaterThan(spaciousDocument.pageCount, compactDocument.pageCount)
     }
 
@@ -123,6 +134,16 @@ final class PrintDocumentRendererTests: XCTestCase {
         guard let page, let text = page.string, let range = text.range(of: needle) else { return nil }
         let nsRange = NSRange(range, in: text)
         return page.selection(for: nsRange)?.bounds(for: page)
+    }
+
+    private static func fontSize(of needle: String, in page: PDFPage?) -> Double? {
+        guard let page,
+              let attributed = page.attributedString,
+              let text = page.string,
+              let range = text.range(of: needle) else { return nil }
+        let nsRange = NSRange(range, in: text)
+        let attributes = attributed.attributes(at: nsRange.location, effectiveRange: nil)
+        return (attributes[.font] as? NSFont).map { Double($0.pointSize) }
     }
 
     private static func writeEvidenceIfRequested(

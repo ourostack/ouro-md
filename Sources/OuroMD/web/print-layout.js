@@ -140,7 +140,14 @@
     var pageGap = toFiniteNumber(Number(config.pageGap), DEFAULT_GAP);
     var rootRect = root.getBoundingClientRect();
     var stride = contentWidth + pageGap;
-    var totalWidth = Math.max(root.scrollWidth, pageWidth);
+    var maxRight = 0;
+    Array.prototype.forEach.call(root.querySelectorAll("*"), function (node) {
+      if (!node.getBoundingClientRect) { return; }
+      var rect = node.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) { return; }
+      maxRight = Math.max(maxRight, rect.right - rootRect.left);
+    });
+    var totalWidth = Math.max(pageWidth, maxRight);
     var pageCount = Math.max(1, Math.ceil((totalWidth + 1) / stride));
     var pageOffsets = Array.apply(null, Array(pageCount)).map(function (_, index) { return index * stride; });
     var fragmentedProofIDs = Array.prototype.map.call(root.querySelectorAll("[data-proof-id]"), function (node) {
