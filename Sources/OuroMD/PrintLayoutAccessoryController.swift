@@ -35,7 +35,7 @@ final class PrintLayoutAccessoryController: NSViewController {
     private let leftField = NSTextField(string: "")
     private let fontSizeField = NSTextField(string: "")
     private let lineSpacingField = NSTextField(string: "")
-    private let externalLinksCheckbox = NSButton(checkboxWithTitle: "Number external links at the end", target: nil, action: nil)
+    private let externalLinksCheckbox = NSButton(checkboxWithTitle: "Endnotes for links, including local paths", target: nil, action: nil)
     private let validationLabel = NSTextField(labelWithString: "")
     private let pageSetupButton = NSButton(title: "Page Setup…", target: nil, action: nil)
 
@@ -64,7 +64,7 @@ final class PrintLayoutAccessoryController: NSViewController {
 
         externalLinksCheckbox.target = self
         externalLinksCheckbox.action = #selector(checkboxChanged(_:))
-        externalLinksCheckbox.setAccessibilityLabel("Number external links at the end")
+        externalLinksCheckbox.setAccessibilityLabel("Endnotes for links, including local paths")
 
         validationLabel.textColor = .systemRed
         validationLabel.lineBreakMode = .byWordWrapping

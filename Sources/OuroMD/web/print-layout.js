@@ -98,7 +98,7 @@
     var heading = document.createElement("h2");
     heading.id = headingID;
     heading.dataset.ouroPrintGenerated = "true";
-    heading.textContent = "External links";
+    heading.textContent = "Link sources (endnotes)";
     section.appendChild(heading);
 
     var list = document.createElement("ol");
