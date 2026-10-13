@@ -9,6 +9,8 @@ final class PrintDocumentRenderer {
         case missingScript
         case loadFailed(Error)
         case pdfFailed
+        case superseded
+        case unavailablePrintOperation
 
         var errorDescription: String? {
             switch self {
@@ -18,6 +20,10 @@ final class PrintDocumentRenderer {
                 return error.localizedDescription
             case .pdfFailed:
                 return "The print preview could not be rendered as PDF."
+            case .superseded:
+                return "The print preview request was superseded by a newer update."
+            case .unavailablePrintOperation:
+                return "The system could not create a print operation for the prepared PDF."
             }
         }
     }
@@ -48,8 +54,13 @@ final class PrintDocumentRenderer {
             script: script,
             printInfo: sizedPrintInfo
         )
-        try await document.load()
-        return document
+        do {
+            try await document.load()
+            return document
+        } catch {
+            document.releaseHold()
+            throw error
+        }
     }
 
 }
@@ -67,6 +78,8 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     let webView: WKWebView
     private let hostWindow: NSWindow
     private var loadContinuation: CheckedContinuation<Void, Error>?
+    private var currentNavigation: WKNavigation?
+    private var loadGeneration = 0
     private(set) var layoutMetrics = PrintLayoutMetrics(
         contentWidth: 0,
         contentHeight: 0,
@@ -140,39 +153,47 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        guard navigation === currentNavigation else { return }
+        let generation = loadGeneration
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
-            self?.finishLoadAfterLayout()
+            self?.finishLoadAfterLayout(navigation: navigation, generation: generation)
         }
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        failLoad(error)
+        failLoad(navigation: navigation, error: error)
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        failLoad(error)
+        failLoad(navigation: navigation, error: error)
     }
 
-    private func failLoad(_ error: Error) {
+    private func failLoad(navigation: WKNavigation?, error: Error) {
+        guard navigation == nil || navigation === currentNavigation else { return }
         if let continuation = loadContinuation {
             loadContinuation = nil
+            currentNavigation = nil
             continuation.resume(throwing: PrintDocumentRenderer.RenderError.loadFailed(error))
         }
     }
 
-    private func finishLoadAfterLayout() {
+    private func finishLoadAfterLayout(navigation: WKNavigation?, generation: Int) {
         guard let continuation = loadContinuation else { return }
+        guard generation == loadGeneration, navigation === currentNavigation else { return }
         webView.evaluateJavaScript(
             "(function(){ if (!window.OuroPrintLayout || typeof window.OuroPrintLayout.apply !== 'function') { return null; } return window.OuroPrintLayout.apply(); })();"
         ) { [weak self] result, error in
             guard let self else { return }
+            guard generation == self.loadGeneration, navigation === self.currentNavigation else { return }
             if let error {
                 self.loadContinuation = nil
+                self.currentNavigation = nil
                 continuation.resume(throwing: PrintDocumentRenderer.RenderError.loadFailed(error))
                 return
             }
             guard let metrics = Self.decodeMetrics(result) else {
                 self.loadContinuation = nil
+                self.currentNavigation = nil
                 continuation.resume(throwing: PrintDocumentRenderer.RenderError.pdfFailed)
                 return
             }
@@ -185,14 +206,19 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
             )
             self.hostWindow.setContentSize(self.webView.frame.size)
             self.loadContinuation = nil
+            self.currentNavigation = nil
             continuation.resume()
         }
     }
 
     func createPDFData() async throws -> Data {
+        let generation = loadGeneration
         var pagePDFs: [Data] = []
         for index in 0..<layoutMetrics.pageCount {
+            try Task.checkCancellation()
+            guard generation == loadGeneration else { throw PrintDocumentRenderer.RenderError.superseded }
             try await activatePage(index)
+            guard generation == loadGeneration else { throw PrintDocumentRenderer.RenderError.superseded }
             pagePDFs.append(try await snapshotVisiblePagePDF())
         }
         return try PrintPDFPaginator.paginate(
@@ -203,9 +229,11 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         )
     }
 
-    func makePrintOperation(with pdf: PDFDocument) -> NSPrintOperation {
-        pdf.printOperation(for: printInfo, scalingMode: .pageScaleNone, autoRotate: false)
-            ?? NSPrintOperation(view: NSView(), printInfo: printInfo)
+    func makePrintOperation(with pdf: PDFDocument) throws -> NSPrintOperation {
+        guard let operation = pdf.printOperation(for: printInfo, scalingMode: .pageScaleNone, autoRotate: false) else {
+            throw PrintDocumentRenderer.RenderError.unavailablePrintOperation
+        }
+        return operation
     }
 
     static var retainedCountForTesting: Int { inFlight.count }
@@ -244,9 +272,23 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
 
     private func loadHTML(using settings: PrintLayoutSettings) async throws {
         let html = PrintLayoutHTMLDocument.wrap(body: bodyHTML, title: title, settings: settings, script: script)
+        loadGeneration += 1
+        let generation = loadGeneration
+        if let continuation = loadContinuation {
+            loadContinuation = nil
+            currentNavigation = nil
+            continuation.resume(throwing: PrintDocumentRenderer.RenderError.superseded)
+        }
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             loadContinuation = continuation
-            webView.loadHTMLString(html, baseURL: baseURL)
+            currentNavigation = webView.loadHTMLString(html, baseURL: baseURL)
+            guard generation == loadGeneration else {
+                let leaked = continuation
+                loadContinuation = nil
+                currentNavigation = nil
+                leaked.resume(throwing: PrintDocumentRenderer.RenderError.superseded)
+                return
+            }
         }
     }
 

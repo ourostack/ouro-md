@@ -42,6 +42,9 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     private let cancelButton = NSButton(title: "Cancel", target: nil, action: nil)
     private var previewTask: Task<Void, Never>?
     private var currentPreviewData: Data?
+    private var completionDelivered = false
+    private var sessionFinished = false
+    private var printOperationRunning = false
 
     init(
         prepared: PreparedPrintDocument,
@@ -67,6 +70,9 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         controls.onSettingsChanged = { [weak self] updated in
             self?.schedulePreviewRefresh(using: updated)
         }
+        controls.onValidationChanged = { [weak self] _ in
+            self?.updatePrimaryEnabled(self?.currentPreviewData != nil)
+        }
         buildPanel()
     }
 
@@ -80,7 +86,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     static var activeCountForTesting: Int { active.count }
 
     func windowWillClose(_ notification: Notification) {
-        finishSession()
+        completeCancellationIfNeeded()
     }
 
     private func retainSession() {
@@ -88,6 +94,8 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     }
 
     private func finishSession() {
+        guard !sessionFinished else { return }
+        sessionFinished = true
         previewTask?.cancel()
         previewTask = nil
         prepared.releaseHold()
@@ -198,7 +206,9 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                 self.updateStatus("Preview ready")
                 self.updatePrimaryEnabled(true)
             } catch {
-                guard !Task.isCancelled else { return }
+                if Task.isCancelled { return }
+                if case PrintDocumentRenderer.RenderError.superseded = error { return }
+                if error is CancellationError { return }
                 self.currentPreviewData = nil
                 self.previewView.document = nil
                 self.updateStatus(error.localizedDescription)
@@ -210,15 +220,12 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
 
     @objc private func cancelPressed(_ sender: Any?) {
         endSheet()
-        if case let .export(_, completion) = action {
-            completion(.success(false))
-        }
-        telemetry("ouro_md_print_cancelled", ["code": .string("cancelled")])
-        finishSession()
+        completeCancellationIfNeeded()
     }
 
     @objc private func primaryPressed(_ sender: Any?) {
-        guard controls.validationMessage == nil else {
+        panel.makeFirstResponder(nil)
+        guard controls.applyCurrentValues() else {
             NSSound.beep()
             return
         }
@@ -234,19 +241,28 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                 finishSession()
                 return
             }
-            let operation = prepared.makePrintOperation(with: pdfDocument)
-            operation.runModal(for: parentWindow, delegate: nil, didRun: nil, contextInfo: nil)
-            telemetry("ouro_md_print_completed", ["code": .string("printed")])
-            finishSession()
-        case .export(let url, let completion):
+            do {
+                let operation = try prepared.makePrintOperation(with: pdfDocument)
+                printOperationRunning = true
+                operation.runModal(
+                    for: parentWindow,
+                    delegate: self,
+                    didRun: #selector(printOperationDidRun(_:success:contextInfo:)),
+                    contextInfo: nil
+                )
+            } catch {
+                reportError("Could not prepare print document", error)
+                finishSession()
+            }
+        case .export(let url, _):
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 do {
                     try pdfData.write(to: url, options: .atomic)
-                    completion(.success(true))
+                    self.deliverExportCompletion(.success(true))
                     self.telemetry("ouro_md_export_completed", ["format": .string("pdf")])
                 } catch {
-                    completion(.failure(error))
+                    self.deliverExportCompletion(.failure(error))
                     self.telemetry("ouro_md_export_failed", ["format": .string("pdf")])
                 }
                 self.finishSession()
@@ -254,10 +270,42 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         }
     }
 
+    @objc private func printOperationDidRun(_ operation: NSPrintOperation, success: Bool, contextInfo: UnsafeMutableRawPointer?) {
+        printOperationRunning = false
+        if success {
+            telemetry("ouro_md_print_completed", ["code": .string("printed")])
+        } else {
+            telemetry("ouro_md_print_cancelled", ["code": .string("cancelled")])
+        }
+        finishSession()
+    }
+
     private func endSheet() {
         if panel.sheetParent != nil {
             parentWindow.endSheet(panel)
         }
         panel.orderOut(nil)
+    }
+
+    private func completeCancellationIfNeeded() {
+        guard !sessionFinished else { return }
+        if printOperationRunning {
+            telemetry("ouro_md_print_cancelled", ["code": .string("cancelled")])
+            printOperationRunning = false
+        } else {
+            telemetry("ouro_md_print_cancelled", ["code": .string("cancelled")])
+        }
+        deliverExportCompletion(.success(false))
+        finishSession()
+    }
+
+    private func deliverExportCompletion(_ result: Result<Bool, Error>) {
+        guard !completionDelivered else { return }
+        guard case let .export(_, completion) = action else {
+            completionDelivered = true
+            return
+        }
+        completionDelivered = true
+        completion(result)
     }
 }
