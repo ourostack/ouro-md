@@ -207,6 +207,8 @@ enum MenuBuilder {
 
         menu.addItem(.separator())
         add(menu, "Toggle Status Bar", #selector(AppDelegate.toggleStatusBar(_:)), "", target)
+        add(menu, "Show Changes Since Last Review", #selector(AppDelegate.showReadingChanges(_:)), "", target)
+        add(menu, "Mark Current Content Reviewed", #selector(AppDelegate.markCurrentReviewed(_:)), "", target)
 
         menu.addItem(.separator())
         let actual = add(menu, "Actual Size", #selector(AppDelegate.actualSize(_:)), "0", target)

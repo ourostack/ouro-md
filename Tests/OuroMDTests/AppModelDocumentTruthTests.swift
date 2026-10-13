@@ -4,6 +4,132 @@ import OuroMDAppSupport
 
 @MainActor
 final class AppModelDocumentTruthTests: XCTestCase {
+    func testFirstReadIsUnmarkedAndOfflineChangesCompareWithRetainedBaseline() throws {
+        let root = tempDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appendingPathComponent("note.md")
+        let store = ReadingBaselineStore(directory: root.appendingPathComponent("baselines"))
+        try "# Original\n".write(to: file, atomically: true, encoding: .utf8)
+        let first = AppModel(readingBaselineStore: store)
+        let bridge = TruthBridge()
+        first.bridge = bridge
+        XCTAssertTrue(first.loadInitialFile(file.path))
+        first.editorDidBecomeReady()
+        XCTAssertTrue(bridge.reviewComparisons.isEmpty)
+        XCTAssertEqual(try store.read(for: file), "# Original\n")
+
+        try "# Offline update\n".write(to: file, atomically: true, encoding: .utf8)
+        let reopened = AppModel(readingBaselineStore: store)
+        let reopenedBridge = TruthBridge()
+        reopened.bridge = reopenedBridge
+        XCTAssertTrue(reopened.loadInitialFile(file.path))
+        XCTAssertTrue(reopenedBridge.reviewComparisons.isEmpty)
+        reopened.editorDidBecomeReady()
+        XCTAssertEqual(reopenedBridge.reviewComparisons, ["# Original\n"])
+        XCTAssertEqual(reopenedBridge.current, "# Offline update\n")
+        XCTAssertEqual(try store.read(for: file), "# Original\n")
+        reopened.markCurrentReviewed()
+        XCTAssertEqual(try store.read(for: file), "# Offline update\n")
+        XCTAssertEqual(reopenedBridge.reviewClears, 1)
+        XCTAssertFalse(reopened.isDirty)
+    }
+
+    func testUnavailableBaselineReportsErrorWithoutTreatingWholeFileAsChanged() throws {
+        let root = tempDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appendingPathComponent("note.md")
+        try "Current".write(to: file, atomically: true, encoding: .utf8)
+        let model = AppModel(readingBaselineStore: FailingReadingBaselineStore())
+        let bridge = TruthBridge()
+        model.bridge = bridge
+        var errors = 0
+        model.presentErrorHandler = { _, _ in errors += 1 }
+        model.editorDidBecomeReady()
+        XCTAssertTrue(model.loadInitialFile(file.path))
+        XCTAssertEqual(errors, 1)
+        XCTAssertTrue(bridge.reviewComparisons.isEmpty)
+        model.markCurrentReviewed()
+        XCTAssertEqual(errors, 2)
+        XCTAssertEqual(bridge.reviewClears, 0)
+    }
+
+    func testExternalUpdateBeforeReadyKeepsOriginalReadingBaseline() throws {
+        let root = tempDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appendingPathComponent("note.md")
+        let store = ReadingBaselineStore(directory: root.appendingPathComponent("baselines"))
+        try "Original".write(to: file, atomically: true, encoding: .utf8)
+        let model = AppModel(readingBaselineStore: store)
+        let bridge = TruthBridge()
+        model.bridge = bridge
+        XCTAssertTrue(model.loadInitialFile(file.path))
+        try "Agent update".write(to: file, atomically: true, encoding: .utf8)
+        model.reconcileExternalChangeForTesting()
+        model.markCurrentReviewed()
+        XCTAssertEqual(try store.read(for: file), "Original")
+        model.editorDidBecomeReady()
+        XCTAssertEqual(bridge.current, "Agent update")
+        XCTAssertEqual(bridge.reviewComparisons, ["Original"])
+        XCTAssertEqual(model.readingReviewStatus, "Changes since last review")
+    }
+
+    func testLateAcknowledgementCannotAcknowledgeReopenedDocument() throws {
+        let root = tempDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appendingPathComponent("note.md")
+        let store = ReadingBaselineStore(directory: root.appendingPathComponent("baselines"))
+        try "Original".write(to: file, atomically: true, encoding: .utf8)
+        let model = AppModel(readingBaselineStore: store)
+        let bridge = TruthBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+        XCTAssertTrue(model.loadInitialFile(file.path))
+        bridge.deferMarkdown = true
+        model.markCurrentReviewed()
+        try "Reopened content".write(to: file, atomically: true, encoding: .utf8)
+        XCTAssertTrue(model.loadInitialFile(file.path))
+        bridge.markdownCompletion?("Stale callback")
+        XCTAssertEqual(try store.read(for: file), "Original")
+        XCTAssertEqual(bridge.reviewClears, 0)
+    }
+
+    func testAcknowledgementKeepsNewExternalEditVisible() throws {
+        let root = tempDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appendingPathComponent("note.md")
+        let store = ReadingBaselineStore(directory: root.appendingPathComponent("baselines"))
+        try "Original".write(to: file, atomically: true, encoding: .utf8)
+        let model = AppModel(readingBaselineStore: store)
+        let bridge = TruthBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+        XCTAssertTrue(model.loadInitialFile(file.path))
+        bridge.deferMarkdown = true
+        model.markCurrentReviewed()
+        try "New unseen content".write(to: file, atomically: true, encoding: .utf8)
+        model.reconcileExternalChangeForTesting()
+        bridge.markdownCompletion?("Original")
+        XCTAssertEqual(try store.read(for: file), "Original")
+        XCTAssertEqual(bridge.reviewClears, 0)
+        XCTAssertEqual(bridge.reviewComparisons.last, "Original")
+        XCTAssertEqual(model.readingReviewStatus, "Changes since last review")
+    }
+
+    func testRenamePreservesReviewBaselineWithoutAcknowledgingChanges() throws {
+        let root = tempDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appendingPathComponent("note.md")
+        let renamed = root.appendingPathComponent("renamed.md")
+        let store = ReadingBaselineStore(directory: root.appendingPathComponent("baselines"))
+        try "Original".write(to: file, atomically: true, encoding: .utf8)
+        let model = AppModel(readingBaselineStore: store)
+        XCTAssertTrue(model.loadInitialFile(file.path))
+        try "Unreviewed".write(to: file, atomically: true, encoding: .utf8)
+        model.reconcileExternalChangeForTesting()
+        XCTAssertNil(model.renameCurrentFile(to: "renamed.md"))
+        XCTAssertEqual(try store.read(for: renamed), "Original")
+    }
+
     func testTruthRefreshesAcrossWelcomeLoadDirtySaveRenameSaveAsAndNewDocument() {
         let repo = tempDirectory()
         let original = repo.appendingPathComponent("note.md")
@@ -151,10 +277,20 @@ private struct LifecycleGitRunner: DocumentTruthGitRunning {
 private final class TruthBridge: EditorBridge {
     var current = ""
     var reloads: [String] = []
+    var reviewComparisons: [String] = []
+    var reviewClears = 0
+    var deferMarkdown = false
+    var markdownCompletion: ((String?) -> Void)?
+
+    func showChanges(since markdown: String) { reviewComparisons.append(markdown) }
+    func clearChangeReview() { reviewClears += 1 }
 
     func setMarkdown(_ markdown: String) { current = markdown }
     func reloadMarkdown(_ markdown: String) { current = markdown; reloads.append(markdown) }
-    func getMarkdown(_ completion: @escaping (String?) -> Void) { completion(current) }
+    func getMarkdown(_ completion: @escaping (String?) -> Void) {
+        if deferMarkdown { markdownCompletion = completion }
+        else { completion(current) }
+    }
     func getHTML(_ completion: @escaping (String?) -> Void) { completion("") }
     func applyTheme(uiMode: String, css: String, codeTheme: String, background: String) {}
     func setMode(_ mode: String) {}
@@ -176,4 +312,9 @@ private final class TruthBridge: EditorBridge {
     func focusEditor() {}
     func printDocument() {}
     func setZoom(_ factor: Double) {}
+}
+
+private struct FailingReadingBaselineStore: ReadingBaselineStoring {
+    func read(for file: URL) throws -> String? { throw CocoaError(.fileReadCorruptFile) }
+    func write(_ markdown: String, for file: URL) throws { throw CocoaError(.fileWriteNoPermission) }
 }

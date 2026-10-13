@@ -8,7 +8,8 @@ import WebKit
 /// be highlighted and brought into view; an agent's file change must be
 /// marked without moving the reader; and loading a document must add no cues.
 /// Agent cues persist until reached and scrolled past, with explicit navigation
-/// for off-screen changes and no saved review state.
+/// for off-screen changes. Retained reading baselines can be compared without
+/// replacing the current document or its undo state.
 final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     private var webView: WKWebView!
     private let theme = ThemeStore.shared.defaultTheme
@@ -414,6 +415,48 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
             guard let self else { return }
             guard case .success(let value) = result, let r = value as? [String: Any] else { self.fail("viewport edge script failed: \(result)") }
             self.record("a cue at the native viewport top is not hidden behind an artificial toolbar band", (r["overlayTop"] as? Double) == 0 && (r["unclipped"] as? Bool) == true, "\(r)")
+            self.retainedReviewCase()
+        }
+    }
+
+    private func retainedReviewCase() {
+        let script = Self.probe + #"""
+        const marks = () => document.querySelectorAll(".ouro-change-mark").length;
+        const current = original.replace("Paragraph 55 says", "Paragraph 55 OFFLINE says");
+        window.ouro.setValue(current);
+        await sleep(500);
+        const firstReadUnmarked = marks() === 0;
+        scroller.scrollTop = 700;
+        await sleep(100);
+        const beforeScroll = scroller.scrollTop;
+        window.ouro.showChangesSince(original);
+        await sleep(500);
+        const comparedMarks = marks();
+        const currentPreserved = window.ouro.getValue() === current;
+        const scrollPreserved = scroller.scrollTop === beforeScroll;
+        window.ouro.clearChangeReview();
+        await sleep(150);
+        const acknowledged = marks() === 0 && document.getElementById("ouro-next-change").hidden;
+        window.ouro.showChangesSince(current);
+        await sleep(250);
+        const sameUnmarked = marks() === 0;
+        window.ouro.showChangesSince(original);
+        window.ouro.setValue("A different document.\n");
+        await sleep(400);
+        return { firstReadUnmarked, comparedMarks, currentPreserved, scrollPreserved,
+          acknowledged, sameUnmarked, staleCancelled: marks() === 0 };
+        """#
+        webView.callAsyncJavaScript(script, arguments: ["original": Self.original], in: nil, in: .page) { [weak self] result in
+            guard let self else { return }
+            guard case .success(let value) = result, let checks = value as? [String: Any] else {
+                self.fail("retained reading review failed: \(result)")
+            }
+            self.record("a first reading has no whole-document cues", checks["firstReadUnmarked"] as? Bool == true, "\(checks)")
+            self.record("retained baseline marks only the offline edit", checks["comparedMarks"] as? Int == 1, "\(checks)")
+            self.record("baseline comparison preserves Markdown and scroll", checks["currentPreserved"] as? Bool == true && checks["scrollPreserved"] as? Bool == true, "\(checks)")
+            self.record("review acknowledgement clears cues without changing content", checks["acknowledged"] as? Bool == true, "\(checks)")
+            self.record("identical baseline comparison adds no cues", checks["sameUnmarked"] as? Bool == true, "\(checks)")
+            self.record("opening another file cancels a retained comparison", checks["staleCancelled"] as? Bool == true, "\(checks)")
             self.finish()
         }
     }

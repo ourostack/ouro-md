@@ -386,6 +386,14 @@ struct EditorWebView: NSViewRepresentable {
 
         func setZoom(_ factor: Double) { if let webView { EditorZoom.apply(factor, to: webView) } }
 
+        func showChanges(since markdown: String) {
+            eval("window.ouro && window.ouro.showChangesSince(\(Self.jsString(markdown)))")
+        }
+
+        func clearChangeReview() {
+            eval("window.ouro && window.ouro.clearChangeReview()")
+        }
+
         private func eval(_ js: String) {
             webView?.evaluateJavaScript(js, completionHandler: nil)
         }

@@ -47,6 +47,8 @@ protocol EditorBridge: AnyObject {
     func focusEditor()
     func printDocument()
     func setZoom(_ factor: Double)
+    func showChanges(since markdown: String)
+    func clearChangeReview()
 }
 
 extension EditorBridge {
@@ -59,6 +61,8 @@ extension EditorBridge {
     func copyAs(_ mode: String) {}
     func scrollToAnchor(_ fragment: String) {}
     func setEditable(_ editable: Bool) {}
+    func showChanges(since markdown: String) {}
+    func clearChangeReview() {}
 }
 
 /// Owns document state (current file, dirty flag, theme/mode) and orchestrates
@@ -93,6 +97,7 @@ final class AppModel: ObservableObject {
     @Published var statusBarVisible = false
     @Published private(set) var outlineItems: [OutlineItem] = []
     @Published private(set) var activeHeadingIndex = -1
+    @Published private(set) var readingReviewStatus = "No reading baseline"
     @Published var outlineFilter = ""
     @Published private(set) var folderItems: [FolderItem] = []
     // Mounted-folder browser (Open Folder).
@@ -150,6 +155,9 @@ final class AppModel: ObservableObject {
     }
 
     private let defaults = UserDefaults.standard
+    private let readingBaselineStore: ReadingBaselineStoring
+    private var readingBaseline: String?
+    private var readingDocumentGeneration = 0
     private var pendingMarkdown: String?
     private var pendingAssistantEdit: String?
     /// Tests answer the external-change conflict here (true reloads from
@@ -171,7 +179,8 @@ final class AppModel: ObservableObject {
     private let folderScanQueue = DispatchQueue(label: "md.ouro.folderscan", qos: .userInitiated)
     private let contentSearcher = ContentSearcher()
 
-    init() {
+    init(readingBaselineStore: ReadingBaselineStoring = ReadingBaselineStore()) {
+        self.readingBaselineStore = readingBaselineStore
         let storedThemeID = defaults.string(forKey: "ouro.theme") ?? "quartz"
         let storedTheme = ThemeStore.shared.theme(id: storedThemeID)
         themeID = storedTheme.id
@@ -288,6 +297,7 @@ final class AppModel: ObservableObject {
         bridge?.setAutoPair(autoPairEnabled)
         bridge?.setEditable(!isFileLocked)
         bridge?.setZoom(zoom)
+        showReadingComparison()
         // A newly opened document window should be ready to type into
         // immediately, without a stray click to place the caret first.
         bridge?.focusEditor()
@@ -418,10 +428,70 @@ final class AppModel: ObservableObject {
 
     // MARK: - File operations
 
+    private func prepareReadingBaseline(for url: URL, markdown: String) {
+        readingDocumentGeneration += 1
+        readingBaseline = nil
+        do {
+            if let previous = try readingBaselineStore.read(for: url) {
+                readingBaseline = previous
+                readingReviewStatus = previous == markdown ? "Unchanged since last review" : "Changes since last review"
+            } else {
+                try readingBaselineStore.write(markdown, for: url)
+                readingBaseline = markdown
+                readingReviewStatus = "New document: reading baseline established"
+            }
+        } catch {
+            readingReviewStatus = "Reading baseline unavailable"
+            presentError("Could not load reading history for \(url.lastPathComponent)", error)
+        }
+    }
+
+    private func showReadingComparison() {
+        guard isReady, let baseline = readingBaseline, baseline != lastLoadedContent else { return }
+        bridge?.showChanges(since: baseline)
+    }
+
+    func showChangesSinceLastReview() {
+        guard currentURL != nil, isReady else { return }
+        statusBarVisible = true
+        guard let baseline = readingBaseline else { return }
+        bridge?.showChanges(since: baseline)
+    }
+
+    func markCurrentReviewed() {
+        guard let url = currentURL, isReady, let bridge, !writingToolsActive else { return }
+        let generation = readingDocumentGeneration
+        let diskAtRequest = lastLoadedContent
+        let acknowledge: (String?) -> Void = { [weak self] markdown in
+            guard let self, self.currentURL == url, self.readingDocumentGeneration == generation, !self.writingToolsActive else { return }
+            guard let markdown else {
+                self.presentError("Could not mark document reviewed", CocoaError(.fileReadUnknown))
+                return
+            }
+            do {
+                try self.readingBaselineStore.write(markdown, for: url)
+                self.readingBaseline = markdown
+                if self.lastLoadedContent != diskAtRequest {
+                    self.readingReviewStatus = "Changes since last review"
+                    self.bridge?.showChanges(since: markdown)
+                } else {
+                    self.readingReviewStatus = "Current content marked reviewed"
+                    self.bridge?.clearChangeReview()
+                }
+            } catch {
+                self.presentError("Could not save reading history for \(url.lastPathComponent)", error)
+            }
+        }
+        bridge.getMarkdown(acknowledge)
+    }
+
     func loadWelcome() {
         pendingAnchorFragment = nil
         currentURL = nil
         lastLoadedContent = nil
+        readingBaseline = nil
+        readingDocumentGeneration += 1
+        readingReviewStatus = "No reading baseline"
         deletedOnDisk = false
         refreshDocumentTruth()
         pushMarkdown(Welcome.markdown)
@@ -436,6 +506,9 @@ final class AppModel: ObservableObject {
             self.pendingAnchorFragment = nil
             self.currentURL = nil
             self.lastLoadedContent = nil
+            self.readingBaseline = nil
+            self.readingDocumentGeneration += 1
+            self.readingReviewStatus = "No reading baseline"
             self.stopWatching()
             self.refreshDocumentTruth()
             self.pushMarkdown("")
@@ -545,7 +618,9 @@ final class AppModel: ObservableObject {
             self.pendingAnchorFragment = nil
             self.currentURL = url
             self.lastLoadedContent = text
+            self.prepareReadingBaseline(for: url, markdown: text)
             self.pushMarkdown(text)
+            self.showReadingComparison()
             self.isDirty = false
             self.refreshDocumentTruth()
             DocumentAccess.noteRecent(url)
@@ -580,7 +655,9 @@ final class AppModel: ObservableObject {
         pendingAnchorFragment = nil
         currentURL = url
         lastLoadedContent = text
+        prepareReadingBaseline(for: url, markdown: text)
         pushMarkdown(text)
+        showReadingComparison()
         isDirty = false
         refreshDocumentTruth()
         DocumentAccess.noteRecent(url)
@@ -675,6 +752,13 @@ final class AppModel: ObservableObject {
         if let coordinationError { throw coordinationError }
         if let moveError { throw moveError }
         currentURL = destination
+        if let baseline = readingBaseline {
+            do {
+                try readingBaselineStore.write(baseline, for: destination)
+            } catch {
+                presentError("Could not move reading history to \(destination.lastPathComponent)", error)
+            }
+        }
         bridge?.setDocBase(destination.deletingLastPathComponent().path)
         DocumentAccess.noteRecent(destination)
         refreshFolder()
@@ -717,6 +801,15 @@ final class AppModel: ObservableObject {
             guard let self else { completion(ok); return }
             if ok {
                 DocumentAccess.noteRecent(url)
+                if let baseline = self.readingBaseline {
+                    do {
+                        try self.readingBaselineStore.write(baseline, for: url)
+                    } catch {
+                        self.presentError("Could not save reading history for \(url.lastPathComponent)", error)
+                    }
+                } else if let saved = self.lastLoadedContent {
+                    self.prepareReadingBaseline(for: url, markdown: saved)
+                }
             } else {
                 self.currentURL = previousURL
                 self.refreshDocumentTruth()
@@ -939,6 +1032,9 @@ final class AppModel: ObservableObject {
             presentExternalChangeConflict(diskContent: disk, url: url)
         } else {
             lastLoadedContent = disk
+            if let baseline = readingBaseline {
+                readingReviewStatus = baseline == disk ? "Unchanged since last review" : "Changes since last review"
+            }
             refreshDocumentTruth()
             guard isReady, let bridge else {
                 pendingMarkdown = disk
@@ -949,6 +1045,9 @@ final class AppModel: ObservableObject {
                 return
             }
             bridge.reloadMarkdown(disk)   // preserves scroll position
+            if let baseline = readingBaseline {
+                bridge.showChanges(since: baseline)
+            }
             captureTelemetry("ouro_md_document_external_reload_completed")
         }
     }
@@ -1004,6 +1103,10 @@ final class AppModel: ObservableObject {
         lastLoadedContent = diskContent
         if response == .alertFirstButtonReturn {
             bridge?.reloadMarkdown(diskContent)
+            if let baseline = readingBaseline {
+                readingReviewStatus = baseline == diskContent ? "Unchanged since last review" : "Changes since last review"
+                bridge?.showChanges(since: baseline)
+            }
             isDirty = false
             refreshDocumentTruth()
             onChromeUpdate?()
@@ -1459,6 +1562,8 @@ final class AppModel: ObservableObject {
         case "view.actual-size": actualSize()
         case "view.zoom-in": zoomIn()
         case "view.zoom-out": zoomOut()
+        case "view.show-reading-changes": showChangesSinceLastReview()
+        case "view.mark-reviewed": markCurrentReviewed()
         case "help.about":
             Task { @MainActor in
                 (NSApp.delegate as? AppDelegate)?.showAbout(nil)

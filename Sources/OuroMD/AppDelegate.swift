@@ -492,6 +492,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     @objc func toggleTypewriter(_ sender: Any?) { model.toggleTypewriter(); syncChrome() }
 
     @objc func toggleStatusBar(_ sender: Any?) { frontController?.toggleStatusBar() }
+    @objc func showReadingChanges(_ sender: Any?) { model.showChangesSinceLastReview() }
+    @objc func markCurrentReviewed(_ sender: Any?) { model.markCurrentReviewed() }
 
     @objc func toggleSidebar(_ sender: Any?) { frontController?.toggleSidebar() }
     @objc func showOutlineSidebar(_ sender: Any?) { frontController?.revealSidebar(mode: .outline) }
@@ -578,6 +580,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             // Keep the commands enabled whenever the editor is ready so the
             // keyboard shortcuts always reach the editor-side router.
             return editorReady
+        case #selector(showReadingChanges(_:)),
+             #selector(markCurrentReviewed(_:)):
+            return editorReady && model.currentURL != nil && !model.writingToolsActive
         case #selector(saveDocument(_:)),
              #selector(saveDocumentAs(_:)),
              #selector(exportHTML(_:)),
@@ -701,4 +706,3 @@ extension AppDelegate: MarkdownDocumentWorkspace {
         openInNewWindow(url.standardizedFileURL)
     }
 }
-

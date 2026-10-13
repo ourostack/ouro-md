@@ -83,6 +83,8 @@ public enum CommandPaletteCatalog {
             CommandPaletteItem(id: "paragraph.math", title: "Math Block", keywords: "equation latex paragraph"),
             CommandPaletteItem(id: "paragraph.hr", title: "Horizontal Rule", keywords: "divider paragraph"),
             CommandPaletteItem(id: "view.source", title: "Toggle Source Mode", keywords: "markdown code", shortcut: "⌘/"),
+            CommandPaletteItem(id: "view.show-reading-changes", title: "Show Changes Since Last Review", keywords: "agent edits reading baseline"),
+            CommandPaletteItem(id: "view.mark-reviewed", title: "Mark Current Content Reviewed", keywords: "acknowledge reading baseline changes"),
             CommandPaletteItem(id: "view.focus", title: "Toggle Focus Mode", keywords: "reading", shortcut: "F8"),
             CommandPaletteItem(id: "view.typewriter", title: "Toggle Typewriter Mode", keywords: "typing", shortcut: "F9"),
             CommandPaletteItem(id: "view.toggle-sidebar", title: "Toggle Sidebar", keywords: "panel", shortcut: "⇧⌘L"),

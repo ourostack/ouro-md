@@ -504,12 +504,17 @@ struct DocumentStatusBar: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
-        HStack(spacing: 10) {
-            Text("\(model.wordCount) words")
-            Text("\(model.charCount) chars")
-            Text(model.mode == "sv" ? "Source" : "Rich")
-            Text(model.theme.displayName)
-            if model.isDirty { Text("Edited") }
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 10) {
+                Text("\(model.wordCount) words")
+                Text("\(model.charCount) chars")
+                Text(model.mode == "sv" ? "Source" : "Rich")
+                Text(model.theme.displayName)
+                if model.isDirty { Text("Edited") }
+            }
+            if model.currentURL != nil {
+                Text(model.readingReviewStatus)
+            }
         }
         .font(.system(size: 11))
         .monospacedDigit()
@@ -519,7 +524,7 @@ struct DocumentStatusBar: View {
         .glassSurface(cornerRadius: SystemDesign.usesGlass ? 12 : 6)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Document status")
-        .accessibilityValue("\(model.wordCount) words, \(model.charCount) characters, \(model.mode == "sv" ? "Source" : "Rich"), \(model.theme.displayName)\(model.isDirty ? ", edited" : "")")
+        .accessibilityValue("\(model.wordCount) words, \(model.charCount) characters, \(model.mode == "sv" ? "Source" : "Rich"), \(model.theme.displayName)\(model.isDirty ? ", edited" : ""), \(model.readingReviewStatus)")
     }
 }
 
