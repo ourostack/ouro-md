@@ -103,7 +103,7 @@
     section.dataset.ouroPrintGenerated = "true";
     var heading = document.createElement("h2");
     heading.id = reserveID(GENERATED_PREFIX + "-external-links-heading");
-    heading.textContent = "External links";
+    heading.textContent = "Link sources (endnotes)";
     section.setAttribute("aria-labelledby", heading.id);
     section.appendChild(heading);
     var list = document.createElement("ol");
@@ -203,12 +203,15 @@
         Array.prototype.forEach.call(marker.getClientRects(), function (rect) {
           if (rect.width <= 0 || rect.height <= 0) { return; }
           var page = pageIndexForRect(rect, rootRect, stride);
-          if (!pages[page]) { pages[page] = { sources: new Set(), notes: new Set() }; }
+          if (!pages[page]) { pages[page] = { sources: new Set(), notes: new Set(), references: Object.create(null) }; }
           var record = pages[page];
           if (marker.dataset.ouroSource) { record.sources.add(marker.dataset.ouroSource); }
           if (marker.dataset.ouroNote) {
-            record.notes.add(marker.dataset.ouroNote);
-            Array.prototype.forEach.call(noteDefinitions[marker.dataset.ouroNote].querySelectorAll("[data-ouro-source]"), function (nested) {
+            var noteID = marker.dataset.ouroNote;
+            record.notes.add(noteID);
+            if (!record.references[noteID]) { record.references[noteID] = []; }
+            if (!record.references[noteID].includes(marker)) { record.references[noteID].push(marker); }
+            Array.prototype.forEach.call(noteDefinitions[noteID].querySelectorAll("[data-ouro-source]"), function (nested) {
               record.sources.add(nested.dataset.ouroSource);
             });
           }
@@ -234,6 +237,17 @@
           entry.prepend(label);
           Array.prototype.forEach.call(entry.querySelectorAll("[id]"), function (node) {
             node.id += "-ouro-page-" + page;
+          });
+          Array.prototype.forEach.call(entry.querySelectorAll("a[href]"), function (backlink) {
+            var isBacklink = backlink.matches(".footnote-backref, .vditor-footnotes__goto-ref, [role='doc-backlink']") || /^[↩↵][\uFE0E\uFE0F]?$/.test(backlink.textContent.trim());
+            var href = backlink.getAttribute("href") || "";
+            if (!isBacklink || href.charAt(0) !== "#") { return; }
+            var target = document.getElementById(href.slice(1));
+            var references = record.references[id];
+            if (target && references.some(function (reference) { return target === reference || target.contains(reference); })) { return; }
+            var localReference = references[0];
+            if (!localReference.id) { localReference.id = reserveID(GENERATED_PREFIX + "-note-reference"); }
+            backlink.setAttribute("href", "#" + localReference.id);
           });
           footer.appendChild(entry);
         });
