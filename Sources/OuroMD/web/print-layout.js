@@ -121,12 +121,67 @@
 
   function wrapTablesForPagination() {
     Array.prototype.forEach.call(article().querySelectorAll("table"), function (table) {
+      if (table.dataset.ouroPrintSplit === "true") { return; }
       var parent = table.parentElement;
       if (parent && parent.classList && parent.classList.contains("ouro-print-keep-together")) { return; }
       var wrapper = document.createElement("div");
       wrapper.className = "ouro-print-keep-together";
       table.parentNode.insertBefore(wrapper, table);
       wrapper.appendChild(table);
+    });
+  }
+
+  function cloneTableFragment(table, rows) {
+    var clone = table.cloneNode(false);
+    Array.prototype.forEach.call(table.children, function (child) {
+      var tag = child.tagName && child.tagName.toLowerCase();
+      if (tag === "colgroup" || tag === "caption") {
+        clone.appendChild(child.cloneNode(true));
+      }
+    });
+    var head = table.querySelector("thead");
+    if (head) { clone.appendChild(head.cloneNode(true)); }
+    var body = document.createElement("tbody");
+    rows.forEach(function (row) { body.appendChild(row.cloneNode(true)); });
+    clone.appendChild(body);
+    clone.dataset.ouroPrintSplit = "true";
+    return clone;
+  }
+
+  function splitTablesForPages() {
+    var contentHeight = toFiniteNumber(Number(config.pageContentHeight), 684);
+    Array.prototype.forEach.call(article().querySelectorAll("table"), function (table) {
+      if (table.dataset.ouroPrintSplit === "true") { return; }
+      var rows = Array.prototype.slice.call(table.querySelectorAll("tbody > tr"));
+      if (!rows.length) { return; }
+      var headerHeight = 0;
+      var head = table.querySelector("thead");
+      if (head) { headerHeight = head.getBoundingClientRect().height; }
+      var groups = [];
+      var current = [];
+      var currentHeight = headerHeight;
+      rows.forEach(function (row) {
+        var rowHeight = row.getBoundingClientRect().height || 0;
+        if (current.length && currentHeight + rowHeight > contentHeight) {
+          groups.push(current);
+          current = [];
+          currentHeight = headerHeight;
+        }
+        current.push(row);
+        currentHeight += rowHeight;
+      });
+      if (current.length) { groups.push(current); }
+      if (groups.length <= 1) { return; }
+      var container = document.createElement("div");
+      container.className = "ouro-print-split-table-group";
+      groups.forEach(function (group) {
+        var wrapper = document.createElement("div");
+        wrapper.className = "ouro-print-keep-together";
+        wrapper.appendChild(cloneTableFragment(table, group));
+        container.appendChild(wrapper);
+      });
+      table.parentNode.insertBefore(container, table);
+      table.remove();
     });
   }
 
@@ -140,24 +195,22 @@
     var pageGap = toFiniteNumber(Number(config.pageGap), DEFAULT_GAP);
     var stride = contentWidth + pageGap;
     var rootRect = root.getBoundingClientRect();
-    var maxAssignedPage = 0;
+    var usedPages = new Set([0]);
     var fragmentedProofIDs = [];
-    Array.prototype.forEach.call(root.children, function (node, index) {
+    Array.prototype.forEach.call(root.querySelectorAll("*"), function (node, index) {
       if (!node.getBoundingClientRect) { return; }
-      node.style.removeProperty("display");
       var fragments = Array.prototype.filter.call(node.getClientRects(), function (rect) { return rect.width > 0 && rect.height > 0; });
       if (!fragments.length) { return; }
       var pages = Array.from(new Set(fragments.map(function (rect) {
         return Math.max(0, Math.floor((rect.left - rootRect.left + 0.5) / stride));
       }))).sort(function (a, b) { return a - b; });
-      var assignedPage = pages[0];
-      node.dataset.ouroPrintPage = String(assignedPage);
-      maxAssignedPage = Math.max(maxAssignedPage, assignedPage);
+      pages.forEach(function (page) { usedPages.add(page); });
       if (pages.length > 1) {
         fragmentedProofIDs.push(node.getAttribute("data-proof-id") || (node.tagName.toLowerCase() + "-" + index));
       }
     });
-    var pageCount = maxAssignedPage + 1;
+    var sortedPages = Array.from(usedPages).sort(function (a, b) { return a - b; });
+    var pageCount = (sortedPages.length ? sortedPages[sortedPages.length - 1] : 0) + 1;
     cachedMetrics = {
       contentWidth: contentWidth,
       contentHeight: contentHeight,
@@ -174,6 +227,7 @@
   function applyLayout() {
     cachedMetrics = null;
     document.documentElement.style.setProperty("--ouro-active-page-offset", "0px");
+    splitTablesForPages();
     wrapTablesForPagination();
     applyReferences();
     return pageMetrics();
@@ -182,23 +236,26 @@
   function showPage(index) {
     var metrics = pageMetrics();
     var normalizedIndex = Math.max(0, Math.min(metrics.pageCount - 1, index || 0));
-    document.documentElement.style.setProperty("--ouro-active-page-offset", "0px");
-    Array.prototype.forEach.call(article().children, function (node) {
-      node.style.display = Number(node.dataset.ouroPrintPage || "0") === normalizedIndex ? "" : "none";
-    });
+    document.documentElement.style.setProperty("--ouro-active-page-offset", String(normalizedIndex * metrics.pageStride) + "px");
     var root = article();
-    var rootRect = root.getBoundingClientRect();
+    var frame = document.querySelector(".ouro-print-content-frame");
+    var frameRect = frame ? frame.getBoundingClientRect() : root.getBoundingClientRect();
     metrics.endnoteLinks = Array.prototype.map.call(root.querySelectorAll(".ouro-print-external-links a.ouro-print-reference-url"), function (anchor) {
       var rect = anchor.getBoundingClientRect();
+      var x = rect.left - frameRect.left;
+      var y = rect.top - frameRect.top;
+      if (x + rect.width < 0 || x > metrics.contentWidth || y + rect.height < 0 || y > metrics.contentHeight) {
+        return null;
+      }
       return {
         url: anchor.href,
         pageIndex: normalizedIndex,
-        x: rect.left - rootRect.left,
-        y: rect.top - rootRect.top,
+        x: Math.max(0, x),
+        y: Math.max(0, y),
         width: rect.width,
         height: rect.height
       };
-    });
+    }).filter(Boolean);
     return metrics;
   }
 
