@@ -23,6 +23,11 @@ struct PrintPageMargins: Equatable, Sendable {
 }
 
 struct PrintLayoutSettings: Equatable, Sendable {
+    enum CitationMode: Int, Sendable {
+        case originalLinks = 0
+        case endnotes = 1
+        case pageFootnotes = 2
+    }
     enum LayoutError: LocalizedError, Equatable {
         case noPrintableArea
         case outsidePrinterArea(PrintPageMargins)
@@ -41,12 +46,19 @@ struct PrintLayoutSettings: Equatable, Sendable {
     var fontSize: Double
     var lineSpacing: Double
     var includeExternalLinkReferences: Bool
+    var citationMode: CitationMode? = nil
+    var headingBreakLevel: Int = 0
+
+    var effectiveCitationMode: CitationMode {
+        citationMode ?? (includeExternalLinkReferences ? .endnotes : .originalLinks)
+    }
 
     static let `default` = Self(
         margins: PrintPageMargins(top: 54, right: 54, bottom: 54, left: 54),
         fontSize: 12,
         lineSpacing: 1.45,
-        includeExternalLinkReferences: false
+        includeExternalLinkReferences: false,
+        citationMode: .pageFootnotes
     )
 
     var normalized: Self {
@@ -55,7 +67,9 @@ struct PrintLayoutSettings: Equatable, Sendable {
             margins: margins.clamped(),
             fontSize: Self.clamp(fontSize, range: 8...24, fallback: defaults.fontSize),
             lineSpacing: Self.clamp(lineSpacing, range: 1...3, fallback: defaults.lineSpacing),
-            includeExternalLinkReferences: includeExternalLinkReferences
+            includeExternalLinkReferences: includeExternalLinkReferences,
+            citationMode: citationMode,
+            headingBreakLevel: min(6, max(0, headingBreakLevel))
         )
     }
 
@@ -118,6 +132,8 @@ struct PrintLayoutSettingsStore {
         static let fontSize = "ouro.printLayout.fontSize"
         static let lineSpacing = "ouro.printLayout.lineSpacing"
         static let includeExternalLinks = "ouro.printLayout.includeExternalLinks"
+        static let citationMode = "ouro.printLayout.citationMode"
+        static let headingBreakLevel = "ouro.printLayout.headingBreakLevel"
     }
 
     let preferences: PrintLayoutPreferenceStore
@@ -137,7 +153,9 @@ struct PrintLayoutSettingsStore {
             ),
             fontSize: preferences.double(forKey: Key.fontSize) ?? defaults.fontSize,
             lineSpacing: preferences.double(forKey: Key.lineSpacing) ?? defaults.lineSpacing,
-            includeExternalLinkReferences: preferences.bool(forKey: Key.includeExternalLinks) ?? defaults.includeExternalLinkReferences
+            includeExternalLinkReferences: preferences.bool(forKey: Key.includeExternalLinks) ?? defaults.includeExternalLinkReferences,
+            citationMode: preferences.double(forKey: Key.citationMode).flatMap { $0.isFinite && (0...2).contains($0) ? PrintLayoutSettings.CitationMode(rawValue: Int($0)) : nil } ?? .pageFootnotes,
+            headingBreakLevel: Int(preferences.double(forKey: Key.headingBreakLevel).map { $0.isFinite && (0...6).contains($0) ? $0 : 0 } ?? 0)
         ).normalized
     }
 
@@ -150,6 +168,8 @@ struct PrintLayoutSettingsStore {
         preferences.set(normalized.fontSize, forKey: Key.fontSize)
         preferences.set(normalized.lineSpacing, forKey: Key.lineSpacing)
         preferences.set(normalized.includeExternalLinkReferences, forKey: Key.includeExternalLinks)
+        preferences.set(Double(normalized.effectiveCitationMode.rawValue), forKey: Key.citationMode)
+        preferences.set(Double(normalized.headingBreakLevel), forKey: Key.headingBreakLevel)
     }
 }
 

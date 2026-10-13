@@ -238,7 +238,8 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                 self.currentPreviewData = pdfData
                 self.currentPreviewSettings = settings
                 self.previewView.document = PDFDocument(data: pdfData)
-                self.updateStatus("Preview ready")
+                let count = self.prepared.layoutMetrics.pageCount
+                self.updateStatus("Preview ready — \(count) \(count == 1 ? "page" : "pages")")
                 self.updatePrimaryEnabled(true)
                 if self.submitWhenPreviewReady {
                     self.submitWhenPreviewReady = false

@@ -52,65 +52,53 @@ enum PrintPDFPaginator {
         margins: PrintPageMargins,
         pageLinks: [[PrintLayoutMetrics.Link]]
     ) throws -> Data {
-        _ = margins
-        let document = PDFDocument()
-        for (index, pageData) in sourcePages.enumerated() {
-            guard let sourceDocument = PDFDocument(data: pageData),
-                  let page = sourceDocument.page(at: 0) else {
-                throw PaginationError.unreadableSource
-            }
-            document.insert(page, at: index)
-        }
-        guard let combined = document.dataRepresentation() else {
+        let output = NSMutableData()
+        var mediaBox = CGRect(origin: .zero, size: paperSize)
+        guard let consumer = CGDataConsumer(data: output as CFMutableData),
+              let context = CGContext(consumer: consumer, mediaBox: &mediaBox, nil) else {
             throw PaginationError.contextCreationFailed
         }
-        return try addEndnoteAnnotations(to: combined, paperSize: paperSize, margins: margins, pageLinks: pageLinks)
-    }
-
-    private static func addEndnoteAnnotations(
-        to data: Data,
-        paperSize: NSSize,
-        margins: PrintPageMargins,
-        pageLinks: [[PrintLayoutMetrics.Link]]
-    ) throws -> Data {
-        guard let document = PDFDocument(data: data) else {
-            throw PaginationError.unreadableOutput
-        }
-        for index in 0..<document.pageCount {
-            guard let page = document.page(at: index) else { continue }
-            for annotation in page.annotations {
-                page.removeAnnotation(annotation)
+        var destinations: [Int: [(String, CGPoint)]] = [:]
+        for (sourceIndex, links) in pageLinks.enumerated() {
+            for (linkIndex, link) in links.enumerated() {
+                guard let target = link.destinationPageIndex, sourcePages.indices.contains(target) else { continue }
+                let name = "ouro-destination-\(sourceIndex)-\(linkIndex)"
+                let point = CGPoint(x: margins.left + (link.destinationX ?? 0), y: paperSize.height - margins.top - (link.destinationY ?? 0))
+                destinations[target, default: []].append((name, point))
             }
         }
-        for (pageIndex, links) in pageLinks.enumerated() {
-            guard let page = document.page(at: pageIndex) else { continue }
-            for link in links {
+        for (index, pageData) in sourcePages.enumerated() {
+            guard let provider = CGDataProvider(data: pageData as CFData),
+                  let sourceDocument = CGPDFDocument(provider),
+                  let page = sourceDocument.page(at: 1) else {
+                throw PaginationError.unreadableSource
+            }
+            context.beginPDFPage(nil)
+            context.drawPDFPage(page)
+            for (name, point) in destinations[index] ?? [] {
+                context.addDestination(name as CFString, at: point)
+            }
+            for (linkIndex, link) in (pageLinks.indices.contains(index) ? pageLinks[index] : []).enumerated() {
                 let bounds = CGRect(
                     x: margins.left + link.x,
                     y: paperSize.height - margins.top - link.y - link.height,
                     width: link.width,
                     height: link.height
-                ).intersection(page.bounds(for: .mediaBox))
+                ).intersection(mediaBox)
                 guard !bounds.isEmpty else { continue }
-                let annotation = PDFAnnotation(bounds: bounds, forType: .link, withProperties: nil)
                 if let urlString = link.url, let url = URL(string: urlString) {
-                    annotation.url = url
-                } else if let destinationPageIndex = link.destinationPageIndex,
-                          let destinationPage = document.page(at: destinationPageIndex) {
-                    let destinationPoint = CGPoint(
-                        x: margins.left + (link.destinationX ?? 0),
-                        y: paperSize.height - margins.top - (link.destinationY ?? 0)
-                    )
-                    annotation.destination = PDFDestination(page: destinationPage, at: destinationPoint)
-                } else {
-                    continue
+                    context.setURL(url as CFURL, for: bounds)
+                } else if let target = link.destinationPageIndex, sourcePages.indices.contains(target) {
+                    context.setDestination("ouro-destination-\(index)-\(linkIndex)" as CFString, for: bounds)
                 }
-                page.addAnnotation(annotation)
             }
+            context.endPDFPage()
         }
-        guard let annotated = document.dataRepresentation() else {
+        context.closePDF()
+        let data = output as Data
+        guard PDFDocument(data: data)?.pageCount == sourcePages.count else {
             throw PaginationError.unreadableOutput
         }
-        return annotated
+        return data
     }
 }

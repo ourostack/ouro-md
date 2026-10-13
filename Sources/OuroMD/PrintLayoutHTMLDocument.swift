@@ -49,7 +49,9 @@ enum PrintLayoutHTMLDocument {
             "marginBottom": settings.margins.bottom,
             "marginLeft": settings.margins.left,
             "pageGap": 24.0,
-            "includeExternalLinkReferences": settings.includeExternalLinkReferences
+            "includeExternalLinkReferences": settings.effectiveCitationMode == .endnotes,
+            "pageFootnotes": settings.effectiveCitationMode == .pageFootnotes,
+            "headingBreakLevel": settings.headingBreakLevel
         ]
         guard let data = try? JSONSerialization.data(withJSONObject: payload),
               let json = String(data: data, encoding: .utf8) else {
@@ -163,6 +165,25 @@ enum PrintLayoutHTMLDocument {
         .markdown-body .ouro-print-keep-together {
           display: block;
         }
+        .ouro-print-section-break {
+          break-before: column;
+          -webkit-column-break-before: always;
+          margin-top: 0 !important;
+        }
+        .ouro-print-page-notes {
+          position: absolute;
+          width: var(--ouro-page-content-width);
+          box-sizing: border-box;
+          border-top: 1px solid #8c959f;
+          padding-top: 6px;
+          font-size: \(cssLength(normalized.fontSize * 5 / 6))px;
+          line-height: 1.2;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+          transform: translateX(calc(-1 * var(--ouro-active-page-offset, 0px)));
+        }
+        .ouro-print-page-notes p { margin: 3px 0; }
+        .ouro-print-page-notes a { color: #111; }
         .markdown-body pre,
         .markdown-body code,
         .markdown-body samp,

@@ -11,6 +11,7 @@ final class PrintDocumentRenderer {
         case pdfFailed
         case superseded
         case unavailablePrintOperation
+        case footnoteLayoutFailed(String)
 
         var errorDescription: String? {
             switch self {
@@ -24,6 +25,8 @@ final class PrintDocumentRenderer {
                 return "The print preview request was superseded by a newer update."
             case .unavailablePrintOperation:
                 return "The system could not create a print operation for the prepared PDF."
+            case .footnoteLayoutFailed(let message):
+                return message
             }
         }
     }
@@ -192,7 +195,12 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
             if let error {
                 self.loadContinuation = nil
                 self.currentNavigation = nil
-                continuation.resume(throwing: PrintDocumentRenderer.RenderError.loadFailed(error))
+                if let message = (error as NSError).userInfo["WKJavaScriptExceptionMessage"] as? String,
+                   message.contains("Page footnote") {
+                    continuation.resume(throwing: PrintDocumentRenderer.RenderError.footnoteLayoutFailed(message))
+                } else {
+                    continuation.resume(throwing: PrintDocumentRenderer.RenderError.loadFailed(error))
+                }
                 return
             }
             guard let metrics = Self.decodeMetrics(result) else {
