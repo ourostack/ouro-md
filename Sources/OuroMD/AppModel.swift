@@ -324,6 +324,11 @@ final class AppModel: ObservableObject {
                          properties: ["code": .string("metadata_initialization_failed")])
     }
 
+    func reportPrintError(_ error: Error) {
+        presentError("Could not prepare print layout", error)
+        captureTelemetry("ouro_md_print_failed", properties: ["code": .string("print_layout_failed")])
+    }
+
     /// Auto-save silently persists a titled document a moment after the last
     /// edit, so the user rarely has to press ⌘S.
     /// The editor's current Markdown, including unsaved edits.
