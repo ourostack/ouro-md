@@ -32,7 +32,7 @@ place — switch themes live, and read the same document four different ways.
   compact **status bar** (word/char count, mode, theme) sits a toggle away
   (**View ▸ Toggle Status Bar**) and is hidden by default.
 - **Export.** Save to themed, self-contained **HTML** or **PDF**.
-- **Print layout.** **File ▸ Print…** and **File ▸ Export ▸ PDF…** share a paginated preview with margins, font size, and line spacing controls. Turn on **Number external links at the end** to print deduplicated numbered references. These settings do not change the Markdown document.
+- **Print layout.** **File ▸ Print…** and **File ▸ Export ▸ PDF…** share a paginated preview with margins, font size, and line spacing controls. Use **Page Setup…** in that sheet to choose paper size and orientation before output. Turn on **Number external links at the end** to print deduplicated numbered references. These settings do not change the Markdown document.
 - **Images that just work.** Pasted or dropped images are embedded inline (as
   data URIs) — no upload server, no broken links.
 - **Headless render.** `ouro-md --render file.md` prints a styled HTML document

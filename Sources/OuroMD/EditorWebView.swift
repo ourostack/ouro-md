@@ -128,18 +128,21 @@ struct EditorWebView: NSViewRepresentable {
         let externalURLOpener: (URL) -> Void
         let anchorScroller: ((String) -> Void)?
         let printSettingsStore: PrintLayoutSettingsStore
+        let pageSetupChooser: (NSPrintInfo) -> Bool
         weak var webView: WKWebView?
 
         init(
             model: AppModel,
             externalURLOpener: @escaping (URL) -> Void = { _ = NSWorkspace.shared.open($0) },
             anchorScroller: ((String) -> Void)? = nil,
-            printSettingsStore: PrintLayoutSettingsStore = PrintLayoutSettingsStore()
+            printSettingsStore: PrintLayoutSettingsStore = PrintLayoutSettingsStore(),
+            pageSetupChooser: @escaping (NSPrintInfo) -> Bool = { NSPageLayout().runModal(with: $0) == NSApplication.ModalResponse.OK.rawValue }
         ) {
             self.model = model
             self.externalURLOpener = externalURLOpener
             self.anchorScroller = anchorScroller
             self.printSettingsStore = printSettingsStore
+            self.pageSetupChooser = pageSetupChooser
         }
 
         // MARK: JS -> native
@@ -368,6 +371,7 @@ struct EditorWebView: NSViewRepresentable {
                         parentWindow: window,
                         action: .print,
                         settingsStore: self.printSettingsStore,
+                        pageSetupChooser: self.pageSetupChooser,
                         reportError: { [weak self] _, error in
                             self?.reportPrintError(error)
                         },
@@ -419,6 +423,7 @@ struct EditorWebView: NSViewRepresentable {
                         parentWindow: window,
                         action: .export(url, completion),
                         settingsStore: self.printSettingsStore,
+                        pageSetupChooser: self.pageSetupChooser,
                         reportError: { [weak self] _, error in
                             self?.reportPrintError(error)
                         },

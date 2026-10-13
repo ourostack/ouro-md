@@ -34,6 +34,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     private let action: Action
     private let reportError: (String, Error) -> Void
     private let telemetry: (String, [String: OuroMDTelemetryValue]) -> Void
+    private let pageSetupChooser: (NSPrintInfo) -> Bool
     private let controls: PrintLayoutAccessoryController
     private let panel: NSPanel
     private let previewView = PDFView()
@@ -53,12 +54,14 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         parentWindow: NSWindow,
         action: Action,
         settingsStore: PrintLayoutSettingsStore,
+        pageSetupChooser: @escaping (NSPrintInfo) -> Bool = { NSPageLayout().runModal(with: $0) == NSApplication.ModalResponse.OK.rawValue },
         reportError: @escaping (String, Error) -> Void,
         telemetry: @escaping (String, [String: OuroMDTelemetryValue]) -> Void
     ) {
         self.prepared = prepared
         self.parentWindow = parentWindow
         self.action = action
+        self.pageSetupChooser = pageSetupChooser
         self.reportError = reportError
         self.telemetry = telemetry
         self.controls = PrintLayoutAccessoryController(settings: prepared.settings, settingsStore: settingsStore)
@@ -74,6 +77,19 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         }
         controls.onValidationChanged = { [weak self] _ in
             self?.updatePrimaryEnabled(self?.currentPreviewData != nil)
+        }
+        controls.onPageSetupRequested = { [weak self] in
+            guard let self, !self.sessionFinished else { return }
+            self.submitWhenPreviewReady = false
+            self.previewTask?.cancel()
+            guard let selected = self.prepared.printInfo.copy() as? NSPrintInfo else {
+                self.reportError("Could not open page setup", SessionError.unavailable("The current paper settings could not be copied."))
+                return
+            }
+            if self.pageSetupChooser(selected) {
+                self.prepared.setPageSettings(selected)
+            }
+            self.schedulePreviewRefresh(using: self.controls.currentSettings)
         }
         buildPanel()
     }

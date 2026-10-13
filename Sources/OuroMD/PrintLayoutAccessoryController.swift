@@ -23,6 +23,7 @@ final class PrintLayoutAccessoryController: NSViewController {
 
     var onSettingsChanged: ((PrintLayoutSettings) -> Void)?
     var onValidationChanged: ((String?) -> Void)?
+    var onPageSetupRequested: (() -> Void)?
 
     private let settingsStore: PrintLayoutSettingsStore
     private(set) var currentSettings: PrintLayoutSettings
@@ -36,6 +37,7 @@ final class PrintLayoutAccessoryController: NSViewController {
     private let lineSpacingField = NSTextField(string: "")
     private let externalLinksCheckbox = NSButton(checkboxWithTitle: "Number external links at the end", target: nil, action: nil)
     private let validationLabel = NSTextField(labelWithString: "")
+    private let pageSetupButton = NSButton(title: "Page Setup…", target: nil, action: nil)
 
     init(settings: PrintLayoutSettings, settingsStore: PrintLayoutSettingsStore = PrintLayoutSettingsStore()) {
         self.currentSettings = settings.normalized
@@ -49,6 +51,10 @@ final class PrintLayoutAccessoryController: NSViewController {
     }
 
     override func loadView() {
+        pageSetupButton.target = self
+        pageSetupButton.action = #selector(pageSetupPressed(_:))
+        pageSetupButton.bezelStyle = .rounded
+        pageSetupButton.setAccessibilityLabel("Page Setup: paper size and orientation")
         configureField(topField, title: "Top margin (pt)")
         configureField(rightField, title: "Right margin (pt)")
         configureField(bottomField, title: "Bottom margin (pt)")
@@ -80,7 +86,7 @@ final class PrintLayoutAccessoryController: NSViewController {
         grid.column(at: 0).xPlacement = .trailing
         grid.column(at: 1).xPlacement = .fill
 
-        let stack = NSStackView(views: [grid, externalLinksCheckbox, validationLabel])
+        let stack = NSStackView(views: [pageSetupButton, grid, externalLinksCheckbox, validationLabel])
         stack.orientation = .vertical
         stack.spacing = 12
         stack.alignment = .leading
@@ -173,6 +179,10 @@ final class PrintLayoutAccessoryController: NSViewController {
 
     @objc private func fieldChanged(_ sender: NSTextField) {
         _ = applyCurrentValues()
+    }
+
+    @objc private func pageSetupPressed(_ sender: Any?) {
+        onPageSetupRequested?()
     }
 
     @objc private func checkboxChanged(_ sender: NSButton) {

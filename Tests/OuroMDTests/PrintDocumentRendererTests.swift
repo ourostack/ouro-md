@@ -19,6 +19,25 @@ final class PrintDocumentRendererTests: XCTestCase {
         XCTAssertEqual(page.bounds(for: .mediaBox).height, 842, accuracy: 1)
     }
 
+    func testPageSetupRepaginatesBeforeFixedNativePrintOperation() async throws {
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<h1>Page setup proof</h1><p>Selected paper controls output.</p>", title: "Page setup", baseURL: nil, settings: .default)
+        defer { prepared.releaseHold() }
+        let selected = NSPrintInfo()
+        selected.paperSize = NSSize(width: 595, height: 842)
+        selected.orientation = .landscape
+        prepared.setPageSettings(selected)
+        try await prepared.reload(with: .default)
+        let data = try await prepared.createPDFData()
+        let document = try XCTUnwrap(PDFDocument(data: data))
+        let page = try XCTUnwrap(document.page(at: 0))
+        XCTAssertEqual(page.bounds(for: .mediaBox).width, selected.paperSize.width, accuracy: 1)
+        XCTAssertEqual(page.bounds(for: .mediaBox).height, selected.paperSize.height, accuracy: 1)
+        let operation = try prepared.makePrintOperation(with: document)
+        XCTAssertFalse(operation.printPanel.options.contains(.showsPaperSize))
+        XCTAssertFalse(operation.printPanel.options.contains(.showsOrientation))
+        XCTAssertFalse(operation.printPanel.options.contains(.showsPageSetupAccessory))
+    }
+
     func testRenderedPDFUsesPagedLayoutPreservesWholeRowsAndClickableEndnotes() async throws {
         let scratch = try PrintLayoutTestPaths.makeScratchDirectory(label: "print-renderer")
         defer { try? FileManager.default.removeItem(at: scratch) }

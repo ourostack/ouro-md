@@ -138,6 +138,10 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         try await loadHTML(using: settings)
     }
 
+    func setPageSettings(_ selected: NSPrintInfo) {
+        printInfo = settings.applying(to: selected)
+    }
+
     func writePDF(to url: URL) async throws {
         let data = try await createPDFData()
         try data.write(to: url, options: .atomic)
@@ -235,6 +239,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         guard let operation = pdf.printOperation(for: printInfo, scalingMode: .pageScaleNone, autoRotate: false) else {
             throw PrintDocumentRenderer.RenderError.unavailablePrintOperation
         }
+        operation.printPanel.options.subtract([.showsPaperSize, .showsOrientation, .showsPageSetupAccessory])
         return operation
     }
 

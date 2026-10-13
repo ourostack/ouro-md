@@ -85,7 +85,10 @@ final class EditorSurfaceTester: NSObject {
 
         let configuration = WKWebViewConfiguration()
         let controller = WKUserContentController()
-        coordinator = EditorWebView.Coordinator(model: model, printSettingsStore: PrintLayoutSettingsStore(preferences: printPreferences.defaults))
+        coordinator = EditorWebView.Coordinator(model: model, printSettingsStore: PrintLayoutSettingsStore(preferences: printPreferences.defaults), pageSetupChooser: { info in
+            info.paperSize = NSSize(width: 595, height: 842)
+            return true
+        })
         controller.add(coordinator, name: "ouro")
         configuration.userContentController = controller
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
@@ -246,7 +249,10 @@ final class EditorSurfaceTester: NSObject {
         guard let font = views.compactMap({ $0 as? NSTextField }).first(where: { $0.accessibilityLabel() == "Font size (pt)" }),
               let export = views.compactMap({ $0 as? NSButton }).first(where: { $0.title == "Export PDF" }),
               let cancel = views.compactMap({ $0 as? NSButton }).first(where: { $0.title == "Cancel" }),
+              let pageSetup = views.compactMap({ $0 as? NSButton }).first(where: { $0.title == "Page Setup…" }),
               await waitUntil(timeout: 8, condition: { export.isEnabled }) else { return false }
+        pageSetup.performClick(nil)
+        guard await waitUntil(timeout: 8, condition: { export.isEnabled }) else { return false }
         font.stringValue = "not a number"
         _ = font.sendAction(font.action, to: font.target)
         let invalidDisabled = !export.isEnabled
@@ -268,6 +274,8 @@ final class EditorSurfaceTester: NSObject {
         let settingsSaved = PrintLayoutSettingsStore(preferences: printPreferences.defaults).load().fontSize == 20
         let printedFontMatches = pdf.page(at: 0)?.attributedString?.attributes(at: 0, effectiveRange: nil)[.font] as? NSFont
         let finalSettingsPrinted = abs((printedFontMatches?.pointSize ?? 0) - 40) < 1
+        let selectedPaperPrinted = abs((pdf.page(at: 0)?.bounds(for: .mediaBox).width ?? 0) - 595) < 1
+            && abs((pdf.page(at: 0)?.bounds(for: .mediaBox).height ?? 0) - 842) < 1
         let unchangedSource = try Data(contentsOf: markdownFile) == originalBytes
 
         var cancelled: Result<Bool, Error>?
@@ -293,7 +301,7 @@ final class EditorSurfaceTester: NSObject {
             if case .success(false)? = closed { return true }
             return false
         })
-        return invalidDisabled && settingsSaved && finalSettingsPrinted && unchangedSource && closedCancelled
+        return invalidDisabled && settingsSaved && finalSettingsPrinted && selectedPaperPrinted && unchangedSource && closedCancelled
             && PrintLayoutSession.activeCountForTesting == 0 && PreparedPrintDocument.retainedCountForTesting == 0
     }
 
