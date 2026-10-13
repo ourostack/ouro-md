@@ -4,6 +4,7 @@ import Foundation
 public protocol ReadingBaselineStoring {
     func read(for file: URL) throws -> String?
     func write(_ markdown: String, for file: URL) throws
+    func remove(for file: URL) throws
 }
 
 /// Private reading history, separate from the document and its Git history.
@@ -42,6 +43,14 @@ public struct ReadingBaselineStore: ReadingBaselineStoring {
         let data = try JSONEncoder().encode(Record(version: 1, markdown: markdown))
         try data.write(to: destination, options: .atomic)
         try manager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: destination.path)
+    }
+
+    public func remove(for file: URL) throws {
+        do {
+            try FileManager.default.removeItem(at: recordURL(for: file))
+        } catch let error as NSError where error.domain == NSCocoaErrorDomain && error.code == NSFileNoSuchFileError {
+            return
+        }
     }
 
     private func recordURL(for file: URL) -> URL {

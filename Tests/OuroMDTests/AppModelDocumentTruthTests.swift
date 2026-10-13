@@ -128,6 +128,28 @@ final class AppModelDocumentTruthTests: XCTestCase {
         model.reconcileExternalChangeForTesting()
         XCTAssertNil(model.renameCurrentFile(to: "renamed.md"))
         XCTAssertEqual(try store.read(for: renamed), "Original")
+        try "Unrelated new file".write(to: file, atomically: true, encoding: .utf8)
+        XCTAssertNil(try store.read(for: file))
+    }
+
+    func testDelayedAcknowledgementDoesNotReviewSubsequentLocalEdits() throws {
+        let root = tempDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appendingPathComponent("note.md")
+        let store = ReadingBaselineStore(directory: root.appendingPathComponent("baselines"))
+        try "Original".write(to: file, atomically: true, encoding: .utf8)
+        let model = AppModel(readingBaselineStore: store)
+        let bridge = TruthBridge()
+        model.bridge = bridge
+        model.editorDidBecomeReady()
+        XCTAssertTrue(model.loadInitialFile(file.path))
+        bridge.deferMarkdown = true
+        model.markCurrentReviewed()
+        model.setDirty(true)
+        bridge.markdownCompletion?("Subsequent typing")
+        XCTAssertEqual(try store.read(for: file), "Original")
+        XCTAssertEqual(bridge.reviewClears, 0)
+        XCTAssertEqual(model.readingReviewStatus, "Document changed: mark reviewed again")
     }
 
     func testTruthRefreshesAcrossWelcomeLoadDirtySaveRenameSaveAsAndNewDocument() {
@@ -317,4 +339,5 @@ private final class TruthBridge: EditorBridge {
 private struct FailingReadingBaselineStore: ReadingBaselineStoring {
     func read(for file: URL) throws -> String? { throw CocoaError(.fileReadCorruptFile) }
     func write(_ markdown: String, for file: URL) throws { throw CocoaError(.fileWriteNoPermission) }
+    func remove(for file: URL) throws { throw CocoaError(.fileWriteNoPermission) }
 }

@@ -13,6 +13,7 @@ place — switch themes live, and read the same document four different ways.
 
 ## Features
 
+- **Reading review.** **View ▸ Show Changes Since Last Review** compares the current document with a private local reading baseline, including edits made while the file was closed. First opening establishes an unmarked baseline; **View ▸ Mark Current Content Reviewed** acknowledges the current text without saving or rewriting the document. **View ▸ Toggle Status Bar** shows the reading-history state.
 - **Instant rendering.** Type Markdown and see it render in place (live-preview
   "IR" mode), with syntax markers kept subtle. Also offers WYSIWYG and
   Split (source + preview) modes.
@@ -38,6 +39,8 @@ place — switch themes live, and read the same document four different ways.
   to stdout for scripting and previews.
 
 ## Install
+
+Reading history stores the full last-reviewed text locally in `~/Library/Application Support/Ouro MD/Reading Baselines`, with owner-only directory and file permissions. It does not use Git or change your Markdown files. History follows a rename or move performed inside Ouro MD; a file moved elsewhere while closed starts a fresh, unmarked baseline at its new path. A reading baseline remains when you close or delete the original file.
 
 **One line (recommended) — no checkout needed:**
 

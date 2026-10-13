@@ -158,6 +158,7 @@ final class AppModel: ObservableObject {
     private let readingBaselineStore: ReadingBaselineStoring
     private var readingBaseline: String?
     private var readingDocumentGeneration = 0
+    private var readingEditGeneration = 0
     private var pendingMarkdown: String?
     private var pendingAssistantEdit: String?
     /// Tests answer the external-change conflict here (true reloads from
@@ -306,6 +307,7 @@ final class AppModel: ObservableObject {
     }
 
     func setDirty(_ dirty: Bool) {
+        if dirty { readingEditGeneration += 1 }
         guard dirty != isDirty else { return }
         isDirty = dirty
         refreshDocumentTruth()
@@ -381,6 +383,7 @@ final class AppModel: ObservableObject {
         guard active != writingToolsActive else { return }
         writingToolsActive = active
         if active {
+            readingEditGeneration += 1
             autosaveItem?.cancel()
             captureTelemetry("ouro_md_writing_tools_session_started")
             return
@@ -461,9 +464,15 @@ final class AppModel: ObservableObject {
     func markCurrentReviewed() {
         guard let url = currentURL, isReady, let bridge, !writingToolsActive else { return }
         let generation = readingDocumentGeneration
+        let editGeneration = readingEditGeneration
         let diskAtRequest = lastLoadedContent
         let acknowledge: (String?) -> Void = { [weak self] markdown in
             guard let self, self.currentURL == url, self.readingDocumentGeneration == generation, !self.writingToolsActive else { return }
+            guard self.readingEditGeneration == editGeneration else {
+                self.readingReviewStatus = "Document changed: mark reviewed again"
+                self.statusBarVisible = true
+                return
+            }
             guard let markdown else {
                 self.presentError("Could not mark document reviewed", CocoaError(.fileReadUnknown))
                 return
@@ -736,6 +745,7 @@ final class AppModel: ObservableObject {
         }
         stopWatching()
         defer { startWatching() }
+        let previousBaselineURL = source.resolvingSymlinksInPath()
         // Native Rename already owns this document's file-access session.
         // Excluding its presenter avoids waiting for that same session to yield.
         let coordinator = NSFileCoordinator(filePresenter: filePresenter)
@@ -755,6 +765,9 @@ final class AppModel: ObservableObject {
         if let baseline = readingBaseline {
             do {
                 try readingBaselineStore.write(baseline, for: destination)
+                if previousBaselineURL != destination.resolvingSymlinksInPath() {
+                    try readingBaselineStore.remove(for: previousBaselineURL)
+                }
             } catch {
                 presentError("Could not move reading history to \(destination.lastPathComponent)", error)
             }
