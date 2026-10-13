@@ -88,7 +88,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         totalWidth: 0,
         pageCount: 1,
         fragmentedProofIDs: [],
-        endnoteLinks: []
+        links: []
     )
 
     init(
@@ -214,14 +214,14 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     func createPDFData() async throws -> Data {
         let generation = loadGeneration
         var pagePDFs: [Data] = []
-        var pageLinks: [[PrintLayoutMetrics.EndnoteLink]] = []
+        var pageLinks: [[PrintLayoutMetrics.Link]] = []
         for index in 0..<layoutMetrics.pageCount {
             try Task.checkCancellation()
             guard generation == loadGeneration else { throw PrintDocumentRenderer.RenderError.superseded }
             let metrics = try await activatePage(index)
             guard generation == loadGeneration else { throw PrintDocumentRenderer.RenderError.superseded }
             pagePDFs.append(try await snapshotVisiblePagePDF())
-            pageLinks.append(metrics.endnoteLinks)
+            pageLinks.append(metrics.links)
         }
         return try PrintPDFPaginator.paginate(
             sourcePages: pagePDFs,
@@ -309,20 +309,23 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
               let pageStride = dictionary["pageStride"] as? NSNumber,
               let totalWidth = dictionary["totalWidth"] as? NSNumber,
               let pageCount = dictionary["pageCount"] as? NSNumber else { return nil }
-        let links = (dictionary["endnoteLinks"] as? [[String: Any]] ?? []).compactMap { link -> PrintLayoutMetrics.EndnoteLink? in
-            guard let url = link["url"] as? String,
-                  let pageIndex = link["pageIndex"] as? NSNumber,
-                  let x = link["x"] as? NSNumber,
+        let links = (dictionary["links"] as? [[String: Any]] ?? []).compactMap { link -> PrintLayoutMetrics.Link? in
+            guard let x = link["x"] as? NSNumber,
                   let y = link["y"] as? NSNumber,
                   let width = link["width"] as? NSNumber,
                   let height = link["height"] as? NSNumber else { return nil }
-            return PrintLayoutMetrics.EndnoteLink(
-                url: url,
-                pageIndex: pageIndex.intValue,
+            let destinationPageIndex = (link["destinationPageIndex"] as? NSNumber)?.intValue
+            let destinationX = (link["destinationX"] as? NSNumber)?.doubleValue
+            let destinationY = (link["destinationY"] as? NSNumber)?.doubleValue
+            return PrintLayoutMetrics.Link(
                 x: x.doubleValue,
                 y: y.doubleValue,
                 width: width.doubleValue,
-                height: height.doubleValue
+                height: height.doubleValue,
+                url: link["url"] as? String,
+                destinationPageIndex: destinationPageIndex,
+                destinationX: destinationX,
+                destinationY: destinationY
             )
         }
         return PrintLayoutMetrics(
@@ -333,7 +336,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
             totalWidth: totalWidth.doubleValue,
             pageCount: pageCount.intValue,
             fragmentedProofIDs: dictionary["fragmentedProofIDs"] as? [String] ?? [],
-            endnoteLinks: links
+            links: links
         )
     }
 }

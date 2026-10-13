@@ -41,7 +41,7 @@ final class PrintDocumentRendererTests: XCTestCase {
         })
         XCTAssertTrue(annotationURLs.contains("https://example.com/repeated?query=1&value=2"))
         XCTAssertTrue(annotationURLs.contains("https://example.com/code-link"))
-        XCTAssertFalse(annotationURLs.contains("https://example.com/image-only"))
+        XCTAssertTrue(annotationURLs.contains("https://example.com/image-only"))
         let fullText = pageStrings.joined(separator: "\n")
         XCTAssertTrue(fullText.contains("x"))
         XCTAssertTrue(fullText.contains("y + z"))
@@ -126,6 +126,64 @@ final class PrintDocumentRendererTests: XCTestCase {
         XCTAssertEqual(PreparedPrintDocument.retainedCountForTesting, 0)
     }
 
+    func testRenderedPDFPreservesAuthoredLinksWhenReferencesAreOff() async throws {
+        let scratch = try PrintLayoutTestPaths.makeScratchDirectory(label: "print-links-off")
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        let renderer = PrintDocumentRenderer(scriptProvider: { PrintLayoutScriptLoader.load() ?? "" })
+        let prepared = try await renderer.prepareDocument(
+            bodyHTML: Self.syntheticBodyHTML,
+            title: "links-off.pdf",
+            baseURL: scratch,
+            settings: PrintLayoutSettings(
+                margins: .init(top: 54, right: 54, bottom: 54, left: 54),
+                fontSize: 12,
+                lineSpacing: 1.45,
+                includeExternalLinkReferences: false
+            )
+        )
+        defer { prepared.releaseHold() }
+        let pdf = try await prepared.createPDFData()
+        let document = try XCTUnwrap(PDFDocument(data: pdf))
+        let annotationURLs = Set((0..<document.pageCount).flatMap { index in
+            document.page(at: index)?.annotations.compactMap { $0.url?.absoluteString } ?? []
+        })
+        XCTAssertTrue(annotationURLs.contains("https://example.com/repeated?query=1&value=2"))
+        XCTAssertTrue(annotationURLs.contains("https://example.com/code-link"))
+        XCTAssertTrue(annotationURLs.contains("https://example.com/image-only"))
+        XCTAssertTrue(Self.containsInternalLink(in: document))
+        let text = (0..<document.pageCount).compactMap { document.page(at: $0)?.string ?? "" }.joined(separator: "\n")
+        XCTAssertFalse(text.contains("External links"))
+    }
+
+    func testRenderedPDFPreservesAuthoredAndGeneratedLinksWhenReferencesAreOn() async throws {
+        let scratch = try PrintLayoutTestPaths.makeScratchDirectory(label: "print-links-on")
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        let renderer = PrintDocumentRenderer(scriptProvider: { PrintLayoutScriptLoader.load() ?? "" })
+        let prepared = try await renderer.prepareDocument(
+            bodyHTML: Self.syntheticBodyHTML,
+            title: "links-on.pdf",
+            baseURL: scratch,
+            settings: PrintLayoutSettings(
+                margins: .init(top: 54, right: 54, bottom: 54, left: 54),
+                fontSize: 12,
+                lineSpacing: 1.45,
+                includeExternalLinkReferences: true
+            )
+        )
+        defer { prepared.releaseHold() }
+        let pdf = try await prepared.createPDFData()
+        let document = try XCTUnwrap(PDFDocument(data: pdf))
+        let annotationURLs = Set((0..<document.pageCount).flatMap { index in
+            document.page(at: index)?.annotations.compactMap { $0.url?.absoluteString } ?? []
+        })
+        XCTAssertTrue(annotationURLs.contains("https://example.com/repeated?query=1&value=2"))
+        XCTAssertTrue(annotationURLs.contains("https://example.com/code-link"))
+        XCTAssertTrue(annotationURLs.contains("https://example.com/image-only"))
+        XCTAssertTrue(Self.containsInternalLink(in: document))
+        let text = (0..<document.pageCount).compactMap { document.page(at: $0)?.string ?? "" }.joined(separator: "\n")
+        XCTAssertTrue(text.contains("External links"))
+    }
+
     private static func bounds(of needle: String, in page: PDFPage?) -> CGRect? {
         guard let page, let text = page.string, let range = text.range(of: needle) else { return nil }
         let nsRange = NSRange(range, in: text)
@@ -142,6 +200,16 @@ final class PrintDocumentRendererTests: XCTestCase {
         return (attributes[.font] as? NSFont).map { Double($0.pointSize) }
     }
 
+    private static func containsInternalLink(in document: PDFDocument) -> Bool {
+        for index in 0..<document.pageCount {
+            guard let page = document.page(at: index) else { continue }
+            for annotation in page.annotations where annotation.destination != nil {
+                return true
+            }
+        }
+        return false
+    }
+
     private static func writeEvidenceIfRequested(
         pdf: Data,
         document: PDFDocument,
@@ -152,16 +220,14 @@ final class PrintDocumentRendererTests: XCTestCase {
         guard let requestedDirectory = env["OURO_PRINT_EVIDENCE_DIR"], !requestedDirectory.isEmpty else { return }
         let evidenceDirectory = URL(fileURLWithPath: requestedDirectory, isDirectory: true)
         try FileManager.default.createDirectory(at: evidenceDirectory, withIntermediateDirectories: true)
-        try pdf.write(to: evidenceDirectory.appendingPathComponent("print-layout-proof.pdf"), options: .atomic)
-
+        try atomicWrite(pdf, to: evidenceDirectory.appendingPathComponent("print-layout-proof.pdf"))
         try writePageImage(pageAt: 0, name: "print-layout-proof-page-1.png", from: document, into: evidenceDirectory)
         try writePageImage(pageAt: max(0, document.pageCount / 2), name: "print-layout-proof-page-middle.png", from: document, into: evidenceDirectory)
         try writePageImage(pageAt: max(0, document.pageCount - 1), name: "print-layout-proof-page-last.png", from: document, into: evidenceDirectory)
         try writeControlsSnapshot(settings: controlsSettings, to: evidenceDirectory.appendingPathComponent("print-layout-controls.png"))
-        try reportLines.joined(separator: "\n").write(
-            to: evidenceDirectory.appendingPathComponent("print-layout-report.txt"),
-            atomically: true,
-            encoding: .utf8
+        try atomicWrite(
+            Data(reportLines.joined(separator: "\n").utf8),
+            to: evidenceDirectory.appendingPathComponent("print-layout-report.txt")
         )
     }
 
@@ -171,7 +237,7 @@ final class PrintDocumentRendererTests: XCTestCase {
         if let tiff = image.tiffRepresentation,
            let bitmap = NSBitmapImageRep(data: tiff),
            let png = bitmap.representation(using: .png, properties: [:]) {
-            try png.write(to: directory.appendingPathComponent(name), options: .atomic)
+            try atomicWrite(png, to: directory.appendingPathComponent(name))
         }
     }
 
@@ -186,7 +252,14 @@ final class PrintDocumentRendererTests: XCTestCase {
         guard let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return }
         view.cacheDisplay(in: view.bounds, to: rep)
         guard let png = rep.representation(using: .png, properties: [:]) else { return }
-        try png.write(to: url, options: .atomic)
+        try atomicWrite(png, to: url)
+    }
+
+    private static func atomicWrite(_ data: Data, to url: URL) throws {
+        let temporary = url.deletingPathExtension().appendingPathExtension(url.pathExtension + ".next")
+        try data.write(to: temporary, options: .atomic)
+        _ = try? FileManager.default.removeItem(at: url)
+        try FileManager.default.moveItem(at: temporary, to: url)
     }
 
     private static let syntheticBodyHTML = {

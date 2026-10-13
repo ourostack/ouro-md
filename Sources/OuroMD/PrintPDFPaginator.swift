@@ -4,13 +4,15 @@ import Foundation
 import PDFKit
 
 struct PrintLayoutMetrics: Equatable, Sendable {
-    struct EndnoteLink: Equatable, Sendable {
-        var url: String
-        var pageIndex: Int
+    struct Link: Equatable, Sendable {
         var x: Double
         var y: Double
         var width: Double
         var height: Double
+        var url: String?
+        var destinationPageIndex: Int?
+        var destinationX: Double?
+        var destinationY: Double?
     }
 
     var contentWidth: Double
@@ -20,7 +22,7 @@ struct PrintLayoutMetrics: Equatable, Sendable {
     var totalWidth: Double
     var pageCount: Int
     var fragmentedProofIDs: [String]
-    var endnoteLinks: [EndnoteLink]
+    var links: [Link]
 }
 
 enum PrintPDFPaginator {
@@ -48,7 +50,7 @@ enum PrintPDFPaginator {
         sourcePages: [Data],
         paperSize: NSSize,
         margins: PrintPageMargins,
-        pageLinks: [[PrintLayoutMetrics.EndnoteLink]]
+        pageLinks: [[PrintLayoutMetrics.Link]]
     ) throws -> Data {
         _ = margins
         let document = PDFDocument()
@@ -69,7 +71,7 @@ enum PrintPDFPaginator {
         to data: Data,
         paperSize: NSSize,
         margins: PrintPageMargins,
-        pageLinks: [[PrintLayoutMetrics.EndnoteLink]]
+        pageLinks: [[PrintLayoutMetrics.Link]]
     ) throws -> Data {
         guard let document = PDFDocument(data: data) else {
             throw PaginationError.unreadableOutput
@@ -83,7 +85,6 @@ enum PrintPDFPaginator {
         for (pageIndex, links) in pageLinks.enumerated() {
             guard let page = document.page(at: pageIndex) else { continue }
             for link in links {
-                guard let url = URL(string: link.url) else { continue }
                 let bounds = CGRect(
                     x: margins.left + link.x,
                     y: paperSize.height - margins.top - link.y - link.height,
@@ -92,7 +93,18 @@ enum PrintPDFPaginator {
                 ).intersection(page.bounds(for: .mediaBox))
                 guard !bounds.isEmpty else { continue }
                 let annotation = PDFAnnotation(bounds: bounds, forType: .link, withProperties: nil)
-                annotation.url = url
+                if let urlString = link.url, let url = URL(string: urlString) {
+                    annotation.url = url
+                } else if let destinationPageIndex = link.destinationPageIndex,
+                          let destinationPage = document.page(at: destinationPageIndex) {
+                    let destinationPoint = CGPoint(
+                        x: margins.left + (link.destinationX ?? 0),
+                        y: paperSize.height - margins.top - (link.destinationY ?? 0)
+                    )
+                    annotation.destination = PDFDestination(page: destinationPage, at: destinationPoint)
+                } else {
+                    continue
+                }
                 page.addAnnotation(annotation)
             }
         }

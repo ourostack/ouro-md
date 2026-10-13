@@ -22,6 +22,17 @@
     return candidate;
   }
 
+  function pageIndexForRect(rect, rootRect, stride) {
+    return Math.max(0, Math.floor((rect.left - rootRect.left + 0.5) / stride));
+  }
+
+  function pageLocationForRect(rect, pageIndex, rootRect, stride) {
+    return {
+      x: rect.left - rootRect.left - (pageIndex * stride),
+      y: rect.top - rootRect.top
+    };
+  }
+
   function normalizedExternalURL(anchor) {
     if (!anchor || shouldSkipReference(anchor)) { return null; }
     try {
@@ -131,16 +142,14 @@
     });
   }
 
-  function cloneTableFragment(table, rows) {
+  function cloneTableFragment(table, rows, includeFooter) {
     var clone = table.cloneNode(false);
     Array.prototype.forEach.call(table.children, function (child) {
       var tag = child.tagName && child.tagName.toLowerCase();
-      if (tag === "colgroup" || tag === "caption") {
+      if (tag === "caption" || tag === "colgroup" || tag === "thead" || (includeFooter && tag === "tfoot")) {
         clone.appendChild(child.cloneNode(true));
       }
     });
-    var head = table.querySelector("thead");
-    if (head) { clone.appendChild(head.cloneNode(true)); }
     var body = document.createElement("tbody");
     rows.forEach(function (row) { body.appendChild(row.cloneNode(true)); });
     clone.appendChild(body);
@@ -149,35 +158,63 @@
   }
 
   function splitTablesForPages() {
-    var contentHeight = toFiniteNumber(Number(config.pageContentHeight), 684);
     Array.prototype.forEach.call(article().querySelectorAll("table"), function (table) {
       if (table.dataset.ouroPrintSplit === "true") { return; }
+      if (table.querySelector("table") || table.querySelector("tbody [rowspan], tbody [colspan], thead [rowspan], thead [colspan]")) { return; }
       var rows = Array.prototype.slice.call(table.querySelectorAll("tbody > tr"));
       if (!rows.length) { return; }
+      var root = article();
+      var rootRect = root.getBoundingClientRect();
+      var contentHeight = toFiniteNumber(Number(config.pageContentHeight), 684);
+      var stride = toFiniteNumber(Number(config.pageContentWidth), root.clientWidth || 1) + toFiniteNumber(Number(config.pageGap), DEFAULT_GAP);
       var headerHeight = 0;
-      var head = table.querySelector("thead");
-      if (head) { headerHeight = head.getBoundingClientRect().height; }
+      var footerHeight = 0;
+      Array.prototype.forEach.call(table.children, function (child) {
+        var tag = child.tagName && child.tagName.toLowerCase();
+        if (tag === "tfoot") {
+          footerHeight += child.getBoundingClientRect().height || 0;
+        } else if (tag === "thead" || tag === "caption") {
+          headerHeight += child.getBoundingClientRect().height || 0;
+        }
+      });
+      var maxRowHeight = rows.reduce(function (max, row) {
+        return Math.max(max, row.getBoundingClientRect().height || 0);
+      }, 0);
+      var safeRowsPerPage = Math.max(1, Math.floor((contentHeight - headerHeight - footerHeight) / Math.max(1, maxRowHeight)) - 2);
       var groups = [];
       var current = [];
-      var currentHeight = headerHeight;
+      var currentPage = 0;
       rows.forEach(function (row) {
-        var rowHeight = row.getBoundingClientRect().height || 0;
-        if (current.length && currentHeight + rowHeight > contentHeight) {
+        var fragments = Array.prototype.filter.call(row.getClientRects(), function (rect) {
+          return rect.width > 0 && rect.height > 0;
+        });
+        var pages = Array.from(new Set(fragments.map(function (rect) {
+          return pageIndexForRect(rect, rootRect, stride);
+        }))).sort(function (a, b) { return a - b; });
+        if (!pages.length) { return; }
+        var rowTargetPage = pages[pages.length - 1];
+        var lastRect = fragments[fragments.length - 1];
+        var bottomSlack = contentHeight - (lastRect.bottom - rootRect.top);
+        if (pages.length === 1 && bottomSlack < 18) {
+          rowTargetPage += 1;
+        }
+        if (!current.length) {
+          currentPage = rowTargetPage;
+        } else if (pages.length > 1 || rowTargetPage !== currentPage || current.length >= safeRowsPerPage) {
           groups.push(current);
           current = [];
-          currentHeight = headerHeight;
+          currentPage = rowTargetPage;
         }
         current.push(row);
-        currentHeight += rowHeight;
       });
       if (current.length) { groups.push(current); }
       if (groups.length <= 1) { return; }
       var container = document.createElement("div");
       container.className = "ouro-print-split-table-group";
-      groups.forEach(function (group) {
+      groups.forEach(function (group, index) {
         var wrapper = document.createElement("div");
         wrapper.className = "ouro-print-keep-together";
-        wrapper.appendChild(cloneTableFragment(table, group));
+        wrapper.appendChild(cloneTableFragment(table, group, index === groups.length - 1));
         container.appendChild(wrapper);
       });
       table.parentNode.insertBefore(container, table);
@@ -197,12 +234,25 @@
     var rootRect = root.getBoundingClientRect();
     var usedPages = new Set([0]);
     var fragmentedProofIDs = [];
+    var destinations = {};
+    Array.prototype.forEach.call(root.querySelectorAll("[id]"), function (node) {
+      if (!node.getBoundingClientRect) { return; }
+      var rect = node.getBoundingClientRect();
+      if (rect.width <= 0 && rect.height <= 0) { return; }
+      var pageIndex = pageIndexForRect(rect, rootRect, stride);
+      var local = pageLocationForRect(rect, pageIndex, rootRect, stride);
+      destinations[node.id] = {
+        pageIndex: pageIndex,
+        x: local.x,
+        y: local.y
+      };
+    });
     Array.prototype.forEach.call(root.querySelectorAll("*"), function (node, index) {
       if (!node.getBoundingClientRect) { return; }
       var fragments = Array.prototype.filter.call(node.getClientRects(), function (rect) { return rect.width > 0 && rect.height > 0; });
       if (!fragments.length) { return; }
       var pages = Array.from(new Set(fragments.map(function (rect) {
-        return Math.max(0, Math.floor((rect.left - rootRect.left + 0.5) / stride));
+        return pageIndexForRect(rect, rootRect, stride);
       }))).sort(function (a, b) { return a - b; });
       pages.forEach(function (page) { usedPages.add(page); });
       if (pages.length > 1) {
@@ -219,7 +269,8 @@
       totalWidth: root.scrollWidth,
       pageCount: pageCount,
       fragmentedProofIDs: fragmentedProofIDs,
-      endnoteLinks: []
+      links: [],
+      destinations: destinations
     };
     return cachedMetrics;
   }
@@ -240,20 +291,37 @@
     var root = article();
     var frame = document.querySelector(".ouro-print-content-frame");
     var frameRect = frame ? frame.getBoundingClientRect() : root.getBoundingClientRect();
-    metrics.endnoteLinks = Array.prototype.map.call(root.querySelectorAll(".ouro-print-external-links a.ouro-print-reference-url"), function (anchor) {
+    metrics.links = Array.prototype.map.call(root.querySelectorAll("a[href]"), function (anchor) {
       var rect = anchor.getBoundingClientRect();
       var x = rect.left - frameRect.left;
       var y = rect.top - frameRect.top;
       if (x + rect.width < 0 || x > metrics.contentWidth || y + rect.height < 0 || y > metrics.contentHeight) {
         return null;
       }
+      var href = (anchor.getAttribute("href") || "").trim();
+      if (href.charAt(0) === "#") {
+        var destination = metrics.destinations[href.slice(1)];
+        if (!destination) { return null; }
+        return {
+          x: Math.max(0, x),
+          y: Math.max(0, y),
+          width: rect.width,
+          height: rect.height,
+          url: null,
+          destinationPageIndex: destination.pageIndex,
+          destinationX: destination.x,
+          destinationY: destination.y
+        };
+      }
       return {
-        url: anchor.href,
-        pageIndex: normalizedIndex,
         x: Math.max(0, x),
         y: Math.max(0, y),
         width: rect.width,
-        height: rect.height
+        height: rect.height,
+        url: anchor.href,
+        destinationPageIndex: null,
+        destinationX: null,
+        destinationY: null
       };
     }).filter(Boolean);
     return metrics;
