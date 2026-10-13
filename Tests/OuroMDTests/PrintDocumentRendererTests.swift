@@ -76,6 +76,7 @@ final class PrintDocumentRendererTests: XCTestCase {
         XCTAssertTrue(annotationURLs.contains("https://example.com/code-link"))
         XCTAssertTrue(annotationURLs.contains("https://example.com/image-only"))
         let fullText = pageStrings.joined(separator: "\n")
+        XCTAssertTrue(fullText.contains("https://example.com/image-only"))
         XCTAssertTrue(fullText.contains("x"))
         XCTAssertTrue(fullText.contains("y + z"))
         XCTAssertTrue(fullText.contains("Rendered diagram"))

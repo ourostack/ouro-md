@@ -35,6 +35,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     private let reportError: (String, Error) -> Void
     private let telemetry: (String, [String: OuroMDTelemetryValue]) -> Void
     private let pageSetupChooser: (NSPrintInfo) -> Bool
+    private let printPanelChooser: (NSPrintInfo) -> Bool
     private let controls: PrintLayoutAccessoryController
     private let panel: NSPanel
     private let previewView = PDFView()
@@ -48,6 +49,8 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     private var completionDelivered = false
     private var sessionFinished = false
     private var printOperationRunning = false
+    private var outputTask: Task<Void, Never>?
+    private var parentCloseObserver: NSObjectProtocol?
 
     init(
         prepared: PreparedPrintDocument,
@@ -55,6 +58,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         action: Action,
         settingsStore: PrintLayoutSettingsStore,
         pageSetupChooser: @escaping (NSPrintInfo) -> Bool = { NSPageLayout().runModal(with: $0) == NSApplication.ModalResponse.OK.rawValue },
+        printPanelChooser: @escaping (NSPrintInfo) -> Bool = { NSPrintPanel().runModal(with: $0) == NSApplication.ModalResponse.OK.rawValue },
         reportError: @escaping (String, Error) -> Void,
         telemetry: @escaping (String, [String: OuroMDTelemetryValue]) -> Void
     ) {
@@ -62,6 +66,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         self.parentWindow = parentWindow
         self.action = action
         self.pageSetupChooser = pageSetupChooser
+        self.printPanelChooser = printPanelChooser
         self.reportError = reportError
         self.telemetry = telemetry
         self.controls = PrintLayoutAccessoryController(settings: prepared.settings, settingsStore: settingsStore)
@@ -96,6 +101,9 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
 
     func begin() {
         retainSession()
+        parentCloseObserver = NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: parentWindow, queue: .main) { [weak self] _ in
+            self?.completeCancellationIfNeeded()
+        }
         panel.delegate = self
         parentWindow.beginSheet(panel)
         schedulePreviewRefresh(using: prepared.settings)
@@ -116,6 +124,12 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         sessionFinished = true
         previewTask?.cancel()
         previewTask = nil
+        outputTask?.cancel()
+        outputTask = nil
+        if let observer = parentCloseObserver {
+            NotificationCenter.default.removeObserver(observer)
+            parentCloseObserver = nil
+        }
         prepared.releaseHold()
         Self.active.removeValue(forKey: ObjectIdentifier(self))
     }
@@ -269,23 +283,43 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         endSheet()
         switch action {
         case .print:
-            guard let pdfDocument = PDFDocument(data: pdfData) else {
-                reportError("Could not prepare print document", SessionError.missingPreview)
+            guard let selected = prepared.printInfo.copy() as? NSPrintInfo else {
+                reportError("Could not open print settings", SessionError.unavailable("The current print settings could not be copied."))
                 finishSession()
                 return
             }
+            guard printPanelChooser(selected) else { completeCancellationIfNeeded(); return }
+            guard !sessionFinished else { return }
             do {
-                let operation = try prepared.makePrintOperation(with: pdfDocument)
-                printOperationRunning = true
-                operation.runModal(
-                    for: parentWindow,
-                    delegate: self,
-                    didRun: #selector(printOperationDidRun(_:success:contextInfo:)),
-                    contextInfo: nil
-                )
+                try controls.currentSettings.validatePrintableArea(paperSize: selected.paperSize, imageableBounds: selected.imageablePageBounds)
             } catch {
                 reportError("Could not prepare print document", error)
-                finishSession()
+                parentWindow.beginSheet(panel)
+                return
+            }
+            let repaginate = selected.paperSize != prepared.printInfo.paperSize
+            prepared.setPageSettings(selected)
+            outputTask = Task { @MainActor in
+                do {
+                    let finalData: Data
+                    if repaginate {
+                        try await self.prepared.reload(with: self.controls.currentSettings)
+                        finalData = try await self.prepared.createPDFData()
+                    } else {
+                        finalData = pdfData
+                    }
+                    try Task.checkCancellation()
+                    guard !self.sessionFinished else { return }
+                    guard let pdfDocument = PDFDocument(data: finalData) else { throw SessionError.missingPreview }
+                    let operation = try self.prepared.makePrintOperation(with: pdfDocument)
+                    operation.showsPrintPanel = false
+                    self.printOperationRunning = true
+                    operation.runModal(for: self.parentWindow, delegate: self, didRun: #selector(self.printOperationDidRun(_:success:contextInfo:)), contextInfo: nil)
+                } catch {
+                    guard !Task.isCancelled else { return }
+                    self.reportError("Could not prepare print document", error)
+                    self.finishSession()
+                }
             }
         case .export(let url, _):
             Task { @MainActor [weak self] in
@@ -321,11 +355,9 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     private func completeCancellationIfNeeded() {
         guard !sessionFinished else { return }
         if printOperationRunning {
-            telemetry("ouro_md_print_cancelled", ["code": .string("cancelled")])
-            printOperationRunning = false
-        } else {
-            telemetry("ouro_md_print_cancelled", ["code": .string("cancelled")])
+            return
         }
+        telemetry("ouro_md_print_cancelled", ["code": .string("cancelled")])
         deliverExportCompletion(.success(false))
         finishSession()
     }

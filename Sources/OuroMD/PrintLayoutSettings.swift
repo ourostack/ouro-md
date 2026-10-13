@@ -25,9 +25,15 @@ struct PrintPageMargins: Equatable, Sendable {
 struct PrintLayoutSettings: Equatable, Sendable {
     enum LayoutError: LocalizedError, Equatable {
         case noPrintableArea
+        case outsidePrinterArea(PrintPageMargins)
 
         var errorDescription: String? {
-            "The selected paper size and margins leave no printable area."
+            switch self {
+            case .noPrintableArea:
+                return "The selected paper size and margins leave no printable area."
+            case .outsidePrinterArea(let required):
+                return String(format: "This printer requires at least %.1f pt top, %.1f pt right, %.1f pt bottom and %.1f pt left margins. Adjust the layout margins or choose another printer.", required.top, required.right, required.bottom, required.left)
+            }
         }
     }
 
@@ -71,6 +77,22 @@ struct PrintLayoutSettings: Equatable, Sendable {
         let printableHeight = paperSize.height - normalized.margins.top - normalized.margins.bottom
         guard printableWidth > 0, printableHeight > 0 else {
             throw LayoutError.noPrintableArea
+        }
+    }
+
+    func validatePrintableArea(paperSize: NSSize, imageableBounds: CGRect) throws {
+        try validate(for: paperSize)
+        guard !imageableBounds.isEmpty, !imageableBounds.isInfinite else { throw LayoutError.noPrintableArea }
+        let required = PrintPageMargins(
+            top: max(0, paperSize.height - imageableBounds.maxY),
+            right: max(0, paperSize.width - imageableBounds.maxX),
+            bottom: max(0, imageableBounds.minY),
+            left: max(0, imageableBounds.minX)
+        )
+        let margins = normalized.margins
+        guard margins.top >= required.top, margins.right >= required.right,
+              margins.bottom >= required.bottom, margins.left >= required.left else {
+            throw LayoutError.outsidePrinterArea(required)
         }
     }
 

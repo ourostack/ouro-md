@@ -46,21 +46,10 @@
 
   function shouldSkipReference(anchor) {
     if (!anchor) { return true; }
-    if (anchor.closest("pre")) { return true; }
+    if (anchor.closest("pre, code")) { return true; }
     var href = (anchor.getAttribute("href") || "").trim();
     if (!href || href.charAt(0) === "#") { return true; }
-    var visibleChildren = Array.prototype.filter.call(anchor.childNodes || [], function (node) {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return (node.textContent || "").trim().length > 0;
-      }
-      return node.nodeType === Node.ELEMENT_NODE;
-    });
-    if (!visibleChildren.length) { return false; }
-    var hasMeaningfulText = (anchor.textContent || "").replace(/\s+/g, " ").trim().length > 0;
-    var onlyImages = visibleChildren.every(function (node) {
-      return node.nodeType !== Node.TEXT_NODE && ["IMG", "PICTURE", "SVG"].indexOf(node.nodeName) >= 0;
-    });
-    return onlyImages || !hasMeaningfulText;
+    return false;
   }
 
   function removeExistingReferences(root) {

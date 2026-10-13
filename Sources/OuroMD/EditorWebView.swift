@@ -129,6 +129,7 @@ struct EditorWebView: NSViewRepresentable {
         let anchorScroller: ((String) -> Void)?
         let printSettingsStore: PrintLayoutSettingsStore
         let pageSetupChooser: (NSPrintInfo) -> Bool
+        let printPanelChooser: (NSPrintInfo) -> Bool
         weak var webView: WKWebView?
 
         init(
@@ -136,13 +137,15 @@ struct EditorWebView: NSViewRepresentable {
             externalURLOpener: @escaping (URL) -> Void = { _ = NSWorkspace.shared.open($0) },
             anchorScroller: ((String) -> Void)? = nil,
             printSettingsStore: PrintLayoutSettingsStore = PrintLayoutSettingsStore(),
-            pageSetupChooser: @escaping (NSPrintInfo) -> Bool = { NSPageLayout().runModal(with: $0) == NSApplication.ModalResponse.OK.rawValue }
+            pageSetupChooser: @escaping (NSPrintInfo) -> Bool = { NSPageLayout().runModal(with: $0) == NSApplication.ModalResponse.OK.rawValue },
+            printPanelChooser: @escaping (NSPrintInfo) -> Bool = { NSPrintPanel().runModal(with: $0) == NSApplication.ModalResponse.OK.rawValue }
         ) {
             self.model = model
             self.externalURLOpener = externalURLOpener
             self.anchorScroller = anchorScroller
             self.printSettingsStore = printSettingsStore
             self.pageSetupChooser = pageSetupChooser
+            self.printPanelChooser = printPanelChooser
         }
 
         // MARK: JS -> native
@@ -372,6 +375,7 @@ struct EditorWebView: NSViewRepresentable {
                         action: .print,
                         settingsStore: self.printSettingsStore,
                         pageSetupChooser: self.pageSetupChooser,
+                        printPanelChooser: self.printPanelChooser,
                         reportError: { [weak self] _, error in
                             self?.reportPrintError(error)
                         },
@@ -424,6 +428,7 @@ struct EditorWebView: NSViewRepresentable {
                         action: .export(url, completion),
                         settingsStore: self.printSettingsStore,
                         pageSetupChooser: self.pageSetupChooser,
+                        printPanelChooser: self.printPanelChooser,
                         reportError: { [weak self] _, error in
                             self?.reportPrintError(error)
                         },

@@ -88,7 +88,7 @@ final class EditorSurfaceTester: NSObject {
         coordinator = EditorWebView.Coordinator(model: model, printSettingsStore: PrintLayoutSettingsStore(preferences: printPreferences.defaults), pageSetupChooser: { info in
             info.paperSize = NSSize(width: 595, height: 842)
             return true
-        })
+        }, printPanelChooser: { _ in false })
         controller.add(coordinator, name: "ouro")
         configuration.userContentController = controller
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
@@ -301,7 +301,19 @@ final class EditorSurfaceTester: NSObject {
             if case .success(false)? = closed { return true }
             return false
         })
-        return invalidDisabled && settingsSaved && finalSettingsPrinted && selectedPaperPrinted && unchangedSource && closedCancelled
+        var printCancelled = false
+        model.telemetryHandler = { event, _ in
+            if event == "ouro_md_print_cancelled" { printCancelled = true }
+        }
+        coordinator.printDocument()
+        guard await waitUntil(timeout: 8, condition: { self.window.attachedSheet?.title == "Print Layout" }),
+              let printPanel = window.attachedSheet, let printView = printPanel.contentView,
+              let continueButton = descendants(of: printView).compactMap({ $0 as? NSButton }).first(where: { $0.title == "Continue to Print" }),
+              await waitUntil(timeout: 8, condition: { continueButton.isEnabled }) else { return false }
+        printPanel.alphaValue = 0
+        continueButton.performClick(nil)
+        let finalPrintCancelled = await waitUntil(timeout: 2, condition: { printCancelled && PrintLayoutSession.activeCountForTesting == 0 })
+        return invalidDisabled && settingsSaved && finalSettingsPrinted && selectedPaperPrinted && unchangedSource && closedCancelled && finalPrintCancelled
             && PrintLayoutSession.activeCountForTesting == 0 && PreparedPrintDocument.retainedCountForTesting == 0
     }
 

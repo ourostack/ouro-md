@@ -2,6 +2,12 @@ import XCTest
 @testable import OuroMD
 
 final class PrintLayoutSettingsTests: XCTestCase {
+    func testPrinterImageableAreaRejectsMarginsThatWouldClipOutput() throws {
+        let settings = PrintLayoutSettings.default
+        XCTAssertNoThrow(try settings.validatePrintableArea(paperSize: NSSize(width: 612, height: 792), imageableBounds: CGRect(x: 18, y: 18, width: 576, height: 756)))
+        XCTAssertThrowsError(try settings.validatePrintableArea(paperSize: NSSize(width: 612, height: 792), imageableBounds: CGRect(x: 72, y: 72, width: 468, height: 648)))
+    }
+
     func testDefaultsProvideReadablePrintLayout() {
         let store = InMemoryPrintLayoutPreferenceStore()
 
