@@ -1,6 +1,22 @@
 (function () {
   "use strict";
 
+  function perfEvent(name, detail) {
+    var hooks = window.__ouroPerfHooks;
+    if (!hooks || typeof hooks.event !== "function") { return; }
+    try { hooks.event(name, detail || {}); } catch (e) { /* measurement must stay optional */ }
+  }
+
+  function trackedRows(signatures) {
+    return signatures.map(function (signature) {
+      return { signature: signature, marked: false, deletion: false, seen: false, atEnd: false };
+    });
+  }
+
+  function retainMarked(rows) {
+    return rows.some(function (row) { return row.marked; }) ? rows : [];
+  }
+
   function matches(before, after) {
     var pairs = [], first = 0, oldEnd = before.length, newEnd = after.length;
     while (first < oldEnd && first < newEnd && before[first].signature === after[first]) {
@@ -151,11 +167,21 @@
     }
 
     function markdownSignatures(md) {
+      var started = Date.now();
       var html = options.renderMarkdown(md);
-      if (html === null) { return null; }
+      if (html === null) {
+        perfEvent("changeMarks.markdownSignatures", { durationMs: Date.now() - started, htmlLength: 0, signatures: 0 });
+        return null;
+      }
       var template = document.createElement("template");
       template.innerHTML = html;
-      return md.trim() ? signatures(passageNodes(template.content)) : [];
+      var result = md.trim() ? signatures(passageNodes(template.content)) : [];
+      perfEvent("changeMarks.markdownSignatures", {
+        durationMs: Date.now() - started,
+        htmlLength: html.length,
+        signatures: result.length
+      });
+      return result;
     }
 
     function passages() {
@@ -178,16 +204,36 @@
       };
     }
 
+    function clearDisplay() {
+      offscreen = [];
+      if (overlay) { overlay.replaceChildren(); }
+      if (nextButton) { nextButton.hidden = true; }
+    }
+
+    function compareRows(beforeSignatures, afterSignatures) {
+      return retainMarked(reconcile(trackedRows(beforeSignatures), afterSignatures, true));
+    }
+
     function update(scrolled) {
+      var started = Date.now();
       if (!overlay || !nextButton || pending) { return; }
+      if (!rows.length) {
+        clearDisplay();
+        perfEvent("changeMarks.update", { durationMs: Date.now() - started, idle: true, marks: 0 });
+        return;
+      }
       var current = passages();
       if (!current) {
-        overlay.replaceChildren(); nextButton.hidden = true; return;
+        clearDisplay();
+        perfEvent("changeMarks.update", { durationMs: Date.now() - started, idle: false, marks: 0, unavailable: true });
+        return;
       }
-      rows = reconcile(rows, current.signatures, false);
-      overlay.replaceChildren();
-      offscreen = [];
-      if (options.mode() === "sv" || !options.root()) { nextButton.hidden = true; return; }
+      rows = retainMarked(reconcile(rows, current.signatures, false));
+      clearDisplay();
+      if (options.mode() === "sv" || !options.root()) {
+        perfEvent("changeMarks.update", { durationMs: Date.now() - started, idle: false, marks: rows.length, sourceMode: true });
+        return;
+      }
       var root = options.root();
       if (resizeObserver && (observedRoot !== root || observedNodes.length !== current.nodes.length
           || current.nodes.some(function (node, index) { return node !== observedNodes[index]; }))) {
@@ -216,6 +262,7 @@
         overlay.appendChild(bar);
       });
       nextButton.hidden = offscreen.length === 0;
+      perfEvent("changeMarks.update", { durationMs: Date.now() - started, idle: false, marks: rows.length, offscreen: offscreen.length });
     }
 
     function schedule(scrolled) {
@@ -253,8 +300,8 @@
         if (pending && activeTicket) {
           var current = passages();
           if (current && activeTicket.target !== null) {
-            rows = reconcile(activeTicket.rows, activeTicket.target, true);
-            rows = reconcile(rows, current.signatures, false);
+            rows = retainMarked(reconcile(activeTicket.rows, activeTicket.target, true));
+            if (rows.length) { rows = retainMarked(reconcile(rows, current.signatures, false)); }
           }
           pending = false;
         }
@@ -271,20 +318,45 @@
         if (ticket.generation !== generation) { return; }
         var current = passages();
         if (current && ticket.target !== null) {
-          rows = reconcile(ticket.rows, ticket.target, true);
-          rows = reconcile(rows, current.signatures, false);
+          rows = retainMarked(reconcile(ticket.rows, ticket.target, true));
+          if (rows.length) { rows = retainMarked(reconcile(rows, current.signatures, false)); }
         }
         pending = false;
         scrollPending = false;
         update(false);
       },
+      compareMarkdown: function (md) {
+        if (md == null) { return false; }
+        generation++; pending = false; activeTicket = null; scrollPending = false;
+        var current = passages(), baseline = markdownSignatures(md);
+        if (!current || baseline === null) {
+          rows = [];
+          clearDisplay();
+          return false;
+        }
+        rows = compareRows(baseline, current.signatures);
+        update(false);
+        return rows.length > 0;
+      },
+      clearReview: function () {
+        generation++; pending = false; activeTicket = null; scrollPending = false;
+        rows = [];
+        clearDisplay();
+      },
       reset: function () {
         generation++; pending = false; rows = []; activeTicket = null; scrollPending = false;
         snapshotMarkdown = null; snapshotSignatures = [];
-        overlay.replaceChildren(); nextButton.hidden = true;
+        clearDisplay();
       }
     };
   }
 
-  window.OuroChangeMarks = { reconcile: reconcile, passed: passed, create: create };
+  window.OuroChangeMarks = {
+    reconcile: reconcile,
+    compare: function (beforeSignatures, afterSignatures) {
+      return retainMarked(reconcile(trackedRows(beforeSignatures || []), afterSignatures || [], true));
+    },
+    passed: passed,
+    create: create
+  };
 })();
