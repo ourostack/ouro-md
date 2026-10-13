@@ -351,9 +351,80 @@ struct EditorWebView: NSViewRepresentable {
 
         func printDocument() {
             guard let webView, let window = webView.window else { return }
-            let operation = webView.printOperation(with: NSPrintInfo.shared)
-            operation.view?.frame = webView.bounds
-            operation.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
+            exportPreparedPrintDocument(for: window) { result in
+                guard case .success(let prepared) = result else { return }
+                let settingsStore = PrintLayoutSettingsStore()
+                let accessory = PrintLayoutAccessoryController(
+                    settings: prepared.settings,
+                    settingsStore: settingsStore
+                )
+                accessory.onSettingsChanged = { [weak prepared] updated in
+                    prepared?.reload(with: updated)
+                }
+                let operation = prepared.makePrintOperation()
+                operation.printPanel.options.insert(.showsPreview)
+                operation.printPanel.addAccessoryController(accessory)
+                operation.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
+                prepared.releaseHold()
+            }
+        }
+
+        func exportPDF(
+            to url: URL,
+            settings: PrintLayoutSettings? = nil,
+            completion: @escaping (Result<Void, Error>) -> Void
+        ) {
+            exportPreparedPrintDocument(for: nil, settings: settings) { result in
+                switch result {
+                case .failure(let error):
+                    completion(.failure(error))
+                case .success(let prepared):
+                    Task { @MainActor in
+                        defer { prepared.releaseHold() }
+                        do {
+                            try await prepared.writePDF(to: url)
+                            completion(.success(()))
+                        } catch {
+                            completion(.failure(error))
+                        }
+                    }
+                }
+            }
+        }
+
+        private func exportPreparedPrintDocument(
+            for window: NSWindow?,
+            settings: PrintLayoutSettings? = nil,
+            completion: @escaping (Result<PreparedPrintDocument, Error>) -> Void
+        ) {
+            guard webView != nil else { return }
+            getHTML { [weak self] body in
+                guard let self else { return }
+                guard let body else {
+                    completion(.failure(NSError(
+                        domain: "ouro-md",
+                        code: 1,
+                        userInfo: [NSLocalizedDescriptionKey: "Print preview HTML is unavailable."]
+                    )))
+                    return
+                }
+                Task { @MainActor in
+                    do {
+                        let renderer = PrintDocumentRenderer()
+                        let settingsStore = PrintLayoutSettingsStore()
+                        let prepared = try await renderer.prepareDocument(
+                            bodyHTML: body,
+                            title: self.model.windowTitle,
+                            baseURL: self.model.currentURL?.deletingLastPathComponent(),
+                            settings: settings ?? settingsStore.load(),
+                            printInfo: .shared
+                        )
+                        completion(.success(prepared))
+                    } catch {
+                        completion(.failure(error))
+                    }
+                }
+            }
         }
 
         private var writingToolsObservation: NSKeyValueObservation?
