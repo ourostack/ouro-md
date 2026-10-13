@@ -214,18 +214,20 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     func createPDFData() async throws -> Data {
         let generation = loadGeneration
         var pagePDFs: [Data] = []
+        var pageLinks: [[PrintLayoutMetrics.EndnoteLink]] = []
         for index in 0..<layoutMetrics.pageCount {
             try Task.checkCancellation()
             guard generation == loadGeneration else { throw PrintDocumentRenderer.RenderError.superseded }
-            try await activatePage(index)
+            let metrics = try await activatePage(index)
             guard generation == loadGeneration else { throw PrintDocumentRenderer.RenderError.superseded }
             pagePDFs.append(try await snapshotVisiblePagePDF())
+            pageLinks.append(metrics.endnoteLinks)
         }
         return try PrintPDFPaginator.paginate(
             sourcePages: pagePDFs,
             paperSize: printInfo.paperSize,
             margins: settings.margins,
-            metrics: layoutMetrics
+            pageLinks: pageLinks
         )
     }
 
@@ -238,19 +240,22 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
 
     static var retainedCountForTesting: Int { inFlight.count }
 
-    private func activatePage(_ index: Int) async throws {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+    private func activatePage(_ index: Int) async throws -> PrintLayoutMetrics {
+        let metrics = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<PrintLayoutMetrics, Error>) in
             webView.evaluateJavaScript(
                 "(function(){ return window.OuroPrintLayout && typeof window.OuroPrintLayout.showPage === 'function' ? window.OuroPrintLayout.showPage(\(index)) : null; })();"
-            ) { _, error in
+            ) { result, error in
                 if let error {
                     continuation.resume(throwing: PrintDocumentRenderer.RenderError.loadFailed(error))
+                } else if let metrics = Self.decodeMetrics(result) {
+                    continuation.resume(returning: metrics)
                 } else {
-                    continuation.resume(returning: ())
+                    continuation.resume(throwing: PrintDocumentRenderer.RenderError.pdfFailed)
                 }
             }
         }
         try await Task.sleep(nanoseconds: 30_000_000)
+        return metrics
     }
 
     private func snapshotVisiblePagePDF() async throws -> Data {
