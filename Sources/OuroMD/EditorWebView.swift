@@ -483,7 +483,10 @@ struct EditorWebView: NSViewRepresentable {
             }
             onPrintPhase?(.extractingHTML)
             getHTML { [weak self] body in
-                guard let self else { return }
+                guard let self else {
+                    completion(.failure(PrintLayoutSession.SessionError.unavailable("The editor is no longer available for PDF preparation.")))
+                    return
+                }
                 guard let body else {
                     completion(.failure(NSError(
                         domain: "ouro-md",

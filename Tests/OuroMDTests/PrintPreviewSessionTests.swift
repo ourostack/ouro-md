@@ -587,6 +587,55 @@ final class PrintPreviewSessionTests: XCTestCase {
         cancelSession(in: parent)
     }
 
+    func testExplicitSettingsExportResolvesIfCoordinatorRetiresDuringHTMLAcquisition() async throws {
+        let editor = DelayedPrintHTMLWebView()
+        var coordinator: EditorWebView.Coordinator? = EditorWebView.Coordinator(model: AppModel())
+        coordinator?.webView = editor
+        weak var retiredCoordinator = coordinator
+        var completions = 0
+        var result: Result<Bool, Error>?
+        coordinator?.exportPDF(to: URL(fileURLWithPath: "/tmp/retired-explicit-export.pdf"), settings: .default) { result = $0; completions += 1 }
+        XCTAssertNotNil(editor.htmlCompletion)
+        coordinator = nil
+        XCTAssertNil(retiredCoordinator)
+        editor.htmlCompletion?("<p>Retired explicit request</p>", nil)
+        editor.htmlCompletion = nil
+        XCTAssertEqual(completions, 1)
+        guard case .failure? = result else { return XCTFail("Retired explicit HTML acquisition must fail rather than leave its completion unresolved.") }
+    }
+
+    func testExplicitSettingsExportPreservesHeadlessCompleteOutput() async throws {
+        let editor = DelayedPrintHTMLWebView()
+        let parent = makeParentWindow()
+        defer { parent.close() }
+        parent.contentView = editor
+        let coordinator = EditorWebView.Coordinator(model: AppModel())
+        coordinator.webView = editor
+        let scratch = try PrintLayoutTestPaths.makeScratchDirectory(label: "explicit-preview")
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        let output = scratch.appendingPathComponent("explicit.pdf")
+        var result: Result<Bool, Error>?
+        var settings = PrintLayoutSettings.default
+        settings.fontSize = 15
+        settings.citationMode = .originalLinks
+        coordinator.exportPDF(to: output, settings: settings) { result = $0 }
+        XCTAssertNil(parent.attachedSheet, "Explicit settings must preserve the supported non-interactive export path.")
+        editor.htmlCompletion?("<p>EXPLICIT-PDF-TOKEN</p>", nil)
+        editor.htmlCompletion = nil
+        let finished = try await waitUntil { result != nil }
+        XCTAssertTrue(finished)
+        guard case .success(true)? = result else { return XCTFail("Explicit-settings export did not finish.") }
+        let pdf = try XCTUnwrap(PDFDocument(url: output))
+        XCTAssertEqual(pdf.pageCount, 1)
+        let page = try XCTUnwrap(pdf.page(at: 0))
+        let text = try XCTUnwrap(page.string)
+        let range = try XCTUnwrap(text.range(of: "EXPLICIT-PDF-TOKEN"))
+        let selection = try XCTUnwrap(page.selection(for: NSRange(range, in: text)))
+        let font = try XCTUnwrap(NSFont(name: "Georgia", size: 15))
+        XCTAssertEqual(selection.bounds(for: page).width, ("EXPLICIT-PDF-TOKEN" as NSString).size(withAttributes: [.font: font]).width, accuracy: 1)
+        XCTAssertNil(parent.attachedSheet)
+    }
+
     private func cancelSession(in parent: NSWindow) {
         button(named: "Cancel", in: parent)?.performClick(nil)
     }
