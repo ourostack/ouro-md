@@ -19,6 +19,7 @@ final class EditorSurfaceTester: NSObject {
     private var acceptanceInput: URL? {
         ProcessInfo.processInfo.environment["OURO_PRINT_ACCEPTANCE_FILE"].map { URL(fileURLWithPath: $0) }
     }
+    var requiresFocusedEditor: Bool { acceptanceInput == nil }
 
     func run() -> Never {
         let app = NSApplication.shared
@@ -103,7 +104,9 @@ final class EditorSurfaceTester: NSObject {
         coordinator.webView = webView
         model.bridge = coordinator
 
-        window = HeadlessHarness.offscreenHostActive(webView, size: frame.size)
+        window = requiresFocusedEditor
+            ? HeadlessHarness.offscreenHostActive(webView, size: frame.size)
+            : HeadlessHarness.offscreenHost(webView, size: frame.size)
 
         guard let indexURL = OuroResources.web("index", "html") else {
             throw SurfaceError("index.html not found")
@@ -219,6 +222,8 @@ final class EditorSurfaceTester: NSObject {
             "firstPageWhilePreparing": progressive, "changedFontReadySeconds": changedSeconds,
             "initialPages": initialPages, "changedFontPages": changedPages, "exportedPages": pdf.pageCount,
             "emptyPages": emptyPages, "sourceUnchanged": unchanged,
+            "hostRequiresEditorActivation": requiresFocusedEditor,
+            "probeApplicationActive": NSApplication.shared.isActive,
             "editorHTMLMilliseconds": (await evaluate("window.__ouroAcceptanceHTMLMilliseconds")) as? Double ?? -1,
             "contentAudit": audit
         ]
