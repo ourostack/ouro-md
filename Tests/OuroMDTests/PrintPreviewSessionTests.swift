@@ -110,7 +110,7 @@ final class PrintPreviewSessionTests: XCTestCase {
         XCTAssertTrue(exportButton(in: parent)?.isEnabled == true)
     }
 
-    func testSubmittingDuringPreviewPreparationQueuesCompleteOutputWithTheFinalFieldEdit() async throws {
+    func testSubmittingDuringPreviewPreparationQueuesCompleteOutputWithLaterFieldEdits() async throws {
         var settings = PrintLayoutSettings.default
         settings.citationMode = .originalLinks
         settings.headingBreakLevel = 2
@@ -136,6 +136,7 @@ final class PrintPreviewSessionTests: XCTestCase {
         font.stringValue = "10"
         export.performClick(nil)
         XCTAssertNil(result, "A queued request must never export only the pages captured so far")
+        font.stringValue = "14"
         let completed = try await waitUntil { result != nil }
         XCTAssertTrue(completed)
         guard case .success(true)? = result else { return XCTFail("Queued export did not finish successfully") }
@@ -149,9 +150,47 @@ final class PrintPreviewSessionTests: XCTestCase {
         let token = "QUEUED-PAGE-200-TOKEN"
         let tokenRange = try XCTUnwrap(text.range(of: token))
         let selection = try XCTUnwrap(finalPage.selection(for: NSRange(tokenRange, in: text)))
-        let expectedFont = try XCTUnwrap(NSFont(name: "Georgia", size: 10))
+        let expectedFont = try XCTUnwrap(NSFont(name: "Georgia", size: 14))
         let expectedWidth = (token as NSString).size(withAttributes: [.font: expectedFont]).width
-        XCTAssertEqual(selection.bounds(for: finalPage).width, expectedWidth, accuracy: 1, "The final physical text size must match the newly entered 10 pt value")
+        XCTAssertEqual(selection.bounds(for: finalPage).width, expectedWidth, accuracy: 1, "Queued output must commit the later, still-uncommitted 14 pt value")
+    }
+
+    func testQueuedOutputDoesNotProceedAfterALaterInvalidFieldEdit() async throws {
+        var settings = PrintLayoutSettings.default
+        settings.citationMode = .originalLinks
+        settings.headingBreakLevel = 2
+        let body = (1...200).map { "<h2>Section \($0)</h2><p>Preserve the queued document and its validation.</p>" }.joined()
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: body, title: "Invalid queued print", baseURL: nil, settings: settings)
+        let parent = makeParentWindow()
+        defer { parent.close(); prepared.releaseHold() }
+        let scratch = try PrintLayoutTestPaths.makeScratchDirectory(label: "invalid-queued-preview")
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        let output = scratch.appendingPathComponent("must-not-export.pdf")
+        var result: Result<Bool, Error>?
+        let session = PrintLayoutSession(prepared: prepared, parentWindow: parent, action: .export(output, { result = $0 }), settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), reportError: { _, error in XCTFail(error.localizedDescription) }, telemetry: { _, _ in })
+        session.begin()
+        let firstPage = try await waitUntil { (self.previewView(in: parent)?.document?.pageCount ?? 0) > 0 }
+        XCTAssertTrue(firstPage)
+        guard let root = parent.attachedSheet?.contentView else { return XCTFail("Missing preview sheet") }
+        let labels = descendants(of: root).compactMap { $0 as? NSTextField }
+        let font = try XCTUnwrap(labels.first { $0.accessibilityLabel() == "Font size (pt)" })
+        let export = try XCTUnwrap(exportButton(in: parent))
+        XCTAssertTrue(export.isEnabled)
+        font.stringValue = "10"
+        export.performClick(nil)
+        font.stringValue = "invalid"
+        _ = font.sendAction(font.action, to: font.target)
+        let finishedRendering = try await waitUntil { self.previewIsReady(in: parent) || result != nil }
+        XCTAssertTrue(finishedRendering)
+        XCTAssertNil(result, "An invalid final field must stop a queued output request")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: output.path), "Last-valid settings must not silently replace the visible invalid input")
+        XCTAssertNotNil(parent.attachedSheet)
+        XCTAssertFalse(export.isEnabled)
+        XCTAssertTrue(labels.contains { $0.accessibilityLabel() == "Print layout validation" && !$0.stringValue.isEmpty })
+        if parent.attachedSheet != nil {
+            let cancel = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSButton }.first { $0.title == "Cancel" })
+            cancel.performClick(nil)
+        }
     }
 
     private func makeParentWindow() -> NSWindow {

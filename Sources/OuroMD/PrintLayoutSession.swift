@@ -306,8 +306,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                 self.updatePrimaryEnabled(true)
                 self.updatePreviewNavigation()
                 if self.submitWhenPreviewReady {
-                    self.submitWhenPreviewReady = false
-                    self.performOutput(using: pdfData)
+                    self.primaryPressed(nil)
                 }
             } catch {
                 if Task.isCancelled { return }
