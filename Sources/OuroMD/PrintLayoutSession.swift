@@ -41,6 +41,12 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         let data: Data
     }
 
+    private enum DisplayState: Equatable {
+        case current
+        case previousComplete
+        case incompleteStale
+    }
+
     private static var active: [ObjectIdentifier: PrintLayoutSession] = [:]
 
     private(set) var prepared: PreparedPrintDocument?
@@ -72,7 +78,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     private var previewTask: Task<Void, Never>?
     private var completePreview: CompletePreview?
     private var lastCompleteDocument: PDFDocument?
-    private var displayIsPreviousLayout = false
+    private var displayState = DisplayState.current
     private var generation = 0
     private var initialPreparationTask: Task<Void, Never>?
     private var initialAttempt = 0
@@ -362,7 +368,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         generation += 1
         let requestedGeneration = generation
         completePreview = nil
-        displayIsPreviousLayout = previewView.document != nil
+        displayState = staleDisplayState
         preparationFailed = false
         retryButton.isHidden = true
         announcedPhases.removeAll()
@@ -374,7 +380,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         } else {
             progressIndicator.isIndeterminate = true
             progressIndicator.startAnimation(nil)
-            updateStatus(previewView.document == nil ? "Rendering preview…" : "Previous layout — updating. Rendering preview…")
+            updateStatus(updatingPreviewPrefix + "Rendering preview…")
         }
         updatePrimaryEnabled(previewView.document != nil && !submitWhenPreviewReady)
         updatePreviewNavigation()
@@ -406,8 +412,9 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                     if displayingReplacement || count > min(selectedPage, total - 1) {
                         if !displayingReplacement || count == 1 {
                             self.display(streamingPreview, selectedPage: min(selectedPage, total - 1))
-                            self.displayIsPreviousLayout = false
+                            self.displayState = .current
                             displayingReplacement = true
+                            self.updateStatus(self.captureStatus(completed: count, total: total))
                         }
                         self.updatePrimaryEnabled(!self.submitWhenPreviewReady)
                     }
@@ -417,7 +424,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                 guard let completePreview = PDFDocument(data: pdfData) else { throw SessionError.missingPreview }
                 self.completePreview = CompletePreview(identity: self.identity(settings: settings), data: pdfData)
                 self.lastCompleteDocument = completePreview
-                self.displayIsPreviousLayout = false
+                self.displayState = .current
                 self.display(completePreview, selectedPage: self.selectedPreviewPageIndex)
                 self.updatePhase(.ready, generation: requestedGeneration)
                 guard self.isCurrent(requestedGeneration) else { return }
@@ -428,8 +435,6 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                 }
             } catch {
                 if Task.isCancelled || !self.isCurrent(requestedGeneration) { return }
-                if case PrintDocumentRenderer.RenderError.superseded = error { return }
-                if error is CancellationError { return }
                 self.failPreparation(error, generation: requestedGeneration)
             }
         }
@@ -438,8 +443,8 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     private func updatePreviewNavigation() {
         let document = previewView.document
         let page = previewView.currentPage.flatMap { document?.index(for: $0) }
-        let total = displayIsPreviousLayout || preparationFailed ? (document?.pageCount ?? 0) : max(document?.pageCount ?? 0, prepared?.layoutMetrics.pageCount ?? 0)
-        pageLabel.stringValue = page.map { "Page \($0 + 1) of \(total)" } ?? "No preview"
+        let total = displayState != .current || preparationFailed ? (document?.pageCount ?? 0) : max(document?.pageCount ?? 0, prepared?.layoutMetrics.pageCount ?? 0)
+        pageLabel.stringValue = page.map { displayState == .incompleteStale ? "Page \($0 + 1) — incomplete preview" : "Page \($0 + 1) of \(total)" } ?? "No preview"
         previousPageButton.isEnabled = previewView.canGoToPreviousPage
         nextPageButton.isEnabled = previewView.canGoToNextPage
         let hasPage = (document?.pageCount ?? 0) > 0
@@ -454,6 +459,23 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
 
     private func identity(settings: PrintLayoutSettings) -> PreviewIdentity {
         PreviewIdentity(generation: generation, settings: settings.normalized, paperSize: currentPrintInfo.paperSize, orientation: currentPrintInfo.orientation)
+    }
+
+    private var staleDisplayState: DisplayState {
+        guard let document = previewView.document else { return .current }
+        return document === lastCompleteDocument ? .previousComplete : .incompleteStale
+    }
+
+    private var updatingPreviewPrefix: String {
+        switch displayState {
+        case .current: return ""
+        case .previousComplete: return "Previous layout — updating. "
+        case .incompleteStale: return "Incomplete preview — updating. "
+        }
+    }
+
+    private func captureStatus(completed: Int, total: Int) -> String {
+        updatingPreviewPrefix + "Preparing page \(completed) of \(total)… Links activate when ready."
     }
 
     private var selectedPreviewPageIndex: Int {
@@ -505,8 +527,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         currentPhase = phase
         onPhase?(phase)
         guard isCurrent(generation) else { return }
-        let previous = displayIsPreviousLayout
-        let prefix = previous ? "Previous layout — updating. " : ""
+        let prefix = updatingPreviewPrefix
         let announcement: String
         switch phase {
         case .extractingHTML:
@@ -525,7 +546,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
             progressIndicator.minValue = 0
             progressIndicator.maxValue = Double(max(1, total))
             progressIndicator.doubleValue = Double(completed)
-            updateStatus(prefix + "Preparing page \(completed) of \(total)… Links activate when ready.")
+            updateStatus(captureStatus(completed: completed, total: total))
         case .assemblingPDF:
             announcement = "Finishing complete PDF."
             updateStatus(prefix + "Finishing complete PDF…")
@@ -566,11 +587,11 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         if let lastCompleteDocument {
             display(lastCompleteDocument, selectedPage: selectedPreviewPageIndex)
         }
-        displayIsPreviousLayout = lastCompleteDocument != nil
+        displayState = staleDisplayState
         submitWhenPreviewReady = false
         updatePhase(.failed, generation: generation)
         guard isCurrent(generation) else { return }
-        let failurePrefix = previewView.document == nil ? "" : (displayIsPreviousLayout ? "Previous layout — update failed. " : "Incomplete preview — preparation failed. ")
+        let failurePrefix = previewView.document == nil ? "" : (displayState == .previousComplete ? "Previous layout — update failed. " : "Incomplete preview — preparation failed. ")
         updateStatus(failurePrefix + error.localizedDescription)
         retryButton.isHidden = false
         retryButton.isEnabled = controls.validationMessage == nil
@@ -663,7 +684,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
             if repaginate {
                 generation += 1
                 completePreview = nil
-                displayIsPreviousLayout = previewView.document != nil
+                displayState = staleDisplayState
                 announcedPhases.removeAll()
                 parentWindow.beginSheet(panel)
                 updatePhase(.loadingHTML, generation: generation)

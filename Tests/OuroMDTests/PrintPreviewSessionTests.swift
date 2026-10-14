@@ -191,6 +191,7 @@ final class PrintPreviewSessionTests: XCTestCase {
         let failed = try await waitUntil { self.button(named: "Retry", in: parent)?.isHidden == false }
         XCTAssertTrue(failed)
         XCTAssertTrue(preview.document === old)
+        XCTAssertTrue(descendants(of: root).compactMap { $0 as? NSTextField }.contains { $0.stringValue.hasPrefix("Previous layout — update failed.") })
         XCTAssertFalse(exportButton(in: parent)?.isEnabled == true)
         font.stringValue = "invalid"
         button(named: "Retry", in: parent)?.performClick(nil)
@@ -206,19 +207,27 @@ final class PrintPreviewSessionTests: XCTestCase {
         cancelSession(in: parent)
     }
 
-    func testFinalPaperChangeShowsCancellableProgressAndNeverSpoolsAfterCancel() async throws {
-        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>Selected paper progress</p>", title: "Final paper", baseURL: nil, settings: .default)
+    func testFinalPaperRebuildCancellationStopsBeforeOutputReadiness() async throws {
+        var settings = PrintLayoutSettings.default
+        settings.headingBreakLevel = 2
+        let body = (1...40).map { "<h2>Section \($0)</h2><p>Selected paper progress</p>" }.joined()
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: body, title: "Final paper", baseURL: nil, settings: settings)
         let parent = makeParentWindow()
         defer { parent.close(); prepared.releaseHold() }
         var chooserFinished = false
         var sawCancellableProgress = false
         var sawDisabledLayoutEdits = false
+        var chooserCount = 0
+        var finalReadyEvents = 0
         let session = PrintLayoutSession(prepared: prepared, parentWindow: parent, action: .print, settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), printPanelChooser: { info in
+            chooserCount += 1
             info.orientation = info.orientation == .portrait ? .landscape : .portrait
             chooserFinished = true
             return true
         }, reportError: { _, error in XCTFail(error.localizedDescription) }, telemetry: { _, _ in }, onPhase: { phase in
-            if chooserFinished, phase == .loadingHTML {
+            guard chooserFinished else { return }
+            if phase == .ready { finalReadyEvents += 1 }
+            if case .capturingPages(let completed, _) = phase, completed == 2 {
                 sawCancellableProgress = parent.attachedSheet != nil && self.button(named: "Cancel", in: parent)?.isEnabled == true
                 if let root = parent.attachedSheet?.contentView {
                     let fields = self.descendants(of: root).compactMap { $0 as? NSTextField }.filter(\.isEditable)
@@ -231,10 +240,13 @@ final class PrintPreviewSessionTests: XCTestCase {
         session.begin()
         _ = try await waitUntil { self.previewIsReady(in: parent) }
         button(named: "Continue to Print", in: parent)?.performClick(nil)
+        _ = try await waitUntil { sawCancellableProgress }
         XCTAssertTrue(sawCancellableProgress)
         XCTAssertTrue(sawDisabledLayoutEdits)
         XCTAssertNil(PrintLayoutSession.activeSession(for: parent))
         XCTAssertNil(parent.attachedSheet)
+        XCTAssertEqual(finalReadyEvents, 0)
+        XCTAssertEqual(chooserCount, 1)
     }
 
     func testRepeatPrintDuringNativeChooserDoesNotReopenLayoutOrStartLoader() async throws {
@@ -584,6 +596,10 @@ final class PrintPreviewSessionTests: XCTestCase {
         let progress = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSProgressIndicator }.first)
         XCTAssertEqual(progress.doubleValue, 0)
         XCTAssertFalse(exportButton(in: parent)?.isEnabled == true)
+        button(named: "Retry", in: parent)?.performClick(nil)
+        let labels = descendants(of: root).compactMap { $0 as? NSTextField }
+        XCTAssertTrue(labels.contains { $0.stringValue.hasPrefix("Incomplete preview — updating.") })
+        XCTAssertFalse(labels.contains { $0.stringValue.hasPrefix("Previous layout —") })
         cancelSession(in: parent)
     }
 
@@ -634,6 +650,66 @@ final class PrintPreviewSessionTests: XCTestCase {
         let font = try XCTUnwrap(NSFont(name: "Georgia", size: 15))
         XCTAssertEqual(selection.bounds(for: page).width, ("EXPLICIT-PDF-TOKEN" as NSString).size(withAttributes: [.font: font]).width, accuracy: 1)
         XCTAssertNil(parent.attachedSheet)
+    }
+
+    func testQueuedOutputFailureAndTerminationRetryNeverAutonomouslyExport() async throws {
+        var settings = PrintLayoutSettings.default
+        settings.headingBreakLevel = 2
+        let body = (1...100).map { "<h2>Section \($0)</h2><p>Retry after terminated capture</p>" }.joined()
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: body, title: "Queued termination", baseURL: nil, settings: settings)
+        let parent = makeParentWindow()
+        defer { parent.close(); prepared.releaseHold() }
+        let scratch = try PrintLayoutTestPaths.makeScratchDirectory(label: "terminated-queue")
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        let output = scratch.appendingPathComponent("must-not-auto-export.pdf")
+        var result: Result<Bool, Error>?
+        var terminated = false
+        let session = PrintLayoutSession(prepared: prepared, parentWindow: parent, action: .export(output, { result = $0 }), settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), reportError: { _, _ in }, telemetry: { _, _ in }, onPhase: { phase in
+            if case .capturingPages(let completed, _) = phase, completed == 2, !terminated {
+                self.exportButton(in: parent)?.performClick(nil)
+                terminated = true
+                prepared.webViewWebContentProcessDidTerminate(prepared.webView)
+            }
+        })
+        session.begin()
+        let failed = try await waitUntil { self.button(named: "Retry", in: parent)?.isHidden == false }
+        XCTAssertTrue(failed, "Termination between capture awaits must fail visibly rather than leave the current generation busy.")
+        XCTAssertTrue(terminated)
+        XCTAssertNil(result)
+        button(named: "Retry", in: parent)?.performClick(nil)
+        let ready = try await waitUntil { self.previewIsReady(in: parent) }
+        XCTAssertTrue(ready)
+        XCTAssertNil(result, "Retry clears failed queued intent instead of automatically submitting it.")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: output.path))
+        cancelSession(in: parent)
+    }
+
+    func testMidCaptureProgressMatchesActualStreamAndFitSurvivesReplacement() async throws {
+        var settings = PrintLayoutSettings.default
+        settings.headingBreakLevel = 2
+        let body = (1...150).map { "<h2>Section \($0)</h2><p>Actual capture progress</p>" }.joined()
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: body, title: "Mid capture progress", baseURL: nil, settings: settings)
+        let parent = makeParentWindow()
+        defer { parent.close(); prepared.releaseHold() }
+        let session = makeSession(prepared: prepared, parent: parent, output: URL(fileURLWithPath: "/tmp/progress-not-exported.pdf"))
+        session.begin()
+        let root = try XCTUnwrap(parent.attachedSheet?.contentView)
+        let progress = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSProgressIndicator }.first)
+        let preview = try XCTUnwrap(previewView(in: parent))
+        let midCapture = try await waitUntil { !progress.isIndeterminate && progress.doubleValue > 0 && progress.doubleValue < progress.maxValue && preview.document != nil }
+        XCTAssertTrue(midCapture)
+        XCTAssertEqual(progress.maxValue, Double(prepared.layoutMetrics.pageCount))
+        XCTAssertEqual(progress.doubleValue, Double(preview.document?.pageCount ?? 0))
+        _ = try await waitUntil { self.previewIsReady(in: parent) }
+        let old = try XCTUnwrap(preview.document)
+        preview.autoScales = true
+        let font = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Font size (pt)" })
+        font.stringValue = "14"
+        _ = font.sendAction(font.action, to: font.target)
+        let ready = try await waitUntil { self.previewIsReady(in: parent) && preview.document !== old }
+        XCTAssertTrue(ready)
+        XCTAssertTrue(preview.autoScales, "Fit mode is retained through both the streamed and complete replacement.")
+        cancelSession(in: parent)
     }
 
     private func cancelSession(in parent: NSWindow) {

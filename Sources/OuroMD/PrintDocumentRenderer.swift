@@ -103,6 +103,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     private var loadPhaseObserver: (@MainActor (PrintPreviewPhase) -> Void)?
     private var released = false
     private var pendingWebOperations: [UUID: (Error) -> Void] = [:]
+    private var invalidationFailure: PrintDocumentRenderer.RenderError?
     private(set) var layoutMetrics = PrintLayoutMetrics(
         contentWidth: 0,
         contentHeight: 0,
@@ -195,6 +196,11 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     }
 
     private func invalidateLoading(with error: Error) {
+        if case PrintDocumentRenderer.RenderError.webContentTerminated = error {
+            invalidationFailure = .webContentTerminated
+        } else {
+            invalidationFailure = nil
+        }
         loadGeneration += 1
         currentNavigation = nil
         loadingSignature = nil
@@ -309,12 +315,12 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         onPhase?(.capturingPages(completed: 0, total: layoutMetrics.pageCount))
         for index in 0..<layoutMetrics.pageCount {
             try Task.checkCancellation()
-            guard generation == loadGeneration else { throw PrintDocumentRenderer.RenderError.superseded }
+            guard generation == loadGeneration else { throw invalidationFailure ?? PrintDocumentRenderer.RenderError.superseded }
             let metrics = try await activatePage(index)
-            guard generation == loadGeneration else { throw PrintDocumentRenderer.RenderError.superseded }
+            guard generation == loadGeneration else { throw invalidationFailure ?? PrintDocumentRenderer.RenderError.superseded }
             let snapshot = try await snapshotVisiblePagePDF()
             try Task.checkCancellation()
-            guard generation == loadGeneration else { throw PrintDocumentRenderer.RenderError.superseded }
+            guard generation == loadGeneration else { throw invalidationFailure ?? PrintDocumentRenderer.RenderError.superseded }
             pagePDFs.append(snapshot)
             pageLinks.append(metrics.links)
             onPhase?(.capturingPages(completed: index + 1, total: layoutMetrics.pageCount))
@@ -322,7 +328,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         }
         onPhase?(.assemblingPDF)
         try Task.checkCancellation()
-        guard generation == loadGeneration else { throw PrintDocumentRenderer.RenderError.superseded }
+        guard generation == loadGeneration else { throw invalidationFailure ?? PrintDocumentRenderer.RenderError.superseded }
         return try PrintPDFPaginator.paginate(
             sourcePages: pagePDFs,
             paperSize: printInfo.paperSize,
