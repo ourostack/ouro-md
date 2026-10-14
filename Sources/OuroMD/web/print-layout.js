@@ -7,7 +7,9 @@
   var noteDefinitions = Object.create(null);
   var sources = Object.create(null);
   var noteLayer = null;
-  var pageVisibilityStyle = null;
+  var pageLinks = [];
+  var pageVisibility = [];
+  var visiblePage = null;
 
   function article() {
     return document.querySelector(".markdown-body") || document.body;
@@ -420,9 +422,6 @@
         fragmentedProofIDs.push(node.getAttribute("data-proof-id") || (node.tagName.toLowerCase() + "-" + index));
       }
     });
-    visibilityRecords.forEach(function (record) {
-      record.node.dataset.ouroPrintPage = String(record.page);
-    });
     var sortedPages = Array.from(usedPages).sort(function (a, b) { return a - b; });
     var pageCount = (sortedPages.length ? sortedPages[sortedPages.length - 1] : 0) + 1;
     cachedMetrics = {
@@ -436,13 +435,39 @@
       links: [],
       destinations: destinations
     };
+    Array.prototype.forEach.call(geometryRoot.querySelectorAll("a[href]"), function (anchor) {
+      var href = (anchor.getAttribute("href") || "").trim();
+      var destination = href.charAt(0) === "#" ? destinations[href.slice(1)] : null;
+      if (href.charAt(0) === "#" && !destination) { return; }
+      Array.prototype.forEach.call(anchor.getClientRects(), function (rect) {
+        var page = pageIndexForRect(rect, rootRect, stride);
+        var local = pageLocationForRect(rect, page, rootRect, stride);
+        if (rect.width <= 0 || rect.height <= 0 || local.x + rect.width < 0 || local.x > contentWidth || local.y + rect.height < 0 || local.y > contentHeight) { return; }
+        if (!pageLinks[page]) { pageLinks[page] = []; }
+        pageLinks[page].push({
+          x: Math.max(0, local.x),
+          y: Math.max(0, local.y),
+          width: rect.width,
+          height: rect.height,
+          url: destination ? null : anchor.href,
+          destinationPageIndex: destination ? destination.pageIndex : null,
+          destinationX: destination ? destination.x : null,
+          destinationY: destination ? destination.y : null
+        });
+      });
+    });
+    visibilityRecords.forEach(function (record) {
+      if (!pageVisibility[record.page]) { pageVisibility[record.page] = []; }
+      pageVisibility[record.page].push({ node: record.node, original: window.getComputedStyle(record.node).visibility });
+    });
+    visibilityRecords.forEach(function (record) { record.node.style.visibility = "hidden"; });
     return cachedMetrics;
   }
 
   function applyLayout() {
     if (applied) { return pageMetrics(); }
     cachedMetrics = null;
-    document.documentElement.style.setProperty("--ouro-active-page-offset", "0px");
+    article().style.transform = "translateX(0px)";
     if (config.pageFootnotes) { preparePageFootnotes(); }
     splitTablesForPages();
     wrapTablesForPagination();
@@ -457,51 +482,18 @@
   function showPage(index) {
     var metrics = pageMetrics();
     var normalizedIndex = Math.max(0, Math.min(metrics.pageCount - 1, index || 0));
-    document.documentElement.style.setProperty("--ouro-active-page-offset", String(normalizedIndex * metrics.pageStride) + "px");
-    if (!pageVisibilityStyle) {
-      pageVisibilityStyle = document.createElement("style");
-      document.head.appendChild(pageVisibilityStyle);
-    }
-    // WebKit's PDF text extraction can expose clipped neighboring columns. Hide
-    // whole off-page elements without reflowing the fragmented body.
-    pageVisibilityStyle.textContent = '.ouro-print-content-frame [data-ouro-print-page]:not([data-ouro-print-page="' + normalizedIndex + '"]) { visibility: hidden; }';
     var root = article();
-    var frame = document.querySelector(".ouro-print-content-frame");
-    var frameRect = frame ? frame.getBoundingClientRect() : root.getBoundingClientRect();
-    metrics.links = Array.prototype.flatMap.call(root.parentNode.querySelectorAll("a[href]"), function (anchor) {
-      return Array.prototype.map.call(anchor.getClientRects(), function (rect) {
-      var x = rect.left - frameRect.left;
-      var y = rect.top - frameRect.top;
-      if (x + rect.width < 0 || x > metrics.contentWidth || y + rect.height < 0 || y > metrics.contentHeight) {
-        return null;
-      }
-      var href = (anchor.getAttribute("href") || "").trim();
-      if (href.charAt(0) === "#") {
-        var destination = metrics.destinations[href.slice(1)];
-        if (!destination) { return null; }
-        return {
-          x: Math.max(0, x),
-          y: Math.max(0, y),
-          width: rect.width,
-          height: rect.height,
-          url: null,
-          destinationPageIndex: destination.pageIndex,
-          destinationX: destination.x,
-          destinationY: destination.y
-        };
-      }
-      return {
-        x: Math.max(0, x),
-        y: Math.max(0, y),
-        width: rect.width,
-        height: rect.height,
-        url: anchor.href,
-        destinationPageIndex: null,
-        destinationX: null,
-        destinationY: null
-      };
-      }).filter(Boolean);
-    });
+    var transform = "translateX(-" + (normalizedIndex * metrics.pageStride) + "px)";
+    root.style.transform = transform;
+    if (noteLayer) {
+      Array.prototype.forEach.call(noteLayer.children, function (footer) { footer.style.transform = transform; });
+    }
+    if (visiblePage !== normalizedIndex) {
+      (pageVisibility[visiblePage] || []).forEach(function (record) { record.node.style.visibility = "hidden"; });
+      (pageVisibility[normalizedIndex] || []).forEach(function (record) { record.node.style.visibility = record.original; });
+      visiblePage = normalizedIndex;
+    }
+    metrics.links = pageLinks[normalizedIndex] || [];
     return metrics;
   }
 
