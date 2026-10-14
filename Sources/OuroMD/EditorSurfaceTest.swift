@@ -200,6 +200,11 @@ final class EditorSurfaceTester: NSObject {
         let readySeconds = trace.elapsedSeconds
         let initialPhaseEvents = trace.events
         let initialProfile = try await PrintLayoutSession.activeSession(for: window)?.prepared?.webView.evaluateJavaScript("window.__ouroPrintLayoutProfile")
+        let editorFontFamily = await evaluate("(function(){var root=document.querySelector('.vditor-ir .vditor-reset,.vditor-wysiwyg .vditor-reset');return root ? getComputedStyle(root).fontFamily : null;})()") as? String
+        let printFontFamily = try await PrintLayoutSession.activeSession(for: window)?.prepared?.webView.evaluateJavaScript("getComputedStyle(document.querySelector('.markdown-body')).fontFamily") as? String
+        guard let editorFontFamily, let printFontFamily, editorFontFamily == printFontFamily else {
+            throw SurfaceError("The print copy did not inherit the applied editor theme's body font.")
+        }
         let initialPages = initialDocument.pageCount
         FileHandle.standardError.write(Data("local print acceptance: readySeconds=\(readySeconds) pages=\(initialPages)\n".utf8))
         let changed = ProcessInfo.processInfo.systemUptime
@@ -246,6 +251,7 @@ final class EditorSurfaceTester: NSObject {
             "editorHTMLMilliseconds": (await evaluate("window.__ouroAcceptanceHTMLMilliseconds")) as? Double ?? -1,
             "phaseEvents": initialPhaseEvents,
             "layoutProfile": initialProfile ?? [:],
+            "themeBodyFontMatchesEditor": true,
             "contentAudit": audit
         ]
         if let path = environment["OURO_PRINT_ACCEPTANCE_REPORT"] {
@@ -493,6 +499,8 @@ final class EditorSurfaceTester: NSObject {
 
     private func verifySharedPDFJourney() async throws -> Bool {
         let originalBytes = try Data(contentsOf: markdownFile)
+        guard let headingScale = await evaluate("(function(){var root=document.querySelector('.vditor-ir .vditor-reset,.vditor-wysiwyg .vditor-reset'),heading=root&&root.querySelector('h1');return heading ? parseFloat(getComputedStyle(heading).fontSize)/parseFloat(getComputedStyle(root).fontSize) : null;})()") as? Double,
+              headingScale.isFinite, headingScale > 0 else { throw SurfaceError("The applied theme's heading scale is unavailable.") }
         let output = root.appendingPathComponent("shared-layout.pdf")
         var result: Result<Bool, Error>?
         coordinator.exportPDF(to: output) { result = $0 }
@@ -535,7 +543,7 @@ final class EditorSurfaceTester: NSObject {
               await waitUntil(timeout: 2, condition: { PrintLayoutSession.activeCountForTesting == 0 && PreparedPrintDocument.retainedCountForTesting == 0 }) else { return false }
         let settingsSaved = PrintLayoutSettingsStore(preferences: printPreferences.defaults).load().fontSize == 20
         let printedFontMatches = pdf.page(at: 0)?.attributedString?.attributes(at: 0, effectiveRange: nil)[.font] as? NSFont
-        let finalSettingsPrinted = abs((printedFontMatches?.pointSize ?? 0) - 40) < 1
+        let finalSettingsPrinted = abs((printedFontMatches?.pointSize ?? 0) - (20 * headingScale)) < 1
         let selectedPaperPrinted = abs((pdf.page(at: 0)?.bounds(for: .mediaBox).width ?? 0) - 595) < 1
             && abs((pdf.page(at: 0)?.bounds(for: .mediaBox).height ?? 0) - 842) < 1
         let unchangedSource = try Data(contentsOf: markdownFile) == originalBytes

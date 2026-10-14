@@ -9,6 +9,7 @@ public enum OuroMDRelease {
     public static let releaseDate = "2026-10-14"
     public static let positioningSubtitle = "Local Markdown workspace for Mac files."
     public static let releaseHighlights = [
+        "Print with the applied theme's fonts and type hierarchy, including bundled fonts, while keeping paper-safe colors and print controls.",
         "Open Print and PDF layout before document preparation begins, with visible loading feedback.",
         "Follow real page-capture progress, cancel preparation, or retry a failed layout without losing the previous preview.",
         "Keep navigating and zooming the previous layout while settings update; output waits for the complete current layout.",

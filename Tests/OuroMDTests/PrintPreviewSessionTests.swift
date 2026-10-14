@@ -647,8 +647,9 @@ final class PrintPreviewSessionTests: XCTestCase {
         let text = try XCTUnwrap(page.string)
         let range = try XCTUnwrap(text.range(of: "EXPLICIT-PDF-TOKEN"))
         let selection = try XCTUnwrap(page.selection(for: NSRange(range, in: text)))
-        let font = try XCTUnwrap(NSFont(name: "Georgia", size: 15))
-        XCTAssertEqual(selection.bounds(for: page).width, ("EXPLICIT-PDF-TOKEN" as NSString).size(withAttributes: [.font: font]).width, accuracy: 1)
+        let font = try XCTUnwrap(selection.attributedString?.attribute(.font, at: 0, effectiveRange: nil) as? NSFont)
+        XCTAssertEqual(font.pointSize, 15, accuracy: 0.1)
+        XCTAssertTrue(PrintEmbeddedFontProof.fonts(in: pdf).contains { $0.embedded && $0.name.contains("OpenSans") })
         XCTAssertNil(parent.attachedSheet)
     }
 

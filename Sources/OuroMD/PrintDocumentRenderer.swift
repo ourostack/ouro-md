@@ -50,6 +50,7 @@ final class PrintDocumentRenderer {
         baseURL: URL?,
         settings: PrintLayoutSettings,
         printInfo: NSPrintInfo = .shared,
+        typography: PrintThemeTypography? = nil,
         onPhase: (@MainActor (PrintPreviewPhase) -> Void)? = nil
     ) async throws -> PreparedPrintDocument {
         let script = scriptProvider()
@@ -64,7 +65,8 @@ final class PrintDocumentRenderer {
             settings: normalized,
             script: (profileLayout ? "window.__ouroPrintProfiling = true;\n" : "") + script,
             printInfo: sizedPrintInfo,
-            webViewConfiguration: webViewConfiguration
+            webViewConfiguration: webViewConfiguration,
+            typography: typography
         )
         do {
             try await document.load(onPhase: onPhase)
@@ -91,6 +93,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     private let title: String
     private let baseURL: URL?
     private let script: String
+    private let typography: PrintThemeTypography?
     private(set) var settings: PrintLayoutSettings
     private(set) var printInfo: NSPrintInfo
     let webView: WKWebView
@@ -122,12 +125,14 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         settings: PrintLayoutSettings,
         script: String,
         printInfo: NSPrintInfo,
-        webViewConfiguration: WKWebViewConfiguration = WKWebViewConfiguration()
+        webViewConfiguration: WKWebViewConfiguration = WKWebViewConfiguration(),
+        typography: PrintThemeTypography? = nil
     ) {
         self.bodyHTML = bodyHTML
         self.title = title
         self.baseURL = baseURL
         self.script = script
+        self.typography = typography
         self.settings = settings.normalized
         self.printInfo = printInfo
         let pageSize = Self.editorCanvasSize(for: self.settings, paperSize: printInfo.paperSize)
@@ -223,7 +228,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         let generation = loadGeneration
         // Navigation completion already waits for image resources; fonts can settle afterward.
         webView.callAsyncJavaScript(
-            "await document.fonts.ready; return true;",
+            "if (window.OuroPrintLayout && typeof window.OuroPrintLayout.prepareTypography === 'function') { window.OuroPrintLayout.prepareTypography(); } else if (window.__ouroPrintLayoutConfig.typography) { throw new Error('The print theme typography helper is unavailable.'); } await document.fonts.ready; return true;",
             arguments: [:], in: nil, in: .page
         ) { [weak self] result in
             guard let self, generation == self.loadGeneration, navigation === self.currentNavigation else { return }
@@ -400,7 +405,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         loadPhaseObserver = onPhase
         onPhase?(.loadingHTML)
         guard generation == loadGeneration, !released else { throw CancellationError() }
-        let html = PrintLayoutHTMLDocument.wrap(body: bodyHTML, title: title, settings: settings, script: script, paperSize: signature.paperSize)
+        let html = PrintLayoutHTMLDocument.wrap(body: bodyHTML, title: title, settings: settings, script: script, paperSize: signature.paperSize, typography: typography)
         try await withTaskCancellationHandler {
             try Task.checkCancellation()
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in

@@ -422,7 +422,9 @@ struct EditorWebView: NSViewRepresentable {
                     return try await PrintDocumentRenderer(profileLayout: self.profilePrintLayout).prepareDocument(
                         bodyHTML: body, title: self.model.windowTitle,
                         baseURL: self.model.currentURL?.deletingLastPathComponent(),
-                        settings: settings, printInfo: info, onPhase: onPhase
+                        settings: settings, printInfo: info,
+                        typography: try self.activePrintTypography(),
+                        onPhase: onPhase
                     )
                 },
                 parentWindow: parentWindow, action: action,
@@ -432,6 +434,11 @@ struct EditorWebView: NSViewRepresentable {
                 telemetry: { [weak self] event, properties in self?.model.telemetryHandler?(event, properties) },
                 onPhase: onPrintPhase
             )
+        }
+
+        private func activePrintTypography() throws -> PrintThemeTypography {
+            // Source mode prints rendered-document type, not the raw Markdown editor's monospace UI.
+            try PrintThemeTypography(theme: model.theme, editorMode: model.mode == "wysiwyg" ? .wysiwyg : .ir)
         }
 
         @MainActor
@@ -505,6 +512,7 @@ struct EditorWebView: NSViewRepresentable {
                             baseURL: self.model.currentURL?.deletingLastPathComponent(),
                             settings: settings ?? settingsStore.load(),
                             printInfo: .shared,
+                            typography: try self.activePrintTypography(),
                             onPhase: self.onPrintPhase
                         )
                         completion(.success(prepared))
