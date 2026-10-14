@@ -365,30 +365,15 @@ struct EditorWebView: NSViewRepresentable {
                 reportPrintError(PrintLayoutSession.SessionError.unavailable("No editor window is available for printing."))
                 return
             }
-            preparePrintDocument { [weak self] result in
-                guard let self else { return }
-                switch result {
-                case .failure(let error):
-                    self.reportPrintError(error)
-                case .success(let prepared):
-                    let session = PrintLayoutSession(
-                        prepared: prepared,
-                        parentWindow: window,
-                        action: .print,
-                        settingsStore: self.printSettingsStore,
-                        pageSetupChooser: self.pageSetupChooser,
-                        printPanelChooser: self.printPanelChooser,
-                        reportError: { [weak self] _, error in
-                            self?.reportPrintError(error)
-                        },
-                        telemetry: { [weak self] event, properties in
-                            self?.model.telemetryHandler?(event, properties)
-                        },
-                        onPhase: self.onPrintPhase
-                    )
-                    session.begin()
+            if let existing = PrintLayoutSession.activeSession(for: window) {
+                if existing.isPrintRequest {
+                    existing.bringToFront()
+                } else {
+                    reportPrintError(PrintLayoutSession.SessionError.unavailable("Another print or export request is already open for this document."))
                 }
+                return
             }
+            makeInteractivePrintSession(parentWindow: window, action: .print).begin()
         }
 
         func exportPDF(
@@ -419,29 +404,73 @@ struct EditorWebView: NSViewRepresentable {
                 completion(.failure(PrintLayoutSession.SessionError.unavailable("No editor window is available for interactive PDF export.")))
                 return
             }
-            preparePrintDocument { [weak self] result in
-                guard let self else { return }
-                switch result {
-                case .failure(let error):
-                    completion(.failure(error))
-                case .success(let prepared):
-                    let session = PrintLayoutSession(
-                        prepared: prepared,
-                        parentWindow: window,
-                        action: .export(url, completion),
-                        settingsStore: self.printSettingsStore,
-                        pageSetupChooser: self.pageSetupChooser,
-                        printPanelChooser: self.printPanelChooser,
-                        reportError: { [weak self] _, error in
-                            self?.reportPrintError(error)
-                        },
-                        telemetry: { [weak self] event, properties in
-                            self?.model.telemetryHandler?(event, properties)
-                        },
-                        onPhase: self.onPrintPhase
+            guard PrintLayoutSession.activeSession(for: window) == nil, window.attachedSheet == nil else {
+                completion(.failure(PrintLayoutSession.SessionError.unavailable("Another sheet or print layout is already open for this document.")))
+                return
+            }
+            makeInteractivePrintSession(parentWindow: window, action: .export(url, completion)).begin()
+        }
+
+        private func makeInteractivePrintSession(parentWindow: NSWindow, action: PrintLayoutSession.Action) -> PrintLayoutSession {
+            PrintLayoutSession(
+                settings: printSettingsStore.load(),
+                printInfo: .shared,
+                documentLoader: { [weak self] settings, info, onPhase in
+                    guard let self else { throw PrintLayoutSession.SessionError.unavailable("The editor is no longer available.") }
+                    onPhase?(.extractingHTML)
+                    let body = try await self.printHTML()
+                    try Task.checkCancellation()
+                    return try await PrintDocumentRenderer(profileLayout: self.profilePrintLayout).prepareDocument(
+                        bodyHTML: body, title: self.model.windowTitle,
+                        baseURL: self.model.currentURL?.deletingLastPathComponent(),
+                        settings: settings, printInfo: info, onPhase: onPhase
                     )
-                    session.begin()
+                },
+                parentWindow: parentWindow, action: action,
+                settingsStore: printSettingsStore,
+                pageSetupChooser: pageSetupChooser, printPanelChooser: printPanelChooser,
+                reportError: { [weak self] _, error in self?.reportPrintError(error) },
+                telemetry: { [weak self] event, properties in self?.model.telemetryHandler?(event, properties) },
+                onPhase: onPrintPhase
+            )
+        }
+
+        @MainActor
+        private final class PrintHTMLRequest {
+            var continuation: CheckedContinuation<String, Error>?
+            var cancelled = false
+
+            func cancel() {
+                cancelled = true
+                let pending = continuation
+                continuation = nil
+                pending?.resume(throwing: CancellationError())
+            }
+
+            func resolve(_ body: String?) {
+                guard let pending = continuation else { return }
+                continuation = nil
+                if let body {
+                    pending.resume(returning: body)
+                } else {
+                    pending.resume(throwing: PrintLayoutSession.SessionError.unavailable("Print preview HTML is unavailable."))
                 }
+            }
+        }
+
+        @MainActor
+        private func printHTML() async throws -> String {
+            guard webView != nil else { throw PrintLayoutSession.SessionError.unavailable("The editor web view is unavailable.") }
+            let request = PrintHTMLRequest()
+            return try await withTaskCancellationHandler {
+                try Task.checkCancellation()
+                return try await withCheckedThrowingContinuation { continuation in
+                    guard !request.cancelled else { continuation.resume(throwing: CancellationError()); return }
+                    request.continuation = continuation
+                    getHTML { request.resolve($0) }
+                }
+            } onCancel: {
+                Task { @MainActor in request.cancel() }
             }
         }
 

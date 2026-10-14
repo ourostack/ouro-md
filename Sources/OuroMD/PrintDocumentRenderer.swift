@@ -76,6 +76,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     private struct LayoutSignature: Equatable {
         let settings: PrintLayoutSettings
         let paperSize: NSSize
+        let orientation: NSPrintInfo.PaperOrientation
     }
 
     private static var inFlight: [ObjectIdentifier: PreparedPrintDocument] = [:]
@@ -94,6 +95,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     private var loadingSignature: LayoutSignature?
     private var loadedSignature: LayoutSignature?
     private var loadPhaseObserver: (@MainActor (PrintPreviewPhase) -> Void)?
+    private var released = false
     private(set) var layoutMetrics = PrintLayoutMetrics(
         contentWidth: 0,
         contentHeight: 0,
@@ -131,6 +133,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
             defer: false
         )
         super.init()
+        hostWindow.isReleasedWhenClosed = false
         webView.navigationDelegate = self
         hostWindow.contentView = webView
         hostWindow.setFrameOrigin(NSPoint(x: -30000, y: -30000))
@@ -138,11 +141,13 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     }
 
     func load(onPhase: (@MainActor (PrintPreviewPhase) -> Void)? = nil) async throws {
+        guard !released else { throw CancellationError() }
         retainHold()
         try await loadHTML(using: settings, onPhase: onPhase)
     }
 
     func reload(with updated: PrintLayoutSettings, onPhase: (@MainActor (PrintPreviewPhase) -> Void)? = nil) async throws {
+        guard !released else { throw CancellationError() }
         settings = updated.normalized
         try settings.validate(for: printInfo.paperSize)
         printInfo = settings.applying(to: printInfo)
@@ -158,7 +163,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
 
     func hasCurrentLayout(for requested: PrintLayoutSettings) -> Bool {
         loadContinuation == nil && currentNavigation == nil &&
-            loadedSignature == LayoutSignature(settings: requested.normalized, paperSize: printInfo.paperSize)
+            loadedSignature == LayoutSignature(settings: requested.normalized, paperSize: printInfo.paperSize, orientation: printInfo.orientation)
     }
 
     func writePDF(to url: URL) async throws {
@@ -167,8 +172,25 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     }
 
     func releaseHold() {
+        guard !released else { return }
+        released = true
+        cancelLoading()
         hostWindow.orderOut(nil)
+        hostWindow.contentView = nil
+        hostWindow.close()
         Self.inFlight.removeValue(forKey: ObjectIdentifier(self))
+    }
+
+    func cancelLoading() {
+        loadGeneration += 1
+        currentNavigation = nil
+        loadingSignature = nil
+        loadedSignature = nil
+        loadPhaseObserver = nil
+        let continuation = loadContinuation
+        loadContinuation = nil
+        continuation?.resume(throwing: CancellationError())
+        webView.stopLoading()
     }
 
     private func retainHold() {
@@ -249,6 +271,8 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         onPhase: (@MainActor (PrintPreviewPhase) -> Void)? = nil,
         onPage: (@MainActor (Int, Int, Data) throws -> Void)? = nil
     ) async throws -> Data {
+        guard !released else { throw CancellationError() }
+        try Task.checkCancellation()
         let generation = loadGeneration
         var pagePDFs: [Data] = []
         var pageLinks: [[PrintLayoutMetrics.Link]] = []
@@ -284,6 +308,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     }
 
     static var retainedCountForTesting: Int { inFlight.count }
+    var isLoading: Bool { loadContinuation != nil || currentNavigation != nil }
 
     private func activatePage(_ index: Int) async throws -> PrintLayoutMetrics {
         let metrics = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<PrintLayoutMetrics, Error>) in
@@ -320,28 +345,32 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     }
 
     private func loadHTML(using settings: PrintLayoutSettings, onPhase: (@MainActor (PrintPreviewPhase) -> Void)?) async throws {
-        let signature = LayoutSignature(settings: settings, paperSize: printInfo.paperSize)
-        let html = PrintLayoutHTMLDocument.wrap(body: bodyHTML, title: title, settings: settings, script: script, paperSize: signature.paperSize)
+        try Task.checkCancellation()
+        let signature = LayoutSignature(settings: settings, paperSize: printInfo.paperSize, orientation: printInfo.orientation)
+        cancelLoading()
         loadGeneration += 1
         loadingSignature = signature
         loadedSignature = nil
         let generation = loadGeneration
-        if let continuation = loadContinuation {
-            loadContinuation = nil
-            currentNavigation = nil
-            continuation.resume(throwing: PrintDocumentRenderer.RenderError.superseded)
-        }
         loadPhaseObserver = onPhase
         onPhase?(.loadingHTML)
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            loadContinuation = continuation
-            currentNavigation = webView.loadHTMLString(html, baseURL: baseURL)
-            guard generation == loadGeneration else {
-                let leaked = continuation
-                loadContinuation = nil
-                currentNavigation = nil
-                leaked.resume(throwing: PrintDocumentRenderer.RenderError.superseded)
-                return
+        let html = PrintLayoutHTMLDocument.wrap(body: bodyHTML, title: title, settings: settings, script: script, paperSize: signature.paperSize)
+        try await withTaskCancellationHandler {
+            try Task.checkCancellation()
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                loadContinuation = continuation
+                currentNavigation = webView.loadHTMLString(html, baseURL: baseURL)
+                guard generation == loadGeneration else {
+                    loadContinuation = nil
+                    currentNavigation = nil
+                    continuation.resume(throwing: PrintDocumentRenderer.RenderError.superseded)
+                    return
+                }
+            }
+        } onCancel: {
+            Task { @MainActor [weak self] in
+                guard let self, self.loadGeneration == generation else { return }
+                self.cancelLoading()
             }
         }
     }

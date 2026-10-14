@@ -5,6 +5,218 @@ import XCTest
 
 @MainActor
 final class PrintPreviewSessionTests: XCTestCase {
+    func testSheetAndBusyProgressExistBeforeDelayedDocumentLoaderReturns() async throws {
+        let parent = makeParentWindow()
+        defer { parent.close() }
+        var loaderStarted = false
+        var phases: [PrintPreviewPhase] = []
+        var announcements: [String] = []
+        let session = PrintLayoutSession(settings: .default, printInfo: NSPrintInfo(), documentLoader: { settings, info, observer in
+            loaderStarted = true
+            observer?(.extractingHTML)
+            try await Task.sleep(nanoseconds: 200_000_000)
+            return try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>LOADED-TOKEN</p>", title: "Delayed", baseURL: nil, settings: settings, printInfo: info, onPhase: observer)
+        }, parentWindow: parent, action: .print, settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), printPanelChooser: { _ in false }, reportError: { _, error in XCTFail(error.localizedDescription) }, telemetry: { _, _ in }, onPhase: { phases.append($0) }, announceAccessibilityPhase: { announcements.append($0) })
+        session.begin()
+        let sheet = try XCTUnwrap(parent.attachedSheet)
+        XCTAssertFalse(loaderStarted, "The sheet must be constructed synchronously before the loader task starts.")
+        let progress = try XCTUnwrap(sheet.contentView.flatMap { descendants(of: $0).compactMap { $0 as? NSProgressIndicator }.first })
+        XCTAssertTrue(progress.isIndeterminate)
+        XCTAssertEqual(progress.accessibilityLabel(), "Print preview progress")
+        let ready = try await waitUntil { self.previewIsReady(in: parent) }
+        XCTAssertTrue(ready)
+        XCTAssertEqual(phases.first, .extractingHTML)
+        XCTAssertEqual(phases.last, .ready)
+        XCTAssertFalse(progress.isIndeterminate)
+        XCTAssertEqual(progress.doubleValue, progress.maxValue)
+        XCTAssertEqual(Set(announcements).count, announcements.count)
+        cancelSession(in: parent)
+    }
+
+    func testCancelDuringInitialLoadReleasesLateDocumentAndCompletesOnce() async throws {
+        let parent = makeParentWindow()
+        defer { parent.close() }
+        let originalHolds = PreparedPrintDocument.retainedCountForTesting
+        var completions = 0
+        var loaderStarted = false
+        let session = PrintLayoutSession(settings: .default, printInfo: NSPrintInfo(), documentLoader: { settings, info, observer in
+            loaderStarted = true
+            try await Task.sleep(nanoseconds: 400_000_000)
+            return try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>Cancelled</p>", title: "Cancel", baseURL: nil, settings: settings, printInfo: info, onPhase: observer)
+        }, parentWindow: parent, action: .export(URL(fileURLWithPath: "/tmp/must-not-export-refinement.pdf"), { _ in completions += 1 }), settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), reportError: { _, _ in }, telemetry: { _, _ in })
+        session.begin()
+        _ = try await waitUntil { loaderStarted }
+        cancelSession(in: parent)
+        try await Task.sleep(nanoseconds: 500_000_000)
+        XCTAssertEqual(completions, 1)
+        XCTAssertNil(parent.attachedSheet)
+        XCTAssertNil(PrintLayoutSession.activeSession(for: parent))
+        XCTAssertEqual(PreparedPrintDocument.retainedCountForTesting, originalHolds)
+    }
+
+    func testDuplicateSessionDoesNotInvokeSecondLoader() async throws {
+        let parent = makeParentWindow()
+        defer { parent.close() }
+        var loads = 0
+        let loader: PrintLayoutSession.DocumentLoader = { settings, info, observer in
+            loads += 1
+            try await Task.sleep(nanoseconds: 150_000_000)
+            return try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>One sheet</p>", title: "One", baseURL: nil, settings: settings, printInfo: info, onPhase: observer)
+        }
+        let first = PrintLayoutSession(settings: .default, printInfo: NSPrintInfo(), documentLoader: loader, parentWindow: parent, action: .print, settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), reportError: { _, _ in }, telemetry: { _, _ in })
+        let second = PrintLayoutSession(settings: .default, printInfo: NSPrintInfo(), documentLoader: loader, parentWindow: parent, action: .print, settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), reportError: { _, _ in }, telemetry: { _, _ in })
+        first.begin()
+        second.begin()
+        let ready = try await waitUntil { self.previewIsReady(in: parent) }
+        XCTAssertTrue(ready)
+        XCTAssertEqual(loads, 1)
+        XCTAssertTrue(PrintLayoutSession.activeSession(for: parent) === first)
+        cancelSession(in: parent)
+    }
+
+    func testInitialFailureExposesRetryWithoutAutomaticallySubmitting() async throws {
+        let parent = makeParentWindow()
+        defer { parent.close() }
+        var attempts = 0
+        var completed = false
+        let session = PrintLayoutSession(settings: .default, printInfo: NSPrintInfo(), documentLoader: { settings, info, observer in
+            attempts += 1
+            if attempts == 1 { throw PrintLayoutSession.SessionError.missingPreview }
+            return try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>RETRY-TOKEN</p>", title: "Retry", baseURL: nil, settings: settings, printInfo: info, onPhase: observer)
+        }, parentWindow: parent, action: .export(URL(fileURLWithPath: "/tmp/must-not-auto-export-refinement.pdf"), { _ in completed = true }), settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), reportError: { _, _ in }, telemetry: { _, _ in })
+        session.begin()
+        let failed = try await waitUntil { self.button(named: "Retry", in: parent)?.isHidden == false }
+        XCTAssertTrue(failed)
+        XCTAssertFalse(exportButton(in: parent)?.isEnabled == true)
+        button(named: "Retry", in: parent)?.performClick(nil)
+        let ready = try await waitUntil { self.previewIsReady(in: parent) }
+        XCTAssertTrue(ready)
+        XCTAssertEqual(attempts, 2)
+        XCTAssertFalse(completed)
+        XCTAssertTrue(button(named: "Retry", in: parent)?.isHidden == true)
+        cancelSession(in: parent)
+    }
+
+    func testSettingsUpdateRetainsOldPreviewAndLatestNavigationAndZoom() async throws {
+        var settings = PrintLayoutSettings.default
+        settings.citationMode = .originalLinks
+        settings.headingBreakLevel = 2
+        let body = (1...100).map { "<h2>Section \($0)</h2><p>CONTINUITY-\($0)-TOKEN</p>" }.joined()
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: body, title: "Continuity", baseURL: nil, settings: settings)
+        let parent = makeParentWindow()
+        defer { parent.close(); prepared.releaseHold() }
+        let session = makeSession(prepared: prepared, parent: parent, output: URL(fileURLWithPath: "/tmp/continuity-not-exported.pdf"))
+        session.begin()
+        _ = try await waitUntil { self.previewIsReady(in: parent) }
+        let preview = try XCTUnwrap(previewView(in: parent))
+        let old = try XCTUnwrap(preview.document)
+        preview.go(to: try XCTUnwrap(old.page(at: 65)))
+        preview.autoScales = false
+        preview.scaleFactor = 0.8
+        let root = try XCTUnwrap(parent.attachedSheet?.contentView)
+        let font = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Font size (pt)" })
+        font.stringValue = "14"
+        _ = font.sendAction(font.action, to: font.target)
+        XCTAssertTrue(preview.document === old)
+        XCTAssertTrue(descendants(of: root).compactMap { $0 as? NSTextField }.contains { $0.stringValue.contains("Previous layout") })
+        preview.go(to: try XCTUnwrap(old.page(at: 75)))
+        let ready = try await waitUntil { self.previewIsReady(in: parent) && preview.document !== old }
+        XCTAssertTrue(ready)
+        let current = try XCTUnwrap(preview.document)
+        XCTAssertEqual(preview.currentPage.map { current.index(for: $0) }, 75)
+        XCTAssertFalse(preview.autoScales)
+        XCTAssertEqual(preview.scaleFactor, 0.8, accuracy: 0.01)
+        cancelSession(in: parent)
+    }
+
+    private func button(named title: String, in parent: NSWindow) -> NSButton? {
+        parent.attachedSheet?.contentView.flatMap { descendants(of: $0).compactMap { $0 as? NSButton }.first { $0.title == title } }
+    }
+
+    func testInitialSettingsEditsReconcileWithoutExtractingHTMLAgain() async throws {
+        let parent = makeParentWindow()
+        defer { parent.close() }
+        var loads = 0
+        let session = PrintLayoutSession(settings: .default, printInfo: NSPrintInfo(), documentLoader: { settings, info, observer in
+            loads += 1
+            try await Task.sleep(nanoseconds: 200_000_000)
+            return try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>Initial edits</p>", title: "Initial edits", baseURL: nil, settings: settings, printInfo: info, onPhase: observer)
+        }, parentWindow: parent, action: .print, settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), reportError: { _, error in XCTFail(error.localizedDescription) }, telemetry: { _, _ in })
+        session.begin()
+        let root = try XCTUnwrap(parent.attachedSheet?.contentView)
+        let font = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Font size (pt)" })
+        font.stringValue = "14"
+        _ = font.sendAction(font.action, to: font.target)
+        let ready = try await waitUntil { self.previewIsReady(in: parent) }
+        XCTAssertTrue(ready)
+        XCTAssertEqual(loads, 1)
+        XCTAssertEqual(session.prepared?.settings.fontSize, 14)
+        cancelSession(in: parent)
+    }
+
+    func testFailedUpdateRestoresOldPreviewAndValidRetryDoesNotSubmit() async throws {
+        let script = try XCTUnwrap(PrintLayoutScriptLoader.load()) + """
+        ;(function(){var apply=window.OuroPrintLayout.apply;window.OuroPrintLayout.apply=function(){if(window.__ouroPrintLayoutConfig.fontSizeForTestFailure){throw new Error('Synthetic failure');}return apply();};})();
+        """
+        let failingScript = script.replacingOccurrences(of: "window.__ouroPrintLayoutConfig.fontSizeForTestFailure", with: "parseFloat(getComputedStyle(document.body).fontSize)>13")
+        let prepared = try await PrintDocumentRenderer(scriptProvider: { failingScript }).prepareDocument(bodyHTML: "<p>Retained complete preview</p>", title: "Failure", baseURL: nil, settings: .default)
+        let parent = makeParentWindow()
+        defer { parent.close(); prepared.releaseHold() }
+        let session = makeSession(prepared: prepared, parent: parent, output: URL(fileURLWithPath: "/tmp/failed-update-not-exported.pdf"))
+        session.begin()
+        _ = try await waitUntil { self.previewIsReady(in: parent) }
+        let preview = try XCTUnwrap(previewView(in: parent))
+        let old = try XCTUnwrap(preview.document)
+        let root = try XCTUnwrap(parent.attachedSheet?.contentView)
+        let font = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Font size (pt)" })
+        font.stringValue = "14"
+        _ = font.sendAction(font.action, to: font.target)
+        let failed = try await waitUntil { self.button(named: "Retry", in: parent)?.isHidden == false }
+        XCTAssertTrue(failed)
+        XCTAssertTrue(preview.document === old)
+        XCTAssertFalse(exportButton(in: parent)?.isEnabled == true)
+        font.stringValue = "invalid"
+        button(named: "Retry", in: parent)?.performClick(nil)
+        XCTAssertFalse(exportButton(in: parent)?.isEnabled == true)
+        XCTAssertTrue(preview.document === old)
+        font.stringValue = "12"
+        _ = font.sendAction(font.action, to: font.target)
+        button(named: "Retry", in: parent)?.performClick(nil)
+        let ready = try await waitUntil { self.previewIsReady(in: parent) }
+        XCTAssertTrue(ready)
+        XCTAssertTrue(button(named: "Retry", in: parent)?.isHidden == true)
+        XCTAssertNotNil(parent.attachedSheet)
+        cancelSession(in: parent)
+    }
+
+    func testFinalPaperChangeShowsCancellableProgressAndNeverSpoolsAfterCancel() async throws {
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>Selected paper progress</p>", title: "Final paper", baseURL: nil, settings: .default)
+        let parent = makeParentWindow()
+        defer { parent.close(); prepared.releaseHold() }
+        var chooserFinished = false
+        var sawCancellableProgress = false
+        let session = PrintLayoutSession(prepared: prepared, parentWindow: parent, action: .print, settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), printPanelChooser: { info in
+            info.orientation = info.orientation == .portrait ? .landscape : .portrait
+            chooserFinished = true
+            return true
+        }, reportError: { _, error in XCTFail(error.localizedDescription) }, telemetry: { _, _ in }, onPhase: { phase in
+            if chooserFinished, phase == .loadingHTML {
+                sawCancellableProgress = parent.attachedSheet != nil && self.button(named: "Cancel", in: parent)?.isEnabled == true
+                self.cancelSession(in: parent)
+            }
+        })
+        session.begin()
+        _ = try await waitUntil { self.previewIsReady(in: parent) }
+        button(named: "Continue to Print", in: parent)?.performClick(nil)
+        XCTAssertTrue(sawCancellableProgress)
+        XCTAssertNil(PrintLayoutSession.activeSession(for: parent))
+        XCTAssertNil(parent.attachedSheet)
+    }
+
+    private func cancelSession(in parent: NSWindow) {
+        button(named: "Cancel", in: parent)?.performClick(nil)
+    }
+
     func testOpeningPreviewReusesTheAlreadyPreparedLayout() async throws {
         let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<h1>Prepared layout</h1><p>Keep the completed layout.</p>", title: "Prepared preview", baseURL: nil, settings: .default)
         _ = try await prepared.webView.evaluateJavaScript("window.__ouroPreparedLayoutMarker = true")

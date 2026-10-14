@@ -5,6 +5,38 @@ import XCTest
 
 @MainActor
 final class PrintDocumentRendererTests: XCTestCase {
+    func testOrientationAloneInvalidatesTheCachedLayout() async throws {
+        let info = NSPrintInfo()
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>Orientation identity</p>", title: "Orientation", baseURL: nil, settings: .default, printInfo: info)
+        defer { prepared.releaseHold() }
+        XCTAssertTrue(prepared.hasCurrentLayout(for: .default))
+        let selected = try XCTUnwrap(info.copy() as? NSPrintInfo)
+        selected.orientation = info.orientation == .portrait ? .landscape : .portrait
+        selected.paperSize = info.paperSize
+        prepared.setPageSettings(selected)
+        XCTAssertFalse(prepared.hasCurrentLayout(for: .default))
+        try await prepared.reload(with: .default)
+        XCTAssertTrue(prepared.hasCurrentLayout(for: .default))
+    }
+
+    func testCancellationDuringWebKitLoadResolvesAndRetiresExactlyOnce() async throws {
+        let originalHolds = PreparedPrintDocument.retainedCountForTesting
+        let prepared = PreparedPrintDocument(bodyHTML: "<p>Cancelled load</p>", title: "Cancel load", baseURL: nil, settings: .default, script: try XCTUnwrap(PrintLayoutScriptLoader.load()), printInfo: NSPrintInfo())
+        let task = Task { try await prepared.load() }
+        await Task.yield()
+        prepared.cancelLoading()
+        do {
+            try await task.value
+            XCTFail("A cancelled loading continuation must not return a prepared layout.")
+        } catch {
+            XCTAssertTrue(error is CancellationError)
+        }
+        prepared.releaseHold()
+        prepared.releaseHold()
+        XCTAssertEqual(PreparedPrintDocument.retainedCountForTesting, originalHolds)
+        XCTAssertNil(prepared.webView.window)
+    }
+
     func testPreparationReportsLoadThenPagination() async throws {
         var phases: [PrintPreviewPhase] = []
         let prepared = try await PrintDocumentRenderer().prepareDocument(

@@ -199,13 +199,14 @@ final class EditorSurfaceTester: NSObject {
         }
         let readySeconds = trace.elapsedSeconds
         let initialPhaseEvents = trace.events
-        let initialProfile = try await PrintLayoutSession.activeSession(for: window)?.prepared.webView.evaluateJavaScript("window.__ouroPrintLayoutProfile")
+        let initialProfile = try await PrintLayoutSession.activeSession(for: window)?.prepared?.webView.evaluateJavaScript("window.__ouroPrintLayoutProfile")
         let initialPages = initialDocument.pageCount
         FileHandle.standardError.write(Data("local print acceptance: readySeconds=\(readySeconds) pages=\(initialPages)\n".utf8))
         let changed = ProcessInfo.processInfo.systemUptime
         font.stringValue = String(settings.fontSize + 1)
         _ = font.sendAction(font.action, to: font.target)
-        guard !button.isEnabled,
+        guard preview.document === initialDocument,
+              !self.printPreviewIsReady(in: view),
               await waitUntil(timeout: 60, condition: { self.printPreviewIsReady(in: view) }),
               let changedDocument = preview.document,
               changedDocument !== initialDocument,
