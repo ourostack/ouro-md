@@ -163,6 +163,22 @@ final class PrintThemeTypographyTests: XCTestCase {
         }
     }
 
+    func testThemeCannotReenableBrokenPDFLigatures() async throws {
+        let bundled = try PrintThemeTypography(theme: ThemeStore.shared.theme(id: "graphite"))
+        let typography = PrintThemeTypography(css: bundled.css + """
+        .vditor-ir .vditor-reset, .vditor-ir .vditor-reset * {
+          font-variant-ligatures: common-ligatures !important;
+          font-feature-settings: "liga" 1, "clig" 1, "dlig" 1 !important;
+        }
+        """, fontCSS: bundled.fontCSS, baseURL: bundled.baseURL)
+        let text = "Qualification fixture office workflow"
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>\(text)</p>", title: "Theme ligature safety", baseURL: nil, settings: .default, typography: typography)
+        defer { prepared.releaseHold() }
+        let data = try await prepared.createPDFData()
+        let pdf = try XCTUnwrap(PDFDocument(data: data))
+        XCTAssertTrue(pdf.string?.contains(text) == true, "Theme declarations must not corrupt searchable print text: \(pdf.string ?? "")")
+    }
+
     private func font(for token: String, in document: PDFDocument) throws -> NSFont {
         for index in 0..<document.pageCount {
             guard let page = document.page(at: index), let text = page.string, let range = text.range(of: token) else { continue }

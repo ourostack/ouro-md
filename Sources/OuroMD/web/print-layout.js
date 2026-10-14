@@ -76,6 +76,11 @@
             if (["font", "font-size", "line-height", "letter-spacing", "word-spacing", "tab-size"].includes(property) || lengthVariables.has(property)) { value = scaleLengths(value); }
             declarations += property + ":" + value + (rule.style.getPropertyPriority(property) ? " !important" : "") + ";";
           });
+          if (["font", "font-variant", "font-variant-ligatures", "font-feature-settings"].some(function (property) { return rule.style.getPropertyValue(property); })) {
+            var features = rule.style.getPropertyValue("font-feature-settings");
+            var disabledLigatures = '"liga" 0,"clig" 0,"dlig" 0,"hlig" 0';
+            declarations += "font-variant-ligatures:none !important;font-feature-settings:" + (features && features !== "normal" ? features + "," : "") + disabledLigatures + " !important;";
+          }
           var nested = rule.cssRules ? projectRules(rule.cssRules) : "";
           var selector = rule.selectorText.replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#editor(?![\w-])/g, function (match) { return match === "#editor" ? ":is(#editor,body[data-ouro-print-editor])" : match; });
           if (declarations || nested) { output += selector + "{" + declarations + nested + "}\n"; }

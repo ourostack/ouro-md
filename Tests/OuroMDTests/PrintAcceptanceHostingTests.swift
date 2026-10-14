@@ -8,11 +8,17 @@ import WebKit
 @MainActor
 final class PrintAcceptanceHostingTests: XCTestCase {
     func testContentAuditRecognizesOnlyVerifiedCellWordLineWraps() throws {
-        XCTAssertEqual(try EditorSurfaceTester.wrappedCellWordCount("Boehringer", pageTexts: ["Bo\nehringer"], verifiedCells: ["Boehringer"]), 1)
+        XCTAssertEqual(try EditorSurfaceTester.wrappedCellWordCount("Boehringer", pageTexts: ["Verified Bo\nehringer record"], verifiedCells: ["Verified Boehringer record"]), 1)
+        XCTAssertEqual(try EditorSurfaceTester.wrappedCellWordCount("Boehringer", pageTexts: ["Bo\nehringer"], verifiedCells: ["Boehringer"]), 0)
         XCTAssertEqual(try EditorSurfaceTester.wrappedCellWordCount("Boehringer", pageTexts: ["Bo ehringer"], verifiedCells: ["Boehringer"]), 0)
         XCTAssertEqual(try EditorSurfaceTester.wrappedCellWordCount("office", pageTexts: ["of\nfice"], verifiedCells: ["Unrelated content"]), 0)
         XCTAssertEqual(try EditorSurfaceTester.wrappedCellWordCount("Boehringer", pageTexts: ["SummaryBo\nehringer"], verifiedCells: ["Boehringer"]), 0)
         XCTAssertEqual(try EditorSurfaceTester.wrappedCellWordCount("Boehringer", pageTexts: ["Boehringer"], verifiedCells: ["Boehringer"]), 0)
+    }
+
+    func testWrappedWordCreditMustBelongToTheVerifiedCellText() throws {
+        XCTAssertEqual(try EditorSurfaceTester.wrappedCellWordCount("office", pageTexts: ["Delivery office record\nof\nfice"], verifiedCells: ["Delivery office record"]), 0)
+        XCTAssertEqual(try EditorSurfaceTester.wrappedCellWordCount("office", pageTexts: ["Delivery of\nfice record"], verifiedCells: ["Delivery office record"]), 1)
     }
 
     func testPrivateAcceptanceUsesNoPresentationInsteadOfAnOffscreenSheet() {

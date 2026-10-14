@@ -316,13 +316,45 @@ final class EditorSurfaceTester: NSObject {
         let start = #"(?<![\p{L}\p{N}])"#
         let end = #"(?![\p{L}\p{N}])"#
         let source = try NSRegularExpression(pattern: start + NSRegularExpression.escapedPattern(for: word) + end)
-        guard verifiedCells.contains(where: { source.firstMatch(in: $0, range: NSRange($0.startIndex..., in: $0)) != nil }) else { return 0 }
-        let wrapped = try NSRegularExpression(pattern: start + word.map { NSRegularExpression.escapedPattern(for: String($0)) }.joined(separator: #"\n?"#) + end)
-        return pageTexts.reduce(0) { count, text in
-            count + wrapped.matches(in: text, range: NSRange(text.startIndex..., in: text)).filter {
-                (text as NSString).substring(with: $0.range).contains("\n")
-            }.count
+        let tokens = try NSRegularExpression(pattern: #"[\p{L}\p{N}]+"#)
+        func normalized(_ text: String) -> String {
+            text.replacingOccurrences(of: #"\[\s*S\s*[\d\s]+\]"#, with: "", options: .regularExpression).precomposedStringWithCompatibilityMapping
         }
+        func tokenRanges(_ text: String) -> [NSRange] {
+            tokens.matches(in: text, range: NSRange(text.startIndex..., in: text)).map(\.range)
+        }
+        let cellContexts = verifiedCells.compactMap { cell -> String? in
+            let text = normalized(cell)
+            let ranges = tokenRanges(text)
+            guard ranges.count > 1, source.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) != nil else { return nil }
+            return ranges.map { (text as NSString).substring(with: $0) }.joined()
+        }
+        guard !cellContexts.isEmpty else { return 0 }
+        let wrapped = try NSRegularExpression(pattern: start + word.map { NSRegularExpression.escapedPattern(for: String($0)) }.joined(separator: #"\n?"#) + end)
+        return pageTexts.map { stream in
+            let text = normalized(stream) as NSString
+            let ranges = tokenRanges(text as String)
+            let compact = ranges.map { text.substring(with: $0) }.joined() as NSString
+            let offsets = ranges.flatMap { Array($0.location..<NSMaxRange($0)) }
+            let candidates = wrapped.matches(in: text as String, range: NSRange(location: 0, length: text.length)).filter {
+                text.substring(with: $0.range).contains("\n")
+            }
+            var recovered = Set<NSRange>()
+            for cell in Set(cellContexts) {
+                var search = NSRange(location: 0, length: compact.length)
+                while search.length > 0 {
+                    let found = compact.range(of: cell, options: [], range: search)
+                    guard found.location != NSNotFound else { break }
+                    let first = offsets[found.location]
+                    let last = offsets[NSMaxRange(found) - 1] + 1
+                    for candidate in candidates where candidate.range.location >= first && NSMaxRange(candidate.range) <= last {
+                        recovered.insert(candidate.range)
+                    }
+                    search = NSRange(location: found.location + 1, length: compact.length - found.location - 1)
+                }
+            }
+            return recovered.count
+        }.max() ?? 0
     }
 
     private func auditLocalPrint(pdf: PDFDocument, settings: PrintLayoutSettings) async throws -> [String: Int] {
@@ -391,7 +423,8 @@ final class EditorSurfaceTester: NSObject {
         for (word, expectedCount) in expectedWords {
             let shortage = max(0, expectedCount - (actualWords[word] ?? 0))
             if shortage > 0 {
-                verifiedWrappedWords += min(shortage, try Self.wrappedCellWordCount(word, pageTexts: pageTexts, verifiedCells: verifiedCells))
+                let cellStreams = [actualText] + columnPageTexts.sorted { $0.key < $1.key }.map { $0.value.joined(separator: "\n") }
+                verifiedWrappedWords += min(shortage, try Self.wrappedCellWordCount(word, pageTexts: cellStreams, verifiedCells: verifiedCells))
             }
         }
         let missingWords = rawMissingWords - verifiedWrappedWords
