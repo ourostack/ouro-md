@@ -325,7 +325,7 @@
       }
     });
     var body = document.createElement("tbody");
-    rows.forEach(function (row) { body.appendChild(row.cloneNode(true)); });
+    rows.forEach(function (row) { body.appendChild(row); });
     clone.appendChild(body);
     clone.dataset.ouroPrintSplit = "true";
     return clone;
@@ -371,6 +371,12 @@
       });
       if (current.length) { groups.push(current); }
       if (groups.length <= 1) { return; }
+      replacements.push({ table: table, groups: groups });
+    });
+    // Finish all live geometry reads before moving rows out of their source tables.
+    replacements.forEach(function (replacement) {
+      var table = replacement.table;
+      var groups = replacement.groups;
       var container = document.createElement("div");
       container.className = "ouro-print-split-table-group";
       groups.forEach(function (group, index) {
@@ -379,11 +385,8 @@
         wrapper.appendChild(cloneTableFragment(table, group, index === groups.length - 1));
         container.appendChild(wrapper);
       });
-      replacements.push({ table: table, container: container });
-    });
-    replacements.forEach(function (replacement) {
-      replacement.table.parentNode.insertBefore(replacement.container, replacement.table);
-      replacement.table.remove();
+      table.parentNode.insertBefore(container, table);
+      table.remove();
     });
   }
 
