@@ -6,8 +6,7 @@ ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
 in careful typography on a centered page. Type Markdown and watch it render in
 place — switch themes live, and read the same document four different ways.
 
-> **Status:** v0.9.100. Reads and edits Markdown today. Release tooling produces
-> Developer-ID signed/notarized public artifacts — see [First launch](#first-launch).
+> **Status:** v0.9.101. Reads and edits Markdown today. Release tooling produces Developer-ID signed/notarized public artifacts — see [First launch](#first-launch).
 
 ---
 
@@ -32,7 +31,7 @@ place — switch themes live, and read the same document four different ways.
   compact **status bar** (word/char count, mode, theme) sits a toggle away
   (**View ▸ Toggle Status Bar**) and is hidden by default.
 - **Export.** Save to themed, self-contained **HTML** or **PDF**.
-- **Print layout.** **File ▸ Print…** and **File ▸ Export ▸ PDF…** share a paginated preview with margins, font size, and line spacing controls. Use **Page Setup…** in that sheet to choose paper size and orientation before output. Turn on **Endnotes for links, including local paths** to print deduplicated numbered sources, including web, email, phone and local or relative file destinations. These settings do not change the Markdown document.
+- **Print layout.** **File ▸ Print…** and **File ▸ Export ▸ PDF…** share a readable page preview with margins, font size, line spacing, page navigation and zoom. Choose **Page-bottom footnotes**, **Endnotes** or **Original links** under **Citations**; generated sources include web, email, phone and local or relative file destinations, so check that choice before sharing output. **New page before** starts each selected heading level on a fresh page; authored `<div class="page-break"></div>` and `<!-- pagebreak -->` markers also work. Use **Page Setup…** for paper size and orientation. The first page appears while the remaining pages prepare, and you can request output without waiting for the whole preview; only the complete document with your final settings is printed or exported. Folded sections expand in the print copy so their content is not silently omitted. Print settings do not change your Markdown or reading view.
 - **Images that just work.** Pasted or dropped images are embedded inline (as
   data URIs) — no upload server, no broken links.
 - **Headless render.** `ouro-md --render file.md` prints a styled HTML document

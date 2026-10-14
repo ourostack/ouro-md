@@ -1,4 +1,5 @@
 import AppKit
+import CryptoKit
 import OuroMDCore
 import PDFKit
 import WebKit
@@ -127,19 +128,78 @@ final class EditorSurfaceTester: NSObject {
         var settings = PrintLayoutSettings.default
         settings.citationMode = .pageFootnotes
         settings.headingBreakLevel = Int(ProcessInfo.processInfo.environment["OURO_PRINT_HEADING_BREAK_LEVEL"] ?? "0") ?? 0
+        let environment = ProcessInfo.processInfo.environment
+        if let font = environment["OURO_PRINT_ACCEPTANCE_FONT_SIZE"] {
+            guard let value = Double(font), (8...23).contains(value) else { throw SurfaceError("Invalid acceptance font size.") }
+            settings.fontSize = value
+        }
+        if let margin = environment["OURO_PRINT_ACCEPTANCE_MARGIN_PT"] {
+            guard let value = Double(margin), (18...144).contains(value) else { throw SurfaceError("Invalid acceptance margin.") }
+            settings.margins = PrintPageMargins(top: value, right: value, bottom: value, left: value)
+        }
         PrintLayoutSettingsStore(preferences: printPreferences.defaults).save(settings)
+        if environment["OURO_PRINT_ACCEPTANCE_AUDIT_ONLY"] == "1" {
+            guard let pdf = PDFDocument(url: output) else { throw SurfaceError("No captured product PDF is available to audit.") }
+            let audit = try await auditLocalPrint(pdf: pdf, settings: settings)
+            let unchanged = try Data(contentsOf: markdownFile) == before
+            if let path = environment["OURO_PRINT_ACCEPTANCE_REPORT"] {
+                let report: [String: Any] = ["auditOnly": true, "inputBytes": before.count, "inputSHA256": Self.sha256(before), "pdfSHA256": Self.sha256(try Data(contentsOf: output)), "pages": pdf.pageCount, "sourceUnchanged": unchanged, "contentAudit": audit]
+                try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]).write(to: URL(fileURLWithPath: path), options: .atomic)
+            }
+            return unchanged && audit["missingWords"] == 0 && audit["missingCells"] == 0 && audit["headingsNotAtPageStart"] == 0 && audit["pagesWithInkOutsideMargins"] == 0
+        }
+        _ = await evaluate("(function(){var original=window.ouro.getHTML;window.ouro.getHTML=function(){var start=performance.now();try{return original.apply(this,arguments);}finally{window.__ouroAcceptanceHTMLMilliseconds=performance.now()-start;}};})()")
         FileHandle.standardError.write(Data("local print acceptance: requesting product export\n".utf8))
+        let requested = Date()
         var exported: Bool?
         model.exportPDF(to: output) { exported = $0 }
-        guard await waitUntil(timeout: 240, condition: { self.window.attachedSheet?.title == "Export PDF Layout" }),
+        guard await waitUntil(timeout: 20, condition: { self.window.attachedSheet?.title == "Export PDF Layout" }),
               let panel = window.attachedSheet, let view = panel.contentView,
-              let button = descendants(of: view).compactMap({ $0 as? NSButton }).first(where: { $0.title == "Export PDF" }) else {
+              let button = descendants(of: view).compactMap({ $0 as? NSButton }).first(where: { $0.title == "Export PDF" }),
+              let preview = descendants(of: view).compactMap({ $0 as? PDFView }).first,
+              let font = descendants(of: view).compactMap({ $0 as? NSTextField }).first(where: { $0.accessibilityLabel() == "Font size (pt)" }) else {
             throw SurfaceError("Product print layout did not open for the local document.")
         }
+        let sheetSeconds = Date().timeIntervalSince(requested)
         panel.alphaValue = 0
-        FileHandle.standardError.write(Data("local print acceptance: waiting for full preview\n".utf8))
-        guard await waitUntil(timeout: 240, condition: { button.isEnabled }) else {
+        guard await waitUntil(timeout: 10, condition: { (preview.document?.pageCount ?? 0) > 0 }) else {
+            throw SurfaceError("First print preview page did not appear promptly.")
+        }
+        let firstPageSeconds = Date().timeIntervalSince(requested)
+        let progressive = !printPreviewIsReady(in: view)
+        let progress = descendants(of: view).compactMap { $0 as? NSTextField }.first { $0.stringValue.hasPrefix("Preparing page ") }?.stringValue ?? "Unknown progress"
+        FileHandle.standardError.write(Data("local print acceptance: firstPageSeconds=\(firstPageSeconds) \(progress)\n".utf8))
+        if let path = environment["OURO_PRINT_ACCEPTANCE_DIAGNOSTICS"] {
+            try await capturePrintGeometry(to: path + "-geometry.json")
+            if environment["OURO_PRINT_ACCEPTANCE_GEOMETRY_ONLY"] == "1" {
+                throw SurfaceError("Private print geometry recorded; output capture not requested.")
+            }
+        }
+        guard await waitUntil(timeout: 60, condition: { self.printPreviewIsReady(in: view) }),
+              let initialDocument = preview.document else {
             throw SurfaceError("Full document print preview did not finish.")
+        }
+        let readySeconds = Date().timeIntervalSince(requested)
+        let initialPages = initialDocument.pageCount
+        FileHandle.standardError.write(Data("local print acceptance: readySeconds=\(readySeconds) pages=\(initialPages)\n".utf8))
+        let changed = Date()
+        font.stringValue = String(settings.fontSize + 1)
+        _ = font.sendAction(font.action, to: font.target)
+        guard !button.isEnabled,
+              await waitUntil(timeout: 60, condition: { self.printPreviewIsReady(in: view) }),
+              let changedDocument = preview.document,
+              changedDocument !== initialDocument,
+              changedDocument.pageCount != initialPages else {
+            let status = descendants(of: view).compactMap { $0 as? NSTextField }.filter { !$0.isEditable }.map(\.stringValue).joined(separator: "; ")
+            throw SurfaceError("Font-size control did not produce a complete changed layout: \(status)")
+        }
+        let changedSeconds = Date().timeIntervalSince(changed)
+        let changedPages = changedDocument.pageCount
+        font.stringValue = String(settings.fontSize)
+        _ = font.sendAction(font.action, to: font.target)
+        guard await waitUntil(timeout: 60, condition: { self.printPreviewIsReady(in: view) }),
+              preview.document?.pageCount == initialPages else {
+            throw SurfaceError("Restoring the font size did not restore the complete layout.")
         }
         button.performClick(nil)
         guard await waitUntil(timeout: 30, condition: { exported != nil }), exported == true,
@@ -152,7 +212,174 @@ final class EditorSurfaceTester: NSObject {
         }
         let unchanged = try Data(contentsOf: markdownFile) == before
         FileHandle.standardError.write(Data("local print acceptance: bytes=\(before.count) pages=\(pdf.pageCount) emptyPages=\(emptyPages) sourceUnchanged=\(unchanged)\n".utf8))
-        return pdf.pageCount > 1 && emptyPages == 0 && unchanged
+        let audit = try await auditLocalPrint(pdf: pdf, settings: settings)
+        let report: [String: Any] = [
+            "inputBytes": before.count, "inputSHA256": Self.sha256(before), "pdfSHA256": Self.sha256(try Data(contentsOf: output)), "fontSize": settings.fontSize, "marginPt": settings.margins.top,
+            "sheetSeconds": sheetSeconds, "firstPageSeconds": firstPageSeconds, "readySeconds": readySeconds,
+            "firstPageWhilePreparing": progressive, "changedFontReadySeconds": changedSeconds,
+            "initialPages": initialPages, "changedFontPages": changedPages, "exportedPages": pdf.pageCount,
+            "emptyPages": emptyPages, "sourceUnchanged": unchanged,
+            "editorHTMLMilliseconds": (await evaluate("window.__ouroAcceptanceHTMLMilliseconds")) as? Double ?? -1,
+            "contentAudit": audit
+        ]
+        if let path = environment["OURO_PRINT_ACCEPTANCE_REPORT"] {
+            try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]).write(to: URL(fileURLWithPath: path), options: .atomic)
+        }
+        return pdf.pageCount == initialPages && emptyPages == 0 && unchanged && progressive && firstPageSeconds < 10 && readySeconds < 60 && changedSeconds < 60 && audit["missingWords"] == 0 && audit["missingCells"] == 0 && audit["headingsNotAtPageStart"] == 0 && audit["pagesWithInkOutsideMargins"] == 0
+    }
+
+    private func capturePrintGeometry(to path: String) async throws {
+        let pattern = EditorWebView.Coordinator.jsString(ProcessInfo.processInfo.environment["OURO_PRINT_ACCEPTANCE_GEOMETRY_PATTERN"] ?? ".+")
+        let inspectVisibility = ProcessInfo.processInfo.environment["OURO_PRINT_ACCEPTANCE_GEOMETRY_ONLY"] == "1"
+        for candidate in NSApplication.shared.windows.flatMap({ $0.contentView.map { descendants(of: $0) } ?? [] }).compactMap({ $0 as? WKWebView }) where candidate !== webView {
+            let geometry = try await candidate.evaluateJavaScript("""
+            (function(){
+              if(!window.OuroPrintLayout){return null;}
+              var root=document.querySelector('.markdown-body'),origin=root.getBoundingClientRect(),metrics=window.OuroPrintLayout.metrics(),pattern=new RegExp(\(pattern),"g");
+              function rectangles(rects){origin=root.getBoundingClientRect();return Array.from(rects).map(function(r){return {page:Math.floor((r.left-origin.left+.5)/metrics.pageStride)+1,x:(r.left-origin.left)%metrics.pageStride,y:r.top-origin.top,width:r.width,height:r.height};});}
+              var walker=document.createTreeWalker(root.parentNode,NodeFilter.SHOW_TEXT),nodes=[],subjects=[],node;
+              while((node=walker.nextNode())){
+                pattern.lastIndex=0;var match;
+                while((match=pattern.exec(node.data))){
+                  if(!match[0].length){throw new Error("Geometry pattern must match nonempty text.");}
+                  var range=document.createRange();range.setStart(node,match.index);range.setEnd(node,match.index+match[0].length);
+                  nodes.push({tag:node.parentElement.tagName,text:match[0],footer:!!node.parentElement.closest('.ouro-print-page-notes'),element:rectangles(node.parentElement.getClientRects()),textRects:rectangles(range.getClientRects())});
+                  subjects.push(node.parentElement);
+                }
+              }
+              if(\(inspectVisibility ? "true" : "false")){
+                var active=/translateX\\(-?([\\d.]+)px\\)/.exec(root.style.transform),previous=active?Math.round(Number(active[1])/metrics.pageStride):0;
+                nodes.forEach(function(record,index){record.visibilityOnTextPages=Array.from(new Set(record.textRects.map(r=>r.page))).map(function(page){window.OuroPrintLayout.showPage(page-1);var element=subjects[index],hidden=[];for(var ancestor=element;ancestor&&ancestor!==root.parentNode;ancestor=ancestor.parentElement){if(getComputedStyle(ancestor).visibility==="hidden"){hidden.push({tag:ancestor.tagName,ownStyle:ancestor.style.visibility,rectangles:rectangles(ancestor.getClientRects())});}}return {page:page,visibility:getComputedStyle(element).visibility,ownStyle:element.style.visibility,hiddenAncestors:hidden};});});
+                window.OuroPrintLayout.showPage(previous);
+              }
+              return {bodyHeight:root.getBoundingClientRect().height,nodes:nodes};
+            })()
+            """)
+            if let geometry {
+                try JSONSerialization.data(withJSONObject: geometry, options: [.prettyPrinted, .sortedKeys]).write(to: URL(fileURLWithPath: path), options: .atomic)
+                return
+            }
+        }
+        throw SurfaceError("Prepared print web view was not available for geometry diagnostics.")
+    }
+
+    private func auditLocalPrint(pdf: PDFDocument, settings: PrintLayoutSettings) async throws -> [String: Int] {
+        guard let expected = await evaluate("""
+        (function(){
+          var root = new DOMParser().parseFromString(window.ouro.getHTML(), "text/html");
+          root.querySelectorAll("script, style").forEach(function(node){node.remove();});
+          root.querySelectorAll("p,li,td,th,div,section,aside,summary,details,h1,h2,h3,h4,h5,h6,br").forEach(function(node){node.appendChild(root.createTextNode(" "));});
+          return {
+            text: root.body.textContent,
+            cells: Array.from(root.querySelectorAll("td, th")).map(function(node){return node.textContent;}),
+            headings: Array.from(root.querySelectorAll("h\(settings.headingBreakLevel)")).map(function(node){return node.textContent.trim();})
+          };
+        })()
+        """) as? [String: Any],
+              let body = expected["text"] as? String,
+              let cells = expected["cells"] as? [String],
+              let headings = expected["headings"] as? [String] else {
+            throw SurfaceError("Could not collect private document content for print verification.")
+        }
+        let wordPattern = try NSRegularExpression(pattern: "[\\p{L}\\p{N}]+")
+        func words(_ text: String) -> [String] {
+            let folded = text.precomposedStringWithCompatibilityMapping
+            return wordPattern.matches(in: folded, range: NSRange(folded.startIndex..., in: folded)).map {
+                (folded as NSString).substring(with: $0.range)
+            }
+        }
+        func compact(_ text: String) -> String {
+            words(text.replacingOccurrences(of: #"\[\s*S\s*[\d\s]+\]"#, with: "", options: .regularExpression)).joined()
+        }
+        let pageTexts = (0..<pdf.pageCount).map { pdf.page(at: $0)?.string ?? "" }
+        let footerStart = try NSRegularExpression(pattern: #"\[S\d+\]\s+(?:https?:|file:|mailto:|tel:)"#)
+        let actualText = pageTexts.joined(separator: "\n")
+        let actualWords = words(actualText).reduce(into: [String: Int]()) { $0[$1, default: 0] += 1 }
+        let expectedWords = words(body).reduce(into: [String: Int]()) { $0[$1, default: 0] += 1 }
+        let missingWords = expectedWords.reduce(0) { $0 + max(0, $1.value - (actualWords[$1.key] ?? 0)) }
+        let actualCompact = compact(actualText) as NSString
+        let initiallyMissing = cells.filter { actualCompact.range(of: compact($0)).location == NSNotFound }
+        var columnStreams: [NSString] = []
+        var columnPageTexts: [String: [String]] = [:]
+        for count in [2, 3] {
+            for column in 0..<count {
+                var fragments: [String] = []
+                for index in 0..<pdf.pageCount {
+                    guard let page = pdf.page(at: index) else { continue }
+                    let box = page.bounds(for: .mediaBox)
+                    let text = pageTexts[index]
+                    let footerTop = footerStart.matches(in: text, range: NSRange(text.startIndex..., in: text)).compactMap { page.selection(for: $0.range)?.bounds(for: page).maxY }.max()
+                    let bottom = footerTop.map { $0 + 6 } ?? settings.margins.bottom
+                    let width = (box.width - settings.margins.left - settings.margins.right) / Double(count)
+                    let bounds = CGRect(x: settings.margins.left + Double(column) * width + 2, y: bottom, width: width - 4, height: box.height - settings.margins.top - bottom)
+                    fragments.append(page.selection(for: bounds)?.string ?? "")
+                }
+                columnPageTexts["\(count)-\(column + 1)"] = fragments
+                columnStreams.append(compact(fragments.joined(separator: "\n")) as NSString)
+            }
+        }
+        let missing = initiallyMissing.filter { cell in
+            let text = compact(cell)
+            return !columnStreams.contains { $0.range(of: text).location != NSNotFound }
+        }
+        let missingCells = missing.count
+        if let path = ProcessInfo.processInfo.environment["OURO_PRINT_ACCEPTANCE_DIAGNOSTICS"] {
+            let compactPages = pageTexts.map(compact)
+            let examplePages = Set(missing.prefix(8).compactMap { cell in
+                let normalized = compact(cell)
+                return compactPages.firstIndex { $0.contains(String(normalized.prefix(16))) || $0.contains(String(normalized.suffix(25))) }
+            }.flatMap { [$0, min($0 + 1, pdf.pageCount - 1)] }).sorted()
+            let diagnostics: [String: Any] = [
+                "actualWords": actualWords.values.reduce(0, +),
+                "cellsMissingBeforeColumnExtraction": initiallyMissing.count,
+                "missingCellExamples": Array(missing.prefix(15)),
+                "missingCellPages": examplePages.map { index -> [String: Any] in ["page": index + 1, "text": pageTexts[index], "selectedColumns": columnPageTexts.mapValues { $0[index] }] },
+                "missingWordExamples": Array(expectedWords.filter { $0.value > (actualWords[$0.key] ?? 0) }.sorted { $0.value > $1.value }.prefix(15).map { record -> [String: Any] in
+                    ["word": record.key, "expected": record.value, "actual": actualWords[record.key] ?? 0, "fusedForms": actualWords.filter { $0.key != record.key && $0.key.contains(record.key) }]
+                }),
+                "pageText": (0..<min(3, pdf.pageCount)).map { pdf.page(at: $0)?.string ?? "" }
+            ]
+            try JSONSerialization.data(withJSONObject: diagnostics, options: [.prettyPrinted, .sortedKeys]).write(to: URL(fileURLWithPath: path), options: .atomic)
+            if ProcessInfo.processInfo.environment["OURO_PRINT_ACCEPTANCE_DIAGNOSTICS_ONLY"] == "1" {
+                throw SurfaceError("Private content diagnostics recorded; full audit not requested.")
+            }
+        }
+        var headingsNotAtPageStart = 0
+        for heading in headings {
+            let atStart = (0..<pdf.pageCount).contains { index in
+                let text = pageTexts[index]
+                guard let page = pdf.page(at: index),
+                      let range = text.range(of: heading),
+                      let selection = page.selection(for: NSRange(range, in: text)) else { return false }
+                return selection.bounds(for: page).maxY >= page.bounds(for: .mediaBox).height - settings.margins.top - 60
+            }
+            if !atStart { headingsNotAtPageStart += 1 }
+        }
+        var pagesWithInkOutsideMargins = 0
+        for index in 0..<pdf.pageCount {
+            guard let page = pdf.page(at: index) else { throw SurfaceError("Unreadable page in print audit.") }
+            let box = page.bounds(for: .mediaBox)
+            let width = Int(box.width), height = Int(box.height)
+            var pixels = [UInt8](repeating: 255, count: width * height * 4)
+            let outside = try pixels.withUnsafeMutableBytes { buffer -> Bool in
+                guard let context = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
+                    throw SurfaceError("Could not raster-audit print output.")
+                }
+                context.setFillColor(NSColor.white.cgColor)
+                context.fill(box)
+                page.draw(with: .mediaBox, to: context)
+                let bytes = buffer.bindMemory(to: UInt8.self)
+                for y in 0..<height {
+                    for x in 0..<width where x < Int(settings.margins.left) - 1 || x >= width - Int(settings.margins.right) + 1 || y < Int(settings.margins.bottom) - 1 || y >= height - Int(settings.margins.top) + 1 {
+                        let offset = (y * width + x) * 4
+                        if bytes[offset] < 220 || bytes[offset + 1] < 220 || bytes[offset + 2] < 220 { return true }
+                    }
+                }
+                return false
+            }
+            if outside { pagesWithInkOutsideMargins += 1 }
+        }
+        return ["expectedWords": expectedWords.values.reduce(0, +), "missingWords": missingWords, "tableCells": cells.count, "missingCells": missingCells, "sectionHeadings": headings.count, "headingsNotAtPageStart": headingsNotAtPageStart, "rasterAuditedPages": pdf.pageCount, "pagesWithInkOutsideMargins": pagesWithInkOutsideMargins]
     }
 
     private func verifyMarkdownFileDropClassification() throws -> Bool {
@@ -254,14 +481,14 @@ final class EditorSurfaceTester: NSObject {
               let export = views.compactMap({ $0 as? NSButton }).first(where: { $0.title == "Export PDF" }),
               let cancel = views.compactMap({ $0 as? NSButton }).first(where: { $0.title == "Cancel" }),
               let pageSetup = views.compactMap({ $0 as? NSButton }).first(where: { $0.title == "Page Setup…" }),
-              await waitUntil(timeout: 8, condition: { export.isEnabled }) else { return false }
+              await waitUntil(timeout: 8, condition: { self.printPreviewIsReady(in: content) }) else { return false }
         let footnotesDefault = citations.titleOfSelectedItem == "Page-bottom footnotes"
         headings.selectItem(withTitle: "Heading 2")
         _ = headings.sendAction(headings.action, to: headings.target)
-        guard await waitUntil(timeout: 8, condition: { export.isEnabled }) else { return false }
+        guard await waitUntil(timeout: 8, condition: { self.printPreviewIsReady(in: content) }) else { return false }
         let pageCountVisible = descendants(of: content).compactMap { $0 as? NSTextField }.contains { $0.stringValue.contains("Preview ready —") && $0.stringValue.contains("pages") }
         pageSetup.performClick(nil)
-        guard await waitUntil(timeout: 8, condition: { export.isEnabled }) else { return false }
+        guard await waitUntil(timeout: 8, condition: { self.printPreviewIsReady(in: content) }) else { return false }
         font.stringValue = "not a number"
         _ = font.sendAction(font.action, to: font.target)
         let invalidDisabled = !export.isEnabled
@@ -269,7 +496,7 @@ final class EditorSurfaceTester: NSObject {
             font.stringValue = value
             _ = font.sendAction(font.action, to: font.target)
         }
-        guard await waitUntil(timeout: 10, condition: { export.isEnabled }) else {
+        guard await waitUntil(timeout: 10, condition: { self.printPreviewIsReady(in: content) }) else {
             cancel.performClick(nil)
             return false
         }
@@ -288,6 +515,10 @@ final class EditorSurfaceTester: NSObject {
         let unchangedSource = try Data(contentsOf: markdownFile) == originalBytes
         let citationPrinted = pdf.page(at: 0)?.string?.contains("https://example.com/native-citation") == true
         let authoredPrinted = pdf.page(at: 0)?.string?.contains("NATIVE-AUTHORED-NOTE") == true
+        let betaPage = (0..<pdf.pageCount).first { pdf.page(at: $0)?.string?.contains("Second company.") == true }
+        let commentPage = (0..<pdf.pageCount).first { pdf.page(at: $0)?.string?.contains("NATIVE-COMMENT-BREAK") == true }
+        let divPage = (0..<pdf.pageCount).first { pdf.page(at: $0)?.string?.contains("NATIVE-DIV-BREAK") == true }
+        let manualBreaksPrinted = betaPage != nil && commentPage == betaPage.map { $0 + 1 } && divPage == commentPage.map { $0 + 1 }
 
         var cancelled: Result<Bool, Error>?
         let cancelledOutput = root.appendingPathComponent("cancelled-layout.pdf")
@@ -320,17 +551,25 @@ final class EditorSurfaceTester: NSObject {
         guard await waitUntil(timeout: 8, condition: { self.window.attachedSheet?.title == "Print Layout" }),
               let printPanel = window.attachedSheet, let printView = printPanel.contentView,
               let continueButton = descendants(of: printView).compactMap({ $0 as? NSButton }).first(where: { $0.title == "Continue to Print" }),
-              await waitUntil(timeout: 8, condition: { continueButton.isEnabled }) else { return false }
+              await waitUntil(timeout: 8, condition: { self.printPreviewIsReady(in: printView) }) else { return false }
         printPanel.alphaValue = 0
         continueButton.performClick(nil)
         let finalPrintCancelled = await waitUntil(timeout: 2, condition: { printCancelled && PrintLayoutSession.activeCountForTesting == 0 })
-        print("print slice checks: default=\(footnotesDefault) pageCount=\(pageCountVisible) citation=\(citationPrinted) authored=\(authoredPrinted) invalid=\(invalidDisabled) saved=\(settingsSaved) finalFont=\(finalSettingsPrinted) paper=\(selectedPaperPrinted) source=\(unchangedSource) closed=\(closedCancelled) printCancel=\(finalPrintCancelled)")
-        return footnotesDefault && pageCountVisible && citationPrinted && authoredPrinted && invalidDisabled && settingsSaved && finalSettingsPrinted && selectedPaperPrinted && unchangedSource && closedCancelled && finalPrintCancelled
+        print("print slice checks: default=\(footnotesDefault) pageCount=\(pageCountVisible) citation=\(citationPrinted) authored=\(authoredPrinted) manualBreaks=\(manualBreaksPrinted) invalid=\(invalidDisabled) saved=\(settingsSaved) finalFont=\(finalSettingsPrinted) paper=\(selectedPaperPrinted) source=\(unchangedSource) closed=\(closedCancelled) printCancel=\(finalPrintCancelled)")
+        return footnotesDefault && pageCountVisible && citationPrinted && authoredPrinted && manualBreaksPrinted && invalidDisabled && settingsSaved && finalSettingsPrinted && selectedPaperPrinted && unchangedSource && closedCancelled && finalPrintCancelled
             && PrintLayoutSession.activeCountForTesting == 0 && PreparedPrintDocument.retainedCountForTesting == 0
     }
 
     private func descendants(of view: NSView) -> [NSView] {
         [view] + view.subviews.flatMap { descendants(of: $0) }
+    }
+
+    private func printPreviewIsReady(in root: NSView) -> Bool {
+        descendants(of: root).compactMap { $0 as? NSTextField }.contains { $0.stringValue.hasPrefix("Preview ready —") }
+    }
+
+    private static func sha256(_ data: Data) -> String {
+        SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
     }
 
     private func waitForMarkdown(containing needle: String, timeout: TimeInterval) async -> Bool {
@@ -413,6 +652,18 @@ final class EditorSurfaceTester: NSObject {
     ## Company Beta
 
     Second company.
+
+    <!-- pagebreak -->
+
+    ### Manual comment break
+
+    NATIVE-COMMENT-BREAK
+
+    <div class="page-break"></div>
+
+    ### Manual div break
+
+    NATIVE-DIV-BREAK
 
     [^native]: NATIVE-AUTHORED-NOTE
     """

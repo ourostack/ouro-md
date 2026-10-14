@@ -4,11 +4,15 @@ public enum OuroMDRelease {
     public static let appName = "Ouro MD"
     public static let bundleIdentifier = "bot.ouro.md"
     public static let repository = "ourostack/ouro-md"
-    public static let version = "0.9.100"
+    public static let version = "0.9.101"
     public static let userAgent = "OuroMD/\(version)"
     public static let releaseDate = "2026-10-13"
     public static let positioningSubtitle = "Local Markdown workspace for Mac files."
     public static let releaseHighlights = [
+        "Print citations as page-bottom footnotes, keep accurately labeled endnotes, or preserve original links.",
+        "Start each chosen heading level on a fresh page, with authored manual page breaks also supported.",
+        "Navigate and zoom the first preview page while the rest prepares; request complete output without waiting at the preview.",
+        "Print folded sections in full, retain field headings at page boundaries, and avoid sparse repeated-header table fragments.",
         "Print and PDF export share a paginated preview with adjustable margins, font size and line spacing.",
         "Turn on numbered external-link references for printed citations without changing your Markdown.",
         "Print layout preserves long paragraphs, multipage tables, table footers and clickable document links.",
