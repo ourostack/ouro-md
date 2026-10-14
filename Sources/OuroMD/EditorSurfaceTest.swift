@@ -15,15 +15,27 @@ final class EditorSurfaceTester: NSObject {
     private var window: NSWindow!
     private var root: URL!
     private var markdownFile: URL!
+    private var activationObserver: NSObjectProtocol?
     private let printPreferences = ScratchUserDefaults(label: "print-journey")
     private var acceptanceInput: URL? {
         ProcessInfo.processInfo.environment["OURO_PRINT_ACCEPTANCE_FILE"].map { URL(fileURLWithPath: $0) }
     }
     var requiresFocusedEditor: Bool { acceptanceInput == nil }
+    var activationPolicy: NSApplication.ActivationPolicy { requiresFocusedEditor ? .accessory : .prohibited }
 
     func run() -> Never {
         let app = NSApplication.shared
-        HeadlessHarness.configure()
+        let acceptedPolicy = app.setActivationPolicy(activationPolicy)
+        if !requiresFocusedEditor {
+            guard acceptedPolicy, !app.isActive else {
+                FileHandle.standardError.write(Data("print acceptance could not prohibit application activation\n".utf8))
+                exit(1)
+            }
+            activationObserver = NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: app, queue: .main) { _ in
+                FileHandle.standardError.write(Data("print acceptance violated its non-activation policy\n".utf8))
+                exit(1)
+            }
+        }
         Task { @MainActor in
             let ok = await self.execute()
             self.cleanup()
@@ -223,6 +235,7 @@ final class EditorSurfaceTester: NSObject {
             "initialPages": initialPages, "changedFontPages": changedPages, "exportedPages": pdf.pageCount,
             "emptyPages": emptyPages, "sourceUnchanged": unchanged,
             "hostRequiresEditorActivation": requiresFocusedEditor,
+            "probeActivationPolicy": NSApplication.shared.activationPolicy().rawValue,
             "probeApplicationActive": NSApplication.shared.isActive,
             "editorHTMLMilliseconds": (await evaluate("window.__ouroAcceptanceHTMLMilliseconds")) as? Double ?? -1,
             "contentAudit": audit
@@ -610,6 +623,10 @@ final class EditorSurfaceTester: NSObject {
         printPreferences.remove()
         model?.teardown()
         window?.orderOut(nil)
+        if let activationObserver {
+            NotificationCenter.default.removeObserver(activationObserver)
+            self.activationObserver = nil
+        }
         try? FileManager.default.removeItem(at: root)
     }
 

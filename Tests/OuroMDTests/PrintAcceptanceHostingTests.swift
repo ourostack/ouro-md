@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 import XCTest
 @testable import OuroMD
 
@@ -13,6 +14,12 @@ final class PrintAcceptanceHostingTests: XCTestCase {
     func testGeneralSurfaceJourneyRetainsItsFocusedEditorRequirement() {
         withAcceptanceFile(nil) {
             XCTAssertTrue(EditorSurfaceTester().requiresFocusedEditor, "Focused editing scenarios remain assigned to the isolated native runner.")
+        }
+    }
+
+    func testExplicitPrintAcceptanceProhibitsImplicitApplicationActivation() {
+        withAcceptanceFile("/tmp/print-acceptance-hosting-fixture.md") {
+            XCTAssertEqual(EditorSurfaceTester().activationPolicy, .prohibited, "Merely avoiding an explicit activate call does not prevent a sheet from activating the process.")
         }
     }
 
