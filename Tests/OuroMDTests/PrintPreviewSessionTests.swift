@@ -1,7 +1,16 @@
 import AppKit
 import PDFKit
+import WebKit
 import XCTest
 @testable import OuroMD
+
+private final class NonActivatingChooserWindow: NSWindow {
+    var requestedFront = false
+
+    override func makeKeyAndOrderFront(_ sender: Any?) {
+        requestedFront = true
+    }
+}
 
 @MainActor
 final class PrintPreviewSessionTests: XCTestCase {
@@ -195,6 +204,7 @@ final class PrintPreviewSessionTests: XCTestCase {
         defer { parent.close(); prepared.releaseHold() }
         var chooserFinished = false
         var sawCancellableProgress = false
+        var sawDisabledLayoutEdits = false
         let session = PrintLayoutSession(prepared: prepared, parentWindow: parent, action: .print, settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), printPanelChooser: { info in
             info.orientation = info.orientation == .portrait ? .landscape : .portrait
             chooserFinished = true
@@ -202,6 +212,11 @@ final class PrintPreviewSessionTests: XCTestCase {
         }, reportError: { _, error in XCTFail(error.localizedDescription) }, telemetry: { _, _ in }, onPhase: { phase in
             if chooserFinished, phase == .loadingHTML {
                 sawCancellableProgress = parent.attachedSheet != nil && self.button(named: "Cancel", in: parent)?.isEnabled == true
+                if let root = parent.attachedSheet?.contentView {
+                    let fields = self.descendants(of: root).compactMap { $0 as? NSTextField }.filter(\.isEditable)
+                    let choices = self.descendants(of: root).compactMap { $0 as? NSPopUpButton }
+                    sawDisabledLayoutEdits = !fields.isEmpty && fields.allSatisfy { !$0.isEnabled } && choices.allSatisfy { !$0.isEnabled }
+                }
                 self.cancelSession(in: parent)
             }
         })
@@ -209,8 +224,137 @@ final class PrintPreviewSessionTests: XCTestCase {
         _ = try await waitUntil { self.previewIsReady(in: parent) }
         button(named: "Continue to Print", in: parent)?.performClick(nil)
         XCTAssertTrue(sawCancellableProgress)
+        XCTAssertTrue(sawDisabledLayoutEdits)
         XCTAssertNil(PrintLayoutSession.activeSession(for: parent))
         XCTAssertNil(parent.attachedSheet)
+    }
+
+    func testRepeatPrintDuringNativeChooserDoesNotReopenLayoutOrStartLoader() async throws {
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>One print request</p>", title: "Repeat print", baseURL: nil, settings: .default)
+        let parent = NonActivatingChooserWindow(contentRect: NSRect(x: -30_000, y: -30_000, width: 980, height: 720), styleMask: [.titled], backing: .buffered, defer: false)
+        parent.isReleasedWhenClosed = false
+        parent.alphaValue = 0
+        parent.orderFront(nil)
+        defer { parent.close(); prepared.releaseHold() }
+        let editor = WKWebView()
+        parent.contentView = editor
+        let coordinator = EditorWebView.Coordinator(model: AppModel(), printSettingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()))
+        coordinator.webView = editor
+        var session: PrintLayoutSession?
+        var didCheckChooser = false
+        session = PrintLayoutSession(prepared: prepared, parentWindow: parent, action: .print, settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), printPanelChooser: { _ in
+            XCTAssertNil(parent.attachedSheet, "The layout is hidden while native output UI owns the request.")
+            coordinator.printDocument()
+            XCTAssertTrue(parent.requestedFront, "Repeated Print fronts the owning window without activating the test process.")
+            XCTAssertNil(parent.attachedSheet, "Repeated Print must not reopen the hidden layout sheet.")
+            XCTAssertTrue(PrintLayoutSession.activeSession(for: parent) === session)
+            didCheckChooser = true
+            return false
+        }, reportError: { _, error in XCTFail(error.localizedDescription) }, telemetry: { _, _ in })
+        session?.begin()
+        _ = try await waitUntil { self.previewIsReady(in: parent) }
+        button(named: "Continue to Print", in: parent)?.performClick(nil)
+        XCTAssertTrue(didCheckChooser)
+        XCTAssertNil(PrintLayoutSession.activeSession(for: parent))
+    }
+
+    func testAccessibilityAnnouncementsAreSemanticAcrossCaptureFailureAndRetry() async throws {
+        let script = try XCTUnwrap(PrintLayoutScriptLoader.load()) + """
+        ;(function(){var apply=window.OuroPrintLayout.apply;window.OuroPrintLayout.apply=function(){if(parseFloat(getComputedStyle(document.body).fontSize)>13){throw new Error('SYNTHETIC-ERROR-NOT-FOR-AX');}return apply();};})();
+        """
+        var settings = PrintLayoutSettings.default
+        settings.citationMode = .originalLinks
+        settings.headingBreakLevel = 2
+        let body = (1...60).map { "<h2>Section \($0)</h2><p>Accessibility capture</p>" }.joined()
+        let prepared = try await PrintDocumentRenderer(scriptProvider: { script }).prepareDocument(bodyHTML: body, title: "Accessible phases", baseURL: nil, settings: settings)
+        let parent = makeParentWindow()
+        defer { parent.close(); prepared.releaseHold() }
+        var announcements: [String] = []
+        let session = PrintLayoutSession(prepared: prepared, parentWindow: parent, action: .print, settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), reportError: { _, _ in }, telemetry: { _, _ in }, announceAccessibilityPhase: { announcements.append($0) })
+        session.begin()
+        _ = try await waitUntil { self.previewIsReady(in: parent) }
+        XCTAssertEqual(announcements.filter { $0 == "Preparing preview pages." }.count, 1, "Sixty page captures must produce one semantic capture announcement.")
+        let root = try XCTUnwrap(parent.attachedSheet?.contentView)
+        let font = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Font size (pt)" })
+        font.stringValue = "14"
+        _ = font.sendAction(font.action, to: font.target)
+        _ = try await waitUntil { self.button(named: "Retry", in: parent)?.isHidden == false }
+        XCTAssertEqual(announcements.filter { $0 == "Print preview preparation failed. Retry or Cancel is available." }.count, 1)
+        XCTAssertFalse(announcements.contains { $0.contains("SYNTHETIC-ERROR-NOT-FOR-AX") })
+        font.stringValue = "12"
+        _ = font.sendAction(font.action, to: font.target)
+        _ = try await waitUntil { self.previewIsReady(in: parent) }
+        XCTAssertEqual(announcements.filter { $0 == "Preparing preview pages." }.count, 2, "A new successful generation gets its own capture announcement, not one per page.")
+        XCTAssertEqual(announcements.filter { $0 == "Print preview ready." }.count, 2)
+        cancelSession(in: parent)
+        let count = announcements.count
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(announcements.count, count, "Retired generations cannot announce.")
+    }
+
+    func testShrinkingPageCountKeepsNearestValidLatestSelectedPage() async throws {
+        let body = (1...400).map { "<p>SHRINK-PASSAGE-\($0)-TOKEN Readable prose fills multiple pages while retaining all the source text.</p>" }.joined()
+        var settings = PrintLayoutSettings.default
+        settings.citationMode = .originalLinks
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: body, title: "Shrink preview", baseURL: nil, settings: settings)
+        let parent = makeParentWindow()
+        defer { parent.close(); prepared.releaseHold() }
+        let session = makeSession(prepared: prepared, parent: parent, output: URL(fileURLWithPath: "/tmp/shrink-not-exported.pdf"))
+        session.begin()
+        _ = try await waitUntil { self.previewIsReady(in: parent) }
+        let preview = try XCTUnwrap(previewView(in: parent))
+        let old = try XCTUnwrap(preview.document)
+        preview.go(to: try XCTUnwrap(old.page(at: old.pageCount - 1)))
+        let root = try XCTUnwrap(parent.attachedSheet?.contentView)
+        let font = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Font size (pt)" })
+        font.stringValue = "8"
+        _ = font.sendAction(font.action, to: font.target)
+        XCTAssertTrue(preview.document === old)
+        let ready = try await waitUntil { self.previewIsReady(in: parent) && preview.document !== old }
+        XCTAssertTrue(ready)
+        let current = try XCTUnwrap(preview.document)
+        XCTAssertLessThan(current.pageCount, old.pageCount)
+        XCTAssertEqual(preview.currentPage.map { current.index(for: $0) }, current.pageCount - 1)
+        XCTAssertTrue(current.string?.contains("SHRINK-PASSAGE-400-TOKEN") == true)
+        cancelSession(in: parent)
+    }
+
+    func testABAEditAndQueuedExportOnlySealLatestGeneration() async throws {
+        var settings = PrintLayoutSettings.default
+        settings.citationMode = .originalLinks
+        settings.headingBreakLevel = 2
+        let body = (1...100).map { "<h2>Section \($0)</h2><p>ABA-PAGE-\($0)-TOKEN</p>" }.joined()
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: body, title: "ABA generations", baseURL: nil, settings: settings)
+        let parent = makeParentWindow()
+        defer { parent.close(); prepared.releaseHold() }
+        let scratch = try PrintLayoutTestPaths.makeScratchDirectory(label: "aba-preview")
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        let output = scratch.appendingPathComponent("latest.pdf")
+        var result: Result<Bool, Error>?
+        var readyEvents = 0
+        var loadingEvents = 0
+        let session = PrintLayoutSession(prepared: prepared, parentWindow: parent, action: .export(output, { result = $0 }), settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), reportError: { _, error in XCTFail(error.localizedDescription) }, telemetry: { _, _ in }, onPhase: { phase in
+            if phase == .ready { readyEvents += 1 }
+            if phase == .loadingHTML { loadingEvents += 1 }
+        })
+        session.begin()
+        _ = try await waitUntil { self.previewIsReady(in: parent) }
+        let root = try XCTUnwrap(parent.attachedSheet?.contentView)
+        let font = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Font size (pt)" })
+        font.stringValue = "14"
+        _ = font.sendAction(font.action, to: font.target)
+        _ = try await waitUntil { loadingEvents > 0 }
+        font.stringValue = "12"
+        _ = font.sendAction(font.action, to: font.target)
+        exportButton(in: parent)?.performClick(nil)
+        XCTAssertNil(result, "Returning to A must not reuse a seal from an older generation.")
+        let finished = try await waitUntil { result != nil }
+        XCTAssertTrue(finished)
+        guard case .success(true)? = result else { return XCTFail("Latest ABA output was not exported.") }
+        XCTAssertEqual(readyEvents, 2, "Only original A and the latest A may seal; superseded B cannot become ready.")
+        let pdf = try XCTUnwrap(PDFDocument(url: output))
+        XCTAssertEqual(pdf.pageCount, 100)
+        for index in 0..<100 { XCTAssertTrue(pdf.page(at: index)?.string?.contains("ABA-PAGE-\(index + 1)-TOKEN") == true) }
     }
 
     private func cancelSession(in parent: NSWindow) {
