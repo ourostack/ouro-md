@@ -3,6 +3,15 @@ import Foundation
 import PDFKit
 import WebKit
 
+private final class NonPresentingPrintPanel: NSPanel {
+    override var canBecomeKey: Bool { false }
+    override var canBecomeMain: Bool { false }
+
+    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
+        frameRect
+    }
+}
+
 @MainActor
 final class PrintLayoutSession: NSObject, NSWindowDelegate {
     enum SessionError: LocalizedError {
@@ -25,6 +34,11 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     enum Action {
         case print
         case export(URL, (Result<Bool, Error>) -> Void)
+    }
+
+    enum Presentation: Equatable {
+        case sheet
+        case headless
     }
 
     typealias DocumentLoader = @MainActor (PrintLayoutSettings, NSPrintInfo, (@MainActor (PrintPreviewPhase) -> Void)?) async throws -> PreparedPrintDocument
@@ -53,6 +67,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     private let documentLoader: DocumentLoader
     private var currentPrintInfo: NSPrintInfo
     private let parentWindow: NSWindow
+    private let presentation: Presentation
     private let action: Action
     private let reportError: (String, Error) -> Void
     private let telemetry: (String, [String: OuroMDTelemetryValue]) -> Void
@@ -103,9 +118,10 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         reportError: @escaping (String, Error) -> Void,
         telemetry: @escaping (String, [String: OuroMDTelemetryValue]) -> Void,
         onPhase: (@MainActor (PrintPreviewPhase) -> Void)? = nil,
-        announceAccessibilityPhase: (@MainActor (String) -> Void)? = nil
+        announceAccessibilityPhase: (@MainActor (String) -> Void)? = nil,
+        presentation: Presentation = .sheet
     ) {
-        self.init(settings: prepared.settings, printInfo: prepared.printInfo, documentLoader: { _, _, _ in prepared }, parentWindow: parentWindow, action: action, settingsStore: settingsStore, pageSetupChooser: pageSetupChooser, printPanelChooser: printPanelChooser, reportError: reportError, telemetry: telemetry, onPhase: onPhase, announceAccessibilityPhase: announceAccessibilityPhase)
+        self.init(settings: prepared.settings, printInfo: prepared.printInfo, documentLoader: { _, _, _ in prepared }, parentWindow: parentWindow, action: action, settingsStore: settingsStore, pageSetupChooser: pageSetupChooser, printPanelChooser: printPanelChooser, reportError: reportError, telemetry: telemetry, onPhase: onPhase, announceAccessibilityPhase: announceAccessibilityPhase, presentation: presentation)
         self.prepared = prepared
     }
 
@@ -121,11 +137,13 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         reportError: @escaping (String, Error) -> Void,
         telemetry: @escaping (String, [String: OuroMDTelemetryValue]) -> Void,
         onPhase: (@MainActor (PrintPreviewPhase) -> Void)? = nil,
-        announceAccessibilityPhase: (@MainActor (String) -> Void)? = nil
+        announceAccessibilityPhase: (@MainActor (String) -> Void)? = nil,
+        presentation: Presentation = .sheet
     ) {
         self.documentLoader = documentLoader
         self.currentPrintInfo = settings.applying(to: printInfo)
         self.parentWindow = parentWindow
+        self.presentation = presentation
         self.action = action
         self.pageSetupChooser = pageSetupChooser
         self.printPanelChooser = printPanelChooser
@@ -134,13 +152,19 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         self.onPhase = onPhase
         self.announceAccessibilityPhase = announceAccessibilityPhase
         self.controls = PrintLayoutAccessoryController(settings: settings, settingsStore: settingsStore)
-        self.panel = NSPanel(
+        let panelType: NSPanel.Type = presentation == .headless ? NonPresentingPrintPanel.self : NSPanel.self
+        self.panel = panelType.init(
             contentRect: NSRect(x: 0, y: 0, width: 980, height: 720),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
         )
         super.init()
+        if presentation == .headless {
+            panel.alphaValue = 0
+            panel.ignoresMouseEvents = true
+            panel.setFrameOrigin(NSPoint(x: -30000, y: -30000))
+        }
         controls.onSettingsChanged = { [weak self] updated in
             self?.schedulePreviewRefresh(using: updated)
         }
@@ -167,6 +191,11 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
 
     func begin() {
         guard !sessionFinished else { return }
+        if presentation == .headless, isPrintRequest {
+            reportError("Could not open print layout", SessionError.unavailable("Headless acceptance supports PDF export only, without native printer dialogs."))
+            finishSession()
+            return
+        }
         if Self.activeSession(for: parentWindow) === self {
             bringToFront()
             return
@@ -183,11 +212,16 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
             self?.completeCancellationIfNeeded()
         }
         panel.delegate = self
-        parentWindow.beginSheet(panel)
+        if presentation == .sheet {
+            parentWindow.beginSheet(panel)
+        } else {
+            panel.contentView?.layoutSubtreeIfNeeded()
+        }
         schedulePreviewRefresh(using: controls.currentSettings, debounce: false)
     }
 
     static var activeCountForTesting: Int { active.count }
+    var panelForTesting: NSPanel { panel }
 
     static func activeSession(for parentWindow: NSWindow) -> PrintLayoutSession? {
         active[ObjectIdentifier(parentWindow)]
@@ -199,7 +233,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     }
 
     func bringToFront() {
-        guard !sessionFinished else { return }
+        guard !sessionFinished, presentation == .sheet else { return }
         (parentWindow.attachedSheet ?? parentWindow).makeKeyAndOrderFront(nil)
     }
 

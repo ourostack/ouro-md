@@ -140,7 +140,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
             frame: NSRect(origin: .zero, size: pageSize),
             configuration: webViewConfiguration
         )
-        self.hostWindow = HeadlessHostWindow(
+        self.hostWindow = NonActivatingHeadlessHostWindow(
             contentRect: NSRect(origin: .zero, size: pageSize),
             styleMask: [.borderless],
             backing: .buffered,
@@ -148,6 +148,8 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         )
         super.init()
         hostWindow.isReleasedWhenClosed = false
+        hostWindow.alphaValue = 0
+        hostWindow.ignoresMouseEvents = true
         webView.navigationDelegate = self
         hostWindow.contentView = webView
         hostWindow.setFrameOrigin(NSPoint(x: -30000, y: -30000))

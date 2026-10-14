@@ -91,6 +91,10 @@ enum PrintLayoutHTMLDocument {
           color: #111111;
           font: \(cssLength(normalized.fontSize))px/\(cssNumber(normalized.lineSpacing)) Georgia, "Times New Roman", serif;
         }
+        .markdown-body, .markdown-body * {
+          /* WebKit's bundled-font ligature mappings corrupt searchable PDF text. */
+          font-variant-ligatures: none !important;
+        }
         .ouro-print-viewport {
           width: var(--ouro-page-width);
           height: var(--ouro-page-height);

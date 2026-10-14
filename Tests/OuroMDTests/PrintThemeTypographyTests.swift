@@ -148,6 +148,21 @@ final class PrintThemeTypographyTests: XCTestCase {
         XCTAssertTrue(PDFDocument(data: data)?.string?.contains("SAFE-THEME-PAYLOAD-TOKEN") == true)
     }
 
+    func testBundledThemePDFPreservesLigatureWordsForSearchAndCopy() async throws {
+        let text = "Qualification fixture office affinity efficient shuffled workflow"
+        let prepared = try await PrintDocumentRenderer().prepareDocument(
+            bodyHTML: "<h2>\(text)</h2><p>\(text) <strong>\(text)</strong> <em>\(text)</em></p><table><tr><td>\(text)</td></tr></table>",
+            title: "Searchable theme text", baseURL: nil, settings: .default,
+            typography: try PrintThemeTypography(theme: ThemeStore.shared.theme(id: "graphite"))
+        )
+        defer { prepared.releaseHold() }
+        let data = try await prepared.createPDFData()
+        let pdf = try XCTUnwrap(PDFDocument(data: data))
+        for word in text.split(separator: " ") {
+            XCTAssertEqual(pdf.string?.components(separatedBy: String(word)).count, 6, "Every heading, body, bold, italic and table occurrence must remain searchable: \(pdf.string ?? "")")
+        }
+    }
+
     private func font(for token: String, in document: PDFDocument) throws -> NSFont {
         for index in 0..<document.pageCount {
             guard let page = document.page(at: index), let text = page.string, let range = text.range(of: token) else { continue }

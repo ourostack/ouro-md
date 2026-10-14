@@ -1,10 +1,67 @@
 import Foundation
 import AppKit
 import XCTest
+import PDFKit
+import WebKit
 @testable import OuroMD
 
 @MainActor
 final class PrintAcceptanceHostingTests: XCTestCase {
+    func testContentAuditRecognizesOnlyVerifiedCellWordLineWraps() throws {
+        XCTAssertEqual(try EditorSurfaceTester.wrappedCellWordCount("Boehringer", pageTexts: ["Bo\nehringer"], verifiedCells: ["Boehringer"]), 1)
+        XCTAssertEqual(try EditorSurfaceTester.wrappedCellWordCount("Boehringer", pageTexts: ["Bo ehringer"], verifiedCells: ["Boehringer"]), 0)
+        XCTAssertEqual(try EditorSurfaceTester.wrappedCellWordCount("office", pageTexts: ["of\nfice"], verifiedCells: ["Unrelated content"]), 0)
+        XCTAssertEqual(try EditorSurfaceTester.wrappedCellWordCount("Boehringer", pageTexts: ["SummaryBo\nehringer"], verifiedCells: ["Boehringer"]), 0)
+        XCTAssertEqual(try EditorSurfaceTester.wrappedCellWordCount("Boehringer", pageTexts: ["Boehringer"], verifiedCells: ["Boehringer"]), 0)
+    }
+
+    func testPrivateAcceptanceUsesNoPresentationInsteadOfAnOffscreenSheet() {
+        withAcceptanceFile("/tmp/print-acceptance-hosting-fixture.md") {
+            XCTAssertEqual(EditorSurfaceTester().printPresentation, .headless)
+        }
+    }
+
+    func testHeadlessExportNeverOrdersAWindowOrAttachesASheet() async throws {
+        let parent = NonActivatingHeadlessHostWindow(contentRect: NSRect(x: -30_000, y: -30_000, width: 760, height: 900), styleMask: [.borderless], backing: .buffered, defer: false)
+        parent.isReleasedWhenClosed = false
+        parent.alphaValue = 0
+        defer { parent.close() }
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>HEADLESS-EXPORT-TOKEN</p>", title: "No presentation", baseURL: nil, settings: .default)
+        let scratch = try PrintLayoutTestPaths.makeScratchDirectory(label: "no-presentation")
+        defer { try? FileManager.default.removeItem(at: scratch); prepared.releaseHold() }
+        let output = scratch.appendingPathComponent("headless.pdf")
+        var result: Result<Bool, Error>?
+        let session = PrintLayoutSession(prepared: prepared, parentWindow: parent, action: .export(output, { result = $0 }), settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), reportError: { _, error in XCTFail(error.localizedDescription) }, telemetry: { _, _ in }, presentation: .headless)
+        session.begin()
+        XCTAssertNil(parent.attachedSheet)
+        XCTAssertFalse(parent.isVisible)
+        XCTAssertFalse(session.panelForTesting.isVisible)
+        XCTAssertEqual(session.panelForTesting.alphaValue, 0)
+        XCTAssertFalse(session.panelForTesting.canBecomeKey)
+        XCTAssertFalse(session.panelForTesting.canBecomeMain)
+        let root = try XCTUnwrap(session.panelForTesting.contentView)
+        let deadline = ProcessInfo.processInfo.systemUptime + 10
+        while ProcessInfo.processInfo.systemUptime < deadline {
+            if descendants(of: root).compactMap({ $0 as? NSTextField }).contains(where: { $0.stringValue.hasPrefix("Preview ready —") }) { break }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        let export = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSButton }.first { $0.title == "Export PDF" })
+        export.performClick(nil)
+        while result == nil, ProcessInfo.processInfo.systemUptime < deadline {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        guard case .success(true)? = result else { return XCTFail("Headless export did not complete.") }
+        XCTAssertTrue(PDFDocument(url: output)?.string?.contains("HEADLESS-EXPORT-TOKEN") == true)
+        XCTAssertFalse(parent.isVisible)
+        XCTAssertFalse(session.panelForTesting.isVisible)
+        XCTAssertNil(parent.attachedSheet)
+        XCTAssertFalse(prepared.webView.window?.canBecomeKey == true)
+    }
+
+    private func descendants(of root: NSView) -> [NSView] {
+        [root] + root.subviews.flatMap { descendants(of: $0) }
+    }
+
     func testExplicitPrintAcceptanceDoesNotRequireEditorActivation() {
         withAcceptanceFile("/tmp/print-acceptance-hosting-fixture.md") {
             XCTAssertFalse(EditorSurfaceTester().requiresFocusedEditor, "A print-only acceptance run must not take focus from the operator's desktop.")

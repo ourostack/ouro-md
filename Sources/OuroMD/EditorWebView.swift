@@ -130,6 +130,7 @@ struct EditorWebView: NSViewRepresentable {
         let printSettingsStore: PrintLayoutSettingsStore
         var onPrintPhase: (@MainActor (PrintPreviewPhase) -> Void)?
         var profilePrintLayout = false
+        var printPresentation = PrintLayoutSession.Presentation.sheet
         let pageSetupChooser: (NSPrintInfo) -> Bool
         let printPanelChooser: (NSPrintInfo) -> Bool
         weak var webView: WKWebView?
@@ -432,7 +433,8 @@ struct EditorWebView: NSViewRepresentable {
                 pageSetupChooser: pageSetupChooser, printPanelChooser: printPanelChooser,
                 reportError: { [weak self] _, error in self?.reportPrintError(error) },
                 telemetry: { [weak self] event, properties in self?.model.telemetryHandler?(event, properties) },
-                onPhase: onPrintPhase
+                onPhase: onPrintPhase,
+                presentation: printPresentation
             )
         }
 
