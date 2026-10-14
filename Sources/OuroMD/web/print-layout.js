@@ -8,8 +8,6 @@
   var sources = Object.create(null);
   var noteLayer = null;
   var pageLinks = [];
-  var pageVisibility = [];
-  var visiblePage = null;
 
   function article() {
     return document.querySelector(".markdown-body") || document.body;
@@ -312,6 +310,12 @@
     return clone;
   }
 
+  function maximumFragmentHeight(node) {
+    return Array.prototype.reduce.call(node.getClientRects(), function (height, rect) {
+      return Math.max(height, rect.height || 0);
+    }, 0);
+  }
+
   function splitTablesForPages() {
     var replacements = [];
     Array.prototype.forEach.call(article().querySelectorAll("table"), function (table) {
@@ -319,49 +323,30 @@
       if (table.querySelector("table") || table.querySelector("tbody [rowspan], tbody [colspan], thead [rowspan], thead [colspan]")) { return; }
       var rows = Array.prototype.slice.call(table.querySelectorAll("tbody > tr"));
       if (!rows.length) { return; }
-      var root = article();
-      var rootRect = root.getBoundingClientRect();
       var contentHeight = toFiniteNumber(Number(config.pageContentHeight), 684);
-      var stride = toFiniteNumber(Number(config.pageContentWidth), root.clientWidth || 1) + toFiniteNumber(Number(config.pageGap), DEFAULT_GAP);
       var headerHeight = 0;
       var footerHeight = 0;
       Array.prototype.forEach.call(table.children, function (child) {
         var tag = child.tagName && child.tagName.toLowerCase();
         if (tag === "tfoot") {
-          footerHeight += child.getBoundingClientRect().height || 0;
+          footerHeight += maximumFragmentHeight(child);
         } else if (tag === "thead" || tag === "caption") {
-          headerHeight += child.getBoundingClientRect().height || 0;
+          headerHeight += maximumFragmentHeight(child);
         }
       });
-      var maxRowHeight = rows.reduce(function (max, row) {
-        return Math.max(max, row.getBoundingClientRect().height || 0);
-      }, 0);
-      var safeRowsPerPage = Math.max(1, Math.floor((contentHeight - headerHeight - footerHeight) / Math.max(1, maxRowHeight)) - 2);
+      var rowHeights = rows.map(maximumFragmentHeight);
+      var safeHeight = Math.max(1, contentHeight - headerHeight - footerHeight - 18);
       var groups = [];
       var current = [];
-      var currentPage = 0;
-      rows.forEach(function (row) {
-        var fragments = Array.prototype.filter.call(row.getClientRects(), function (rect) {
-          return rect.width > 0 && rect.height > 0;
-        });
-        var pages = Array.from(new Set(fragments.map(function (rect) {
-          return pageIndexForRect(rect, rootRect, stride);
-        }))).sort(function (a, b) { return a - b; });
-        if (!pages.length) { return; }
-        var rowTargetPage = pages[pages.length - 1];
-        var lastRect = fragments[fragments.length - 1];
-        var bottomSlack = contentHeight - (lastRect.bottom - rootRect.top);
-        if (pages.length === 1 && bottomSlack < 18) {
-          rowTargetPage += 1;
-        }
-        if (!current.length) {
-          currentPage = rowTargetPage;
-        } else if (pages.length > 1 || rowTargetPage !== currentPage || current.length >= safeRowsPerPage) {
+      var currentHeight = 0;
+      rows.forEach(function (row, index) {
+        if (current.length && currentHeight + rowHeights[index] > safeHeight) {
           groups.push(current);
           current = [];
-          currentPage = rowTargetPage;
+          currentHeight = 0;
         }
         current.push(row);
+        currentHeight += rowHeights[index];
       });
       if (current.length) { groups.push(current); }
       if (groups.length <= 1) { return; }
@@ -393,7 +378,6 @@
     var rootRect = root.getBoundingClientRect();
     var usedPages = new Set([0]);
     var fragmentedProofIDs = [];
-    var visibilityRecords = [];
     var destinations = {};
     var geometryRoot = root.parentNode;
     Array.prototype.forEach.call(geometryRoot.querySelectorAll("[id]"), function (node) {
@@ -417,7 +401,6 @@
         return pageIndexForRect(rect, rootRect, stride);
       }))).sort(function (a, b) { return a - b; });
       pages.forEach(function (page) { usedPages.add(page); });
-      if (pages.length === 1) { visibilityRecords.push({ node: node, page: pages[0] }); }
       if (pages.length > 1) {
         fragmentedProofIDs.push(node.getAttribute("data-proof-id") || (node.tagName.toLowerCase() + "-" + index));
       }
@@ -456,11 +439,6 @@
         });
       });
     });
-    visibilityRecords.forEach(function (record) {
-      if (!pageVisibility[record.page]) { pageVisibility[record.page] = []; }
-      pageVisibility[record.page].push({ node: record.node, original: window.getComputedStyle(record.node).visibility });
-    });
-    visibilityRecords.forEach(function (record) { record.node.style.visibility = "hidden"; });
     return cachedMetrics;
   }
 
@@ -468,6 +446,7 @@
     if (applied) { return pageMetrics(); }
     cachedMetrics = null;
     article().style.transform = "translateX(0px)";
+    Array.prototype.forEach.call(article().querySelectorAll("details"), function (details) { details.open = true; });
     if (config.pageFootnotes) { preparePageFootnotes(); }
     splitTablesForPages();
     wrapTablesForPagination();
@@ -486,12 +465,10 @@
     var transform = "translateX(-" + (normalizedIndex * metrics.pageStride) + "px)";
     root.style.transform = transform;
     if (noteLayer) {
-      Array.prototype.forEach.call(noteLayer.children, function (footer) { footer.style.transform = transform; });
-    }
-    if (visiblePage !== normalizedIndex) {
-      (pageVisibility[visiblePage] || []).forEach(function (record) { record.node.style.visibility = "hidden"; });
-      (pageVisibility[normalizedIndex] || []).forEach(function (record) { record.node.style.visibility = record.original; });
-      visiblePage = normalizedIndex;
+      Array.prototype.forEach.call(noteLayer.children, function (footer) {
+        footer.style.transform = transform;
+        footer.style.visibility = Number(footer.dataset.ouroNotePage) === normalizedIndex ? "visible" : "hidden";
+      });
     }
     metrics.links = pageLinks[normalizedIndex] || [];
     return metrics;

@@ -5,6 +5,76 @@ import XCTest
 
 @MainActor
 final class PrintPageFootnotesTests: XCTestCase {
+    func testClosedAndNestedDetailsPrintTheirCompleteContents() async throws {
+        let body = "<h2>Company Alpha</h2><details><summary>Captured evidence</summary><p>CLOSED-DETAIL-BODY</p><table><thead><tr><th>Evidence</th></tr></thead><tbody><tr><td>CLOSED-TABLE-CELL <a href=\"https://example.com/captured\">source</a></td></tr></tbody></table><details><summary>Nested record</summary><p>NESTED-DETAIL-BODY</p></details></details><h2>Company Beta</h2><p>FINAL-COMPANY-BODY</p>"
+        var settings = PrintLayoutSettings.default
+        settings.headingBreakLevel = 2
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: body, title: "Complete disclosure", baseURL: nil, settings: settings)
+        defer { prepared.releaseHold() }
+        let data = try await prepared.createPDFData()
+        let pdf = try XCTUnwrap(PDFDocument(data: data))
+        let text = try XCTUnwrap(pdf.string)
+        for token in ["CLOSED-DETAIL-BODY", "CLOSED-TABLE-CELL", "NESTED-DETAIL-BODY", "FINAL-COMPANY-BODY"] {
+            XCTAssertTrue(text.contains(token), "Printing must include folded document content: \(token)")
+        }
+        XCTAssertTrue(pdf.page(at: 0)?.string?.contains("https://example.com/captured") == true)
+    }
+
+    func testLongDisclosurePrintsAsCompactlyAsTheSameOrdinaryBody() async throws {
+        let rows = (1...100).map { "<tr><td>DISCLOSURE-ROW-\($0)-TOKEN</td><td>Readable captured evidence with enough prose to exercise rows across page boundaries.</td></tr>" }.joined()
+        let table = "<table><thead><tr><th>Row</th><th>Evidence</th></tr></thead><tbody>\(rows)</tbody></table>"
+        var settings = PrintLayoutSettings.default
+        settings.fontSize = 9
+        settings.margins = PrintPageMargins(top: 20, right: 20, bottom: 20, left: 20)
+        settings.citationMode = .originalLinks
+        let ordinary = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>Captured evidence</p>\(table)", title: "Ordinary table", baseURL: nil, settings: settings)
+        defer { ordinary.releaseHold() }
+        XCTAssertLessThanOrEqual(ordinary.layoutMetrics.pageCount, 6, "Short two-column rows must not gain a repeated header for every individual row")
+        let disclosure = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<details><summary>Captured evidence</summary>\(table)</details>", title: "Disclosure table", baseURL: nil, settings: settings)
+        defer { disclosure.releaseHold() }
+        XCTAssertLessThanOrEqual(disclosure.layoutMetrics.pageCount, ordinary.layoutMetrics.pageCount + 1, "Native disclosure layout must not explode a normal table into hundreds of sparse print pages")
+        let data = try await disclosure.createPDFData()
+        let pdf = try XCTUnwrap(PDFDocument(data: data))
+        let text = (pdf.string ?? "").replacingOccurrences(of: "\\s+", with: "", options: .regularExpression)
+        for row in 1...100 {
+            XCTAssertEqual(text.components(separatedBy: "DISCLOSURE-ROW-\(row)-TOKEN").count - 1, 1)
+        }
+    }
+
+    func testSplitTablesRespectLargeAuthoredAndSourceFootnoteReservations() async throws {
+        let url = "https://example.com/" + String(repeating: "long-captured-source-path/", count: 100)
+        let note = String(repeating: "AUTHORED-RESERVATION-NOTE readable evidence. ", count: 45)
+        let rows = (1...120).map { "<tr><td>RESERVED-ROW-\($0)-BEGIN</td><td>Readable captured evidence keeps RESERVED-ROW-\($0)-END <a href=\"\(url)\">source</a> <a href=\"#fn-reserved\">1</a></td></tr>" }.joined()
+        let body = "<table><thead><tr><th>Row</th><th>Evidence</th></tr></thead><tbody>\(rows)</tbody></table><section class=\"footnotes\"><ol><li id=\"fn-reserved\">\(note)</li></ol></section>"
+        var settings = PrintLayoutSettings.default
+        settings.fontSize = 9
+        settings.margins = PrintPageMargins(top: 20, right: 20, bottom: 20, left: 20)
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: body, title: "Reserved table space", baseURL: nil, settings: settings)
+        defer { prepared.releaseHold() }
+        let data = try await prepared.createPDFData()
+        let pdf = try XCTUnwrap(PDFDocument(data: data))
+        let fullText = (pdf.string ?? "").replacingOccurrences(of: "\\s+", with: "", options: .regularExpression)
+        for row in 1...120 {
+            for suffix in ["BEGIN", "END"] {
+                let token = "RESERVED-ROW-\(row)-\(suffix)"
+                XCTAssertEqual(fullText.components(separatedBy: token).count - 1, 1, "Table body must survive the reserved footer: \(token)")
+            }
+        }
+        for index in 0..<pdf.pageCount {
+            let page = try XCTUnwrap(pdf.page(at: index))
+            let text = try XCTUnwrap(page.string)
+            guard let footerRange = text.range(of: "AUTHORED-RESERVATION-NOTE") else { continue }
+            let footerTop = try XCTUnwrap(page.selection(for: NSRange(footerRange, in: text))).bounds(for: page).maxY
+            for row in 1...120 {
+                for suffix in ["BEGIN", "END"] {
+                    guard let range = text.range(of: "RESERVED-ROW-\(row)-\(suffix)") else { continue }
+                    let bounds = try XCTUnwrap(page.selection(for: NSRange(range, in: text))).bounds(for: page)
+                    XCTAssertGreaterThan(bounds.minY, footerTop, "Table body and page-bottom notes must never overlap")
+                }
+            }
+        }
+    }
+
     func testDefaultCitationsAreDeduplicatedAtBottomOfTheirReferencePage() async throws {
         let body = """
         <h2>Company Alpha</h2><p>ALPHA-REFERENCE <a href="https://example.com/shared">source</a> and <a href="https://example.com/shared"><code>code label</code></a> and <a href="https://example.com/shared"><img alt="linked image" width="16" height="16" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3C/svg%3E"></a>.</p>

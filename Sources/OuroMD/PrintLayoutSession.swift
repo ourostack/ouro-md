@@ -88,7 +88,8 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
             self?.schedulePreviewRefresh(using: updated)
         }
         controls.onValidationChanged = { [weak self] _ in
-            self?.updatePrimaryEnabled(self?.currentPreviewData != nil)
+            guard let self else { return }
+            self.updatePrimaryEnabled(self.previewView.document != nil && !self.submitWhenPreviewReady)
         }
         controls.onPageSetupRequested = { [weak self] in
             guard let self, !self.sessionFinished else { return }
@@ -284,8 +285,11 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                         throw SessionError.unavailable("A rendered preview page could not be read.")
                     }
                     streamingPreview.insert(page, at: streamingPreview.pageCount)
-                    if count == 1 { self.previewView.document = streamingPreview }
-                    self.updateStatus("Preparing page \(count) of \(total)…")
+                    if count == 1 {
+                        self.previewView.document = streamingPreview
+                        self.updatePrimaryEnabled(!self.submitWhenPreviewReady)
+                    }
+                    self.updateStatus("Preparing page \(count) of \(total)… Links activate when ready.")
                     self.updatePreviewNavigation()
                 }
                 guard !Task.isCancelled else { return }
@@ -371,6 +375,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
             return
         }
         guard let pdfData = currentPreviewData, currentPreviewSettings == controls.currentSettings else {
+            updatePrimaryEnabled(false)
             return
         }
         submitWhenPreviewReady = false

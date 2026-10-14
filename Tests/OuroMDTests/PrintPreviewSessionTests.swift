@@ -14,7 +14,7 @@ final class PrintPreviewSessionTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: scratch) }
         let session = makeSession(prepared: prepared, parent: parent, output: scratch.appendingPathComponent("output.pdf"))
         session.begin()
-        let ready = try await waitUntil { self.exportButton(in: parent)?.isEnabled == true }
+        let ready = try await waitUntil { self.previewIsReady(in: parent) }
         XCTAssertTrue(ready)
         let survived = try await prepared.webView.evaluateJavaScript("window.__ouroPreparedLayoutMarker === true") as? Bool
         XCTAssertEqual(survived, true, "Opening the layout sheet must not navigate and rebuild an identical prepared document")
@@ -34,7 +34,7 @@ final class PrintPreviewSessionTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: scratch) }
         let session = makeSession(prepared: prepared, parent: parent, output: scratch.appendingPathComponent("output.pdf"))
         session.begin()
-        let ready = try await waitUntil { self.exportButton(in: parent)?.isEnabled == true }
+        let ready = try await waitUntil { self.previewIsReady(in: parent) }
         XCTAssertTrue(ready)
         let survived = try await prepared.webView.evaluateJavaScript("window.__ouroPreparedLayoutMarker === true") as? Bool
         XCTAssertEqual(survived, false)
@@ -59,10 +59,10 @@ final class PrintPreviewSessionTests: XCTestCase {
         var sawFirstPageWhilePreparing = false
         let ready = try await waitUntil {
             if let document = self.previewView(in: parent)?.document,
-               document.pageCount > 0, self.exportButton(in: parent)?.isEnabled == false {
+               document.pageCount > 0, !self.previewIsReady(in: parent) {
                 sawFirstPageWhilePreparing = true
             }
-            return self.exportButton(in: parent)?.isEnabled == true
+            return self.previewIsReady(in: parent)
         }
         XCTAssertTrue(ready)
         XCTAssertTrue(sawFirstPageWhilePreparing, "Readers must see the first page instead of a blank preview until every output page is captured")
@@ -80,7 +80,7 @@ final class PrintPreviewSessionTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: scratch) }
         let session = makeSession(prepared: prepared, parent: parent, output: scratch.appendingPathComponent("output.pdf"))
         session.begin()
-        let ready = try await waitUntil { self.exportButton(in: parent)?.isEnabled == true }
+        let ready = try await waitUntil { self.previewIsReady(in: parent) }
         XCTAssertTrue(ready)
         let preview = try XCTUnwrap(previewView(in: parent))
         let document = try XCTUnwrap(preview.document)
@@ -110,8 +110,53 @@ final class PrintPreviewSessionTests: XCTestCase {
         XCTAssertTrue(exportButton(in: parent)?.isEnabled == true)
     }
 
+    func testSubmittingDuringPreviewPreparationQueuesCompleteOutputWithTheFinalFieldEdit() async throws {
+        var settings = PrintLayoutSettings.default
+        settings.citationMode = .originalLinks
+        settings.headingBreakLevel = 2
+        let body = (1...200).map { "<h2>Section \($0)</h2><p>QUEUED-PAGE-\($0)-TOKEN</p>" }.joined()
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: body, title: "Queued print output", baseURL: nil, settings: settings)
+        let parent = makeParentWindow()
+        defer { parent.close(); prepared.releaseHold() }
+        let scratch = try PrintLayoutTestPaths.makeScratchDirectory(label: "queued-preview")
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        let output = scratch.appendingPathComponent("complete.pdf")
+        var result: Result<Bool, Error>?
+        let session = PrintLayoutSession(prepared: prepared, parentWindow: parent, action: .export(output, { result = $0 }), settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), reportError: { _, error in XCTFail(error.localizedDescription) }, telemetry: { _, _ in })
+        session.begin()
+        let firstPage = try await waitUntil { (self.previewView(in: parent)?.document?.pageCount ?? 0) > 0 }
+        XCTAssertTrue(firstPage)
+        guard let root = parent.attachedSheet?.contentView else { return XCTFail("Missing preview sheet") }
+        let labels = descendants(of: root).compactMap { $0 as? NSTextField }
+        XCTAssertTrue(labels.contains { $0.stringValue.hasPrefix("Preparing page ") })
+        let export = try XCTUnwrap(exportButton(in: parent))
+        XCTAssertTrue(export.isEnabled, "A reader must be able to request output while remaining preview pages are preparing")
+        guard export.isEnabled else { return }
+        let font = try XCTUnwrap(labels.first { $0.accessibilityLabel() == "Font size (pt)" })
+        font.stringValue = "10"
+        export.performClick(nil)
+        XCTAssertNil(result, "A queued request must never export only the pages captured so far")
+        let completed = try await waitUntil { result != nil }
+        XCTAssertTrue(completed)
+        guard case .success(true)? = result else { return XCTFail("Queued export did not finish successfully") }
+        let pdf = try XCTUnwrap(PDFDocument(url: output))
+        XCTAssertEqual(pdf.pageCount, 200)
+        for index in 0..<200 {
+            XCTAssertTrue(pdf.page(at: index)?.string?.contains("QUEUED-PAGE-\(index + 1)-TOKEN") == true)
+        }
+        let finalPage = try XCTUnwrap(pdf.page(at: 199))
+        let text = try XCTUnwrap(finalPage.string)
+        let token = "QUEUED-PAGE-200-TOKEN"
+        let tokenRange = try XCTUnwrap(text.range(of: token))
+        let selection = try XCTUnwrap(finalPage.selection(for: NSRange(tokenRange, in: text)))
+        let expectedFont = try XCTUnwrap(NSFont(name: "Georgia", size: 10))
+        let expectedWidth = (token as NSString).size(withAttributes: [.font: expectedFont]).width
+        XCTAssertEqual(selection.bounds(for: finalPage).width, expectedWidth, accuracy: 1, "The final physical text size must match the newly entered 10 pt value")
+    }
+
     private func makeParentWindow() -> NSWindow {
         let window = NSWindow(contentRect: NSRect(x: -30_000, y: -30_000, width: 980, height: 720), styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
         window.alphaValue = 0
         window.orderFront(nil)
         return window
@@ -133,6 +178,11 @@ final class PrintPreviewSessionTests: XCTestCase {
     private func exportButton(in parent: NSWindow) -> NSButton? {
         guard let root = parent.attachedSheet?.contentView else { return nil }
         return descendants(of: root).compactMap { $0 as? NSButton }.first { $0.title == "Export PDF" }
+    }
+
+    private func previewIsReady(in parent: NSWindow) -> Bool {
+        guard let root = parent.attachedSheet?.contentView else { return false }
+        return descendants(of: root).compactMap { $0 as? NSTextField }.contains { $0.stringValue.hasPrefix("Preview ready —") }
     }
 
     private func waitUntil(_ condition: () -> Bool) async throws -> Bool {

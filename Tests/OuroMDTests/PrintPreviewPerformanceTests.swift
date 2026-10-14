@@ -7,6 +7,44 @@ import XCTest
 
 @MainActor
 final class PrintPreviewPerformanceTests: XCTestCase {
+    func testCompanyFieldHeadingsSurviveEveryPageBoundaryInCitedTables() async throws {
+        let source = "https://example.com/" + String(repeating: "source-segment/", count: 120)
+        let note = String(repeating: "Captured evidence remains readable and complete. ", count: 25)
+        let sections = (1...40).map { section -> String in
+            let rows = (1...(6 + (section * 13) % 25)).map { row in "<tr><td>FIELD-\(section)-ROW-\(row)</td><td>Readable captured evidence for this field in a normal two-column table.</td></tr>" }.joined()
+            let prose = String(repeating: "Readable captured context. ", count: 10 + (section * 19) % 70)
+            return "<h2>Company \(section)</h2><details><summary>Captured record</summary><p>\(prose) <a href=\"\(source)\">source</a> <a href=\"#fn-reserved\">1</a></p><p><strong>ORGANIZATION-\(section)-TOKEN</strong></p><table><thead><tr><th>Field</th><th>Evidence</th></tr></thead><tbody>\(rows)</tbody></table><p><strong>CHALLENGER-\(section)-TOKEN</strong></p><p>\(prose)</p></details>"
+        }.joined()
+        var settings = PrintLayoutSettings.default
+        settings.fontSize = 9
+        settings.margins = PrintPageMargins(top: 20, right: 20, bottom: 20, left: 20)
+        settings.headingBreakLevel = 2
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: sections + "<section class=\"footnotes\"><ol><li id=\"fn-reserved\">\(note)</li></ol></section>", title: "Field heading boundaries", baseURL: nil, settings: settings)
+        defer { prepared.releaseHold() }
+        let data = try await prepared.createPDFData()
+        let pdf = try XCTUnwrap(PDFDocument(data: data))
+        let text = (pdf.string ?? "").replacingOccurrences(of: "\\s+", with: "", options: .regularExpression)
+        for section in 1...40 {
+            for prefix in ["ORGANIZATION", "CHALLENGER"] {
+                let token = "\(prefix)-\(section)-TOKEN"
+                XCTAssertEqual(text.components(separatedBy: token).count - 1, 1, "No field heading may disappear at a page boundary: \(token)")
+            }
+        }
+    }
+
+    func testViewportClippingKeepsEachBodyTokenOnceWithoutVisibilityChanges() async throws {
+        let rows = (1...100).map { "<tr><td>CLIPPED-ROW-\($0)-TOKEN</td><td>Readable captured evidence spans columns and has a <a href=\"https://example.com/source\">source</a>.</td></tr>" }.joined()
+        let paragraphs = (1...200).map { "<p><strong>CLIPPED-PASSAGE-\($0)-TOKEN</strong> preserves every passage across page boundaries.</p>" }.joined()
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<table><thead><tr><th>Row</th><th>Evidence</th></tr></thead><tbody>\(rows)</tbody></table>\(paragraphs)", title: "Stable viewport clipping", baseURL: nil, settings: .default)
+        defer { prepared.releaseHold() }
+        let data = try await prepared.createPDFData()
+        let pdf = try XCTUnwrap(PDFDocument(data: data))
+        let text = (pdf.string ?? "").replacingOccurrences(of: "\\s+", with: "", options: .regularExpression)
+        for token in (1...100).map({ "CLIPPED-ROW-\($0)-TOKEN" }) + (1...200).map({ "CLIPPED-PASSAGE-\($0)-TOKEN" }) {
+            XCTAssertEqual(text.components(separatedBy: token).count - 1, 1, "Viewport clipping must omit off-page text and preserve the current page: \(token)")
+        }
+    }
+
     func testPageActivationDoesNotInvalidateInheritedDocumentStyles() async throws {
         var settings = PrintLayoutSettings.default
         settings.citationMode = .originalLinks
@@ -37,6 +75,25 @@ final class PrintPreviewPerformanceTests: XCTestCase {
         let reads = try await prepared.webView.evaluateJavaScript("window.__ouroPrintProfile.anchorRectReads") as? Int
         XCTAssertEqual(reads, 0, "Activating pages must use layout's cached link geometry, not remeasure every document link on every page")
         XCTAssertEqual(observedURLs, Set((1...120).map { "https://example.com/source/\($0)" }))
+    }
+
+    func testManyPageCaptureDoesNotPayAFixedDelayPerPage() async throws {
+        var settings = PrintLayoutSettings.default
+        settings.citationMode = .originalLinks
+        settings.headingBreakLevel = 2
+        let body = (1...200).map { "<h2>Page \($0)</h2><p>PAGE-\($0)-CAPTURE-TOKEN</p>" }.joined()
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: body, title: "Responsive capture", baseURL: nil, settings: settings)
+        defer { prepared.releaseHold() }
+        XCTAssertEqual(prepared.layoutMetrics.pageCount, 200)
+        let started = Date()
+        let data = try await prepared.createPDFData()
+        let elapsed = Date().timeIntervalSince(started)
+        let pdf = try XCTUnwrap(PDFDocument(data: data))
+        XCTAssertEqual(pdf.pageCount, 200)
+        for index in 0..<200 {
+            XCTAssertTrue(pdf.page(at: index)?.string?.contains("PAGE-\(index + 1)-CAPTURE-TOKEN") == true, "Captures must use each current page, not the previous painted page")
+        }
+        XCTAssertLessThan(elapsed, 6, "A fixed paint sleep compounds into a minute of avoidable waiting on large guides")
     }
 
     func testProfileRequestedPrivateDocument() async throws {
@@ -73,6 +130,29 @@ final class PrintPreviewPerformanceTests: XCTestCase {
         let prepareMilliseconds = Date().timeIntervalSince(prepareStart) * 1_000
         let count = prepared.layoutMetrics.pageCount
         print("private print profile: prepared pages=\(count) prepareMs=\(Int(prepareMilliseconds))")
+        if environment["OURO_PRINT_PROFILE_LAYOUT_ONLY"] == "1" {
+            let geometry = try await prepared.webView.evaluateJavaScript("""
+            (function(){
+              var root=document.querySelector('.markdown-body');
+              var footers=Array.from(document.querySelectorAll('.ouro-print-page-notes'));
+              return {
+                bodyHeight:root.getBoundingClientRect().height,
+                fullContentHeight:window.__ouroPrintLayoutConfig.pageContentHeight,
+                tables:root.querySelectorAll('table').length,
+                rows:root.querySelectorAll('tr').length,
+                disclosureCount:root.querySelectorAll('details').length,
+                footerCount:footers.length,
+                maxFooterHeight:Math.max(0,...footers.map(n=>n.getBoundingClientRect().height)),
+                columnHistogram:Array.from(root.querySelectorAll('table')).reduce(function(counts,table){var count=table.querySelector('tr').children.length;counts[count]=(counts[count]||0)+1;return counts;},{}),
+                cellLengthHistogram:Array.from(root.querySelectorAll('td')).reduce(function(counts,cell){var length=cell.textContent.length;var bucket=length<100?"short":length<500?"medium":length<2000?"long":"huge";counts[bucket]=(counts[bucket]||0)+1;return counts;},{}),
+                oversizedRows:Array.from(root.querySelectorAll('tr')).filter(n=>n.getBoundingClientRect().height>window.__ouroPrintLayoutConfig.pageContentHeight).length
+              };
+            })()
+            """)
+            let report: [String: Any] = ["inputBytes": before.count, "pages": count, "prepareMilliseconds": prepareMilliseconds, "geometry": try XCTUnwrap(geometry)]
+            try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]).write(to: URL(fileURLWithPath: reportPath), options: .atomic)
+            return
+        }
         let pdfStart = Date()
         let pdf = try await prepared.createPDFData()
         let pdfMilliseconds = Date().timeIntervalSince(pdfStart) * 1_000
