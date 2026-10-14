@@ -236,6 +236,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         guard let continuation = loadContinuation else { return }
         guard generation == loadGeneration, navigation === currentNavigation else { return }
         loadPhaseObserver?(.paginating)
+        guard generation == loadGeneration, navigation === currentNavigation else { return }
         webView.evaluateJavaScript(
             "(function(){ if (!window.OuroPrintLayout || typeof window.OuroPrintLayout.apply !== 'function') { return null; } return window.OuroPrintLayout.apply(); })();"
         ) { [weak self] result, error in
@@ -300,6 +301,8 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
             try onPage?(index + 1, layoutMetrics.pageCount, snapshot)
         }
         onPhase?(.assemblingPDF)
+        try Task.checkCancellation()
+        guard generation == loadGeneration else { throw PrintDocumentRenderer.RenderError.superseded }
         return try PrintPDFPaginator.paginate(
             sourcePages: pagePDFs,
             paperSize: printInfo.paperSize,
@@ -363,6 +366,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         let generation = loadGeneration
         loadPhaseObserver = onPhase
         onPhase?(.loadingHTML)
+        guard generation == loadGeneration, !released else { throw CancellationError() }
         let html = PrintLayoutHTMLDocument.wrap(body: bodyHTML, title: title, settings: settings, script: script, paperSize: signature.paperSize)
         try await withTaskCancellationHandler {
             try Task.checkCancellation()

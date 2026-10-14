@@ -4,11 +4,15 @@ public enum OuroMDRelease {
     public static let appName = "Ouro MD"
     public static let bundleIdentifier = "bot.ouro.md"
     public static let repository = "ourostack/ouro-md"
-    public static let version = "0.9.101"
+    public static let version = "0.9.102"
     public static let userAgent = "OuroMD/\(version)"
-    public static let releaseDate = "2026-10-13"
+    public static let releaseDate = "2026-10-14"
     public static let positioningSubtitle = "Local Markdown workspace for Mac files."
     public static let releaseHighlights = [
+        "Open Print and PDF layout immediately, with preparation feedback before document extraction begins.",
+        "Follow real page-capture progress, cancel preparation, or retry a failed layout without losing the previous preview.",
+        "Keep navigating and zooming the previous layout while settings update; output waits for the complete current layout.",
+        "Changing printer paper or orientation shows cancellable preparation before the final print operation.",
         "Print citations as page-bottom footnotes, keep accurately labeled endnotes, or preserve original links.",
         "Start each chosen heading level on a fresh page, with authored manual page breaks also supported.",
         "Navigate and zoom the first preview page while the rest prepares; request complete output without waiting at the preview.",

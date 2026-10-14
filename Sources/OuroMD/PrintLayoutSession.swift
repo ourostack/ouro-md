@@ -159,6 +159,11 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     }
 
     func begin() {
+        guard !sessionFinished else { return }
+        if Self.activeSession(for: parentWindow) === self {
+            bringToFront()
+            return
+        }
         guard Self.activeSession(for: parentWindow) == nil, parentWindow.attachedSheet == nil else {
             let error = SessionError.unavailable("Another sheet or print layout is already open for this document.")
             reportError("Could not open print layout", error)
@@ -414,6 +419,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                 self.displayIsPreviousLayout = false
                 self.display(completePreview, selectedPage: self.selectedPreviewPageIndex)
                 self.updatePhase(.ready, generation: requestedGeneration)
+                guard self.isCurrent(requestedGeneration) else { return }
                 self.updatePrimaryEnabled(true)
                 self.updatePreviewNavigation()
                 if self.submitWhenPreviewReady {
@@ -496,6 +502,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     private func updatePhase(_ phase: PrintPreviewPhase, generation: Int) {
         guard isCurrent(generation) else { return }
         onPhase?(phase)
+        guard isCurrent(generation) else { return }
         let previous = displayIsPreviousLayout
         let prefix = previous ? "Previous layout — updating. " : ""
         let announcement: String
@@ -559,6 +566,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         displayIsPreviousLayout = previewView.document != nil
         submitWhenPreviewReady = false
         updatePhase(.failed, generation: generation)
+        guard isCurrent(generation) else { return }
         updateStatus((previewView.document == nil ? "" : "Previous layout — update failed. ") + error.localizedDescription)
         retryButton.isHidden = false
         retryButton.isEnabled = controls.validationMessage == nil
@@ -674,6 +682,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                     self.completePreview = CompletePreview(identity: outputIdentity, data: finalData)
                     self.display(pdfDocument, selectedPage: self.selectedPreviewPageIndex)
                     self.updatePhase(.ready, generation: outputIdentity.generation)
+                    guard self.isCurrent(outputIdentity.generation), !Task.isCancelled else { return }
                     self.endSheet()
                     let operation = try prepared.makePrintOperation(with: pdfDocument)
                     operation.showsPrintPanel = false
