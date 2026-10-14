@@ -34,8 +34,8 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     private let action: Action
     private let reportError: (String, Error) -> Void
     private let telemetry: (String, [String: OuroMDTelemetryValue]) -> Void
-    private let pageSetupChooser: (NSPrintInfo) -> Bool
-    private let printPanelChooser: (NSPrintInfo) -> Bool
+    private let pageSetupChooser: @MainActor (NSPrintInfo) -> Bool
+    private let printPanelChooser: @MainActor (NSPrintInfo) -> Bool
     private let controls: PrintLayoutAccessoryController
     private let panel: NSPanel
     private let previewView = PDFView()
@@ -64,8 +64,8 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         parentWindow: NSWindow,
         action: Action,
         settingsStore: PrintLayoutSettingsStore,
-        pageSetupChooser: @escaping (NSPrintInfo) -> Bool = { NSPageLayout().runModal(with: $0) == NSApplication.ModalResponse.OK.rawValue },
-        printPanelChooser: @escaping (NSPrintInfo) -> Bool = { NSPrintPanel().runModal(with: $0) == NSApplication.ModalResponse.OK.rawValue },
+        pageSetupChooser: @escaping @MainActor (NSPrintInfo) -> Bool = { NSPageLayout().runModal(with: $0) == NSApplication.ModalResponse.OK.rawValue },
+        printPanelChooser: @escaping @MainActor (NSPrintInfo) -> Bool = { NSPrintPanel().runModal(with: $0) == NSApplication.ModalResponse.OK.rawValue },
         reportError: @escaping (String, Error) -> Void,
         telemetry: @escaping (String, [String: OuroMDTelemetryValue]) -> Void
     ) {
