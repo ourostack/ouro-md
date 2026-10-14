@@ -1,3 +1,9 @@
+<!-- ourostack:brand:start -->
+<p align="center">
+  <a href="https://github.com/ourostack"><img src="https://raw.githubusercontent.com/ourostack/.github/main/brand/ouro-md.png" alt="Ouro MD" width="160" height="160"></a>
+</p>
+<!-- ourostack:brand:end -->
+
 # ouro-md
 
 A minimalist, beautiful, themable Markdown editor that's native to macOS.
