@@ -200,8 +200,17 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         guard navigation === currentNavigation else { return }
         let generation = loadGeneration
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
-            self?.finishLoadAfterLayout(navigation: navigation, generation: generation)
+        webView.callAsyncJavaScript(
+            "await document.fonts.ready; await Promise.all(Array.from(document.images).filter(image => image.complete && image.naturalWidth > 0).map(image => image.decode())); return true;",
+            arguments: [:], in: nil, in: .page
+        ) { [weak self] result in
+            guard let self, generation == self.loadGeneration, navigation === self.currentNavigation else { return }
+            switch result {
+            case .success:
+                self.finishLoadAfterLayout(navigation: navigation, generation: generation)
+            case .failure(let error):
+                self.failLoad(navigation: navigation, error: error)
+            }
         }
     }
 

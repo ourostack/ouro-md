@@ -7,6 +7,23 @@ import XCTest
 
 @MainActor
 final class PrintPreviewPerformanceTests: XCTestCase {
+    func testTableSplittingMovesEachBodyRowOnceAfterMeasuringAllTables() async throws {
+        let script = try XCTUnwrap(PrintLayoutScriptLoader.load()) + """
+        ;(function(){var apply=window.OuroPrintLayout.apply;window.OuroPrintLayout.apply=function(){window.__ouroOriginalBodyRows=Array.from(document.querySelectorAll('tbody>tr'));return apply();};})();
+        """
+        let rows = (1...100).map { "<tr><td id=\"retained-row-\($0)\">RETAINED-ROW-\($0)-TOKEN</td><td>Readable table evidence.</td></tr>" }.joined()
+        let prepared = try await PrintDocumentRenderer(scriptProvider: { script }).prepareDocument(bodyHTML: "<table><thead><tr><th>Field</th><th>Evidence</th></tr></thead><tbody>\(rows)</tbody></table>", title: "Retained rows", baseURL: nil, settings: .default)
+        defer { prepared.releaseHold() }
+        let rowsRetained = try await prepared.webView.evaluateJavaScript("window.__ouroOriginalBodyRows.every(function(row){return row.isConnected;})") as? Bool
+        XCTAssertEqual(rowsRetained, true, "Splitting must move measured body rows, not allocate deep copies that immediately replace them.")
+        let data = try await prepared.createPDFData()
+        let pdf = try XCTUnwrap(PDFDocument(data: data))
+        let text = try XCTUnwrap(pdf.string).replacingOccurrences(of: "\\s+", with: "", options: .regularExpression)
+        for index in 1...100 {
+            XCTAssertEqual(text.components(separatedBy: "RETAINED-ROW-\(index)-TOKEN").count - 1, 1)
+        }
+    }
+
     func testOptInLayoutProfileHasOnlyFixedNumericMetadata() async throws {
         let prepared = try await PrintDocumentRenderer(profileLayout: true).prepareDocument(
             bodyHTML: "<p>Profile source <a href=\"https://example.com/source\">source</a></p>",

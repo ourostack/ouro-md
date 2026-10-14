@@ -417,7 +417,6 @@ struct EditorWebView: NSViewRepresentable {
                 printInfo: .shared,
                 documentLoader: { [weak self] settings, info, onPhase in
                     guard let self else { throw PrintLayoutSession.SessionError.unavailable("The editor is no longer available.") }
-                    onPhase?(.extractingHTML)
                     let body = try await self.printHTML()
                     try Task.checkCancellation()
                     return try await PrintDocumentRenderer(profileLayout: self.profilePrintLayout).prepareDocument(

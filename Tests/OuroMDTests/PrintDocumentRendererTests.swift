@@ -5,6 +5,16 @@ import XCTest
 
 @MainActor
 final class PrintDocumentRendererTests: XCTestCase {
+    func testPreparationWaitsForActualFontReadinessInsteadOfAFixedSettlingDelay() async throws {
+        let script = try XCTUnwrap(PrintLayoutScriptLoader.load()) + """
+        ;Object.defineProperty(document.fonts,'ready',{get:function(){return new Promise(function(resolve){setTimeout(function(){window.__ouroFontsReadyForTest=true;resolve();},600);});}});
+        """
+        let prepared = try await PrintDocumentRenderer(scriptProvider: { script }).prepareDocument(bodyHTML: "<p>Wait for font readiness</p>", title: "Font readiness", baseURL: nil, settings: .default)
+        defer { prepared.releaseHold() }
+        let ready = try await prepared.webView.evaluateJavaScript("window.__ouroFontsReadyForTest === true") as? Bool
+        XCTAssertEqual(ready, true, "Pagination must await real font readiness, not an arbitrary settling sleep.")
+    }
+
     func testOrientationAloneInvalidatesTheCachedLayout() async throws {
         let info = NSPrintInfo()
         let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>Orientation identity</p>", title: "Orientation", baseURL: nil, settings: .default, printInfo: info)
