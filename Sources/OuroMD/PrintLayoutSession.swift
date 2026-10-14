@@ -42,6 +42,13 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     private let statusLabel = NSTextField(labelWithString: "")
     private let primaryButton = NSButton(title: "", target: nil, action: nil)
     private let cancelButton = NSButton(title: "Cancel", target: nil, action: nil)
+    private let previousPageButton = NSButton(title: "Previous", target: nil, action: nil)
+    private let nextPageButton = NSButton(title: "Next", target: nil, action: nil)
+    private let pageLabel = NSTextField(labelWithString: "")
+    private let zoomOutButton = NSButton(title: "Zoom out", target: nil, action: nil)
+    private let zoomInButton = NSButton(title: "Zoom in", target: nil, action: nil)
+    private let fitPageButton = NSButton(title: "Fit page", target: nil, action: nil)
+    private var pageChangeObserver: NSObjectProtocol?
     private var previewTask: Task<Void, Never>?
     private var currentPreviewData: Data?
     private var currentPreviewSettings: PrintLayoutSettings?
@@ -94,7 +101,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
             if self.pageSetupChooser(selected) {
                 self.prepared.setPageSettings(selected)
             }
-            self.schedulePreviewRefresh(using: self.controls.currentSettings)
+            self.schedulePreviewRefresh(using: self.controls.currentSettings, debounce: false)
         }
         buildPanel()
     }
@@ -106,7 +113,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         }
         panel.delegate = self
         parentWindow.beginSheet(panel)
-        schedulePreviewRefresh(using: prepared.settings)
+        schedulePreviewRefresh(using: prepared.settings, debounce: false)
     }
 
     static var activeCountForTesting: Int { active.count }
@@ -130,6 +137,10 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
             NotificationCenter.default.removeObserver(observer)
             parentCloseObserver = nil
         }
+        if let observer = pageChangeObserver {
+            NotificationCenter.default.removeObserver(observer)
+            pageChangeObserver = nil
+        }
         prepared.releaseHold()
         Self.active.removeValue(forKey: ObjectIdentifier(self))
     }
@@ -142,10 +153,27 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
             }
         }()
         previewView.autoScales = true
-        previewView.displayMode = .singlePageContinuous
+        previewView.displayMode = .singlePage
         previewView.displaysPageBreaks = true
         previewView.backgroundColor = .windowBackgroundColor
         previewView.setAccessibilityLabel("Print preview")
+        previewView.minScaleFactor = 0.2
+        previewView.maxScaleFactor = 4
+
+        previousPageButton.target = self
+        previousPageButton.action = #selector(previousPagePressed(_:))
+        nextPageButton.target = self
+        nextPageButton.action = #selector(nextPagePressed(_:))
+        zoomOutButton.target = self
+        zoomOutButton.action = #selector(zoomOutPressed(_:))
+        zoomInButton.target = self
+        zoomInButton.action = #selector(zoomInPressed(_:))
+        fitPageButton.target = self
+        fitPageButton.action = #selector(fitPagePressed(_:))
+        pageLabel.setAccessibilityLabel("Preview page")
+        pageChangeObserver = NotificationCenter.default.addObserver(forName: .PDFViewPageChanged, object: previewView, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.updatePreviewNavigation() }
+        }
 
         statusLabel.textColor = .secondaryLabelColor
         statusLabel.lineBreakMode = .byWordWrapping
@@ -182,7 +210,17 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
             controlsContainer.widthAnchor.constraint(equalToConstant: 300)
         ])
         split.addSubview(controlsContainer)
-        split.addSubview(previewView)
+        let navigation = NSStackView(views: [previousPageButton, pageLabel, nextPageButton, NSView(), zoomOutButton, zoomInButton, fitPageButton])
+        navigation.orientation = .horizontal
+        navigation.spacing = 8
+        navigation.alignment = .centerY
+        navigation.setContentHuggingPriority(.required, for: .vertical)
+        previewView.setContentHuggingPriority(.defaultLow, for: .vertical)
+        let previewStack = NSStackView(views: [previewView, navigation])
+        previewStack.orientation = .vertical
+        previewStack.spacing = 8
+        previewStack.alignment = .width
+        split.addSubview(previewStack)
 
         let buttons = NSStackView(views: [cancelButton, primaryButton])
         buttons.orientation = .horizontal
@@ -213,6 +251,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         panel.contentView = container
         updateStatus("Preparing preview…")
         updatePrimaryEnabled(false)
+        updatePreviewNavigation()
     }
 
     private func updateStatus(_ text: String) {
@@ -223,24 +262,45 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         primaryButton.isEnabled = enabled && controls.validationMessage == nil
     }
 
-    private func schedulePreviewRefresh(using settings: PrintLayoutSettings) {
+    private func schedulePreviewRefresh(using settings: PrintLayoutSettings, debounce: Bool = true) {
         previewTask?.cancel()
         currentPreviewData = nil
         currentPreviewSettings = nil
+        previewView.document = nil
         updateStatus("Rendering preview…")
         updatePrimaryEnabled(false)
+        updatePreviewNavigation()
         previewTask = Task { [weak self] in
             guard let self else { return }
             do {
-                try await self.prepared.reload(with: settings)
-                let pdfData = try await self.prepared.createPDFData()
+                if debounce { try await Task.sleep(nanoseconds: 120_000_000) }
+                try Task.checkCancellation()
+                if !self.prepared.hasCurrentLayout(for: settings) {
+                    try await self.prepared.reload(with: settings)
+                }
+                let streamingPreview = PDFDocument()
+                let pdfData = try await self.prepared.createPDFData { count, total, data in
+                    guard let page = PDFDocument(data: data)?.page(at: 0) else {
+                        throw SessionError.unavailable("A rendered preview page could not be read.")
+                    }
+                    streamingPreview.insert(page, at: streamingPreview.pageCount)
+                    if count == 1 { self.previewView.document = streamingPreview }
+                    self.updateStatus("Preparing page \(count) of \(total)…")
+                    self.updatePreviewNavigation()
+                }
                 guard !Task.isCancelled else { return }
+                guard let completePreview = PDFDocument(data: pdfData) else { throw SessionError.missingPreview }
+                let selectedPage = self.previewView.currentPage.map { streamingPreview.index(for: $0) } ?? 0
                 self.currentPreviewData = pdfData
                 self.currentPreviewSettings = settings
-                self.previewView.document = PDFDocument(data: pdfData)
+                self.previewView.document = completePreview
+                if let page = completePreview.page(at: min(max(0, selectedPage), completePreview.pageCount - 1)) {
+                    self.previewView.go(to: page)
+                }
                 let count = self.prepared.layoutMetrics.pageCount
                 self.updateStatus("Preview ready — \(count) \(count == 1 ? "page" : "pages")")
                 self.updatePrimaryEnabled(true)
+                self.updatePreviewNavigation()
                 if self.submitWhenPreviewReady {
                     self.submitWhenPreviewReady = false
                     self.performOutput(using: pdfData)
@@ -254,9 +314,47 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                 self.previewView.document = nil
                 self.updateStatus(error.localizedDescription)
                 self.updatePrimaryEnabled(false)
+                self.updatePreviewNavigation()
                 self.telemetry("ouro_md_print_preview_failed", ["code": .string("preview_failed")])
             }
         }
+    }
+
+    private func updatePreviewNavigation() {
+        let document = previewView.document
+        let page = previewView.currentPage.flatMap { document?.index(for: $0) }
+        let total = prepared.layoutMetrics.pageCount
+        pageLabel.stringValue = page.map { "Page \($0 + 1) of \(total)" } ?? "No preview"
+        previousPageButton.isEnabled = previewView.canGoToPreviousPage
+        nextPageButton.isEnabled = previewView.canGoToNextPage
+        let hasPage = (document?.pageCount ?? 0) > 0
+        zoomOutButton.isEnabled = hasPage
+        zoomInButton.isEnabled = hasPage
+        fitPageButton.isEnabled = hasPage
+    }
+
+    @objc private func previousPagePressed(_ sender: Any?) {
+        previewView.goToPreviousPage(sender)
+        updatePreviewNavigation()
+    }
+
+    @objc private func nextPagePressed(_ sender: Any?) {
+        previewView.goToNextPage(sender)
+        updatePreviewNavigation()
+    }
+
+    @objc private func zoomOutPressed(_ sender: Any?) {
+        previewView.autoScales = false
+        previewView.scaleFactor = max(previewView.minScaleFactor, previewView.scaleFactor / 1.25)
+    }
+
+    @objc private func zoomInPressed(_ sender: Any?) {
+        previewView.autoScales = false
+        previewView.scaleFactor = min(previewView.maxScaleFactor, previewView.scaleFactor * 1.25)
+    }
+
+    @objc private func fitPagePressed(_ sender: Any?) {
+        previewView.autoScales = true
     }
 
     @objc private func cancelPressed(_ sender: Any?) {

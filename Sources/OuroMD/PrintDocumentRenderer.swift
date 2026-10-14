@@ -70,6 +70,11 @@ final class PrintDocumentRenderer {
 
 @MainActor
 final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
+    private struct LayoutSignature: Equatable {
+        let settings: PrintLayoutSettings
+        let paperSize: NSSize
+    }
+
     private static var inFlight: [ObjectIdentifier: PreparedPrintDocument] = [:]
 
     private let bodyHTML: String
@@ -83,6 +88,8 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     private var loadContinuation: CheckedContinuation<Void, Error>?
     private var currentNavigation: WKNavigation?
     private var loadGeneration = 0
+    private var loadingSignature: LayoutSignature?
+    private var loadedSignature: LayoutSignature?
     private(set) var layoutMetrics = PrintLayoutMetrics(
         contentWidth: 0,
         contentHeight: 0,
@@ -143,6 +150,11 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
 
     func setPageSettings(_ selected: NSPrintInfo) {
         printInfo = settings.applying(to: selected)
+    }
+
+    func hasCurrentLayout(for requested: PrintLayoutSettings) -> Bool {
+        loadContinuation == nil && currentNavigation == nil &&
+            loadedSignature == LayoutSignature(settings: requested.normalized, paperSize: printInfo.paperSize)
     }
 
     func writePDF(to url: URL) async throws {
@@ -217,13 +229,14 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
                 height: printInfo.paperSize.height
             )
             self.hostWindow.setContentSize(self.webView.frame.size)
+            self.loadedSignature = self.loadingSignature
             self.loadContinuation = nil
             self.currentNavigation = nil
             continuation.resume()
         }
     }
 
-    func createPDFData() async throws -> Data {
+    func createPDFData(onPage: (@MainActor (Int, Int, Data) throws -> Void)? = nil) async throws -> Data {
         let generation = loadGeneration
         var pagePDFs: [Data] = []
         var pageLinks: [[PrintLayoutMetrics.Link]] = []
@@ -232,8 +245,12 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
             guard generation == loadGeneration else { throw PrintDocumentRenderer.RenderError.superseded }
             let metrics = try await activatePage(index)
             guard generation == loadGeneration else { throw PrintDocumentRenderer.RenderError.superseded }
-            pagePDFs.append(try await snapshotVisiblePagePDF())
+            let snapshot = try await snapshotVisiblePagePDF()
+            try Task.checkCancellation()
+            guard generation == loadGeneration else { throw PrintDocumentRenderer.RenderError.superseded }
+            pagePDFs.append(snapshot)
             pageLinks.append(metrics.links)
+            try onPage?(index + 1, layoutMetrics.pageCount, snapshot)
         }
         return try PrintPDFPaginator.paginate(
             sourcePages: pagePDFs,
@@ -289,8 +306,11 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     }
 
     private func loadHTML(using settings: PrintLayoutSettings) async throws {
-        let html = PrintLayoutHTMLDocument.wrap(body: bodyHTML, title: title, settings: settings, script: script, paperSize: printInfo.paperSize)
+        let signature = LayoutSignature(settings: settings, paperSize: printInfo.paperSize)
+        let html = PrintLayoutHTMLDocument.wrap(body: bodyHTML, title: title, settings: settings, script: script, paperSize: signature.paperSize)
         loadGeneration += 1
+        loadingSignature = signature
+        loadedSignature = nil
         let generation = loadGeneration
         if let continuation = loadContinuation {
             loadContinuation = nil
