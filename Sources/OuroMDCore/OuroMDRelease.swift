@@ -9,7 +9,7 @@ public enum OuroMDRelease {
     public static let releaseDate = "2026-10-14"
     public static let positioningSubtitle = "Local Markdown workspace for Mac files."
     public static let releaseHighlights = [
-        "Open Print and PDF layout immediately, with preparation feedback before document extraction begins.",
+        "Open Print and PDF layout before document preparation begins, with visible loading feedback.",
         "Follow real page-capture progress, cancel preparation, or retry a failed layout without losing the previous preview.",
         "Keep navigating and zooming the previous layout while settings update; output waits for the complete current layout.",
         "Changing printer paper or orientation shows cancellable preparation before the final print operation.",

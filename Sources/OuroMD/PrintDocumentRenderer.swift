@@ -12,6 +12,7 @@ final class PrintDocumentRenderer {
         case superseded
         case unavailablePrintOperation
         case footnoteLayoutFailed(String)
+        case webContentTerminated
 
         var errorDescription: String? {
             switch self {
@@ -27,16 +28,20 @@ final class PrintDocumentRenderer {
                 return "The system could not create a print operation for the prepared PDF."
             case .footnoteLayoutFailed(let message):
                 return message
+            case .webContentTerminated:
+                return "The print renderer stopped unexpectedly. Retry to prepare the preview again."
             }
         }
     }
 
     private let scriptProvider: () -> String
     private let profileLayout: Bool
+    private let webViewConfiguration: WKWebViewConfiguration
 
-    init(scriptProvider: @escaping () -> String = { PrintLayoutScriptLoader.load() ?? "" }, profileLayout: Bool = false) {
+    init(scriptProvider: @escaping () -> String = { PrintLayoutScriptLoader.load() ?? "" }, profileLayout: Bool = false, webViewConfiguration: WKWebViewConfiguration = WKWebViewConfiguration()) {
         self.scriptProvider = scriptProvider
         self.profileLayout = profileLayout
+        self.webViewConfiguration = webViewConfiguration
     }
 
     func prepareDocument(
@@ -58,7 +63,8 @@ final class PrintDocumentRenderer {
             baseURL: baseURL,
             settings: normalized,
             script: (profileLayout ? "window.__ouroPrintProfiling = true;\n" : "") + script,
-            printInfo: sizedPrintInfo
+            printInfo: sizedPrintInfo,
+            webViewConfiguration: webViewConfiguration
         )
         do {
             try await document.load(onPhase: onPhase)
@@ -96,6 +102,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     private var loadedSignature: LayoutSignature?
     private var loadPhaseObserver: (@MainActor (PrintPreviewPhase) -> Void)?
     private var released = false
+    private var pendingWebOperations: [UUID: (Error) -> Void] = [:]
     private(set) var layoutMetrics = PrintLayoutMetrics(
         contentWidth: 0,
         contentHeight: 0,
@@ -113,7 +120,8 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         baseURL: URL?,
         settings: PrintLayoutSettings,
         script: String,
-        printInfo: NSPrintInfo
+        printInfo: NSPrintInfo,
+        webViewConfiguration: WKWebViewConfiguration = WKWebViewConfiguration()
     ) {
         self.bodyHTML = bodyHTML
         self.title = title
@@ -124,7 +132,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         let pageSize = Self.editorCanvasSize(for: self.settings, paperSize: printInfo.paperSize)
         self.webView = WKWebView(
             frame: NSRect(origin: .zero, size: pageSize),
-            configuration: WKWebViewConfiguration()
+            configuration: webViewConfiguration
         )
         self.hostWindow = HeadlessHostWindow(
             contentRect: NSRect(origin: .zero, size: pageSize),
@@ -182,6 +190,11 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     }
 
     func cancelLoading() {
+        invalidateLoading(with: CancellationError())
+        webView.stopLoading()
+    }
+
+    private func invalidateLoading(with error: Error) {
         loadGeneration += 1
         currentNavigation = nil
         loadingSignature = nil
@@ -189,8 +202,10 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         loadPhaseObserver = nil
         let continuation = loadContinuation
         loadContinuation = nil
-        continuation?.resume(throwing: CancellationError())
-        webView.stopLoading()
+        continuation?.resume(throwing: error)
+        let pending = Array(pendingWebOperations.values)
+        pendingWebOperations.removeAll()
+        pending.forEach { $0(error) }
     }
 
     private func retainHold() {
@@ -200,8 +215,9 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         guard navigation === currentNavigation else { return }
         let generation = loadGeneration
+        // Navigation completion already waits for image resources; fonts can settle afterward.
         webView.callAsyncJavaScript(
-            "await document.fonts.ready; await Promise.all(Array.from(document.images).filter(image => image.complete && image.naturalWidth > 0).map(image => image.decode())); return true;",
+            "await document.fonts.ready; return true;",
             arguments: [:], in: nil, in: .page
         ) { [weak self] result in
             guard let self, generation == self.loadGeneration, navigation === self.currentNavigation else { return }
@@ -212,6 +228,10 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
                 self.failLoad(navigation: navigation, error: error)
             }
         }
+    }
+
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        invalidateLoading(with: PrintDocumentRenderer.RenderError.webContentTerminated)
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
@@ -320,13 +340,17 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     }
 
     static var retainedCountForTesting: Int { inFlight.count }
+    var pendingWebOperationCountForTesting: Int { pendingWebOperations.count }
     var isLoading: Bool { loadContinuation != nil || currentNavigation != nil }
 
     private func activatePage(_ index: Int) async throws -> PrintLayoutMetrics {
         let metrics = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<PrintLayoutMetrics, Error>) in
+            let operationID = UUID()
+            pendingWebOperations[operationID] = { continuation.resume(throwing: $0) }
             webView.evaluateJavaScript(
                 "(function(){ return window.OuroPrintLayout && typeof window.OuroPrintLayout.showPage === 'function' ? window.OuroPrintLayout.showPage(\(index)) : null; })();"
-            ) { result, error in
+            ) { [weak self] result, error in
+                guard let self, self.pendingWebOperations.removeValue(forKey: operationID) != nil else { return }
                 if let error {
                     continuation.resume(throwing: PrintDocumentRenderer.RenderError.loadFailed(error))
                 } else if let metrics = Self.decodeMetrics(result) {
@@ -343,7 +367,10 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         let configuration = WKPDFConfiguration()
         configuration.rect = webView.bounds
         return try await withCheckedThrowingContinuation { continuation in
-            webView.createPDF(configuration: configuration) { result in
+            let operationID = UUID()
+            pendingWebOperations[operationID] = { continuation.resume(throwing: $0) }
+            webView.createPDF(configuration: configuration) { [weak self] result in
+                guard let self, self.pendingWebOperations.removeValue(forKey: operationID) != nil else { return }
                 switch result {
                 case .success(let data):
                     continuation.resume(returning: data)

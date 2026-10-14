@@ -12,6 +12,14 @@ private final class NonActivatingChooserWindow: NSWindow {
     }
 }
 
+private final class DelayedPrintHTMLWebView: WKWebView {
+    var htmlCompletion: ((Any?, Error?) -> Void)?
+
+    override func evaluateJavaScript(_ javaScriptString: String, completionHandler: ((Any?, Error?) -> Void)? = nil) {
+        htmlCompletion = completionHandler
+    }
+}
+
 @MainActor
 final class PrintPreviewSessionTests: XCTestCase {
     func testSheetAndBusyProgressExistBeforeDelayedDocumentLoaderReturns() async throws {
@@ -355,6 +363,228 @@ final class PrintPreviewSessionTests: XCTestCase {
         let pdf = try XCTUnwrap(PDFDocument(url: output))
         XCTAssertEqual(pdf.pageCount, 100)
         for index in 0..<100 { XCTAssertTrue(pdf.page(at: index)?.string?.contains("ABA-PAGE-\(index + 1)-TOKEN") == true) }
+    }
+
+    func testUnrelatedSheetRejectsBothCoordinatorExportAndSessionLoader() async throws {
+        let parent = makeParentWindow()
+        defer { parent.close() }
+        let editor = WKWebView()
+        parent.contentView = editor
+        let other = NSPanel()
+        other.isReleasedWhenClosed = false
+        parent.beginSheet(other, completionHandler: nil)
+        defer { parent.endSheet(other); other.close() }
+        let coordinator = EditorWebView.Coordinator(model: AppModel())
+        coordinator.webView = editor
+        var coordinatorResult: Result<Bool, Error>?
+        coordinator.exportPDF(to: URL(fileURLWithPath: "/tmp/blocked-coordinator.pdf")) { coordinatorResult = $0 }
+        guard case .failure? = coordinatorResult else { return XCTFail("An unrelated sheet must reject interactive export synchronously.") }
+        var loaded = false
+        var sessionResult: Result<Bool, Error>?
+        let session = PrintLayoutSession(settings: .default, printInfo: NSPrintInfo(), documentLoader: { settings, info, observer in
+            loaded = true
+            return try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>Must not load</p>", title: "Blocked", baseURL: nil, settings: settings, printInfo: info, onPhase: observer)
+        }, parentWindow: parent, action: .export(URL(fileURLWithPath: "/tmp/blocked-session.pdf"), { sessionResult = $0 }), settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), reportError: { _, _ in }, telemetry: { _, _ in })
+        session.begin()
+        guard case .failure? = sessionResult else { return XCTFail("Defensive session admission must reject the unrelated sheet.") }
+        XCTAssertFalse(loaded)
+        XCTAssertTrue(parent.attachedSheet === other)
+        XCTAssertNil(PrintLayoutSession.activeSession(for: parent))
+    }
+
+    func testRepeatedPrintDuringExportReportsUnavailableWithoutReplacingSession() async throws {
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>Existing export</p>", title: "Export owner", baseURL: nil, settings: .default)
+        let parent = makeParentWindow()
+        defer { parent.close(); prepared.releaseHold() }
+        let editor = WKWebView()
+        parent.contentView = editor
+        let model = AppModel()
+        var errors = 0
+        model.presentErrorHandler = { _, _ in errors += 1 }
+        let coordinator = EditorWebView.Coordinator(model: model)
+        coordinator.webView = editor
+        let session = makeSession(prepared: prepared, parent: parent, output: URL(fileURLWithPath: "/tmp/export-owner.pdf"))
+        session.begin()
+        let sheet = parent.attachedSheet
+        coordinator.printDocument()
+        XCTAssertEqual(errors, 1)
+        XCTAssertTrue(PrintLayoutSession.activeSession(for: parent) === session)
+        XCTAssertTrue(parent.attachedSheet === sheet)
+        cancelSession(in: parent)
+    }
+
+    func testCancellingProductHTMLAcquisitionIgnoresLateCallback() async throws {
+        let parent = makeParentWindow()
+        defer { parent.close() }
+        let editor = DelayedPrintHTMLWebView()
+        parent.contentView = editor
+        let coordinator = EditorWebView.Coordinator(model: AppModel(), printSettingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()))
+        coordinator.webView = editor
+        var completions = 0
+        var result: Result<Bool, Error>?
+        var phases: [PrintPreviewPhase] = []
+        coordinator.onPrintPhase = { phases.append($0) }
+        coordinator.exportPDF(to: URL(fileURLWithPath: "/tmp/cancelled-html.pdf")) { result = $0; completions += 1 }
+        let pending = try await waitUntil { editor.htmlCompletion != nil }
+        XCTAssertTrue(pending)
+        let holds = PreparedPrintDocument.retainedCountForTesting
+        cancelSession(in: parent)
+        guard case .success(false)? = result else { return XCTFail("Cancelling HTML acquisition must complete the export once.") }
+        editor.htmlCompletion?("<p>Late HTML must not construct a renderer.</p>", nil)
+        editor.htmlCompletion = nil
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(completions, 1)
+        XCTAssertEqual(PreparedPrintDocument.retainedCountForTesting, holds)
+        XCTAssertFalse(phases.contains(.ready))
+        XCTAssertNil(PrintLayoutSession.activeSession(for: parent))
+        XCTAssertNil(parent.attachedSheet)
+    }
+
+    func testParentCloseDuringInitialLoadCompletesCancellationOnce() async throws {
+        let parent = makeParentWindow()
+        defer { parent.close() }
+        var completions = 0
+        var started = false
+        let session = PrintLayoutSession(settings: .default, printInfo: NSPrintInfo(), documentLoader: { settings, info, observer in
+            started = true
+            try await Task.sleep(nanoseconds: 500_000_000)
+            return try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>Closed parent</p>", title: "Close", baseURL: nil, settings: settings, printInfo: info, onPhase: observer)
+        }, parentWindow: parent, action: .export(URL(fileURLWithPath: "/tmp/closed-parent.pdf"), { _ in completions += 1 }), settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), reportError: { _, _ in }, telemetry: { _, _ in })
+        session.begin()
+        _ = try await waitUntil { started }
+        parent.close()
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(completions, 1)
+        XCTAssertNil(PrintLayoutSession.activeSession(for: parent))
+    }
+
+    func testSelectedPaperPreparationCompletesAndSealsWithoutASecondChooser() async throws {
+        let initial = NSPrintInfo()
+        initial.paperSize = NSSize(width: 612, height: 792)
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>Complete selected paper</p>", title: "Selected paper completion", baseURL: nil, settings: .default, printInfo: initial)
+        let parent = makeParentWindow()
+        defer { parent.close(); prepared.releaseHold() }
+        var chooserCount = 0
+        var completedPaperSize: NSSize?
+        var sawAsyncPreparation = false
+        let session = PrintLayoutSession(prepared: prepared, parentWindow: parent, action: .print, settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), printPanelChooser: { info in
+            chooserCount += 1
+            info.paperSize = NSSize(width: 595, height: 842)
+            return true
+        }, reportError: { _, error in XCTFail(error.localizedDescription) }, telemetry: { _, _ in }, onPhase: { phase in
+            guard chooserCount > 0 else { return }
+            if phase == .paginating { sawAsyncPreparation = parent.attachedSheet != nil }
+            if phase == .ready {
+                let preview = self.previewView(in: parent)
+                completedPaperSize = preview?.document?.page(at: 0)?.bounds(for: .mediaBox).size
+                self.cancelSession(in: parent)
+            }
+        })
+        session.begin()
+        _ = try await waitUntil { self.previewIsReady(in: parent) }
+        button(named: "Continue to Print", in: parent)?.performClick(nil)
+        let finished = try await waitUntil { completedPaperSize != nil }
+        XCTAssertTrue(finished)
+        XCTAssertEqual(try XCTUnwrap(completedPaperSize).width, 595, accuracy: 1)
+        XCTAssertEqual(try XCTUnwrap(completedPaperSize).height, 842, accuracy: 1)
+        XCTAssertTrue(sawAsyncPreparation)
+        XCTAssertEqual(chooserCount, 1)
+        XCTAssertNil(PrintLayoutSession.activeSession(for: parent))
+    }
+
+    func testParentCloseDuringAsyncSelectedPaperPreparationPreventsOutput() async throws {
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>Close selected paper</p>", title: "Close output", baseURL: nil, settings: .default)
+        let parent = makeParentWindow()
+        defer { parent.close(); prepared.releaseHold() }
+        var chooserFinished = false
+        var closedAsyncPreparation = false
+        let session = PrintLayoutSession(prepared: prepared, parentWindow: parent, action: .print, settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), printPanelChooser: { info in
+            info.paperSize = NSSize(width: 595, height: 842)
+            chooserFinished = true
+            return true
+        }, reportError: { _, error in XCTFail(error.localizedDescription) }, telemetry: { _, _ in }, onPhase: { phase in
+            if chooserFinished, phase == .paginating {
+                closedAsyncPreparation = true
+                parent.close()
+            }
+        })
+        session.begin()
+        _ = try await waitUntil { self.previewIsReady(in: parent) }
+        button(named: "Continue to Print", in: parent)?.performClick(nil)
+        let closed = try await waitUntil { closedAsyncPreparation }
+        XCTAssertTrue(closed)
+        XCTAssertNil(PrintLayoutSession.activeSession(for: parent))
+        XCTAssertNil(parent.attachedSheet)
+    }
+
+    func testSelectedPaperFailureKeepsOldPreviewAndExposesRetry() async throws {
+        let script = try XCTUnwrap(PrintLayoutScriptLoader.load()) + """
+        ;(function(){var apply=window.OuroPrintLayout.apply;window.OuroPrintLayout.apply=function(){if(window.__ouroPrintLayoutConfig.pageWidth<600){throw new Error('Synthetic selected paper failure');}return apply();};})();
+        """
+        let initial = NSPrintInfo()
+        initial.paperSize = NSSize(width: 612, height: 792)
+        let prepared = try await PrintDocumentRenderer(scriptProvider: { script }).prepareDocument(bodyHTML: "<p>Preserve original complete layout</p>", title: "Selected paper failure", baseURL: nil, settings: .default, printInfo: initial)
+        let parent = makeParentWindow()
+        defer { parent.close(); prepared.releaseHold() }
+        var chooserCount = 0
+        let session = PrintLayoutSession(prepared: prepared, parentWindow: parent, action: .print, settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), printPanelChooser: { info in
+            chooserCount += 1
+            info.paperSize = NSSize(width: 595, height: 842)
+            return true
+        }, reportError: { _, _ in }, telemetry: { _, _ in })
+        session.begin()
+        _ = try await waitUntil { self.previewIsReady(in: parent) }
+        let old = previewView(in: parent)?.document
+        button(named: "Continue to Print", in: parent)?.performClick(nil)
+        let failed = try await waitUntil { self.button(named: "Retry", in: parent)?.isHidden == false }
+        XCTAssertTrue(failed)
+        XCTAssertTrue(previewView(in: parent)?.document === old)
+        XCTAssertFalse(button(named: "Continue to Print", in: parent)?.isEnabled == true)
+        XCTAssertEqual(chooserCount, 1)
+        cancelSession(in: parent)
+    }
+
+    func testInitialEditsDoNotRegressAnAlreadyLoadingPhaseToExtraction() async throws {
+        let parent = makeParentWindow()
+        defer { parent.close() }
+        var phases: [PrintPreviewPhase] = []
+        let session = PrintLayoutSession(settings: .default, printInfo: NSPrintInfo(), documentLoader: { settings, info, observer in
+            observer?(.loadingHTML)
+            try await Task.sleep(nanoseconds: 200_000_000)
+            return try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>Keep the current phase</p>", title: "Current phase", baseURL: nil, settings: settings, printInfo: info, onPhase: observer)
+        }, parentWindow: parent, action: .print, settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), reportError: { _, error in XCTFail(error.localizedDescription) }, telemetry: { _, _ in }, onPhase: { phases.append($0) })
+        session.begin()
+        _ = try await waitUntil { phases.last == .loadingHTML }
+        let root = try XCTUnwrap(parent.attachedSheet?.contentView)
+        let font = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Font size (pt)" })
+        font.stringValue = "14"
+        _ = font.sendAction(font.action, to: font.target)
+        XCTAssertEqual(phases.last, .loadingHTML)
+        XCTAssertEqual(phases.filter { $0 == .extractingHTML }.count, 1)
+        _ = try await waitUntil { self.previewIsReady(in: parent) }
+        cancelSession(in: parent)
+    }
+
+    func testFailedInitialStreamIsLabeledIncompleteAndProgressDoesNotLookComplete() async throws {
+        let script = try XCTUnwrap(PrintLayoutScriptLoader.load()) + """
+        ;(function(){var show=window.OuroPrintLayout.showPage;window.OuroPrintLayout.showPage=function(index){if(index>0){throw new Error('Synthetic second-page capture failure');}return show(index);};})();
+        """
+        var settings = PrintLayoutSettings.default
+        settings.headingBreakLevel = 2
+        let prepared = try await PrintDocumentRenderer(scriptProvider: { script }).prepareDocument(bodyHTML: "<h2>First</h2><p>Partial preview</p><h2>Second</h2><p>Failed capture</p>", title: "Partial failure", baseURL: nil, settings: settings)
+        let parent = makeParentWindow()
+        defer { parent.close(); prepared.releaseHold() }
+        let session = makeSession(prepared: prepared, parent: parent, output: URL(fileURLWithPath: "/tmp/partial-failure.pdf"))
+        session.begin()
+        let failed = try await waitUntil { self.button(named: "Retry", in: parent)?.isHidden == false }
+        XCTAssertTrue(failed)
+        let root = try XCTUnwrap(parent.attachedSheet?.contentView)
+        XCTAssertTrue(descendants(of: root).compactMap { $0 as? NSTextField }.contains { $0.stringValue.hasPrefix("Incomplete preview — preparation failed.") })
+        XCTAssertEqual(previewView(in: parent)?.document?.pageCount, 1)
+        let progress = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSProgressIndicator }.first)
+        XCTAssertEqual(progress.doubleValue, 0)
+        XCTAssertFalse(exportButton(in: parent)?.isEnabled == true)
+        cancelSession(in: parent)
     }
 
     private func cancelSession(in parent: NSWindow) {

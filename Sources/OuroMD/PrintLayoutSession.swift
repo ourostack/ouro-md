@@ -79,6 +79,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     private var preparationFailed = false
     private var outputPreparationRunning = false
     private var announcedPhases = Set<String>()
+    private var currentPhase: PrintPreviewPhase?
     private var submitWhenPreviewReady = false
     private var completionDelivered = false
     private var sessionFinished = false
@@ -369,7 +370,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
             prepared.cancelLoading()
         }
         if prepared == nil {
-            updatePhase(.extractingHTML, generation: requestedGeneration)
+            updatePhase(initialPreparationTask == nil ? .extractingHTML : (currentPhase ?? .extractingHTML), generation: requestedGeneration)
         } else {
             progressIndicator.isIndeterminate = true
             progressIndicator.startAnimation(nil)
@@ -501,6 +502,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
 
     private func updatePhase(_ phase: PrintPreviewPhase, generation: Int) {
         guard isCurrent(generation) else { return }
+        currentPhase = phase
         onPhase?(phase)
         guard isCurrent(generation) else { return }
         let previous = displayIsPreviousLayout
@@ -544,6 +546,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         case .failed:
             progressIndicator.isIndeterminate = false
             progressIndicator.stopAnimation(nil)
+            progressIndicator.doubleValue = 0
         case .capturingPages, .ready:
             break
         }
@@ -563,11 +566,12 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         if let lastCompleteDocument {
             display(lastCompleteDocument, selectedPage: selectedPreviewPageIndex)
         }
-        displayIsPreviousLayout = previewView.document != nil
+        displayIsPreviousLayout = lastCompleteDocument != nil
         submitWhenPreviewReady = false
         updatePhase(.failed, generation: generation)
         guard isCurrent(generation) else { return }
-        updateStatus((previewView.document == nil ? "" : "Previous layout — update failed. ") + error.localizedDescription)
+        let failurePrefix = previewView.document == nil ? "" : (displayIsPreviousLayout ? "Previous layout — update failed. " : "Incomplete preview — preparation failed. ")
+        updateStatus(failurePrefix + error.localizedDescription)
         retryButton.isHidden = false
         retryButton.isEnabled = controls.validationMessage == nil
         updatePrimaryEnabled(false)
@@ -680,6 +684,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                     guard !self.sessionFinished, outputIdentity == self.identity(settings: self.controls.currentSettings) else { return }
                     guard let pdfDocument = PDFDocument(data: finalData) else { throw SessionError.missingPreview }
                     self.completePreview = CompletePreview(identity: outputIdentity, data: finalData)
+                    self.lastCompleteDocument = pdfDocument
                     self.display(pdfDocument, selectedPage: self.selectedPreviewPageIndex)
                     self.updatePhase(.ready, generation: outputIdentity.generation)
                     guard self.isCurrent(outputIdentity.generation), !Task.isCancelled else { return }
@@ -700,7 +705,12 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 do {
-                    guard preview.identity == self.identity(settings: self.controls.currentSettings), !self.sessionFinished else { return }
+                    guard !self.sessionFinished else { return }
+                    guard preview.identity == self.identity(settings: self.controls.currentSettings) else {
+                        self.deliverExportCompletion(.failure(SessionError.unavailable("The PDF export was superseded by a newer layout.")))
+                        self.finishSession()
+                        return
+                    }
                     try preview.data.write(to: url, options: .atomic)
                     self.deliverExportCompletion(.success(true))
                 } catch {
