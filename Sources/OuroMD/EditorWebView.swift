@@ -128,6 +128,8 @@ struct EditorWebView: NSViewRepresentable {
         let externalURLOpener: (URL) -> Void
         let anchorScroller: ((String) -> Void)?
         let printSettingsStore: PrintLayoutSettingsStore
+        var onPrintPhase: (@MainActor (PrintPreviewPhase) -> Void)?
+        var profilePrintLayout = false
         let pageSetupChooser: (NSPrintInfo) -> Bool
         let printPanelChooser: (NSPrintInfo) -> Bool
         weak var webView: WKWebView?
@@ -381,7 +383,8 @@ struct EditorWebView: NSViewRepresentable {
                         },
                         telemetry: { [weak self] event, properties in
                             self?.model.telemetryHandler?(event, properties)
-                        }
+                        },
+                        onPhase: self.onPrintPhase
                     )
                     session.begin()
                 }
@@ -434,7 +437,8 @@ struct EditorWebView: NSViewRepresentable {
                         },
                         telemetry: { [weak self] event, properties in
                             self?.model.telemetryHandler?(event, properties)
-                        }
+                        },
+                        onPhase: self.onPrintPhase
                     )
                     session.begin()
                 }
@@ -449,6 +453,7 @@ struct EditorWebView: NSViewRepresentable {
                 completion(.failure(PrintLayoutSession.SessionError.unavailable("The editor web view is unavailable.")))
                 return
             }
+            onPrintPhase?(.extractingHTML)
             getHTML { [weak self] body in
                 guard let self else { return }
                 guard let body else {
@@ -461,14 +466,15 @@ struct EditorWebView: NSViewRepresentable {
                 }
                 Task { @MainActor in
                     do {
-                        let renderer = PrintDocumentRenderer()
+                        let renderer = PrintDocumentRenderer(profileLayout: self.profilePrintLayout)
                         let settingsStore = self.printSettingsStore
                         let prepared = try await renderer.prepareDocument(
                             bodyHTML: body,
                             title: self.model.windowTitle,
                             baseURL: self.model.currentURL?.deletingLastPathComponent(),
                             settings: settings ?? settingsStore.load(),
-                            printInfo: .shared
+                            printInfo: .shared,
+                            onPhase: self.onPrintPhase
                         )
                         completion(.success(prepared))
                     } catch {

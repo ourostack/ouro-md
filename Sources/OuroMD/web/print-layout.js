@@ -8,6 +8,27 @@
   var sources = Object.create(null);
   var noteLayer = null;
   var pageLinks = [];
+  var profile = window.__ouroPrintProfiling ? {steps: {}, rectReads: 0, anchorRectReads: 0, anchorQueries: 0} : null;
+  if (profile) {
+    window.__ouroPrintLayoutProfile = profile;
+    var originalRects = Element.prototype.getClientRects;
+    Element.prototype.getClientRects = function () {
+      profile.rectReads += 1;
+      if (this.tagName === "A") { profile.anchorRectReads += 1; }
+      return originalRects.call(this);
+    };
+    var originalQuery = Element.prototype.querySelectorAll;
+    Element.prototype.querySelectorAll = function (selector) {
+      if (selector === "a[href]") { profile.anchorQueries += 1; }
+      return originalQuery.call(this, selector);
+    };
+  }
+
+  function measuredStep(code, operation) {
+    if (!profile) { return operation(); }
+    var start = performance.now();
+    try { return operation(); } finally { profile.steps[code] = (profile.steps[code] || 0) + performance.now() - start; }
+  }
 
   function article() {
     return document.querySelector(".markdown-body") || document.body;
@@ -447,15 +468,15 @@
     cachedMetrics = null;
     article().style.transform = "translateX(0px)";
     Array.prototype.forEach.call(article().querySelectorAll("details"), function (details) { details.open = true; });
-    if (config.pageFootnotes) { preparePageFootnotes(); }
-    splitTablesForPages();
-    wrapTablesForPagination();
-    uniquifyClonedIDs(article());
-    if (!config.pageFootnotes) { applyReferences(); }
-    applySectionBreaks();
-    if (config.pageFootnotes) { buildPageFootnotes(); }
+    if (config.pageFootnotes) { measuredStep("prepare_footnotes", preparePageFootnotes); }
+    measuredStep("split_tables", splitTablesForPages);
+    measuredStep("wrap_tables", wrapTablesForPagination);
+    measuredStep("unique_ids", function () { uniquifyClonedIDs(article()); });
+    if (!config.pageFootnotes) { measuredStep("references", applyReferences); }
+    measuredStep("section_breaks", applySectionBreaks);
+    if (config.pageFootnotes) { measuredStep("build_footnotes", buildPageFootnotes); }
     applied = true;
-    return pageMetrics();
+    return measuredStep("geometry", pageMetrics);
   }
 
   function showPage(index) {

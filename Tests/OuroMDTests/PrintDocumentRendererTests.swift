@@ -5,6 +5,66 @@ import XCTest
 
 @MainActor
 final class PrintDocumentRendererTests: XCTestCase {
+    func testPreparationReportsLoadThenPagination() async throws {
+        var phases: [PrintPreviewPhase] = []
+        let prepared = try await PrintDocumentRenderer().prepareDocument(
+            bodyHTML: "<p>Observe real preparation.</p>",
+            title: "Preparation phases",
+            baseURL: nil,
+            settings: .default,
+            onPhase: { phases.append($0) }
+        )
+        defer { prepared.releaseHold() }
+        XCTAssertEqual(phases, [.loadingHTML, .paginating])
+        XCTAssertGreaterThan(prepared.layoutMetrics.contentWidth, 0)
+        XCTAssertGreaterThan(prepared.layoutMetrics.pageCount, 0)
+    }
+
+    func testCaptureReportsAssemblyBeforeReturningCompletePDF() async throws {
+        var settings = PrintLayoutSettings.default
+        settings.citationMode = .originalLinks
+        settings.headingBreakLevel = 2
+        let prepared = try await PrintDocumentRenderer().prepareDocument(
+            bodyHTML: "<h2>First</h2><p>FIRST-PHASE-TOKEN</p><h2>Second</h2><p>SECOND-PHASE-TOKEN</p>",
+            title: "Capture phases",
+            baseURL: nil,
+            settings: settings
+        )
+        defer { prepared.releaseHold() }
+        var phases: [PrintPreviewPhase] = []
+        let data = try await prepared.createPDFData(onPhase: { phases.append($0) })
+        let pdf = try XCTUnwrap(PDFDocument(data: data))
+        XCTAssertEqual(phases, [
+            .capturingPages(completed: 0, total: 2),
+            .capturingPages(completed: 1, total: 2),
+            .capturingPages(completed: 2, total: 2),
+            .assemblingPDF
+        ])
+        XCTAssertFalse(phases.contains(.ready), "Only the session can seal the current preview and declare it ready.")
+        XCTAssertEqual(pdf.pageCount, 2)
+        XCTAssertTrue(pdf.page(at: 0)?.string?.contains("FIRST-PHASE-TOKEN") == true)
+        XCTAssertTrue(pdf.page(at: 1)?.string?.contains("SECOND-PHASE-TOKEN") == true)
+    }
+
+    func testOptionalPhaseObservationDoesNotChangeCompleteOutput() async throws {
+        let body = "<h2>Complete output</h2><p>OBSERVED-PHASE-TOKEN <a href=\"https://example.com/phase-source\">source</a></p>"
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: body, title: "Optional observer", baseURL: nil, settings: .default)
+        defer { prepared.releaseHold() }
+        let plainData = try await prepared.createPDFData()
+        let plain = try XCTUnwrap(PDFDocument(data: plainData))
+        var phases: [PrintPreviewPhase] = []
+        let observedData = try await prepared.createPDFData(onPhase: { phases.append($0) })
+        let observed = try XCTUnwrap(PDFDocument(data: observedData))
+        XCTAssertEqual(plain.pageCount, observed.pageCount)
+        XCTAssertEqual(plain.string, observed.string)
+        XCTAssertTrue(observed.string?.contains("OBSERVED-PHASE-TOKEN") == true)
+        for index in 0..<plain.pageCount {
+            XCTAssertEqual(plain.page(at: index)?.bounds(for: .mediaBox), observed.page(at: index)?.bounds(for: .mediaBox))
+            XCTAssertEqual(plain.page(at: index)?.annotations.compactMap(\.url), observed.page(at: index)?.annotations.compactMap(\.url))
+        }
+        XCTAssertEqual(phases.last, .assemblingPDF)
+    }
+
     func testEndnotesIncludeLocalAndRelativeCitationTargets() async throws {
         let body = "<p>Sources: <a href=\"https://example.com/source\">Web source</a>, <a href=\"file:///tmp/local-source.md\">Local source</a>, <a href=\"relative-source.md\">Relative source</a>.</p>"
         var settings = PrintLayoutSettings.default

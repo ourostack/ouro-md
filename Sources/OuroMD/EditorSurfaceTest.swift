@@ -165,7 +165,10 @@ final class EditorSurfaceTester: NSObject {
         }
         _ = await evaluate("(function(){var original=window.ouro.getHTML;window.ouro.getHTML=function(){var start=performance.now();try{return original.apply(this,arguments);}finally{window.__ouroAcceptanceHTMLMilliseconds=performance.now()-start;}};})()")
         FileHandle.standardError.write(Data("local print acceptance: requesting product export\n".utf8))
-        let requested = Date()
+        let trace = PrintPreviewTrace()
+        coordinator.onPrintPhase = { trace.record($0) }
+        coordinator.profilePrintLayout = true
+        defer { coordinator.onPrintPhase = nil; coordinator.profilePrintLayout = false }
         var exported: Bool?
         model.exportPDF(to: output) { exported = $0 }
         guard await waitUntil(timeout: 20, condition: { self.window.attachedSheet?.title == "Export PDF Layout" }),
@@ -175,12 +178,12 @@ final class EditorSurfaceTester: NSObject {
               let font = descendants(of: view).compactMap({ $0 as? NSTextField }).first(where: { $0.accessibilityLabel() == "Font size (pt)" }) else {
             throw SurfaceError("Product print layout did not open for the local document.")
         }
-        let sheetSeconds = Date().timeIntervalSince(requested)
+        let sheetSeconds = trace.elapsedSeconds
         panel.alphaValue = 0
         guard await waitUntil(timeout: 10, condition: { (preview.document?.pageCount ?? 0) > 0 }) else {
             throw SurfaceError("First print preview page did not appear promptly.")
         }
-        let firstPageSeconds = Date().timeIntervalSince(requested)
+        let firstPageSeconds = trace.elapsedSeconds
         let progressive = !printPreviewIsReady(in: view)
         let progress = descendants(of: view).compactMap { $0 as? NSTextField }.first { $0.stringValue.hasPrefix("Preparing page ") }?.stringValue ?? "Unknown progress"
         FileHandle.standardError.write(Data("local print acceptance: firstPageSeconds=\(firstPageSeconds) \(progress)\n".utf8))
@@ -194,10 +197,12 @@ final class EditorSurfaceTester: NSObject {
               let initialDocument = preview.document else {
             throw SurfaceError("Full document print preview did not finish.")
         }
-        let readySeconds = Date().timeIntervalSince(requested)
+        let readySeconds = trace.elapsedSeconds
+        let initialPhaseEvents = trace.events
+        let initialProfile = try await PrintLayoutSession.activeSession(for: window)?.prepared.webView.evaluateJavaScript("window.__ouroPrintLayoutProfile")
         let initialPages = initialDocument.pageCount
         FileHandle.standardError.write(Data("local print acceptance: readySeconds=\(readySeconds) pages=\(initialPages)\n".utf8))
-        let changed = Date()
+        let changed = ProcessInfo.processInfo.systemUptime
         font.stringValue = String(settings.fontSize + 1)
         _ = font.sendAction(font.action, to: font.target)
         guard !button.isEnabled,
@@ -208,7 +213,7 @@ final class EditorSurfaceTester: NSObject {
             let status = descendants(of: view).compactMap { $0 as? NSTextField }.filter { !$0.isEditable }.map(\.stringValue).joined(separator: "; ")
             throw SurfaceError("Font-size control did not produce a complete changed layout: \(status)")
         }
-        let changedSeconds = Date().timeIntervalSince(changed)
+        let changedSeconds = ProcessInfo.processInfo.systemUptime - changed
         let changedPages = changedDocument.pageCount
         font.stringValue = String(settings.fontSize)
         _ = font.sendAction(font.action, to: font.target)
@@ -238,6 +243,8 @@ final class EditorSurfaceTester: NSObject {
             "probeActivationPolicy": NSApplication.shared.activationPolicy().rawValue,
             "probeApplicationActive": NSApplication.shared.isActive,
             "editorHTMLMilliseconds": (await evaluate("window.__ouroAcceptanceHTMLMilliseconds")) as? Double ?? -1,
+            "phaseEvents": initialPhaseEvents,
+            "layoutProfile": initialProfile ?? [:],
             "contentAudit": audit
         ]
         if let path = environment["OURO_PRINT_ACCEPTANCE_REPORT"] {

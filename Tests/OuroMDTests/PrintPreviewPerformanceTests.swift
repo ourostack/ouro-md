@@ -7,6 +7,25 @@ import XCTest
 
 @MainActor
 final class PrintPreviewPerformanceTests: XCTestCase {
+    func testOptInLayoutProfileHasOnlyFixedNumericMetadata() async throws {
+        let prepared = try await PrintDocumentRenderer(profileLayout: true).prepareDocument(
+            bodyHTML: "<p>Profile source <a href=\"https://example.com/source\">source</a></p>",
+            title: "Profile metadata", baseURL: nil, settings: .default
+        )
+        defer { prepared.releaseHold() }
+        let result = try await prepared.webView.evaluateJavaScript("window.__ouroPrintLayoutProfile")
+        let profile = try XCTUnwrap(result as? [String: Any])
+        let steps = try XCTUnwrap(profile["steps"] as? [String: Double])
+        XCTAssertNotNil(steps["geometry"])
+        XCTAssertNotNil(steps["split_tables"])
+        XCTAssertTrue(steps.values.allSatisfy { $0 >= 0 })
+        XCTAssertGreaterThan(try XCTUnwrap(profile["rectReads"] as? Int), 0)
+        let unprofiled = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>Normal output</p>", title: "Normal", baseURL: nil, settings: .default)
+        defer { unprofiled.releaseHold() }
+        let disabled = try await unprofiled.webView.evaluateJavaScript("typeof window.__ouroPrintLayoutProfile === 'undefined'") as? Bool
+        XCTAssertEqual(disabled, true)
+    }
+
     func testCompanyFieldHeadingsSurviveEveryPageBoundaryInCitedTables() async throws {
         let source = "https://example.com/" + String(repeating: "source-segment/", count: 120)
         let note = String(repeating: "Captured evidence remains readable and complete. ", count: 25)

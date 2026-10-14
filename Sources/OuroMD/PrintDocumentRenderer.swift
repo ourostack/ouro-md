@@ -32,9 +32,11 @@ final class PrintDocumentRenderer {
     }
 
     private let scriptProvider: () -> String
+    private let profileLayout: Bool
 
-    init(scriptProvider: @escaping () -> String = { PrintLayoutScriptLoader.load() ?? "" }) {
+    init(scriptProvider: @escaping () -> String = { PrintLayoutScriptLoader.load() ?? "" }, profileLayout: Bool = false) {
         self.scriptProvider = scriptProvider
+        self.profileLayout = profileLayout
     }
 
     func prepareDocument(
@@ -42,7 +44,8 @@ final class PrintDocumentRenderer {
         title: String,
         baseURL: URL?,
         settings: PrintLayoutSettings,
-        printInfo: NSPrintInfo = .shared
+        printInfo: NSPrintInfo = .shared,
+        onPhase: (@MainActor (PrintPreviewPhase) -> Void)? = nil
     ) async throws -> PreparedPrintDocument {
         let script = scriptProvider()
         guard !script.isEmpty else { throw RenderError.missingScript }
@@ -54,11 +57,11 @@ final class PrintDocumentRenderer {
             title: title,
             baseURL: baseURL,
             settings: normalized,
-            script: script,
+            script: (profileLayout ? "window.__ouroPrintProfiling = true;\n" : "") + script,
             printInfo: sizedPrintInfo
         )
         do {
-            try await document.load()
+            try await document.load(onPhase: onPhase)
             return document
         } catch {
             document.releaseHold()
@@ -90,6 +93,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     private var loadGeneration = 0
     private var loadingSignature: LayoutSignature?
     private var loadedSignature: LayoutSignature?
+    private var loadPhaseObserver: (@MainActor (PrintPreviewPhase) -> Void)?
     private(set) var layoutMetrics = PrintLayoutMetrics(
         contentWidth: 0,
         contentHeight: 0,
@@ -133,19 +137,19 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         hostWindow.orderFront(nil)
     }
 
-    func load() async throws {
+    func load(onPhase: (@MainActor (PrintPreviewPhase) -> Void)? = nil) async throws {
         retainHold()
-        try await loadHTML(using: settings)
+        try await loadHTML(using: settings, onPhase: onPhase)
     }
 
-    func reload(with updated: PrintLayoutSettings) async throws {
+    func reload(with updated: PrintLayoutSettings, onPhase: (@MainActor (PrintPreviewPhase) -> Void)? = nil) async throws {
         settings = updated.normalized
         try settings.validate(for: printInfo.paperSize)
         printInfo = settings.applying(to: printInfo)
         let canvasSize = Self.editorCanvasSize(for: settings, paperSize: printInfo.paperSize)
         webView.frame = NSRect(origin: .zero, size: canvasSize)
         hostWindow.setContentSize(canvasSize)
-        try await loadHTML(using: settings)
+        try await loadHTML(using: settings, onPhase: onPhase)
     }
 
     func setPageSettings(_ selected: NSPrintInfo) {
@@ -192,6 +196,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         if let continuation = loadContinuation {
             loadContinuation = nil
             currentNavigation = nil
+            loadPhaseObserver = nil
             continuation.resume(throwing: PrintDocumentRenderer.RenderError.loadFailed(error))
         }
     }
@@ -199,6 +204,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     private func finishLoadAfterLayout(navigation: WKNavigation?, generation: Int) {
         guard let continuation = loadContinuation else { return }
         guard generation == loadGeneration, navigation === currentNavigation else { return }
+        loadPhaseObserver?(.paginating)
         webView.evaluateJavaScript(
             "(function(){ if (!window.OuroPrintLayout || typeof window.OuroPrintLayout.apply !== 'function') { return null; } return window.OuroPrintLayout.apply(); })();"
         ) { [weak self] result, error in
@@ -207,6 +213,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
             if let error {
                 self.loadContinuation = nil
                 self.currentNavigation = nil
+                self.loadPhaseObserver = nil
                 if let message = (error as NSError).userInfo["WKJavaScriptExceptionMessage"] as? String,
                    message.contains("Page footnote") {
                     continuation.resume(throwing: PrintDocumentRenderer.RenderError.footnoteLayoutFailed(message))
@@ -218,6 +225,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
             guard let metrics = Self.decodeMetrics(result) else {
                 self.loadContinuation = nil
                 self.currentNavigation = nil
+                self.loadPhaseObserver = nil
                 continuation.resume(throwing: PrintDocumentRenderer.RenderError.pdfFailed)
                 return
             }
@@ -232,14 +240,19 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
             self.loadedSignature = self.loadingSignature
             self.loadContinuation = nil
             self.currentNavigation = nil
+            self.loadPhaseObserver = nil
             continuation.resume()
         }
     }
 
-    func createPDFData(onPage: (@MainActor (Int, Int, Data) throws -> Void)? = nil) async throws -> Data {
+    func createPDFData(
+        onPhase: (@MainActor (PrintPreviewPhase) -> Void)? = nil,
+        onPage: (@MainActor (Int, Int, Data) throws -> Void)? = nil
+    ) async throws -> Data {
         let generation = loadGeneration
         var pagePDFs: [Data] = []
         var pageLinks: [[PrintLayoutMetrics.Link]] = []
+        onPhase?(.capturingPages(completed: 0, total: layoutMetrics.pageCount))
         for index in 0..<layoutMetrics.pageCount {
             try Task.checkCancellation()
             guard generation == loadGeneration else { throw PrintDocumentRenderer.RenderError.superseded }
@@ -250,8 +263,10 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
             guard generation == loadGeneration else { throw PrintDocumentRenderer.RenderError.superseded }
             pagePDFs.append(snapshot)
             pageLinks.append(metrics.links)
+            onPhase?(.capturingPages(completed: index + 1, total: layoutMetrics.pageCount))
             try onPage?(index + 1, layoutMetrics.pageCount, snapshot)
         }
+        onPhase?(.assemblingPDF)
         return try PrintPDFPaginator.paginate(
             sourcePages: pagePDFs,
             paperSize: printInfo.paperSize,
@@ -304,7 +319,7 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         }
     }
 
-    private func loadHTML(using settings: PrintLayoutSettings) async throws {
+    private func loadHTML(using settings: PrintLayoutSettings, onPhase: (@MainActor (PrintPreviewPhase) -> Void)?) async throws {
         let signature = LayoutSignature(settings: settings, paperSize: printInfo.paperSize)
         let html = PrintLayoutHTMLDocument.wrap(body: bodyHTML, title: title, settings: settings, script: script, paperSize: signature.paperSize)
         loadGeneration += 1
@@ -316,6 +331,8 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
             currentNavigation = nil
             continuation.resume(throwing: PrintDocumentRenderer.RenderError.superseded)
         }
+        loadPhaseObserver = onPhase
+        onPhase?(.loadingHTML)
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             loadContinuation = continuation
             currentNavigation = webView.loadHTMLString(html, baseURL: baseURL)

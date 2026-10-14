@@ -34,6 +34,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     private let action: Action
     private let reportError: (String, Error) -> Void
     private let telemetry: (String, [String: OuroMDTelemetryValue]) -> Void
+    private let onPhase: (@MainActor (PrintPreviewPhase) -> Void)?
     private let pageSetupChooser: @MainActor (NSPrintInfo) -> Bool
     private let printPanelChooser: @MainActor (NSPrintInfo) -> Bool
     private let controls: PrintLayoutAccessoryController
@@ -67,7 +68,8 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         pageSetupChooser: @escaping @MainActor (NSPrintInfo) -> Bool = { NSPageLayout().runModal(with: $0) == NSApplication.ModalResponse.OK.rawValue },
         printPanelChooser: @escaping @MainActor (NSPrintInfo) -> Bool = { NSPrintPanel().runModal(with: $0) == NSApplication.ModalResponse.OK.rawValue },
         reportError: @escaping (String, Error) -> Void,
-        telemetry: @escaping (String, [String: OuroMDTelemetryValue]) -> Void
+        telemetry: @escaping (String, [String: OuroMDTelemetryValue]) -> Void,
+        onPhase: (@MainActor (PrintPreviewPhase) -> Void)? = nil
     ) {
         self.prepared = prepared
         self.parentWindow = parentWindow
@@ -76,6 +78,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         self.printPanelChooser = printPanelChooser
         self.reportError = reportError
         self.telemetry = telemetry
+        self.onPhase = onPhase
         self.controls = PrintLayoutAccessoryController(settings: prepared.settings, settingsStore: settingsStore)
         self.panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: 980, height: 720),
@@ -118,6 +121,10 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     }
 
     static var activeCountForTesting: Int { active.count }
+
+    static func activeSession(for parentWindow: NSWindow) -> PrintLayoutSession? {
+        active.values.first { $0.parentWindow === parentWindow }
+    }
 
     func windowWillClose(_ notification: Notification) {
         completeCancellationIfNeeded()
@@ -277,10 +284,10 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                 if debounce { try await Task.sleep(nanoseconds: 120_000_000) }
                 try Task.checkCancellation()
                 if !self.prepared.hasCurrentLayout(for: settings) {
-                    try await self.prepared.reload(with: settings)
+                    try await self.prepared.reload(with: settings, onPhase: self.onPhase)
                 }
                 let streamingPreview = PDFDocument()
-                let pdfData = try await self.prepared.createPDFData { count, total, data in
+                let pdfData = try await self.prepared.createPDFData(onPhase: self.onPhase) { count, total, data in
                     guard let page = PDFDocument(data: data)?.page(at: 0) else {
                         throw SessionError.unavailable("A rendered preview page could not be read.")
                     }
@@ -297,6 +304,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                 let selectedPage = self.previewView.currentPage.map { streamingPreview.index(for: $0) } ?? 0
                 self.currentPreviewData = pdfData
                 self.currentPreviewSettings = settings
+                self.onPhase?(.ready)
                 self.previewView.document = completePreview
                 if let page = completePreview.page(at: min(max(0, selectedPage), completePreview.pageCount - 1)) {
                     self.previewView.go(to: page)
@@ -313,6 +321,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                 if case PrintDocumentRenderer.RenderError.superseded = error { return }
                 if error is CancellationError { return }
                 self.currentPreviewData = nil
+                self.onPhase?(.failed)
                 self.submitWhenPreviewReady = false
                 self.previewView.document = nil
                 self.updateStatus(error.localizedDescription)
