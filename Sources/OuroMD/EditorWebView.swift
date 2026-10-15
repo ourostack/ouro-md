@@ -249,11 +249,11 @@ struct EditorWebView: NSViewRepresentable {
         }
 
         func getHTML(_ completion: @escaping (String?) -> Void) {
-            getHTML(profilePreparation: false, completion)
+            getHTML(profilePreparation: false) { body, _ in completion(body) }
         }
 
-        private func getHTML(profilePreparation: Bool, _ completion: @escaping (String?) -> Void) {
-            guard let webView else { completion(nil); return }
+        private func getHTML(profilePreparation: Bool, _ completion: @escaping (String?, [String: Double]) -> Void) {
+            guard let webView else { completion(nil, [:]); return }
             let requested = profilePreparation ? floor(Date().timeIntervalSince1970 * 1_000) : 0
             let script = profilePreparation ? """
             (function(){
@@ -262,21 +262,22 @@ struct EditorWebView: NSViewRepresentable {
               return {body:body,entered:entered,finished:Date.now(),profile:window.__ouroPrintHTMLProfile};
             })()
             """ : "window.ouro ? window.ouro.getHTML(false) : null"
-            webView.evaluateJavaScript(script) { [weak self] result, _ in
-                guard profilePreparation else { completion(result as? String); return }
+            webView.evaluateJavaScript(script) { result, _ in
+                guard profilePreparation else { completion(result as? String, [:]); return }
                 let returned = floor(Date().timeIntervalSince1970 * 1_000)
                 let payload = result as? [String: Any]
+                var timings: [String: Double] = [:]
                 if let entered = payload?["entered"] as? Double,
                    let finished = payload?["finished"] as? Double,
                    let profile = payload?["profile"] as? [String: Double],
                    let render = profile["render_html"], let normalize = profile["normalize_headings"] {
                     // Queue and return transfer use millisecond wall clocks across the WebKit process boundary.
-                    self?.printPreparationProfile["html_queue"] = entered - requested
-                    self?.printPreparationProfile["html_render"] = render
-                    self?.printPreparationProfile["html_normalize"] = normalize
-                    self?.printPreparationProfile["html_return_transfer"] = returned - finished
+                    timings["html_queue"] = entered - requested
+                    timings["html_render"] = render
+                    timings["html_normalize"] = normalize
+                    timings["html_return_transfer"] = returned - finished
                 }
-                completion(payload?["body"] as? String)
+                completion(payload?["body"] as? String, timings)
             }
         }
 
@@ -509,7 +510,11 @@ struct EditorWebView: NSViewRepresentable {
                 return try await withCheckedThrowingContinuation { continuation in
                     guard !request.cancelled else { continuation.resume(throwing: CancellationError()); return }
                     request.continuation = continuation
-                    getHTML(profilePreparation: profilePrintLayout) { request.resolve($0) }
+                    getHTML(profilePreparation: profilePrintLayout) { [weak self] body, timings in
+                        guard !request.cancelled else { return }
+                        self?.printPreparationProfile.merge(timings) { _, latest in latest }
+                        request.resolve(body)
+                    }
                 }
             } onCancel: {
                 Task { @MainActor in request.cancel() }

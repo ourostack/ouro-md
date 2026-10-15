@@ -7,6 +7,8 @@ import WebKit
 
 private final class ProfiledPrintHTMLWebView: WKWebView {
     var profileRequests = 0
+    var delayProfile = false
+    var pendingProfile: ((Any?, Error?) -> Void)?
 
     override func evaluateJavaScript(_ javaScriptString: String, completionHandler: ((Any?, Error?) -> Void)? = nil) {
         guard javaScriptString.contains("entered:entered") else {
@@ -15,12 +17,54 @@ private final class ProfiledPrintHTMLWebView: WKWebView {
         }
         let now = floor(Date().timeIntervalSince1970 * 1_000)
         profileRequests += 1
+        if delayProfile {
+            pendingProfile = completionHandler
+            return
+        }
         completionHandler?(["body": "<p>PROFILED-HTML-TOKEN</p>", "entered": now, "finished": now, "profile": ["render_html": 3.0, "normalize_headings": 2.0]], nil)
     }
 }
 
 @MainActor
 final class PrintAcceptanceHostingTests: XCTestCase {
+    func testCancelledHTMLRequestDoesNotPublishLatePreparationMetrics() async throws {
+        let parent = NonActivatingHeadlessHostWindow(contentRect: NSRect(x: -30_000, y: -30_000, width: 1000, height: 800), styleMask: [.borderless], backing: .buffered, defer: false)
+        parent.isReleasedWhenClosed = false
+        parent.alphaValue = 0
+        defer { parent.close() }
+        let editor = ProfiledPrintHTMLWebView()
+        editor.delayProfile = true
+        parent.contentView = editor
+        let coordinator = EditorWebView.Coordinator(model: AppModel(), printSettingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()))
+        coordinator.webView = editor
+        coordinator.printPresentation = .headless
+        coordinator.profilePrintLayout = true
+        let scratch = try PrintLayoutTestPaths.makeScratchDirectory(label: "headless-late-html-profile")
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        var completions = 0
+        coordinator.exportPDF(to: scratch.appendingPathComponent("unused.pdf")) { _ in completions += 1 }
+        let session = try XCTUnwrap(PrintLayoutSession.activeSession(for: parent))
+        defer { session.panelForTesting.close() }
+        let root = try XCTUnwrap(session.panelForTesting.contentView)
+        let deadline = ProcessInfo.processInfo.systemUptime + 10
+        while editor.pendingProfile == nil, ProcessInfo.processInfo.systemUptime < deadline { try await Task.sleep(nanoseconds: 1_000_000) }
+        let pending = try XCTUnwrap(editor.pendingProfile)
+        let holds = PreparedPrintDocument.retainedCountForTesting
+        descendants(of: root).compactMap { $0 as? NSButton }.first { $0.title == "Cancel" }?.performClick(nil)
+        try await Task.sleep(nanoseconds: 10_000_000)
+        let now = floor(Date().timeIntervalSince1970 * 1_000)
+        pending(["body": "<p>Retired HTML</p>", "entered": now, "finished": now, "profile": ["render_html": 3.0, "normalize_headings": 2.0]], nil)
+        editor.pendingProfile = nil
+        try await Task.sleep(nanoseconds: 10_000_000)
+        XCTAssertTrue(coordinator.printPreparationProfile.isEmpty, "Retired measurements must not contaminate a later print request.")
+        XCTAssertEqual(PreparedPrintDocument.retainedCountForTesting, holds)
+        XCTAssertEqual(completions, 1)
+        XCTAssertNil(PrintLayoutSession.activeSession(for: parent))
+        XCTAssertFalse(parent.isVisible)
+        XCTAssertFalse(session.panelForTesting.isVisible)
+        XCTAssertNil(parent.attachedSheet)
+    }
+
     func testOrdinaryHTMLAcquisitionRetainsItsStringOnlyBridge() {
         let editor = ProfiledPrintHTMLWebView()
         let coordinator = EditorWebView.Coordinator(model: AppModel())
@@ -126,6 +170,7 @@ final class PrintAcceptanceHostingTests: XCTestCase {
         var captures: [Int] = []
         var statuses: [String] = []
         var progressValues: [Double] = []
+        var firstPageBeforeSecondCapture = false
         let started = ProcessInfo.processInfo.systemUptime
         let fixture = try await makeNavigationFixture(pageCount: 200, onPhase: { phase in
             if case .capturingPages(let completed, let total) = phase {
@@ -134,6 +179,9 @@ final class PrintAcceptanceHostingTests: XCTestCase {
             }
             if let root = observedSession?.panelForTesting.contentView {
                 let views = self.descendants(of: root)
+                if case .capturingPages(completed: 2, total: _) = phase {
+                    firstPageBeforeSecondCapture = views.compactMap { $0 as? PDFView }.first?.document?.pageCount == 1
+                }
                 if let status = views.compactMap({ $0 as? NSTextField }).first(where: { $0.stringValue.contains("Preparing page") }) {
                     statuses.append(status.stringValue)
                 }
@@ -143,8 +191,8 @@ final class PrintAcceptanceHostingTests: XCTestCase {
             }
         }, onSession: { observedSession = $0 })
         defer { disposeNavigationFixture(fixture) }
-        XCTAssertEqual(fixture.preview.document?.pageCount, 1, "The first captured page must display without waiting for a UI batch.")
         try await waitForNavigationReady(fixture)
+        XCTAssertTrue(firstPageBeforeSecondCapture, "The first captured page must display before the second capture, not wait for a UI batch.")
         let elapsed = ProcessInfo.processInfo.systemUptime - started
         let statusChanges = zip(statuses, statuses.dropFirst()).filter { $0 != $1 }.count
         let progressChanges = zip(progressValues, progressValues.dropFirst()).filter { $0 != $1 }.count
