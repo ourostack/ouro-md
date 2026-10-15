@@ -90,6 +90,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     private let zoomInButton = NSButton(title: "Zoom in", target: nil, action: nil)
     private let fitPageButton = NSButton(title: "Fit page", target: nil, action: nil)
     private var pageChangeObserver: NSObjectProtocol?
+    private var scaleChangeObserver: NSObjectProtocol?
     private var previewTask: Task<Void, Never>?
     private var completePreview: CompletePreview?
     private var lastCompleteDocument: PDFDocument?
@@ -101,6 +102,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     private var outputPreparationRunning = false
     private var announcedPhases = Set<String>()
     private var currentPhase: PrintPreviewPhase?
+    private var lastCaptureUIUpdate: TimeInterval?
     private var submitWhenPreviewReady = false
     private var completionDelivered = false
     private var sessionFinished = false
@@ -264,6 +266,10 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
             NotificationCenter.default.removeObserver(observer)
             pageChangeObserver = nil
         }
+        if let observer = scaleChangeObserver {
+            NotificationCenter.default.removeObserver(observer)
+            scaleChangeObserver = nil
+        }
         prepared?.releaseHold()
         prepared = nil
         if Self.active[ObjectIdentifier(parentWindow)] === self {
@@ -298,6 +304,9 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         fitPageButton.action = #selector(fitPagePressed(_:))
         pageLabel.setAccessibilityLabel("Preview page")
         pageChangeObserver = NotificationCenter.default.addObserver(forName: .PDFViewPageChanged, object: previewView, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.updatePreviewNavigation() }
+        }
+        scaleChangeObserver = NotificationCenter.default.addObserver(forName: .PDFViewScaleChanged, object: previewView, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.updatePreviewNavigation() }
         }
 
@@ -406,6 +415,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         preparationFailed = false
         retryButton.isHidden = true
         announcedPhases.removeAll()
+        lastCaptureUIUpdate = nil
         if let prepared, prepared.isLoading {
             prepared.cancelLoading()
         }
@@ -429,7 +439,10 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                 try Task.checkCancellation()
                 guard self.isCurrent(requestedGeneration) else { return }
                 prepared.setPageSettings(self.currentPrintInfo)
-                let phaseObserver: @MainActor (PrintPreviewPhase) -> Void = { [weak self] phase in self?.updatePhase(phase, generation: requestedGeneration) }
+                var captureUIChanged = false
+                let phaseObserver: @MainActor (PrintPreviewPhase) -> Void = { [weak self] phase in
+                    captureUIChanged = self?.updatePhase(phase, generation: requestedGeneration) ?? false
+                }
                 if !prepared.hasCurrentLayout(for: settings) {
                     try await prepared.reload(with: settings, onPhase: phaseObserver)
                 }
@@ -443,16 +456,20 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                     }
                     streamingPreview.insert(page, at: streamingPreview.pageCount)
                     let selectedPage = self.selectedPreviewPageIndex
+                    var replacedDisplay = false
                     if displayingReplacement || count > min(selectedPage, total - 1) {
                         if !displayingReplacement || count == 1 {
                             self.display(streamingPreview, selectedPage: min(selectedPage, total - 1))
                             self.displayState = .current
                             displayingReplacement = true
+                            replacedDisplay = true
                             self.updateStatus(self.captureStatus(completed: count, total: total))
+                            self.updatePrimaryEnabled(!self.submitWhenPreviewReady)
                         }
-                        self.updatePrimaryEnabled(!self.submitWhenPreviewReady)
                     }
-                    self.updatePreviewNavigation()
+                    if captureUIChanged || replacedDisplay {
+                        self.updatePreviewNavigation()
+                    }
                 }
                 guard !Task.isCancelled, self.isCurrent(requestedGeneration) else { return }
                 guard let completePreview = PDFDocument(data: pdfData) else { throw SessionError.missingPreview }
@@ -482,8 +499,8 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         previousPageButton.isEnabled = previewView.canGoToPreviousPage
         nextPageButton.isEnabled = previewView.canGoToNextPage
         let hasPage = (document?.pageCount ?? 0) > 0
-        zoomOutButton.isEnabled = hasPage
-        zoomInButton.isEnabled = hasPage
+        zoomOutButton.isEnabled = hasPage && previewView.scaleFactor > previewView.minScaleFactor + 0.00001
+        zoomInButton.isEnabled = hasPage && previewView.scaleFactor < previewView.maxScaleFactor - 0.00001
         fitPageButton.isEnabled = hasPage
     }
 
@@ -518,13 +535,17 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     }
 
     private func display(_ document: PDFDocument, selectedPage: Int) {
-        let fit = previewView.autoScales
+        let fit = previewView.document == nil || previewView.autoScales
         let scale = previewView.scaleFactor
         previewView.document = document
+        // PDFKit resets scale limits when the document changes.
+        previewView.minScaleFactor = min(0.2, previewView.scaleFactorForSizeToFit)
+        previewView.maxScaleFactor = 4
+        previewView.autoScales = fit
+        previewView.layoutDocumentView()
         if let page = document.page(at: min(max(0, selectedPage), document.pageCount - 1)) {
             previewView.go(to: page)
         }
-        previewView.autoScales = fit
         if !fit { previewView.scaleFactor = scale }
     }
 
@@ -556,11 +577,19 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         }
     }
 
-    private func updatePhase(_ phase: PrintPreviewPhase, generation: Int) {
-        guard isCurrent(generation) else { return }
+    @discardableResult
+    private func updatePhase(_ phase: PrintPreviewPhase, generation: Int) -> Bool {
+        guard isCurrent(generation) else { return false }
         currentPhase = phase
         onPhase?(phase)
-        guard isCurrent(generation) else { return }
+        guard isCurrent(generation) else { return false }
+        if case .capturingPages(let completed, let total) = phase {
+            let now = ProcessInfo.processInfo.systemUptime
+            guard completed <= 1 || completed >= total || lastCaptureUIUpdate.map({ now - $0 >= 0.05 }) ?? true else { return false }
+            lastCaptureUIUpdate = now
+        } else {
+            lastCaptureUIUpdate = nil
+        }
         let prefix = updatingPreviewPrefix
         let announcement: String
         switch phase {
@@ -612,6 +641,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                 NSAccessibility.post(element: progressIndicator, notification: .announcementRequested, userInfo: [.announcement: announcement, .priority: NSAccessibilityPriorityLevel.medium.rawValue])
             }
         }
+        return true
     }
 
     private func failPreparation(_ error: Error, generation: Int) {
@@ -657,15 +687,19 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     @objc private func zoomOutPressed(_ sender: Any?) {
         previewView.autoScales = false
         previewView.scaleFactor = max(previewView.minScaleFactor, previewView.scaleFactor / 1.25)
+        updatePreviewNavigation()
     }
 
     @objc private func zoomInPressed(_ sender: Any?) {
         previewView.autoScales = false
         previewView.scaleFactor = min(previewView.maxScaleFactor, previewView.scaleFactor * 1.25)
+        updatePreviewNavigation()
     }
 
     @objc private func fitPagePressed(_ sender: Any?) {
         previewView.autoScales = true
+        previewView.layoutDocumentView()
+        updatePreviewNavigation()
     }
 
     @objc private func cancelPressed(_ sender: Any?) {
