@@ -8,6 +8,132 @@
   var sources = Object.create(null);
   var noteLayer = null;
   var pageLinks = [];
+  var typographyPrepared = false;
+  var profile = window.__ouroPrintProfiling ? {steps: {}, rectReads: 0, anchorRectReads: 0, anchorQueries: 0} : null;
+  if (profile) {
+    window.__ouroPrintLayoutProfile = profile;
+    var originalRects = Element.prototype.getClientRects;
+    Element.prototype.getClientRects = function () {
+      profile.rectReads += 1;
+      if (this.tagName === "A") { profile.anchorRectReads += 1; }
+      return originalRects.call(this);
+    };
+    var originalQuery = Element.prototype.querySelectorAll;
+    Element.prototype.querySelectorAll = function (selector) {
+      if (selector === "a[href]") { profile.anchorQueries += 1; }
+      return originalQuery.call(this, selector);
+    };
+  }
+
+  function measuredStep(code, operation) {
+    if (!profile) { return operation(); }
+    var start = performance.now();
+    try { return operation(); } finally { profile.steps[code] = (profile.steps[code] || 0) + performance.now() - start; }
+  }
+
+  function prepareTypography() {
+    if (typographyPrepared || !config.typography) { return; }
+    var source = document.createElement("style");
+    source.media = "not all";
+    source.textContent = config.typography.fontCSS + "\n" + config.typography.css;
+    document.head.appendChild(source);
+    var properties = ["font", "font-family", "font-size", "font-size-adjust", "font-weight", "font-style", "font-stretch", "font-variant", "font-variant-ligatures", "font-variant-caps", "font-variant-alternates", "font-variant-east-asian", "font-variant-numeric", "font-variant-position", "font-feature-settings", "font-variation-settings", "font-kerning", "font-optical-sizing", "font-synthesis", "text-rendering", "letter-spacing", "word-spacing", "line-height", "tab-size"];
+    var lengthVariables = new Set();
+    var variableValues = Object.create(null);
+    function collectReferences(value) {
+      value.replace(/var\(\s*(--[\w-]+)/g, function (_, name) { lengthVariables.add(name); return _; });
+    }
+    function collectLengthVariables(rules) {
+      Array.prototype.forEach.call(rules, function (rule) {
+        if (rule.type === CSSRule.STYLE_RULE) {
+          ["font", "font-size", "letter-spacing", "word-spacing", "line-height", "tab-size"].forEach(function (property) { collectReferences(rule.style.getPropertyValue(property)); });
+          Array.prototype.forEach.call(rule.style, function (property) {
+            if (property.indexOf("--") === 0) {
+              if (!variableValues[property]) { variableValues[property] = []; }
+              variableValues[property].push(rule.style.getPropertyValue(property));
+            }
+          });
+          if (rule.cssRules) { collectLengthVariables(rule.cssRules); }
+        } else if (rule.cssRules) {
+          collectLengthVariables(rule.cssRules);
+        }
+      });
+    }
+    function scaleLengths(value) {
+      return value.replace(/("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|(^|[^\w-])(-?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)(px|pt|pc|in|cm|mm|q)\b/gi, function (match, quoted, prefix, number, unit) {
+        return quoted || prefix + "calc(" + number + unit + " * var(--ouro-print-type-scale, 1))";
+      });
+    }
+    function projectRules(rules) {
+      var output = "";
+      Array.prototype.forEach.call(rules, function (rule) {
+        if (rule.type === CSSRule.STYLE_RULE) {
+          var declarations = "";
+          var customProperties = Array.prototype.filter.call(rule.style, function (property) { return property.indexOf("--") === 0 && property.indexOf("--ouro-") !== 0; });
+          properties.concat(customProperties).forEach(function (property) {
+            var value = rule.style.getPropertyValue(property);
+            if (!value) { return; }
+            if (["font", "font-size", "line-height", "letter-spacing", "word-spacing", "tab-size"].includes(property) || lengthVariables.has(property)) { value = scaleLengths(value); }
+            declarations += property + ":" + value + (rule.style.getPropertyPriority(property) ? " !important" : "") + ";";
+          });
+          if (["font", "font-variant", "font-variant-ligatures", "font-feature-settings"].some(function (property) { return rule.style.getPropertyValue(property); })) {
+            var features = rule.style.getPropertyValue("font-feature-settings");
+            var disabledLigatures = '"liga" 0,"clig" 0,"dlig" 0,"hlig" 0';
+            declarations += "font-variant-ligatures:none !important;font-feature-settings:" + (features && features !== "normal" ? features + "," : "") + disabledLigatures + " !important;";
+          }
+          var nested = rule.cssRules ? projectRules(rule.cssRules) : "";
+          var selector = rule.selectorText.replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#editor(?![\w-])/g, function (match) { return match === "#editor" ? ":is(#editor,body[data-ouro-print-editor])" : match; });
+          if (declarations || nested) { output += selector + "{" + declarations + nested + "}\n"; }
+        } else if (rule.type === CSSRule.FONT_FACE_RULE) {
+          var face = rule.cssText;
+          if (config.typography.baseURL) {
+            face = face.replace(/url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s]+))\s*\)/g, function (_, doubleQuoted, singleQuoted, unquoted) {
+              return "url(" + JSON.stringify(new URL(doubleQuoted || singleQuoted || unquoted, config.typography.baseURL).href) + ")";
+            });
+          }
+          output += face + "\n";
+        } else if (rule.type === CSSRule.MEDIA_RULE || rule.type === CSSRule.SUPPORTS_RULE) {
+          output += (rule.type === CSSRule.MEDIA_RULE ? "@media " : "@supports ") + rule.conditionText + "{" + projectRules(rule.cssRules) + "}\n";
+        } else if (rule.type === CSSRule.IMPORT_RULE) {
+          if (!rule.styleSheet) { throw new Error("The print theme's imported typography is unavailable. Use a self-contained theme stylesheet."); }
+          output += projectRules(rule.styleSheet.cssRules);
+        } else if (/^@layer\b/.test(rule.cssText)) {
+          output += rule.cssRules ? rule.cssText.slice(0, rule.cssText.indexOf("{")) + "{" + projectRules(rule.cssRules) + "}\n" : rule.cssText + "\n";
+        }
+      });
+      return output;
+    }
+    try {
+      collectLengthVariables(source.sheet.cssRules);
+      var previousVariableCount = -1;
+      while (previousVariableCount !== lengthVariables.size) {
+        previousVariableCount = lengthVariables.size;
+        Array.from(lengthVariables).forEach(function (name) { (variableValues[name] || []).forEach(collectReferences); });
+      }
+      var projected = document.createElement("style");
+      projected.id = "ouro-print-theme-typography";
+      projected.textContent = projectRules(source.sheet.cssRules);
+      document.head.appendChild(projected);
+    } finally {
+      source.remove();
+    }
+    var root = article();
+    var bodyStyle = getComputedStyle(root);
+    var themeSize = parseFloat(bodyStyle.fontSize);
+    var rootSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    if (!(themeSize > 0) || !(rootSize > 0)) { throw new Error("The print theme must define a positive body font size."); }
+    var scale = Number(config.fontSize) / themeSize;
+    document.documentElement.style.setProperty("--ouro-print-type-scale", String(scale));
+    document.documentElement.style.setProperty("font-size", (rootSize * scale) + "px", "important");
+    document.body.style.setProperty("font-family", bodyStyle.fontFamily, "important");
+    document.body.style.setProperty("font-size", config.fontSize + "px", "important");
+    document.body.style.setProperty("line-height", String(config.lineSpacing), "important");
+    root.style.setProperty("font-size", config.fontSize + "px", "important");
+    root.style.setProperty("line-height", String(config.lineSpacing), "important");
+    typographyPrepared = true;
+    // Real text must participate in layout before awaiting its requested web fonts.
+    void root.offsetHeight;
+  }
 
   function article() {
     return document.querySelector(".markdown-body") || document.body;
@@ -304,7 +430,7 @@
       }
     });
     var body = document.createElement("tbody");
-    rows.forEach(function (row) { body.appendChild(row.cloneNode(true)); });
+    rows.forEach(function (row) { body.appendChild(row); });
     clone.appendChild(body);
     clone.dataset.ouroPrintSplit = "true";
     return clone;
@@ -350,6 +476,12 @@
       });
       if (current.length) { groups.push(current); }
       if (groups.length <= 1) { return; }
+      replacements.push({ table: table, groups: groups });
+    });
+    // Finish all live geometry reads before moving rows out of their source tables.
+    replacements.forEach(function (replacement) {
+      var table = replacement.table;
+      var groups = replacement.groups;
       var container = document.createElement("div");
       container.className = "ouro-print-split-table-group";
       groups.forEach(function (group, index) {
@@ -358,11 +490,8 @@
         wrapper.appendChild(cloneTableFragment(table, group, index === groups.length - 1));
         container.appendChild(wrapper);
       });
-      replacements.push({ table: table, container: container });
-    });
-    replacements.forEach(function (replacement) {
-      replacement.table.parentNode.insertBefore(replacement.container, replacement.table);
-      replacement.table.remove();
+      table.parentNode.insertBefore(container, table);
+      table.remove();
     });
   }
 
@@ -447,15 +576,15 @@
     cachedMetrics = null;
     article().style.transform = "translateX(0px)";
     Array.prototype.forEach.call(article().querySelectorAll("details"), function (details) { details.open = true; });
-    if (config.pageFootnotes) { preparePageFootnotes(); }
-    splitTablesForPages();
-    wrapTablesForPagination();
-    uniquifyClonedIDs(article());
-    if (!config.pageFootnotes) { applyReferences(); }
-    applySectionBreaks();
-    if (config.pageFootnotes) { buildPageFootnotes(); }
+    if (config.pageFootnotes) { measuredStep("prepare_footnotes", preparePageFootnotes); }
+    measuredStep("split_tables", splitTablesForPages);
+    measuredStep("wrap_tables", wrapTablesForPagination);
+    measuredStep("unique_ids", function () { uniquifyClonedIDs(article()); });
+    if (!config.pageFootnotes) { measuredStep("references", applyReferences); }
+    measuredStep("section_breaks", applySectionBreaks);
+    if (config.pageFootnotes) { measuredStep("build_footnotes", buildPageFootnotes); }
     applied = true;
-    return pageMetrics();
+    return measuredStep("geometry", pageMetrics);
   }
 
   function showPage(index) {
@@ -475,6 +604,7 @@
   }
 
   window.OuroPrintLayout = {
+    prepareTypography: prepareTypography,
     apply: applyLayout,
     metrics: pageMetrics,
     showPage: showPage

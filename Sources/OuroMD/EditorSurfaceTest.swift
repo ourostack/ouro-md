@@ -15,14 +15,33 @@ final class EditorSurfaceTester: NSObject {
     private var window: NSWindow!
     private var root: URL!
     private var markdownFile: URL!
+    private var activationObserver: NSObjectProtocol?
     private let printPreferences = ScratchUserDefaults(label: "print-journey")
     private var acceptanceInput: URL? {
         ProcessInfo.processInfo.environment["OURO_PRINT_ACCEPTANCE_FILE"].map { URL(fileURLWithPath: $0) }
     }
+    var requiresFocusedEditor: Bool { acceptanceInput == nil }
+    var activationPolicy: NSApplication.ActivationPolicy { requiresFocusedEditor ? .accessory : .prohibited }
+    var printPresentation: PrintLayoutSession.Presentation { requiresFocusedEditor ? .sheet : .headless }
+
+    static func appliedEditorTypographyScript(mode: String) -> String {
+        let selector = mode == "wysiwyg" ? ".vditor-wysiwyg .vditor-reset" : ".vditor-ir .vditor-reset"
+        return "(function(){var root=document.querySelector('\(selector)'),heading=root&&root.querySelector('h1');return root ? {fontFamily:getComputedStyle(root).fontFamily,headingScale:heading ? parseFloat(getComputedStyle(heading).fontSize)/parseFloat(getComputedStyle(root).fontSize) : null} : null;})()"
+    }
 
     func run() -> Never {
         let app = NSApplication.shared
-        HeadlessHarness.configure()
+        let acceptedPolicy = app.setActivationPolicy(activationPolicy)
+        if !requiresFocusedEditor {
+            guard acceptedPolicy, !app.isActive else {
+                FileHandle.standardError.write(Data("print acceptance could not prohibit application activation\n".utf8))
+                exit(1)
+            }
+            activationObserver = NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: app, queue: .main) { _ in
+                FileHandle.standardError.write(Data("print acceptance violated its non-activation policy\n".utf8))
+                exit(1)
+            }
+        }
         Task { @MainActor in
             let ok = await self.execute()
             self.cleanup()
@@ -91,6 +110,7 @@ final class EditorSurfaceTester: NSObject {
             info.paperSize = NSSize(width: 595, height: 842)
             return true
         }, printPanelChooser: { _ in false })
+        coordinator.printPresentation = printPresentation
         controller.add(coordinator, name: "ouro")
         configuration.userContentController = controller
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
@@ -103,7 +123,9 @@ final class EditorSurfaceTester: NSObject {
         coordinator.webView = webView
         model.bridge = coordinator
 
-        window = HeadlessHarness.offscreenHostActive(webView, size: frame.size)
+        window = requiresFocusedEditor
+            ? HeadlessHarness.offscreenHostActive(webView, size: frame.size)
+            : HeadlessHarness.nonPresentingHost(webView, size: frame.size)
 
         guard let indexURL = OuroResources.web("index", "html") else {
             throw SurfaceError("index.html not found")
@@ -150,22 +172,25 @@ final class EditorSurfaceTester: NSObject {
         }
         _ = await evaluate("(function(){var original=window.ouro.getHTML;window.ouro.getHTML=function(){var start=performance.now();try{return original.apply(this,arguments);}finally{window.__ouroAcceptanceHTMLMilliseconds=performance.now()-start;}};})()")
         FileHandle.standardError.write(Data("local print acceptance: requesting product export\n".utf8))
-        let requested = Date()
+        let trace = PrintPreviewTrace()
+        coordinator.onPrintPhase = { trace.record($0) }
+        coordinator.profilePrintLayout = true
+        defer { coordinator.onPrintPhase = nil; coordinator.profilePrintLayout = false }
         var exported: Bool?
         model.exportPDF(to: output) { exported = $0 }
-        guard await waitUntil(timeout: 20, condition: { self.window.attachedSheet?.title == "Export PDF Layout" }),
-              let panel = window.attachedSheet, let view = panel.contentView,
+        guard await waitUntil(timeout: 20, condition: { PrintLayoutSession.activeSession(for: self.window) != nil }),
+              let panel = PrintLayoutSession.activeSession(for: window)?.panelForTesting, let view = panel.contentView,
               let button = descendants(of: view).compactMap({ $0 as? NSButton }).first(where: { $0.title == "Export PDF" }),
               let preview = descendants(of: view).compactMap({ $0 as? PDFView }).first,
               let font = descendants(of: view).compactMap({ $0 as? NSTextField }).first(where: { $0.accessibilityLabel() == "Font size (pt)" }) else {
             throw SurfaceError("Product print layout did not open for the local document.")
         }
-        let sheetSeconds = Date().timeIntervalSince(requested)
-        panel.alphaValue = 0
+        let preparationViewSeconds = trace.elapsedSeconds
+        try verifyNonPresentingWindows(panel: panel)
         guard await waitUntil(timeout: 10, condition: { (preview.document?.pageCount ?? 0) > 0 }) else {
             throw SurfaceError("First print preview page did not appear promptly.")
         }
-        let firstPageSeconds = Date().timeIntervalSince(requested)
+        let firstPageSeconds = trace.elapsedSeconds
         let progressive = !printPreviewIsReady(in: view)
         let progress = descendants(of: view).compactMap { $0 as? NSTextField }.first { $0.stringValue.hasPrefix("Preparing page ") }?.stringValue ?? "Unknown progress"
         FileHandle.standardError.write(Data("local print acceptance: firstPageSeconds=\(firstPageSeconds) \(progress)\n".utf8))
@@ -179,21 +204,29 @@ final class EditorSurfaceTester: NSObject {
               let initialDocument = preview.document else {
             throw SurfaceError("Full document print preview did not finish.")
         }
-        let readySeconds = Date().timeIntervalSince(requested)
+        let readySeconds = trace.elapsedSeconds
+        let initialPhaseEvents = trace.events
+        let initialProfile = try await PrintLayoutSession.activeSession(for: window)?.prepared?.webView.evaluateJavaScript("window.__ouroPrintLayoutProfile")
+        let editorFontFamily = (await evaluate(Self.appliedEditorTypographyScript(mode: model.mode)) as? [String: Any])?["fontFamily"] as? String
+        let printFontFamily = try await PrintLayoutSession.activeSession(for: window)?.prepared?.webView.evaluateJavaScript("getComputedStyle(document.querySelector('.markdown-body')).fontFamily") as? String
+        guard let editorFontFamily, let printFontFamily, editorFontFamily == printFontFamily else {
+            throw SurfaceError("The print copy did not inherit the applied editor theme's body font.")
+        }
         let initialPages = initialDocument.pageCount
         FileHandle.standardError.write(Data("local print acceptance: readySeconds=\(readySeconds) pages=\(initialPages)\n".utf8))
-        let changed = Date()
+        let changed = ProcessInfo.processInfo.systemUptime
         font.stringValue = String(settings.fontSize + 1)
         _ = font.sendAction(font.action, to: font.target)
-        guard !button.isEnabled,
+        guard preview.document === initialDocument,
+              !self.printPreviewIsReady(in: view),
               await waitUntil(timeout: 60, condition: { self.printPreviewIsReady(in: view) }),
               let changedDocument = preview.document,
               changedDocument !== initialDocument,
-              changedDocument.pageCount != initialPages else {
+              PrintLayoutSession.activeSession(for: window)?.prepared?.settings.fontSize == settings.fontSize + 1 else {
             let status = descendants(of: view).compactMap { $0 as? NSTextField }.filter { !$0.isEditable }.map(\.stringValue).joined(separator: "; ")
             throw SurfaceError("Font-size control did not produce a complete changed layout: \(status)")
         }
-        let changedSeconds = Date().timeIntervalSince(changed)
+        let changedSeconds = ProcessInfo.processInfo.systemUptime - changed
         let changedPages = changedDocument.pageCount
         font.stringValue = String(settings.fontSize)
         _ = font.sendAction(font.action, to: font.target)
@@ -211,21 +244,41 @@ final class EditorSurfaceTester: NSObject {
             if (pdf.page(at: index)?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { emptyPages += 1 }
         }
         let unchanged = try Data(contentsOf: markdownFile) == before
+        try verifyNonPresentingWindows(panel: panel)
         FileHandle.standardError.write(Data("local print acceptance: bytes=\(before.count) pages=\(pdf.pageCount) emptyPages=\(emptyPages) sourceUnchanged=\(unchanged)\n".utf8))
         let audit = try await auditLocalPrint(pdf: pdf, settings: settings)
         let report: [String: Any] = [
             "inputBytes": before.count, "inputSHA256": Self.sha256(before), "pdfSHA256": Self.sha256(try Data(contentsOf: output)), "fontSize": settings.fontSize, "marginPt": settings.margins.top,
-            "sheetSeconds": sheetSeconds, "firstPageSeconds": firstPageSeconds, "readySeconds": readySeconds,
+            "preparationViewSeconds": preparationViewSeconds, "firstPageSeconds": firstPageSeconds, "readySeconds": readySeconds,
+            "headlessPresentation": true,
+            "hostAndPanelCannotTakeFocus": true,
+            "printPanelNeverOrdered": !panel.isVisible,
+            "hostAlpha": window.alphaValue,
             "firstPageWhilePreparing": progressive, "changedFontReadySeconds": changedSeconds,
             "initialPages": initialPages, "changedFontPages": changedPages, "exportedPages": pdf.pageCount,
             "emptyPages": emptyPages, "sourceUnchanged": unchanged,
+            "hostRequiresEditorActivation": requiresFocusedEditor,
+            "probeActivationPolicy": NSApplication.shared.activationPolicy().rawValue,
+            "probeApplicationActive": NSApplication.shared.isActive,
             "editorHTMLMilliseconds": (await evaluate("window.__ouroAcceptanceHTMLMilliseconds")) as? Double ?? -1,
+            "phaseEvents": initialPhaseEvents,
+            "layoutProfile": initialProfile ?? [:],
+            "themeBodyFontMatchesEditor": true,
             "contentAudit": audit
         ]
         if let path = environment["OURO_PRINT_ACCEPTANCE_REPORT"] {
             try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]).write(to: URL(fileURLWithPath: path), options: .atomic)
         }
         return pdf.pageCount == initialPages && emptyPages == 0 && unchanged && progressive && firstPageSeconds < 10 && readySeconds < 60 && changedSeconds < 60 && audit["missingWords"] == 0 && audit["missingCells"] == 0 && audit["headingsNotAtPageStart"] == 0 && audit["pagesWithInkOutsideMargins"] == 0
+    }
+
+    private func verifyNonPresentingWindows(panel: NSPanel) throws {
+        guard !NSApp.isActive, !panel.isVisible, panel.alphaValue == 0,
+              !panel.canBecomeKey, !panel.canBecomeMain, !panel.isKeyWindow, !panel.isMainWindow,
+              window.alphaValue == 0, !window.canBecomeKey, !window.canBecomeMain,
+              !window.isKeyWindow, !window.isMainWindow, window.attachedSheet == nil else {
+            throw SurfaceError("Headless print acceptance attempted window presentation or focus.")
+        }
     }
 
     private func capturePrintGeometry(to path: String) async throws {
@@ -263,6 +316,52 @@ final class EditorSurfaceTester: NSObject {
         throw SurfaceError("Prepared print web view was not available for geometry diagnostics.")
     }
 
+    static func wrappedCellWordCount(_ word: String, pageTexts: [String], verifiedCells: [String]) throws -> Int {
+        guard !word.isEmpty else { return 0 }
+        let start = #"(?<![\p{L}\p{N}])"#
+        let end = #"(?![\p{L}\p{N}])"#
+        let source = try NSRegularExpression(pattern: start + NSRegularExpression.escapedPattern(for: word) + end)
+        let tokens = try NSRegularExpression(pattern: #"[\p{L}\p{N}]+"#)
+        func normalized(_ text: String) -> String {
+            text.replacingOccurrences(of: #"\[\s*S\s*[\d\s]+\]"#, with: "", options: .regularExpression).precomposedStringWithCompatibilityMapping
+        }
+        func tokenRanges(_ text: String) -> [NSRange] {
+            tokens.matches(in: text, range: NSRange(text.startIndex..., in: text)).map(\.range)
+        }
+        let cellContexts = verifiedCells.compactMap { cell -> String? in
+            let text = normalized(cell)
+            let ranges = tokenRanges(text)
+            guard ranges.count > 1, source.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) != nil else { return nil }
+            return ranges.map { (text as NSString).substring(with: $0) }.joined()
+        }
+        guard !cellContexts.isEmpty else { return 0 }
+        let wrapped = try NSRegularExpression(pattern: start + word.map { NSRegularExpression.escapedPattern(for: String($0)) }.joined(separator: #"\n?"#) + end)
+        return pageTexts.map { stream in
+            let text = normalized(stream) as NSString
+            let ranges = tokenRanges(text as String)
+            let compact = ranges.map { text.substring(with: $0) }.joined() as NSString
+            let offsets = ranges.flatMap { Array($0.location..<NSMaxRange($0)) }
+            let candidates = wrapped.matches(in: text as String, range: NSRange(location: 0, length: text.length)).filter {
+                text.substring(with: $0.range).contains("\n")
+            }
+            var recovered = Set<NSRange>()
+            for cell in Set(cellContexts) {
+                var search = NSRange(location: 0, length: compact.length)
+                while search.length > 0 {
+                    let found = compact.range(of: cell, options: [], range: search)
+                    guard found.location != NSNotFound else { break }
+                    let first = offsets[found.location]
+                    let last = offsets[NSMaxRange(found) - 1] + 1
+                    for candidate in candidates where candidate.range.location >= first && NSMaxRange(candidate.range) <= last {
+                        recovered.insert(candidate.range)
+                    }
+                    search = NSRange(location: found.location + 1, length: compact.length - found.location - 1)
+                }
+            }
+            return recovered.count
+        }.max() ?? 0
+    }
+
     private func auditLocalPrint(pdf: PDFDocument, settings: PrintLayoutSettings) async throws -> [String: Int] {
         guard let expected = await evaluate("""
         (function(){
@@ -296,7 +395,7 @@ final class EditorSurfaceTester: NSObject {
         let actualText = pageTexts.joined(separator: "\n")
         let actualWords = words(actualText).reduce(into: [String: Int]()) { $0[$1, default: 0] += 1 }
         let expectedWords = words(body).reduce(into: [String: Int]()) { $0[$1, default: 0] += 1 }
-        let missingWords = expectedWords.reduce(0) { $0 + max(0, $1.value - (actualWords[$1.key] ?? 0)) }
+        let rawMissingWords = expectedWords.reduce(0) { $0 + max(0, $1.value - (actualWords[$1.key] ?? 0)) }
         let actualCompact = compact(actualText) as NSString
         let initiallyMissing = cells.filter { actualCompact.range(of: compact($0)).location == NSNotFound }
         var columnStreams: [NSString] = []
@@ -323,6 +422,17 @@ final class EditorSurfaceTester: NSObject {
             return !columnStreams.contains { $0.range(of: text).location != NSNotFound }
         }
         let missingCells = missing.count
+        let missingCellText = Set(missing.map(compact))
+        let verifiedCells = cells.filter { !missingCellText.contains(compact($0)) }
+        var verifiedWrappedWords = 0
+        for (word, expectedCount) in expectedWords {
+            let shortage = max(0, expectedCount - (actualWords[word] ?? 0))
+            if shortage > 0 {
+                let cellStreams = [actualText] + columnPageTexts.sorted { $0.key < $1.key }.map { $0.value.joined(separator: "\n") }
+                verifiedWrappedWords += min(shortage, try Self.wrappedCellWordCount(word, pageTexts: cellStreams, verifiedCells: verifiedCells))
+            }
+        }
+        let missingWords = rawMissingWords - verifiedWrappedWords
         if let path = ProcessInfo.processInfo.environment["OURO_PRINT_ACCEPTANCE_DIAGNOSTICS"] {
             let compactPages = pageTexts.map(compact)
             let examplePages = Set(missing.prefix(8).compactMap { cell in
@@ -379,7 +489,7 @@ final class EditorSurfaceTester: NSObject {
             }
             if outside { pagesWithInkOutsideMargins += 1 }
         }
-        return ["expectedWords": expectedWords.values.reduce(0, +), "missingWords": missingWords, "tableCells": cells.count, "missingCells": missingCells, "sectionHeadings": headings.count, "headingsNotAtPageStart": headingsNotAtPageStart, "rasterAuditedPages": pdf.pageCount, "pagesWithInkOutsideMargins": pagesWithInkOutsideMargins]
+        return ["expectedWords": expectedWords.values.reduce(0, +), "missingWords": missingWords, "rawTokenMissingWords": rawMissingWords, "verifiedCellWrappedWords": verifiedWrappedWords, "tableCells": cells.count, "missingCells": missingCells, "sectionHeadings": headings.count, "headingsNotAtPageStart": headingsNotAtPageStart, "rasterAuditedPages": pdf.pageCount, "pagesWithInkOutsideMargins": pagesWithInkOutsideMargins]
     }
 
     private func verifyMarkdownFileDropClassification() throws -> Bool {
@@ -467,6 +577,8 @@ final class EditorSurfaceTester: NSObject {
 
     private func verifySharedPDFJourney() async throws -> Bool {
         let originalBytes = try Data(contentsOf: markdownFile)
+        guard let headingScale = (await evaluate(Self.appliedEditorTypographyScript(mode: model.mode)) as? [String: Any])?["headingScale"] as? Double,
+              headingScale.isFinite, headingScale > 0 else { throw SurfaceError("The applied theme's heading scale is unavailable.") }
         let output = root.appendingPathComponent("shared-layout.pdf")
         var result: Result<Bool, Error>?
         coordinator.exportPDF(to: output) { result = $0 }
@@ -509,7 +621,7 @@ final class EditorSurfaceTester: NSObject {
               await waitUntil(timeout: 2, condition: { PrintLayoutSession.activeCountForTesting == 0 && PreparedPrintDocument.retainedCountForTesting == 0 }) else { return false }
         let settingsSaved = PrintLayoutSettingsStore(preferences: printPreferences.defaults).load().fontSize == 20
         let printedFontMatches = pdf.page(at: 0)?.attributedString?.attributes(at: 0, effectiveRange: nil)[.font] as? NSFont
-        let finalSettingsPrinted = abs((printedFontMatches?.pointSize ?? 0) - 40) < 1
+        let finalSettingsPrinted = abs((printedFontMatches?.pointSize ?? 0) - (20 * headingScale)) < 1
         let selectedPaperPrinted = abs((pdf.page(at: 0)?.bounds(for: .mediaBox).width ?? 0) - 595) < 1
             && abs((pdf.page(at: 0)?.bounds(for: .mediaBox).height ?? 0) - 842) < 1
         let unchangedSource = try Data(contentsOf: markdownFile) == originalBytes
@@ -605,6 +717,10 @@ final class EditorSurfaceTester: NSObject {
         printPreferences.remove()
         model?.teardown()
         window?.orderOut(nil)
+        if let activationObserver {
+            NotificationCenter.default.removeObserver(activationObserver)
+            self.activationObserver = nil
+        }
         try? FileManager.default.removeItem(at: root)
     }
 

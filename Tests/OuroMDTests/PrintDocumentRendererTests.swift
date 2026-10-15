@@ -1,10 +1,211 @@
 import AppKit
 import PDFKit
+import WebKit
 import XCTest
 @testable import OuroMD
 
 @MainActor
+private final class DelayedPrintImageHandler: NSObject, WKURLSchemeHandler {
+    private var stopped = Set<ObjectIdentifier>()
+    private(set) var finished = false
+    let delay: UInt64
+
+    init(delay: UInt64) { self.delay = delay }
+
+    func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
+        let id = ObjectIdentifier(urlSchemeTask)
+        Task { @MainActor in
+            do { try await Task.sleep(nanoseconds: delay) } catch { return }
+            guard !stopped.contains(id), let url = urlSchemeTask.request.url else { return }
+            let data = Data("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\"><rect width=\"64\" height=\"64\" fill=\"#0000ff\"/></svg>".utf8)
+            urlSchemeTask.didReceive(URLResponse(url: url, mimeType: "image/svg+xml", expectedContentLength: data.count, textEncodingName: "utf-8"))
+            urlSchemeTask.didReceive(data)
+            finished = true
+            urlSchemeTask.didFinish()
+        }
+    }
+
+    func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {
+        stopped.insert(ObjectIdentifier(urlSchemeTask))
+    }
+}
+
+@MainActor
 final class PrintDocumentRendererTests: XCTestCase {
+    func testPreparationWaitsForActualImageResourceAndPreservesItsPaint() async throws {
+        try await verifyImageResource(delay: 400_000_000, rejectingDecode: false)
+    }
+
+    func testRejectingDecodeDoesNotPreventAnAlreadyLoadedImageFromPrinting() async throws {
+        try await verifyImageResource(delay: 0, rejectingDecode: true)
+    }
+
+    private func verifyImageResource(delay: UInt64, rejectingDecode: Bool) async throws {
+        let handler = DelayedPrintImageHandler(delay: delay)
+        let configuration = WKWebViewConfiguration()
+        configuration.setURLSchemeHandler(handler, forURLScheme: "print-fixture")
+        let script = try XCTUnwrap(PrintLayoutScriptLoader.load()) + (rejectingDecode ? ";HTMLImageElement.prototype.decode=function(){return Promise.reject(new Error('Synthetic decode rejection'));};" : "")
+        let prepared = try await PrintDocumentRenderer(scriptProvider: { script }, webViewConfiguration: configuration).prepareDocument(bodyHTML: "<img width=\"64\" height=\"64\" src=\"print-fixture://image/blue.svg\" alt=\"Blue print fixture\">", title: "Image readiness", baseURL: nil, settings: .default)
+        defer { prepared.releaseHold() }
+        XCTAssertTrue(handler.finished, "WebKit navigation must finish loading image resources before pagination.")
+        let geometry = try await prepared.webView.evaluateJavaScript("Array.from(document.images).map(image=>[image.complete,image.naturalWidth,image.naturalHeight,image.getBoundingClientRect().width,image.getBoundingClientRect().height])")
+        let data = try await prepared.createPDFData()
+        let pdf = try XCTUnwrap(PDFDocument(data: data))
+        let image = try XCTUnwrap(pdf.page(at: 0)?.thumbnail(of: NSSize(width: 150, height: 200), for: .mediaBox))
+        let bitmap = try XCTUnwrap(image.tiffRepresentation.flatMap { NSBitmapImageRep(data: $0) })
+        var bluePixels = 0
+        var peakBlueDominance = 0.0
+        for x in 0..<bitmap.pixelsWide {
+            for y in 0..<bitmap.pixelsHigh {
+                if let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) {
+                    peakBlueDominance = max(peakBlueDominance, color.blueComponent - max(color.redComponent, color.greenComponent))
+                    if color.blueComponent - max(color.redComponent, color.greenComponent) > 0.5 { bluePixels += 1 }
+                }
+            }
+        }
+        XCTAssertGreaterThan(bluePixels, 100, "A ready PDF must contain the loaded image's blue ink, not only an empty image box. Geometry: \(String(describing: geometry)); peak blue dominance: \(peakBlueDominance); bitmap \(bitmap.pixelsWide)x\(bitmap.pixelsHigh).")
+    }
+
+    func testWebContentTerminationResolvesPendingLoadAndAllowsRetry() async throws {
+        let prepared = PreparedPrintDocument(bodyHTML: "<p>Retry terminated load</p>", title: "Termination", baseURL: nil, settings: .default, script: try XCTUnwrap(PrintLayoutScriptLoader.load()), printInfo: NSPrintInfo())
+        defer { prepared.releaseHold() }
+        let loading = Task { try await prepared.load() }
+        await Task.yield()
+        prepared.webViewWebContentProcessDidTerminate(prepared.webView)
+        do {
+            try await loading.value
+            XCTFail("Termination must resolve the pending load with an explicit error.")
+        } catch {
+            guard case PrintDocumentRenderer.RenderError.webContentTerminated = error else { return XCTFail("Unexpected termination error: \(error)") }
+        }
+        try await prepared.reload(with: .default)
+        XCTAssertTrue(prepared.hasCurrentLayout(for: .default))
+    }
+
+    func testWebContentTerminationResolvesPendingCapture() async throws {
+        var settings = PrintLayoutSettings.default
+        settings.headingBreakLevel = 2
+        let body = (1...100).map { "<h2>Section \($0)</h2><p>Terminate capture</p>" }.joined()
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: body, title: "Capture termination", baseURL: nil, settings: settings)
+        defer { prepared.releaseHold() }
+        let capturing = Task { try await prepared.createPDFData() }
+        for _ in 0..<1000 {
+            if prepared.pendingWebOperationCountForTesting > 0 { break }
+            await Task.yield()
+        }
+        XCTAssertGreaterThan(prepared.pendingWebOperationCountForTesting, 0)
+        prepared.webViewWebContentProcessDidTerminate(prepared.webView)
+        do {
+            _ = try await capturing.value
+            XCTFail("Termination must resolve a pending capture, not leave its task suspended.")
+        } catch {
+            guard case PrintDocumentRenderer.RenderError.webContentTerminated = error else { return XCTFail("Unexpected capture termination error: \(error)") }
+        }
+        XCTAssertEqual(prepared.pendingWebOperationCountForTesting, 0)
+    }
+
+    func testPreparationWaitsForActualFontReadinessInsteadOfAFixedSettlingDelay() async throws {
+        let script = try XCTUnwrap(PrintLayoutScriptLoader.load()) + """
+        ;Object.defineProperty(document.fonts,'ready',{get:function(){return new Promise(function(resolve){setTimeout(function(){window.__ouroFontsReadyForTest=true;resolve();},600);});}});
+        """
+        let prepared = try await PrintDocumentRenderer(scriptProvider: { script }).prepareDocument(bodyHTML: "<p>Wait for font readiness</p>", title: "Font readiness", baseURL: nil, settings: .default)
+        defer { prepared.releaseHold() }
+        let ready = try await prepared.webView.evaluateJavaScript("window.__ouroFontsReadyForTest === true") as? Bool
+        XCTAssertEqual(ready, true, "Pagination must await real font readiness, not an arbitrary settling sleep.")
+    }
+
+    func testOrientationAloneInvalidatesTheCachedLayout() async throws {
+        let info = NSPrintInfo()
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>Orientation identity</p>", title: "Orientation", baseURL: nil, settings: .default, printInfo: info)
+        defer { prepared.releaseHold() }
+        XCTAssertTrue(prepared.hasCurrentLayout(for: .default))
+        let selected = try XCTUnwrap(info.copy() as? NSPrintInfo)
+        selected.orientation = info.orientation == .portrait ? .landscape : .portrait
+        selected.paperSize = info.paperSize
+        prepared.setPageSettings(selected)
+        XCTAssertFalse(prepared.hasCurrentLayout(for: .default))
+        try await prepared.reload(with: .default)
+        XCTAssertTrue(prepared.hasCurrentLayout(for: .default))
+    }
+
+    func testCancellationDuringWebKitLoadResolvesAndRetiresExactlyOnce() async throws {
+        let originalHolds = PreparedPrintDocument.retainedCountForTesting
+        let prepared = PreparedPrintDocument(bodyHTML: "<p>Cancelled load</p>", title: "Cancel load", baseURL: nil, settings: .default, script: try XCTUnwrap(PrintLayoutScriptLoader.load()), printInfo: NSPrintInfo())
+        let task = Task { try await prepared.load() }
+        await Task.yield()
+        prepared.cancelLoading()
+        do {
+            try await task.value
+            XCTFail("A cancelled loading continuation must not return a prepared layout.")
+        } catch {
+            XCTAssertTrue(error is CancellationError)
+        }
+        prepared.releaseHold()
+        prepared.releaseHold()
+        XCTAssertEqual(PreparedPrintDocument.retainedCountForTesting, originalHolds)
+        XCTAssertNil(prepared.webView.window)
+    }
+
+    func testPreparationReportsLoadThenPagination() async throws {
+        var phases: [PrintPreviewPhase] = []
+        let prepared = try await PrintDocumentRenderer().prepareDocument(
+            bodyHTML: "<p>Observe real preparation.</p>",
+            title: "Preparation phases",
+            baseURL: nil,
+            settings: .default,
+            onPhase: { phases.append($0) }
+        )
+        defer { prepared.releaseHold() }
+        XCTAssertEqual(phases, [.loadingHTML, .paginating])
+        XCTAssertGreaterThan(prepared.layoutMetrics.contentWidth, 0)
+        XCTAssertGreaterThan(prepared.layoutMetrics.pageCount, 0)
+    }
+
+    func testCaptureReportsAssemblyBeforeReturningCompletePDF() async throws {
+        var settings = PrintLayoutSettings.default
+        settings.citationMode = .originalLinks
+        settings.headingBreakLevel = 2
+        let prepared = try await PrintDocumentRenderer().prepareDocument(
+            bodyHTML: "<h2>First</h2><p>FIRST-PHASE-TOKEN</p><h2>Second</h2><p>SECOND-PHASE-TOKEN</p>",
+            title: "Capture phases",
+            baseURL: nil,
+            settings: settings
+        )
+        defer { prepared.releaseHold() }
+        var phases: [PrintPreviewPhase] = []
+        let data = try await prepared.createPDFData(onPhase: { phases.append($0) })
+        let pdf = try XCTUnwrap(PDFDocument(data: data))
+        XCTAssertEqual(phases, [
+            .capturingPages(completed: 0, total: 2),
+            .capturingPages(completed: 1, total: 2),
+            .capturingPages(completed: 2, total: 2),
+            .assemblingPDF
+        ])
+        XCTAssertFalse(phases.contains(.ready), "Only the session can seal the current preview and declare it ready.")
+        XCTAssertEqual(pdf.pageCount, 2)
+        XCTAssertTrue(pdf.page(at: 0)?.string?.contains("FIRST-PHASE-TOKEN") == true)
+        XCTAssertTrue(pdf.page(at: 1)?.string?.contains("SECOND-PHASE-TOKEN") == true)
+    }
+
+    func testOptionalPhaseObservationDoesNotChangeCompleteOutput() async throws {
+        let body = "<h2>Complete output</h2><p>OBSERVED-PHASE-TOKEN <a href=\"https://example.com/phase-source\">source</a></p>"
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: body, title: "Optional observer", baseURL: nil, settings: .default)
+        defer { prepared.releaseHold() }
+        let plainData = try await prepared.createPDFData()
+        let plain = try XCTUnwrap(PDFDocument(data: plainData))
+        var phases: [PrintPreviewPhase] = []
+        let observedData = try await prepared.createPDFData(onPhase: { phases.append($0) })
+        let observed = try XCTUnwrap(PDFDocument(data: observedData))
+        XCTAssertEqual(plain.pageCount, observed.pageCount)
+        XCTAssertEqual(plain.string, observed.string)
+        XCTAssertTrue(observed.string?.contains("OBSERVED-PHASE-TOKEN") == true)
+        for index in 0..<plain.pageCount {
+            XCTAssertEqual(plain.page(at: index)?.bounds(for: .mediaBox), observed.page(at: index)?.bounds(for: .mediaBox))
+            XCTAssertEqual(plain.page(at: index)?.annotations.compactMap(\.url), observed.page(at: index)?.annotations.compactMap(\.url))
+        }
+        XCTAssertEqual(phases.last, .assemblingPDF)
+    }
+
     func testEndnotesIncludeLocalAndRelativeCitationTargets() async throws {
         let body = "<p>Sources: <a href=\"https://example.com/source\">Web source</a>, <a href=\"file:///tmp/local-source.md\">Local source</a>, <a href=\"relative-source.md\">Relative source</a>.</p>"
         var settings = PrintLayoutSettings.default

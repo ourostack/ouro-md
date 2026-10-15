@@ -3,9 +3,9 @@ import Foundation
 import OuroMDCore
 
 enum PrintLayoutHTMLDocument {
-    static func wrap(body: String, title: String, settings: PrintLayoutSettings, script: String, paperSize: NSSize = NSSize(width: 612, height: 792)) -> String {
+    static func wrap(body: String, title: String, settings: PrintLayoutSettings, script: String, paperSize: NSSize = NSSize(width: 612, height: 792), typography: PrintThemeTypography? = nil) -> String {
         let normalized = settings.normalized
-        let config = printLayoutConfiguration(for: normalized, paperSize: paperSize)
+        let config = printLayoutConfiguration(for: normalized, paperSize: paperSize, typography: typography)
         return """
         <!DOCTYPE html>
         <html lang="en">
@@ -23,11 +23,11 @@ enum PrintLayoutHTMLDocument {
         \(script)
         </script>
         </head>
-        <body>
+        <body data-ouro-print-editor>
         <div class="ouro-print-viewport">
-          <div class="ouro-print-root">
+          <div class="ouro-print-root vditor-\(typography?.editorMode.rawValue ?? "ir")">
             <div class="ouro-print-content-frame">
-              <article class="markdown-body ouro-print-pages">
+              <article class="markdown-body ouro-print-pages vditor-reset">
               \(body)
               </article>
             </div>
@@ -38,8 +38,8 @@ enum PrintLayoutHTMLDocument {
         """
     }
 
-    private static func printLayoutConfiguration(for settings: PrintLayoutSettings, paperSize: NSSize) -> String {
-        let payload: [String: Any] = [
+    private static func printLayoutConfiguration(for settings: PrintLayoutSettings, paperSize: NSSize, typography: PrintThemeTypography?) -> String {
+        var payload: [String: Any] = [
             "pageWidth": paperSize.width,
             "pageHeight": paperSize.height,
             "pageContentWidth": paperSize.width - settings.margins.left - settings.margins.right,
@@ -51,13 +51,18 @@ enum PrintLayoutHTMLDocument {
             "pageGap": 24.0,
             "includeExternalLinkReferences": settings.effectiveCitationMode == .endnotes,
             "pageFootnotes": settings.effectiveCitationMode == .pageFootnotes,
-            "headingBreakLevel": settings.headingBreakLevel
+            "headingBreakLevel": settings.headingBreakLevel,
+            "fontSize": settings.fontSize,
+            "lineSpacing": settings.lineSpacing
         ]
+        if let typography {
+            payload["typography"] = ["css": typography.css, "fontCSS": typography.fontCSS, "baseURL": typography.baseURL?.absoluteString ?? ""]
+        }
         guard let data = try? JSONSerialization.data(withJSONObject: payload),
               let json = String(data: data, encoding: .utf8) else {
             return "{\"includeExternalLinkReferences\":false}"
         }
-        return json
+        return json.replacingOccurrences(of: "<", with: "\\u003c")
     }
 
     private static func baseCSS(for settings: PrintLayoutSettings, paperSize: NSSize) -> String {
@@ -81,9 +86,14 @@ enum PrintLayoutHTMLDocument {
         }
         body {
           margin: 0;
+          padding: 0;
           background: #ffffff;
           color: #111111;
           font: \(cssLength(normalized.fontSize))px/\(cssNumber(normalized.lineSpacing)) Georgia, "Times New Roman", serif;
+        }
+        .markdown-body, .markdown-body * {
+          /* WebKit's bundled-font ligature mappings corrupt searchable PDF text. */
+          font-variant-ligatures: none !important;
         }
         .ouro-print-viewport {
           width: var(--ouro-page-width);
