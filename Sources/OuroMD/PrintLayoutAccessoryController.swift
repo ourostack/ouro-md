@@ -67,11 +67,13 @@ final class PrintLayoutAccessoryController: NSViewController {
         citationSelector.target = self
         citationSelector.action = #selector(choiceChanged(_:))
         citationSelector.setAccessibilityLabel("Citations")
+        citationSelector.setContentCompressionResistancePriority(.required, for: .horizontal)
         citationSelector.toolTip = "Generated link sources include web, email, phone and local or relative file paths."
         headingSelector.addItems(withTitles: ["None"] + (1...6).map { "Heading \($0)" })
         headingSelector.target = self
         headingSelector.action = #selector(choiceChanged(_:))
         headingSelector.setAccessibilityLabel("New page before heading")
+        headingSelector.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         validationLabel.textColor = .systemRed
         validationLabel.lineBreakMode = .byWordWrapping
@@ -93,7 +95,7 @@ final class PrintLayoutAccessoryController: NSViewController {
         grid.xPlacement = .fill
         grid.yPlacement = .center
         grid.column(at: 0).xPlacement = .trailing
-        grid.column(at: 1).xPlacement = .fill
+        grid.column(at: 1).xPlacement = .leading
 
         let stack = NSStackView(views: [pageSetupButton, grid, validationLabel])
         stack.orientation = .vertical
@@ -108,7 +110,7 @@ final class PrintLayoutAccessoryController: NSViewController {
             stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             stack.topAnchor.constraint(equalTo: container.topAnchor),
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            stack.bottomAnchor.constraint(lessThanOrEqualTo: container.bottomAnchor),
             topField.widthAnchor.constraint(equalToConstant: 80),
             rightField.widthAnchor.constraint(equalToConstant: 80),
             bottomField.widthAnchor.constraint(equalToConstant: 80),
