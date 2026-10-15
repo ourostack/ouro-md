@@ -30,9 +30,12 @@ struct PrintThemeTypography {
         self.editorMode = editorMode
     }
 
-    init(theme: Theme, editorMode: EditorMode = .ir) throws {
+    init(theme: Theme, editorMode: EditorMode = .ir, onFontResourcesPrepared: ((Double) -> Void)? = nil) throws {
         guard let baseURL = OuroResources.web("index", "html") else { throw ResourceError.missingEditorBase }
-        self.init(css: theme.editorCSS, fontCSS: try Self.bundledFontCSS.get(), baseURL: baseURL, editorMode: editorMode)
+        let fontStart = onFontResourcesPrepared == nil ? nil : ProcessInfo.processInfo.systemUptime
+        let fonts = try Self.bundledFontCSS.get()
+        if let fontStart { onFontResourcesPrepared?((ProcessInfo.processInfo.systemUptime - fontStart) * 1_000) }
+        self.init(css: theme.editorCSS, fontCSS: fonts, baseURL: baseURL, editorMode: editorMode)
     }
 
     private static let bundledFontCSS: Result<String, Error> = Result {

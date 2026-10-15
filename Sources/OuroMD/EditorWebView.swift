@@ -254,8 +254,29 @@ struct EditorWebView: NSViewRepresentable {
 
         private func getHTML(profilePreparation: Bool, _ completion: @escaping (String?) -> Void) {
             guard let webView else { completion(nil); return }
-            webView.evaluateJavaScript("window.ouro ? window.ouro.getHTML(\(profilePreparation)) : null") { result, _ in
-                completion(result as? String)
+            let requested = profilePreparation ? floor(Date().timeIntervalSince1970 * 1_000) : 0
+            let script = profilePreparation ? """
+            (function(){
+              var entered=Date.now();
+              var body=window.ouro ? window.ouro.getHTML(true) : null;
+              return {body:body,entered:entered,finished:Date.now(),profile:window.__ouroPrintHTMLProfile};
+            })()
+            """ : "window.ouro ? window.ouro.getHTML(false) : null"
+            webView.evaluateJavaScript(script) { [weak self] result, _ in
+                guard profilePreparation else { completion(result as? String); return }
+                let returned = floor(Date().timeIntervalSince1970 * 1_000)
+                let payload = result as? [String: Any]
+                if let entered = payload?["entered"] as? Double,
+                   let finished = payload?["finished"] as? Double,
+                   let profile = payload?["profile"] as? [String: Double],
+                   let render = profile["render_html"], let normalize = profile["normalize_headings"] {
+                    // Queue and return transfer use millisecond wall clocks across the WebKit process boundary.
+                    self?.printPreparationProfile["html_queue"] = entered - requested
+                    self?.printPreparationProfile["html_render"] = render
+                    self?.printPreparationProfile["html_normalize"] = normalize
+                    self?.printPreparationProfile["html_return_transfer"] = returned - finished
+                }
+                completion(payload?["body"] as? String)
             }
         }
 
@@ -451,7 +472,9 @@ struct EditorWebView: NSViewRepresentable {
 
         private func activePrintTypography() throws -> PrintThemeTypography {
             // Source mode prints rendered-document type, not the raw Markdown editor's monospace UI.
-            try PrintThemeTypography(theme: model.theme, editorMode: model.mode == "wysiwyg" ? .wysiwyg : .ir)
+            try PrintThemeTypography(theme: model.theme, editorMode: model.mode == "wysiwyg" ? .wysiwyg : .ir, onFontResourcesPrepared: profilePrintLayout ? { milliseconds in
+                self.printPreparationProfile["font_resources"] = milliseconds
+            } : nil)
         }
 
         @MainActor

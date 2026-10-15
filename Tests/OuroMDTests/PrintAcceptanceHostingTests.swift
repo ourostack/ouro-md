@@ -5,8 +5,70 @@ import PDFKit
 import WebKit
 @testable import OuroMD
 
+private final class ProfiledPrintHTMLWebView: WKWebView {
+    var profileRequests = 0
+
+    override func evaluateJavaScript(_ javaScriptString: String, completionHandler: ((Any?, Error?) -> Void)? = nil) {
+        guard javaScriptString.contains("entered:entered") else {
+            completionHandler?("<p>PROFILED-HTML-TOKEN</p>", nil)
+            return
+        }
+        let now = floor(Date().timeIntervalSince1970 * 1_000)
+        profileRequests += 1
+        completionHandler?(["body": "<p>PROFILED-HTML-TOKEN</p>", "entered": now, "finished": now, "profile": ["render_html": 3.0, "normalize_headings": 2.0]], nil)
+    }
+}
+
 @MainActor
 final class PrintAcceptanceHostingTests: XCTestCase {
+    func testOrdinaryHTMLAcquisitionRetainsItsStringOnlyBridge() {
+        let editor = ProfiledPrintHTMLWebView()
+        let coordinator = EditorWebView.Coordinator(model: AppModel())
+        coordinator.webView = editor
+        var body: String?
+        coordinator.getHTML { body = $0 }
+        XCTAssertEqual(body, "<p>PROFILED-HTML-TOKEN</p>")
+        XCTAssertEqual(editor.profileRequests, 0)
+        XCTAssertTrue(coordinator.printPreparationProfile.isEmpty)
+    }
+
+    func testProfiledHTMLSeparatesQueueConversionTransferAndFontWork() async throws {
+        let parent = NonActivatingHeadlessHostWindow(contentRect: NSRect(x: -30_000, y: -30_000, width: 1000, height: 800), styleMask: [.borderless], backing: .buffered, defer: false)
+        parent.isReleasedWhenClosed = false
+        parent.alphaValue = 0
+        defer { parent.close() }
+        let editor = ProfiledPrintHTMLWebView()
+        parent.contentView = editor
+        let coordinator = EditorWebView.Coordinator(model: AppModel(), printSettingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()))
+        coordinator.webView = editor
+        coordinator.printPresentation = .headless
+        coordinator.profilePrintLayout = true
+        let scratch = try PrintLayoutTestPaths.makeScratchDirectory(label: "headless-html-profile")
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        coordinator.exportPDF(to: scratch.appendingPathComponent("unused.pdf")) { _ in }
+        let session = try XCTUnwrap(PrintLayoutSession.activeSession(for: parent))
+        defer { session.panelForTesting.close() }
+        let root = try XCTUnwrap(session.panelForTesting.contentView)
+        defer { descendants(of: root).compactMap { $0 as? NSButton }.first { $0.title == "Cancel" }?.performClick(nil) }
+        let deadline = ProcessInfo.processInfo.systemUptime + 10
+        while !descendants(of: root).compactMap({ $0 as? NSTextField }).contains(where: { $0.stringValue.hasPrefix("Preview ready —") }), ProcessInfo.processInfo.systemUptime < deadline {
+            try await Task.sleep(nanoseconds: 5_000_000)
+        }
+        let preview = try XCTUnwrap(descendants(of: root).compactMap { $0 as? PDFView }.first)
+        XCTAssertTrue(preview.document?.string?.contains("PROFILED-HTML-TOKEN") == true)
+        XCTAssertEqual(editor.profileRequests, 1, "Profiling must not acquire HTML a second time.")
+        let profile = coordinator.printPreparationProfile
+        for code in ["html_queue", "html_render", "html_normalize", "html_return_transfer", "font_resources", "typography_snapshot", "html_callback"] {
+            XCTAssertNotNil(profile[code], "Missing fixed numeric preparation step: \(code)")
+            XCTAssertGreaterThanOrEqual(profile[code] ?? -1, 0)
+        }
+        XCTAssertEqual(profile["html_render"], 3)
+        XCTAssertEqual(profile["html_normalize"], 2)
+        XCTAssertFalse(parent.isVisible)
+        XCTAssertFalse(session.panelForTesting.isVisible)
+        XCTAssertNil(parent.attachedSheet)
+    }
+
     func testCaptureBatchFailureAndCancellationRetireUIImmediately() async throws {
         let parent = NonActivatingHeadlessHostWindow(contentRect: NSRect(x: -30_000, y: -30_000, width: 1000, height: 800), styleMask: [.borderless], backing: .buffered, defer: false)
         parent.isReleasedWhenClosed = false
