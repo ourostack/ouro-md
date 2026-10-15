@@ -5,6 +5,35 @@ import XCTest
 
 @MainActor
 final class PrintPageFootnotesTests: XCTestCase {
+    func testSparseFootersRemainCorrectWhenPagesAreRevisitedOutOfOrder() async throws {
+        var settings = PrintLayoutSettings.default
+        settings.headingBreakLevel = 2
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<h2>First</h2><p>FIRST-FOOTER <a href=\"https://example.com/first\">source</a></p><h2>Middle</h2><p>NO-FOOTER</p><h2>Last</h2><p>LAST-FOOTER <a href=\"https://example.com/last\">source</a></p>", title: "Sparse footers", baseURL: nil, settings: settings)
+        defer { prepared.releaseHold() }
+        XCTAssertEqual(prepared.layoutMetrics.pageCount, 3)
+        for page in [2, 0, 1, 1, 2, 2, 0] {
+            let visible = try await prepared.webView.evaluateJavaScript("window.OuroPrintLayout.showPage(\(page)); Array.from(document.querySelectorAll('.ouro-print-page-notes')).filter(footer=>getComputedStyle(footer).display!=='none').map(footer=>Number(footer.dataset.ouroNotePage))") as? [Int]
+            XCTAssertEqual(visible, page == 1 ? [] : [page])
+        }
+        let data = try await prepared.createPDFData()
+        let pdf = try XCTUnwrap(PDFDocument(data: data))
+        XCTAssertTrue(pdf.page(at: 0)?.string?.contains("https://example.com/first") == true)
+        XCTAssertFalse(pdf.page(at: 1)?.string?.contains("https://example.com") == true)
+        XCTAssertTrue(pdf.page(at: 2)?.string?.contains("https://example.com/last") == true)
+    }
+
+    func testAnAuthoredNotesVisibleDescendantCannotLeakOntoOtherPages() async throws {
+        var settings = PrintLayoutSettings.default
+        settings.headingBreakLevel = 2
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<h2>First</h2><p>First reference <a href=\"#fn-visible\">1</a>.</p><h2>Second</h2><p>Second page has no note.</p><section class=\"footnotes\"><ol><li id=\"fn-visible\"><span style=\"visibility:visible\">VISIBLE-AUTHORED-NOTE</span></li></ol></section>", title: "Authored visibility", baseURL: nil, settings: settings)
+        defer { prepared.releaseHold() }
+        let data = try await prepared.createPDFData()
+        let pdf = try XCTUnwrap(PDFDocument(data: data))
+        XCTAssertEqual(pdf.pageCount, 2)
+        XCTAssertTrue(pdf.page(at: 0)?.string?.contains("VISIBLE-AUTHORED-NOTE") == true)
+        XCTAssertFalse(pdf.page(at: 1)?.string?.contains("VISIBLE-AUTHORED-NOTE") == true, "Hidden ancestor visibility does not suppress a child's explicit visibility override.")
+    }
+
     func testClosedAndNestedDetailsPrintTheirCompleteContents() async throws {
         let body = "<h2>Company Alpha</h2><details><summary>Captured evidence</summary><p>CLOSED-DETAIL-BODY</p><table><thead><tr><th>Evidence</th></tr></thead><tbody><tr><td>CLOSED-TABLE-CELL <a href=\"https://example.com/captured\">source</a></td></tr></tbody></table><details><summary>Nested record</summary><p>NESTED-DETAIL-BODY</p></details></details><h2>Company Beta</h2><p>FINAL-COMPANY-BODY</p>"
         var settings = PrintLayoutSettings.default

@@ -341,7 +341,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
             controls.view.trailingAnchor.constraint(equalTo: controlsContainer.trailingAnchor),
             controls.view.topAnchor.constraint(equalTo: controlsContainer.topAnchor),
             controls.view.bottomAnchor.constraint(equalTo: controlsContainer.bottomAnchor),
-            controlsContainer.widthAnchor.constraint(equalToConstant: 300)
+            controlsContainer.widthAnchor.constraint(equalToConstant: 360)
         ])
         split.addSubview(controlsContainer)
         let navigation = NSStackView(views: [previousPageButton, pageLabel, nextPageButton, NSView(), zoomOutButton, zoomInButton, fitPageButton])

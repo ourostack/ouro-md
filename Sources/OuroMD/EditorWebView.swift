@@ -130,6 +130,7 @@ struct EditorWebView: NSViewRepresentable {
         let printSettingsStore: PrintLayoutSettingsStore
         var onPrintPhase: (@MainActor (PrintPreviewPhase) -> Void)?
         var profilePrintLayout = false
+        private(set) var printPreparationProfile: [String: Double] = [:]
         var printPresentation = PrintLayoutSession.Presentation.sheet
         let pageSetupChooser: (NSPrintInfo) -> Bool
         let printPanelChooser: (NSPrintInfo) -> Bool
@@ -248,8 +249,12 @@ struct EditorWebView: NSViewRepresentable {
         }
 
         func getHTML(_ completion: @escaping (String?) -> Void) {
+            getHTML(profilePreparation: false, completion)
+        }
+
+        private func getHTML(profilePreparation: Bool, _ completion: @escaping (String?) -> Void) {
             guard let webView else { completion(nil); return }
-            webView.evaluateJavaScript("window.ouro ? window.ouro.getHTML() : null") { result, _ in
+            webView.evaluateJavaScript("window.ouro ? window.ouro.getHTML(\(profilePreparation)) : null") { result, _ in
                 completion(result as? String)
             }
         }
@@ -418,13 +423,19 @@ struct EditorWebView: NSViewRepresentable {
                 printInfo: .shared,
                 documentLoader: { [weak self] settings, info, onPhase in
                     guard let self else { throw PrintLayoutSession.SessionError.unavailable("The editor is no longer available.") }
+                    self.printPreparationProfile = [:]
+                    let htmlStart = self.profilePrintLayout ? ProcessInfo.processInfo.systemUptime : nil
                     let body = try await self.printHTML()
+                    if let htmlStart { self.printPreparationProfile["html_callback"] = (ProcessInfo.processInfo.systemUptime - htmlStart) * 1_000 }
                     try Task.checkCancellation()
+                    let typographyStart = self.profilePrintLayout ? ProcessInfo.processInfo.systemUptime : nil
+                    let typography = try self.activePrintTypography()
+                    if let typographyStart { self.printPreparationProfile["typography_snapshot"] = (ProcessInfo.processInfo.systemUptime - typographyStart) * 1_000 }
                     return try await PrintDocumentRenderer(profileLayout: self.profilePrintLayout).prepareDocument(
                         bodyHTML: body, title: self.model.windowTitle,
                         baseURL: self.model.currentURL?.deletingLastPathComponent(),
                         settings: settings, printInfo: info,
-                        typography: try self.activePrintTypography(),
+                        typography: typography,
                         onPhase: onPhase
                     )
                 },
@@ -475,7 +486,7 @@ struct EditorWebView: NSViewRepresentable {
                 return try await withCheckedThrowingContinuation { continuation in
                     guard !request.cancelled else { continuation.resume(throwing: CancellationError()); return }
                     request.continuation = continuation
-                    getHTML { request.resolve($0) }
+                    getHTML(profilePreparation: profilePrintLayout) { request.resolve($0) }
                 }
             } onCancel: {
                 Task { @MainActor in request.cancel() }

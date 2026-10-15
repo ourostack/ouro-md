@@ -4,11 +4,13 @@ public enum OuroMDRelease {
     public static let appName = "Ouro MD"
     public static let bundleIdentifier = "bot.ouro.md"
     public static let repository = "ourostack/ouro-md"
-    public static let version = "0.9.102"
+    public static let version = "0.9.103"
     public static let userAgent = "OuroMD/\(version)"
     public static let releaseDate = "2026-10-14"
     public static let positioningSubtitle = "Local Markdown workspace for Mac files."
     public static let releaseHighlights = [
+        "Keep print controls compact and show citation and heading choices without truncation.",
+        "Capture cited PDFs without repeatedly restyling every page's footer, preserving each page's own notes.",
         "Print with the applied theme's fonts and type hierarchy, including bundled fonts, while keeping paper-safe colors and print controls.",
         "Open Print and PDF layout before document preparation begins, with visible loading feedback.",
         "Follow real page-capture progress, cancel preparation, or retry a failed layout without losing the previous preview.",

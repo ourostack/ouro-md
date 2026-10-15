@@ -207,6 +207,8 @@ final class EditorSurfaceTester: NSObject {
         let readySeconds = trace.elapsedSeconds
         let initialPhaseEvents = trace.events
         let initialProfile = try await PrintLayoutSession.activeSession(for: window)?.prepared?.webView.evaluateJavaScript("window.__ouroPrintLayoutProfile")
+        let initialPreparationProfile = coordinator.printPreparationProfile.merging(PrintLayoutSession.activeSession(for: window)?.prepared?.preparationProfile ?? [:]) { _, latest in latest }
+        let initialHTMLProfile = await evaluate("window.__ouroPrintHTMLProfile")
         let editorFontFamily = (await evaluate(Self.appliedEditorTypographyScript(mode: model.mode)) as? [String: Any])?["fontFamily"] as? String
         let printFontFamily = try await PrintLayoutSession.activeSession(for: window)?.prepared?.webView.evaluateJavaScript("getComputedStyle(document.querySelector('.markdown-body')).fontFamily") as? String
         guard let editorFontFamily, let printFontFamily, editorFontFamily == printFontFamily else {
@@ -263,6 +265,8 @@ final class EditorSurfaceTester: NSObject {
             "editorHTMLMilliseconds": (await evaluate("window.__ouroAcceptanceHTMLMilliseconds")) as? Double ?? -1,
             "phaseEvents": initialPhaseEvents,
             "layoutProfile": initialProfile ?? [:],
+            "preparationProfile": initialPreparationProfile,
+            "htmlProfile": initialHTMLProfile ?? [:],
             "themeBodyFontMatchesEditor": true,
             "contentAudit": audit
         ]
