@@ -58,6 +58,7 @@ final class PrintDocumentRenderer {
         let normalized = settings.normalized
         try normalized.validate(for: printInfo.paperSize)
         let sizedPrintInfo = normalized.applying(to: printInfo)
+        let constructionStart = profileLayout ? ProcessInfo.processInfo.systemUptime : nil
         let document = PreparedPrintDocument(
             bodyHTML: bodyHTML,
             title: title,
@@ -66,8 +67,12 @@ final class PrintDocumentRenderer {
             script: (profileLayout ? "window.__ouroPrintProfiling = true;\n" : "") + script,
             printInfo: sizedPrintInfo,
             webViewConfiguration: webViewConfiguration,
-            typography: typography
+            typography: typography,
+            profilePreparation: profileLayout
         )
+        if let constructionStart {
+            document.recordPreparation("surface_construction", since: constructionStart)
+        }
         do {
             try await document.load(onPhase: onPhase)
             return document
@@ -94,6 +99,8 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
     private let baseURL: URL?
     private let script: String
     private let typography: PrintThemeTypography?
+    private let profilePreparation: Bool
+    private(set) var preparationProfile: [String: Double] = [:]
     private(set) var settings: PrintLayoutSettings
     private(set) var printInfo: NSPrintInfo
     let webView: WKWebView
@@ -126,13 +133,15 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         script: String,
         printInfo: NSPrintInfo,
         webViewConfiguration: WKWebViewConfiguration = WKWebViewConfiguration(),
-        typography: PrintThemeTypography? = nil
+        typography: PrintThemeTypography? = nil,
+        profilePreparation: Bool = false
     ) {
         self.bodyHTML = bodyHTML
         self.title = title
         self.baseURL = baseURL
         self.script = script
         self.typography = typography
+        self.profilePreparation = profilePreparation
         self.settings = settings.normalized
         self.printInfo = printInfo
         let pageSize = Self.editorCanvasSize(for: self.settings, paperSize: printInfo.paperSize)
@@ -160,6 +169,10 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         guard !released else { throw CancellationError() }
         retainHold()
         try await loadHTML(using: settings, onPhase: onPhase)
+    }
+
+    fileprivate func recordPreparation(_ code: String, since start: Double) {
+        preparationProfile[code] = (ProcessInfo.processInfo.systemUptime - start) * 1_000
     }
 
     func reload(with updated: PrintLayoutSettings, onPhase: (@MainActor (PrintPreviewPhase) -> Void)? = nil) async throws {
@@ -407,12 +420,16 @@ final class PreparedPrintDocument: NSObject, WKNavigationDelegate {
         loadPhaseObserver = onPhase
         onPhase?(.loadingHTML)
         guard generation == loadGeneration, !released else { throw CancellationError() }
+        let wrapStart = profilePreparation ? ProcessInfo.processInfo.systemUptime : nil
         let html = PrintLayoutHTMLDocument.wrap(body: bodyHTML, title: title, settings: settings, script: script, paperSize: signature.paperSize, typography: typography)
+        if let wrapStart { recordPreparation("html_wrap", since: wrapStart) }
         try await withTaskCancellationHandler {
             try Task.checkCancellation()
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                 loadContinuation = continuation
+                let submitStart = profilePreparation ? ProcessInfo.processInfo.systemUptime : nil
                 currentNavigation = webView.loadHTMLString(html, baseURL: baseURL)
+                if let submitStart { recordPreparation("html_submit", since: submitStart) }
                 guard generation == loadGeneration else {
                     loadContinuation = nil
                     currentNavigation = nil

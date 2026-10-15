@@ -7,6 +7,8 @@
   var noteDefinitions = Object.create(null);
   var sources = Object.create(null);
   var noteLayer = null;
+  var pageFooters = Object.create(null);
+  var activeFooter = null;
   var pageLinks = [];
   var typographyPrepared = false;
   var profile = window.__ouroPrintProfiling ? {steps: {}, rectReads: 0, anchorRectReads: 0, anchorQueries: 0} : null;
@@ -397,6 +399,7 @@
       if (required <= reserved || required === 0) {
         footers.forEach(function (footer, index) {
           footer.style.top = (fullHeight - heights[index]) + "px";
+          pageFooters[footer.dataset.ouroNotePage] = footer;
         });
         Array.prototype.forEach.call(root.querySelectorAll("[data-ouro-note]"), function (ref) {
           var page = pageIndexForRect(ref.getBoundingClientRect(), rootRect, stride);
@@ -594,10 +597,17 @@
     var transform = "translateX(-" + (normalizedIndex * metrics.pageStride) + "px)";
     root.style.transform = transform;
     if (noteLayer) {
-      Array.prototype.forEach.call(noteLayer.children, function (footer) {
-        footer.style.transform = transform;
-        footer.style.visibility = Number(footer.dataset.ouroNotePage) === normalizedIndex ? "visible" : "hidden";
-      });
+      // Hide entire inactive subtrees only after their link geometry has been cached.
+      if (noteLayer.dataset.ouroPrintPaging !== "true") { noteLayer.dataset.ouroPrintPaging = "true"; }
+      var footer = pageFooters[normalizedIndex] || null;
+      if (activeFooter !== footer) {
+        if (activeFooter) { activeFooter.classList.remove("ouro-print-active-footer"); }
+        if (footer) {
+          footer.style.transform = transform;
+          footer.classList.add("ouro-print-active-footer");
+        }
+        activeFooter = footer;
+      }
     }
     metrics.links = pageLinks[normalizedIndex] || [];
     return metrics;

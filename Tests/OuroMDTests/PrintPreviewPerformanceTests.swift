@@ -7,6 +7,41 @@ import XCTest
 
 @MainActor
 final class PrintPreviewPerformanceTests: XCTestCase {
+    func testPageActivationTouchesOnlyTheCurrentAndPreviousFooters() async throws {
+        var settings = PrintLayoutSettings.default
+        settings.headingBreakLevel = 2
+        let body = (1...120).map { "<h2>Section \($0)</h2><p>PAGE-\($0)-FOOTER-TOKEN <a href=\"https://example.com/source/\($0)\">source</a></p>" }.joined()
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: body, title: "Bounded footer activation", baseURL: nil, settings: settings)
+        defer { prepared.releaseHold() }
+        XCTAssertEqual(prepared.layoutMetrics.pageCount, 120)
+        let result = try await prepared.webView.evaluateJavaScript("""
+        (function(){
+          var layer=document.querySelector('.ouro-print-note-layer');
+          var observer=new MutationObserver(function(){});
+          observer.observe(layer,{subtree:true,attributes:true,attributeFilter:['style','class']});
+          var start=performance.now();
+          for(var page=0;page<120;page++){window.OuroPrintLayout.showPage(page);}
+          var elapsed=performance.now()-start;
+          var changes=observer.takeRecords().length;
+          observer.disconnect();
+          var visible=Array.from(layer.children).filter(function(footer){return getComputedStyle(footer).display!=='none';});
+          return {changes:changes,milliseconds:elapsed,visiblePages:visible.map(function(footer){return Number(footer.dataset.ouroNotePage);})};
+        })()
+        """) as? [String: Any]
+        let changes = try XCTUnwrap(result?["changes"] as? Int)
+        print("footer activation measurement: \(changes) style/class writes; \(try XCTUnwrap(result?["milliseconds"] as? Double)) ms")
+        XCTAssertLessThanOrEqual(changes, 3 * 120, "Paging must not restyle every document footer for each page.")
+        XCTAssertEqual(result?["visiblePages"] as? [Int], [119])
+        let data = try await prepared.createPDFData()
+        let pdf = try XCTUnwrap(PDFDocument(data: data))
+        XCTAssertEqual(pdf.pageCount, 120)
+        for page in 1...120 {
+            let text = try XCTUnwrap(pdf.page(at: page - 1)?.string)
+            XCTAssertTrue(text.contains("PAGE-\(page)-FOOTER-TOKEN"))
+            XCTAssertEqual(text.components(separatedBy: "https://example.com/source/\(page)").count - 1, 1)
+        }
+    }
+
     func testTableSplittingMovesEachBodyRowOnceAfterMeasuringAllTables() async throws {
         let script = try XCTUnwrap(PrintLayoutScriptLoader.load()) + """
         ;(function(){var apply=window.OuroPrintLayout.apply;window.OuroPrintLayout.apply=function(){window.__ouroOriginalBodyRows=Array.from(document.querySelectorAll('tbody>tr'));return apply();};})();

@@ -192,6 +192,9 @@ enum PrintLayoutHTMLDocument {
           word-break: break-word;
           transform: translateX(calc(-1 * var(--ouro-active-page-offset, 0px)));
         }
+        .ouro-print-note-layer[data-ouro-print-paging] > .ouro-print-page-notes:not(.ouro-print-active-footer) {
+          display: none !important;
+        }
         .ouro-print-page-notes p { margin: 3px 0; }
         .ouro-print-page-notes a { color: #111; }
         .markdown-body pre,

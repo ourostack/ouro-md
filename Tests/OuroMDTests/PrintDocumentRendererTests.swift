@@ -32,6 +32,16 @@ private final class DelayedPrintImageHandler: NSObject, WKURLSchemeHandler {
 
 @MainActor
 final class PrintDocumentRendererTests: XCTestCase {
+    func testPreparationProfileIsOptInAndContainsOnlyFixedTimingCodes() async throws {
+        for profiling in [false, true] {
+            let prepared = try await PrintDocumentRenderer(profileLayout: profiling).prepareDocument(bodyHTML: "<p>PRIVATE-PROFILE-CONTENT</p>", title: "PRIVATE-PROFILE-TITLE", baseURL: nil, settings: .default)
+            defer { prepared.releaseHold() }
+            let expected: Set<String> = profiling ? ["surface_construction", "html_wrap", "html_submit"] : []
+            XCTAssertEqual(Set(prepared.preparationProfile.keys), expected)
+            XCTAssertTrue(prepared.preparationProfile.values.allSatisfy { $0.isFinite && $0 >= 0 })
+        }
+    }
+
     func testPreparationWaitsForActualImageResourceAndPreservesItsPaint() async throws {
         try await verifyImageResource(delay: 400_000_000, rejectingDecode: false)
     }

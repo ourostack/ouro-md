@@ -2428,8 +2428,18 @@
       try { restoreTableCellSpaces(); } catch (e) { /* never block a save */ }
       try { return vditor ? vditor.getValue() : state.value; } catch (e) { return state.value; }
     },
-    getHTML: function () {
-      try { return vditor ? normalizeHeadingIDsInHTML(vditor.getHTML()) : ""; } catch (e) { return ""; }
+    getHTML: function (profilePreparation) {
+      try {
+        if (!vditor) { return ""; }
+        var start = profilePreparation ? performance.now() : 0;
+        var html = vditor.getHTML();
+        var normalizedStart = profilePreparation ? performance.now() : 0;
+        var normalized = normalizeHeadingIDsInHTML(html);
+        if (profilePreparation) {
+          window.__ouroPrintHTMLProfile = {render_html: normalizedStart - start, normalize_headings: performance.now() - normalizedStart};
+        }
+        return normalized;
+      } catch (e) { return ""; }
     },
     setTheme: function (uiMode, css, codeTheme, background) {
       var prevMode = state.uiTheme;
