@@ -7,6 +7,137 @@ import WebKit
 
 @MainActor
 final class PrintAcceptanceHostingTests: XCTestCase {
+    func testInitialPreviewFitsTheWholePageInsideItsViewport() async throws {
+        let fixture = try await makeNavigationFixture()
+        defer { disposeNavigationFixture(fixture) }
+        let page = try XCTUnwrap(fixture.preview.currentPage)
+        let rendered = fixture.preview.convert(page.bounds(for: .mediaBox), from: page)
+        let viewport = fixture.preview.bounds
+        XCTAssertGreaterThan(viewport.width, 100)
+        XCTAssertGreaterThan(viewport.height, 100)
+        XCTAssertLessThanOrEqual(rendered.width, viewport.width + 1, "Initial fit must show the entire page width, not merely set autoScales.")
+        XCTAssertLessThanOrEqual(rendered.height, viewport.height + 1, "Initial fit must show the entire page height.")
+        XCTAssertGreaterThanOrEqual(rendered.minX, viewport.minX - 1)
+        XCTAssertGreaterThanOrEqual(rendered.minY, viewport.minY - 1)
+        XCTAssertLessThanOrEqual(rendered.maxX, viewport.maxX + 1)
+        XCTAssertLessThanOrEqual(rendered.maxY, viewport.maxY + 1)
+    }
+
+    func testInitialFitIncludesPaperLargerThanTheDefaultZoomMinimum() async throws {
+        let fixture = try await makeNavigationFixture(paperSize: NSSize(width: 2384, height: 3370))
+        defer { disposeNavigationFixture(fixture) }
+        let page = try XCTUnwrap(fixture.preview.currentPage)
+        let rendered = fixture.preview.convert(page.bounds(for: .mediaBox), from: page)
+        XCTAssertLessThanOrEqual(rendered.width, fixture.preview.bounds.width + 1)
+        XCTAssertLessThanOrEqual(rendered.height, fixture.preview.bounds.height + 1)
+    }
+
+    func testZoomButtonsDisableAtTheirConfiguredBounds() async throws {
+        let fixture = try await makeNavigationFixture()
+        defer { disposeNavigationFixture(fixture) }
+        let root = try XCTUnwrap(fixture.session.panelForTesting.contentView)
+        let zoomOut = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSButton }.first { $0.title == "Zoom out" })
+        let zoomIn = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSButton }.first { $0.title == "Zoom in" })
+        zoomOut.performClick(nil)
+        for _ in 0..<60 { zoomOut.performClick(nil) }
+        XCTAssertEqual(fixture.preview.scaleFactor, 0.2, accuracy: 0.001)
+        XCTAssertFalse(zoomOut.isEnabled, "A clamped action must not remain available as a dead click.")
+        XCTAssertTrue(zoomIn.isEnabled)
+        for _ in 0..<60 { zoomIn.performClick(nil) }
+        XCTAssertEqual(fixture.preview.scaleFactor, 4, accuracy: 0.001)
+        XCTAssertFalse(zoomIn.isEnabled)
+        XCTAssertTrue(zoomOut.isEnabled)
+    }
+
+    func testZoomButtonsFollowDirectPreviewScaleChanges() async throws {
+        let fixture = try await makeNavigationFixture()
+        defer { disposeNavigationFixture(fixture) }
+        try await waitForNavigationReady(fixture)
+        let root = try XCTUnwrap(fixture.session.panelForTesting.contentView)
+        let zoomOut = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSButton }.first { $0.title == "Zoom out" })
+        let zoomIn = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSButton }.first { $0.title == "Zoom in" })
+        try await Task.sleep(nanoseconds: 50_000_000)
+        fixture.preview.autoScales = false
+        fixture.preview.scaleFactor = 0.2
+        try await Task.sleep(nanoseconds: 30_000_000)
+        XCTAssertFalse(zoomOut.isEnabled, "Scale changes outside our buttons must refresh their availability.")
+        XCTAssertTrue(zoomIn.isEnabled)
+        fixture.preview.scaleFactor = 4
+        try await Task.sleep(nanoseconds: 30_000_000)
+        XCTAssertFalse(zoomIn.isEnabled)
+        XCTAssertTrue(zoomOut.isEnabled)
+    }
+
+    func testManualZoomAndSelectedPageSurviveHeadlessSettingsReplacement() async throws {
+        let fixture = try await makeNavigationFixture()
+        defer { disposeNavigationFixture(fixture) }
+        try await waitForNavigationReady(fixture)
+        let previous = try XCTUnwrap(fixture.preview.document)
+        fixture.preview.go(to: try XCTUnwrap(previous.page(at: 5)))
+        fixture.preview.autoScales = false
+        fixture.preview.scaleFactor = 0.8
+        let root = try XCTUnwrap(fixture.session.panelForTesting.contentView)
+        let font = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Font size (pt)" })
+        font.stringValue = "14"
+        _ = font.sendAction(font.action, to: font.target)
+        XCTAssertTrue(fixture.preview.document === previous)
+        try await waitForNavigationReady(fixture)
+        let replacement = try XCTUnwrap(fixture.preview.document)
+        XCTAssertFalse(replacement === previous)
+        XCTAssertFalse(fixture.preview.autoScales)
+        XCTAssertEqual(fixture.preview.scaleFactor, 0.8, accuracy: 0.001)
+        XCTAssertEqual(replacement.index(for: try XCTUnwrap(fixture.preview.currentPage)), 5)
+    }
+
+    private typealias NavigationFixture = (parent: NonActivatingHeadlessHostWindow, prepared: PreparedPrintDocument, session: PrintLayoutSession, preview: PDFView, scratch: URL)
+
+    private func waitForNavigationReady(_ fixture: NavigationFixture) async throws {
+        let root = try XCTUnwrap(fixture.session.panelForTesting.contentView)
+        let deadline = ProcessInfo.processInfo.systemUptime + 10
+        while !descendants(of: root).compactMap({ $0 as? NSTextField }).contains(where: { $0.stringValue.hasPrefix("Preview ready —") }), ProcessInfo.processInfo.systemUptime < deadline { try await Task.sleep(nanoseconds: 5_000_000) }
+        XCTAssertTrue(descendants(of: root).compactMap { $0 as? NSTextField }.contains { $0.stringValue.hasPrefix("Preview ready —") })
+    }
+
+    private func makeNavigationFixture(paperSize: NSSize = NSSize(width: 612, height: 792)) async throws -> NavigationFixture {
+        var settings = PrintLayoutSettings.default
+        settings.headingBreakLevel = 2
+        settings.citationMode = .originalLinks
+        let info = NSPrintInfo()
+        info.paperSize = paperSize
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: (1...20).map { "<h2>Owned page \($0)</h2><p>Navigation stays available while the remaining pages prepare.</p>" }.joined(), title: "Navigation polish", baseURL: nil, settings: settings, printInfo: info)
+        var transferred = false
+        defer { if !transferred { prepared.releaseHold() } }
+        let parent = NonActivatingHeadlessHostWindow(contentRect: NSRect(x: -30_000, y: -30_000, width: 1000, height: 800), styleMask: [.borderless], backing: .buffered, defer: false)
+        parent.isReleasedWhenClosed = false
+        parent.alphaValue = 0
+        defer { if !transferred { parent.close() } }
+        let scratch = try PrintLayoutTestPaths.makeScratchDirectory(label: "headless-navigation")
+        defer { if !transferred { try? FileManager.default.removeItem(at: scratch) } }
+        let session = PrintLayoutSession(prepared: prepared, parentWindow: parent, action: .export(scratch.appendingPathComponent("unused.pdf"), { _ in }), settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), reportError: { _, error in XCTFail(error.localizedDescription) }, telemetry: { _, _ in }, presentation: .headless)
+        session.begin()
+        let root = try XCTUnwrap(session.panelForTesting.contentView)
+        root.layoutSubtreeIfNeeded()
+        let preview = try XCTUnwrap(descendants(of: root).compactMap { $0 as? PDFView }.first)
+        let deadline = ProcessInfo.processInfo.systemUptime + 10
+        while preview.document?.pageCount ?? 0 == 0, ProcessInfo.processInfo.systemUptime < deadline { try await Task.sleep(nanoseconds: 1_000_000) }
+        XCTAssertGreaterThan(preview.document?.pageCount ?? 0, 0)
+        XCTAssertFalse(parent.isVisible)
+        XCTAssertFalse(session.panelForTesting.isVisible)
+        XCTAssertNil(parent.attachedSheet)
+        transferred = true
+        return (parent, prepared, session, preview, scratch)
+    }
+
+    private func disposeNavigationFixture(_ fixture: NavigationFixture) {
+        if let root = fixture.session.panelForTesting.contentView {
+            descendants(of: root).compactMap { $0 as? NSButton }.first { $0.title == "Cancel" }?.performClick(nil)
+        }
+        fixture.session.panelForTesting.close()
+        fixture.prepared.releaseHold()
+        fixture.parent.close()
+        try? FileManager.default.removeItem(at: fixture.scratch)
+    }
+
     func testSyntheticPrintPreviewStateScreenshotsOnIsolatedCI() async throws {
         guard ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" else {
             throw XCTSkip("Native screenshot proof runs only on the isolated CI desktop.")
