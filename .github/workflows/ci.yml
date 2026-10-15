@@ -93,6 +93,7 @@ jobs:
           path: |
             .build/ouro-swift-test.log
             .build/ouro-test-timings.tsv
+            .build/print-layout-test-artifacts/preview-state-screenshots-*/*.png
 
   app-bundle:
     name: App bundle

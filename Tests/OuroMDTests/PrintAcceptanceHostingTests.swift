@@ -7,6 +7,79 @@ import WebKit
 
 @MainActor
 final class PrintAcceptanceHostingTests: XCTestCase {
+    func testSyntheticPrintPreviewStateScreenshotsOnIsolatedCI() async throws {
+        guard ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" else {
+            throw XCTSkip("Native screenshot proof runs only on the isolated CI desktop.")
+        }
+        let parent = NSWindow(contentRect: NSRect(x: 40, y: 40, width: 1000, height: 800), styleMask: [.titled], backing: .buffered, defer: false)
+        parent.isReleasedWhenClosed = false
+        parent.title = "Owned synthetic print preview proof"
+        NSApp.setActivationPolicy(.accessory)
+        NSApp.activate(ignoringOtherApps: true)
+        parent.makeKeyAndOrderFront(nil)
+        defer { parent.close() }
+        let artifacts = try PrintLayoutTestPaths.makeScratchDirectory(label: "preview-state-screenshots")
+        var attempts = 0
+        var failInitialLoad = false
+        var phaseObserver: (@MainActor (PrintPreviewPhase) -> Void)?
+        var settings = PrintLayoutSettings.default
+        settings.headingBreakLevel = 2
+        let session = PrintLayoutSession(settings: settings, printInfo: NSPrintInfo(), documentLoader: { settings, info, observer in
+            attempts += 1
+            phaseObserver = observer
+            if attempts == 1 {
+                while !failInitialLoad { try await Task.sleep(nanoseconds: 10_000_000) }
+                throw PrintLayoutSession.SessionError.missingPreview
+            }
+            return try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<h2>Harbor notes</h2><p>A readable synthetic page.</p><h2>Route planning</h2><p>Keep this page available while settings change.</p>", title: "Preview states", baseURL: nil, settings: settings, printInfo: info, onPhase: observer)
+        }, parentWindow: parent, action: .export(artifacts.appendingPathComponent("unused.pdf"), { _ in }), settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), reportError: { _, _ in }, telemetry: { _, _ in })
+        session.begin()
+        let root = try XCTUnwrap(session.panelForTesting.contentView)
+        func capture(_ state: String) async throws {
+            root.layoutSubtreeIfNeeded()
+            try await Task.sleep(nanoseconds: 100_000_000)
+            let output = artifacts.appendingPathComponent("\(state).png")
+            let capture = Process()
+            capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+            capture.arguments = ["-x", "-o", "-l", String(session.panelForTesting.windowNumber), output.path]
+            try capture.run()
+            capture.waitUntilExit()
+            XCTAssertEqual(capture.terminationStatus, 0)
+            XCTAssertGreaterThan(try Data(contentsOf: output).count, 1_000)
+        }
+        func waitFor(_ condition: () -> Bool) async throws {
+            let deadline = ProcessInfo.processInfo.systemUptime + 10
+            while !condition(), ProcessInfo.processInfo.systemUptime < deadline { try await Task.sleep(nanoseconds: 10_000_000) }
+            XCTAssertTrue(condition())
+        }
+        func button(_ title: String) -> NSButton? {
+            descendants(of: root).compactMap { $0 as? NSButton }.first { $0.title == title }
+        }
+        func ready() -> Bool {
+            descendants(of: root).compactMap { $0 as? NSTextField }.contains { $0.stringValue.hasPrefix("Preview ready —") }
+        }
+        try await capture("loading")
+        try await waitFor { phaseObserver != nil }
+        phaseObserver?(.capturingPages(completed: 1, total: 3))
+        try await capture("capture-progress")
+        failInitialLoad = true
+        try await waitFor { button("Retry")?.isHidden == false }
+        try await capture("failure-retry")
+        button("Retry")?.performClick(nil)
+        try await waitFor { ready() }
+        try await capture("ready")
+        let preview = try XCTUnwrap(descendants(of: root).compactMap { $0 as? PDFView }.first)
+        let previous = try XCTUnwrap(preview.document)
+        let font = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Font size (pt)" })
+        font.stringValue = "14"
+        _ = font.sendAction(font.action, to: font.target)
+        XCTAssertTrue(preview.document === previous)
+        XCTAssertFalse(ready())
+        try await capture("updating-previous-preview")
+        button("Cancel")?.performClick(nil)
+        print("owned isolated-CI print state screenshots: \(artifacts.path)")
+    }
+
     func testThemeReferenceReadsTheActiveModeNotAnEmptyInactiveEditor() async throws {
         let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>Mode reference fixture</p>", title: "Active mode reference", baseURL: nil, settings: .default)
         defer { prepared.releaseHold() }
