@@ -102,6 +102,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
     private var outputPreparationRunning = false
     private var announcedPhases = Set<String>()
     private var currentPhase: PrintPreviewPhase?
+    private var lastCaptureUIUpdate: TimeInterval?
     private var submitWhenPreviewReady = false
     private var completionDelivered = false
     private var sessionFinished = false
@@ -414,6 +415,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         preparationFailed = false
         retryButton.isHidden = true
         announcedPhases.removeAll()
+        lastCaptureUIUpdate = nil
         if let prepared, prepared.isLoading {
             prepared.cancelLoading()
         }
@@ -437,7 +439,10 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                 try Task.checkCancellation()
                 guard self.isCurrent(requestedGeneration) else { return }
                 prepared.setPageSettings(self.currentPrintInfo)
-                let phaseObserver: @MainActor (PrintPreviewPhase) -> Void = { [weak self] phase in self?.updatePhase(phase, generation: requestedGeneration) }
+                var captureUIChanged = false
+                let phaseObserver: @MainActor (PrintPreviewPhase) -> Void = { [weak self] phase in
+                    captureUIChanged = self?.updatePhase(phase, generation: requestedGeneration) ?? false
+                }
                 if !prepared.hasCurrentLayout(for: settings) {
                     try await prepared.reload(with: settings, onPhase: phaseObserver)
                 }
@@ -451,16 +456,20 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                     }
                     streamingPreview.insert(page, at: streamingPreview.pageCount)
                     let selectedPage = self.selectedPreviewPageIndex
+                    var replacedDisplay = false
                     if displayingReplacement || count > min(selectedPage, total - 1) {
                         if !displayingReplacement || count == 1 {
                             self.display(streamingPreview, selectedPage: min(selectedPage, total - 1))
                             self.displayState = .current
                             displayingReplacement = true
+                            replacedDisplay = true
                             self.updateStatus(self.captureStatus(completed: count, total: total))
+                            self.updatePrimaryEnabled(!self.submitWhenPreviewReady)
                         }
-                        self.updatePrimaryEnabled(!self.submitWhenPreviewReady)
                     }
-                    self.updatePreviewNavigation()
+                    if captureUIChanged || replacedDisplay {
+                        self.updatePreviewNavigation()
+                    }
                 }
                 guard !Task.isCancelled, self.isCurrent(requestedGeneration) else { return }
                 guard let completePreview = PDFDocument(data: pdfData) else { throw SessionError.missingPreview }
@@ -568,11 +577,19 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
         }
     }
 
-    private func updatePhase(_ phase: PrintPreviewPhase, generation: Int) {
-        guard isCurrent(generation) else { return }
+    @discardableResult
+    private func updatePhase(_ phase: PrintPreviewPhase, generation: Int) -> Bool {
+        guard isCurrent(generation) else { return false }
         currentPhase = phase
         onPhase?(phase)
-        guard isCurrent(generation) else { return }
+        guard isCurrent(generation) else { return false }
+        if case .capturingPages(let completed, let total) = phase {
+            let now = ProcessInfo.processInfo.systemUptime
+            guard completed <= 1 || completed >= total || lastCaptureUIUpdate.map({ now - $0 >= 0.05 }) ?? true else { return false }
+            lastCaptureUIUpdate = now
+        } else {
+            lastCaptureUIUpdate = nil
+        }
         let prefix = updatingPreviewPrefix
         let announcement: String
         switch phase {
@@ -624,6 +641,7 @@ final class PrintLayoutSession: NSObject, NSWindowDelegate {
                 NSAccessibility.post(element: progressIndicator, notification: .announcementRequested, userInfo: [.announcement: announcement, .priority: NSAccessibilityPriorityLevel.medium.rawValue])
             }
         }
+        return true
     }
 
     private func failPreparation(_ error: Error, generation: Int) {

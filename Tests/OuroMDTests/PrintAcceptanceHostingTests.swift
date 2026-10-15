@@ -7,6 +7,103 @@ import WebKit
 
 @MainActor
 final class PrintAcceptanceHostingTests: XCTestCase {
+    func testCaptureBatchFailureAndCancellationRetireUIImmediately() async throws {
+        let parent = NonActivatingHeadlessHostWindow(contentRect: NSRect(x: -30_000, y: -30_000, width: 1000, height: 800), styleMask: [.borderless], backing: .buffered, defer: false)
+        parent.isReleasedWhenClosed = false
+        parent.alphaValue = 0
+        defer { parent.close() }
+        let scratch = try PrintLayoutTestPaths.makeScratchDirectory(label: "headless-capture-retirement")
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        var phaseObserver: (@MainActor (PrintPreviewPhase) -> Void)?
+        var shouldFail = false
+        var rawCaptures: [Int] = []
+        var completions = 0
+        let session = PrintLayoutSession(settings: .default, printInfo: NSPrintInfo(), documentLoader: { _, _, observer in
+            phaseObserver = observer
+            while !shouldFail { try await Task.sleep(nanoseconds: 1_000_000) }
+            throw PrintLayoutSession.SessionError.missingPreview
+        }, parentWindow: parent, action: .export(scratch.appendingPathComponent("unused.pdf"), { _ in completions += 1 }), settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), reportError: { _, _ in }, telemetry: { _, _ in }, onPhase: { phase in
+            if case .capturingPages(let completed, _) = phase { rawCaptures.append(completed) }
+        }, presentation: .headless)
+        defer { session.panelForTesting.close() }
+        session.begin()
+        let deadline = ProcessInfo.processInfo.systemUptime + 10
+        while phaseObserver == nil, ProcessInfo.processInfo.systemUptime < deadline { try await Task.sleep(nanoseconds: 1_000_000) }
+        let observer = try XCTUnwrap(phaseObserver)
+        let root = try XCTUnwrap(session.panelForTesting.contentView)
+        let progress = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSProgressIndicator }.first)
+        observer(.capturingPages(completed: 0, total: 200))
+        observer(.capturingPages(completed: 1, total: 200))
+        XCTAssertEqual(progress.doubleValue, 1, "First progress must not wait for the batch interval.")
+        for completed in 2...200 { observer(.capturingPages(completed: completed, total: 200)) }
+        XCTAssertEqual(rawCaptures, Array(0...200))
+        XCTAssertEqual(progress.doubleValue, 200, "Final capture must flush immediately.")
+        shouldFail = true
+        let retry = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSButton }.first { $0.title == "Retry" })
+        while retry.isHidden, ProcessInfo.processInfo.systemUptime < deadline { try await Task.sleep(nanoseconds: 1_000_000) }
+        XCTAssertFalse(retry.isHidden)
+        XCTAssertEqual(progress.doubleValue, 0, "Failure must retire complete-looking progress immediately.")
+        let status = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSTextField }.first { $0.stringValue == PrintLayoutSession.SessionError.missingPreview.localizedDescription })
+        let cancel = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSButton }.first { $0.title == "Cancel" })
+        cancel.performClick(nil)
+        observer(.capturingPages(completed: 75, total: 200))
+        observer(.ready)
+        try await Task.sleep(nanoseconds: 60_000_000)
+        XCTAssertEqual(rawCaptures, Array(0...200), "Late callbacks from a retired session must not escape to consumers.")
+        XCTAssertEqual(progress.doubleValue, 0)
+        XCTAssertEqual(status.stringValue, PrintLayoutSession.SessionError.missingPreview.localizedDescription)
+        XCTAssertEqual(completions, 1)
+        XCTAssertNil(PrintLayoutSession.activeSession(for: parent))
+        XCTAssertFalse(parent.isVisible)
+        XCTAssertFalse(session.panelForTesting.isVisible)
+        XCTAssertNil(parent.attachedSheet)
+    }
+
+    func testCaptureProgressCoalescesUIWithoutDroppingRawPhasesOrPages() async throws {
+        weak var observedSession: PrintLayoutSession?
+        var captures: [Int] = []
+        var statuses: [String] = []
+        var progressValues: [Double] = []
+        let started = ProcessInfo.processInfo.systemUptime
+        let fixture = try await makeNavigationFixture(pageCount: 200, onPhase: { phase in
+            if case .capturingPages(let completed, let total) = phase {
+                XCTAssertEqual(total, 200)
+                captures.append(completed)
+            }
+            if let root = observedSession?.panelForTesting.contentView {
+                let views = self.descendants(of: root)
+                if let status = views.compactMap({ $0 as? NSTextField }).first(where: { $0.stringValue.contains("Preparing page") }) {
+                    statuses.append(status.stringValue)
+                }
+                if let progress = views.compactMap({ $0 as? NSProgressIndicator }).first {
+                    progressValues.append(progress.doubleValue)
+                }
+            }
+        }, onSession: { observedSession = $0 })
+        defer { disposeNavigationFixture(fixture) }
+        XCTAssertEqual(fixture.preview.document?.pageCount, 1, "The first captured page must display without waiting for a UI batch.")
+        try await waitForNavigationReady(fixture)
+        let elapsed = ProcessInfo.processInfo.systemUptime - started
+        let statusChanges = zip(statuses, statuses.dropFirst()).filter { $0 != $1 }.count
+        let progressChanges = zip(progressValues, progressValues.dropFirst()).filter { $0 != $1 }.count
+        let maximumRefreshes = Int(ceil(elapsed / 0.05)) + 8
+        print("capture UI measurement: raw=\(captures.count) statusChanges=\(statusChanges) progressChanges=\(progressChanges) elapsed=\(elapsed)s maximumRefreshes=\(maximumRefreshes)")
+        XCTAssertEqual(captures, Array(0...200), "Raw typed phase delivery must remain exact.")
+        XCTAssertLessThanOrEqual(statusChanges, maximumRefreshes, "Fast capture should not redraw status for every page.")
+        XCTAssertLessThanOrEqual(progressChanges, maximumRefreshes, "Fast capture should not redraw the progress bar for every page.")
+        let pdf = try XCTUnwrap(fixture.preview.document)
+        XCTAssertEqual(pdf.pageCount, 200)
+        for index in 0..<200 {
+            XCTAssertTrue(pdf.page(at: index)?.string?.contains("Owned page \(index + 1)") == true)
+        }
+        let root = try XCTUnwrap(fixture.session.panelForTesting.contentView)
+        let progress = try XCTUnwrap(descendants(of: root).compactMap { $0 as? NSProgressIndicator }.first)
+        XCTAssertEqual(progress.doubleValue, 200, "Ready must immediately flush final progress.")
+        XCTAssertFalse(fixture.parent.isVisible)
+        XCTAssertFalse(fixture.session.panelForTesting.isVisible)
+        XCTAssertNil(fixture.parent.attachedSheet)
+    }
+
     func testInitialPreviewFitsTheWholePageInsideItsViewport() async throws {
         let fixture = try await makeNavigationFixture()
         defer { disposeNavigationFixture(fixture) }
@@ -98,13 +195,13 @@ final class PrintAcceptanceHostingTests: XCTestCase {
         XCTAssertTrue(descendants(of: root).compactMap { $0 as? NSTextField }.contains { $0.stringValue.hasPrefix("Preview ready —") })
     }
 
-    private func makeNavigationFixture(paperSize: NSSize = NSSize(width: 612, height: 792)) async throws -> NavigationFixture {
+    private func makeNavigationFixture(paperSize: NSSize = NSSize(width: 612, height: 792), pageCount: Int = 20, onPhase: (@MainActor (PrintPreviewPhase) -> Void)? = nil, onSession: ((PrintLayoutSession) -> Void)? = nil) async throws -> NavigationFixture {
         var settings = PrintLayoutSettings.default
         settings.headingBreakLevel = 2
         settings.citationMode = .originalLinks
         let info = NSPrintInfo()
         info.paperSize = paperSize
-        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: (1...20).map { "<h2>Owned page \($0)</h2><p>Navigation stays available while the remaining pages prepare.</p>" }.joined(), title: "Navigation polish", baseURL: nil, settings: settings, printInfo: info)
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: (1...pageCount).map { "<h2>Owned page \($0)</h2><p>Navigation stays available while the remaining pages prepare.</p>" }.joined(), title: "Navigation polish", baseURL: nil, settings: settings, printInfo: info)
         var transferred = false
         defer { if !transferred { prepared.releaseHold() } }
         let parent = NonActivatingHeadlessHostWindow(contentRect: NSRect(x: -30_000, y: -30_000, width: 1000, height: 800), styleMask: [.borderless], backing: .buffered, defer: false)
@@ -113,7 +210,8 @@ final class PrintAcceptanceHostingTests: XCTestCase {
         defer { if !transferred { parent.close() } }
         let scratch = try PrintLayoutTestPaths.makeScratchDirectory(label: "headless-navigation")
         defer { if !transferred { try? FileManager.default.removeItem(at: scratch) } }
-        let session = PrintLayoutSession(prepared: prepared, parentWindow: parent, action: .export(scratch.appendingPathComponent("unused.pdf"), { _ in }), settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), reportError: { _, error in XCTFail(error.localizedDescription) }, telemetry: { _, _ in }, presentation: .headless)
+        let session = PrintLayoutSession(prepared: prepared, parentWindow: parent, action: .export(scratch.appendingPathComponent("unused.pdf"), { _ in }), settingsStore: PrintLayoutSettingsStore(preferences: InMemoryPrintLayoutPreferenceStore()), reportError: { _, error in XCTFail(error.localizedDescription) }, telemetry: { _, _ in }, onPhase: onPhase, presentation: .headless)
+        onSession?(session)
         session.begin()
         let root = try XCTUnwrap(session.panelForTesting.contentView)
         root.layoutSubtreeIfNeeded()
