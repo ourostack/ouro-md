@@ -7,6 +7,17 @@ import WebKit
 
 @MainActor
 final class PrintAcceptanceHostingTests: XCTestCase {
+    func testThemeReferenceReadsTheActiveModeNotAnEmptyInactiveEditor() async throws {
+        let prepared = try await PrintDocumentRenderer().prepareDocument(bodyHTML: "<p>Mode reference fixture</p>", title: "Active mode reference", baseURL: nil, settings: .default)
+        defer { prepared.releaseHold() }
+        _ = try await prepared.webView.evaluateJavaScript("""
+        document.body.innerHTML='<style>.vditor-ir .vditor-reset{font:20px Georgia}.vditor-ir h1{font-size:40px}</style><div class="vditor-wysiwyg" style="display:none"><div class="vditor-reset"></div></div><div class="vditor-ir"><div class="vditor-reset"><h1>Active heading</h1></div></div>';
+        """)
+        let typography = try await prepared.webView.evaluateJavaScript(EditorSurfaceTester.appliedEditorTypographyScript(mode: "ir")) as? [String: Any]
+        XCTAssertEqual(typography?["headingScale"] as? Double, 2)
+        XCTAssertTrue((typography?["fontFamily"] as? String)?.contains("Georgia") == true)
+    }
+
     func testContentAuditRecognizesOnlyVerifiedCellWordLineWraps() throws {
         XCTAssertEqual(try EditorSurfaceTester.wrappedCellWordCount("Boehringer", pageTexts: ["Verified Bo\nehringer record"], verifiedCells: ["Verified Boehringer record"]), 1)
         XCTAssertEqual(try EditorSurfaceTester.wrappedCellWordCount("Boehringer", pageTexts: ["Bo\nehringer"], verifiedCells: ["Boehringer"]), 0)

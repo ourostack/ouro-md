@@ -24,6 +24,11 @@ final class EditorSurfaceTester: NSObject {
     var activationPolicy: NSApplication.ActivationPolicy { requiresFocusedEditor ? .accessory : .prohibited }
     var printPresentation: PrintLayoutSession.Presentation { requiresFocusedEditor ? .sheet : .headless }
 
+    static func appliedEditorTypographyScript(mode: String) -> String {
+        let selector = mode == "wysiwyg" ? ".vditor-wysiwyg .vditor-reset" : ".vditor-ir .vditor-reset"
+        return "(function(){var root=document.querySelector('\(selector)'),heading=root&&root.querySelector('h1');return root ? {fontFamily:getComputedStyle(root).fontFamily,headingScale:heading ? parseFloat(getComputedStyle(heading).fontSize)/parseFloat(getComputedStyle(root).fontSize) : null} : null;})()"
+    }
+
     func run() -> Never {
         let app = NSApplication.shared
         let acceptedPolicy = app.setActivationPolicy(activationPolicy)
@@ -202,7 +207,7 @@ final class EditorSurfaceTester: NSObject {
         let readySeconds = trace.elapsedSeconds
         let initialPhaseEvents = trace.events
         let initialProfile = try await PrintLayoutSession.activeSession(for: window)?.prepared?.webView.evaluateJavaScript("window.__ouroPrintLayoutProfile")
-        let editorFontFamily = await evaluate("(function(){var root=document.querySelector('.vditor-ir .vditor-reset,.vditor-wysiwyg .vditor-reset');return root ? getComputedStyle(root).fontFamily : null;})()") as? String
+        let editorFontFamily = (await evaluate(Self.appliedEditorTypographyScript(mode: model.mode)) as? [String: Any])?["fontFamily"] as? String
         let printFontFamily = try await PrintLayoutSession.activeSession(for: window)?.prepared?.webView.evaluateJavaScript("getComputedStyle(document.querySelector('.markdown-body')).fontFamily") as? String
         guard let editorFontFamily, let printFontFamily, editorFontFamily == printFontFamily else {
             throw SurfaceError("The print copy did not inherit the applied editor theme's body font.")
@@ -572,7 +577,7 @@ final class EditorSurfaceTester: NSObject {
 
     private func verifySharedPDFJourney() async throws -> Bool {
         let originalBytes = try Data(contentsOf: markdownFile)
-        guard let headingScale = await evaluate("(function(){var root=document.querySelector('.vditor-ir .vditor-reset,.vditor-wysiwyg .vditor-reset'),heading=root&&root.querySelector('h1');return heading ? parseFloat(getComputedStyle(heading).fontSize)/parseFloat(getComputedStyle(root).fontSize) : null;})()") as? Double,
+        guard let headingScale = (await evaluate(Self.appliedEditorTypographyScript(mode: model.mode)) as? [String: Any])?["headingScale"] as? Double,
               headingScale.isFinite, headingScale > 0 else { throw SurfaceError("The applied theme's heading scale is unavailable.") }
         let output = root.appendingPathComponent("shared-layout.pdf")
         var result: Result<Bool, Error>?
