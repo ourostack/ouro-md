@@ -1,7 +1,7 @@
 name: Window chrome
 
 # Captures real moving editor content plus native chrome, with a released
-# flat-layout negative control. Interactive tests run only on the hosted Mac.
+# flat-layout and reflected-edge controls. Interactive tests run only on the hosted Mac.
 
 on:
   pull_request:
@@ -54,6 +54,7 @@ jobs:
           OURO_MD_TELEMETRY_DISABLED: '1'
         run: ./scripts/run-hosted-native-proof.sh header
       - name: Checkout the flat released negative control
+        if: always()
         uses: actions/checkout@v5
         with:
           ref: v0.9.95
@@ -73,12 +74,35 @@ jobs:
           export OURO_PROOF_RUNNER="$PWD/scripts/run-hosted-native-proof.sh"
           cd .ci/header-baseline
           "$OURO_PROOF_RUNNER" header
+      - name: Checkout the reflected-edge regression control
+        if: always()
+        uses: actions/checkout@v5
+        with:
+          ref: v0.9.104
+          path: .ci/header-echo
+      - name: Prove the old reflection remains distinguishable from real underlap
+        if: always()
+        env:
+          OURO_HEADER_RENDERING: '1'
+          OURO_NATIVE_PREFERENCE_PROOF: '1'
+          OURO_HEADER_EXPECT_UNDERLAP: '1'
+          OURO_HEADER_EXPECT_ECHO: '1'
+          OURO_HEADER_REQUIRE_LIVE_PAINT: ${{ matrix.runner == 'macos-26-intel' && '1' || '0' }}
+          OURO_HEADER_REQUIRE_FULLSCREEN: '0'
+          OURO_MD_TELEMETRY_DISABLED: '1'
+        run: |
+          cp Tests/OuroMDTests/NativeHeaderRenderingTests.swift .ci/header-echo/Tests/OuroMDTests/
+          export OURO_HEADER_OUTPUT="$PWD/.build/header-rendering/echo-v0.9.104"
+          export OURO_PROOF_RUNNER="$PWD/scripts/run-hosted-native-proof.sh"
+          cd .ci/header-echo
+          "$OURO_PROOF_RUNNER" header
       - name: Restore owned preferences after interrupted native capture
         if: always()
         env:
           OURO_NATIVE_PREFERENCE_PROOF: '1'
         run: |
           OURO_HEADER_OUTPUT=.build/header-rendering/flat-v0.9.95 ./scripts/run-hosted-native-proof.sh header --restore
+          OURO_HEADER_OUTPUT=.build/header-rendering/echo-v0.9.104 ./scripts/run-hosted-native-proof.sh header --restore
           OURO_HEADER_OUTPUT=.build/header-rendering/current ./scripts/run-hosted-native-proof.sh header --restore
       - uses: actions/upload-artifact@v6
         if: always()

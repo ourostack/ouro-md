@@ -73,6 +73,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
                   if (!root || !root.textContent.includes("HEADER ECHO FIXTURE")) { return null; }
                   const first = root.firstElementChild;
                   first.style.cssText = "margin:0;min-height:200px;font-size:48px;";
+                  first.style.setProperty("margin", "0", "important");
                   first.style.setProperty("background", \(marked ? "\"#ee2211\"" : "getComputedStyle(document.body).backgroundColor"), "important");
                   first.style.setProperty("color", \(marked ? "\"black\"" : "\"transparent\""), "important");
                   window.scrollTo(0, 0);
@@ -82,13 +83,13 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 """)
                 let values = try XCTUnwrap(geometry as? [String: Any])
                 XCTAssertEqual(values["scroll"] as? Double, 0, "the regression must be at true scroll-top")
-                XCTAssertGreaterThanOrEqual(values["firstTop"] as? Double ?? -1, 0,
-                                           "the high-contrast fixture must not actually have scrolled under the header")
+                XCTAssertEqual(try XCTUnwrap(values["firstTop"] as? Double), 30, accuracy: 1,
+                               "the fixture must occupy the document edge below the header, not evade the mirrored region")
                 try await Task.sleep(for: .seconds(1))
                 pumpNativeApplicationEvents()
                 let state = marked ? "top-marked" : "top-blank"
                 let bitmap = try captureWindow(controller.window, to: output.appendingPathComponent("\(theme)-\(state)-window.png"))
-                let header = meanRGB(bitmap, region: NSRect(x: 320, y: 12, width: 480, height: 26))
+                let header = meanRGB(bitmap, region: headerRegion(in: bitmap, window: controller.window))
                 topHeaders.append(header)
                 measurements.append(["theme": theme, "state": state, "headerRGB": header,
                                      "layout": values, "coloredBodyPixels": coloredPixels(bitmap)])
@@ -98,7 +99,11 @@ final class NativeHeaderRenderingTests: XCTestCase {
             }
             let topChange = zip(topHeaders[0], topHeaders[1]).map { abs($0 - $1) }.max() ?? 0
             if env["OURO_HEADER_REQUIRE_LIVE_PAINT"] == "1" {
-                XCTAssertLessThan(topChange, 3, "content entirely below the header must not be mirrored into it at scroll-top")
+                if env["OURO_HEADER_EXPECT_ECHO"] == "1" {
+                    XCTAssertGreaterThan(topChange, 5, "the known-bad reflected-edge release must expose its false backdrop")
+                } else {
+                    XCTAssertLessThan(topChange, 3, "content entirely below the header must not be mirrored into it at scroll-top")
+                }
             }
             let document = (1...30).map {
                 "## Passage \($0)\n\nMoving document backdrop \($0). Native title and toolbar controls must remain readable."
@@ -146,7 +151,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 CATransaction.flush()
                 let imageURL = output.appendingPathComponent("\(theme)-\(name)-window.png")
                 let bitmap = try captureWindow(controller.window, to: imageURL)
-                let header = meanRGB(bitmap, region: NSRect(x: 320, y: 12, width: 480, height: 26))
+                let header = meanRGB(bitmap, region: headerRegion(in: bitmap, window: controller.window))
                 headerMeans.append(header)
                 let frame = web.convert(web.bounds, to: nil)
                 measurements.append(["theme": theme, "state": name, "headerRGB": header,
@@ -168,7 +173,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
                     XCTAssertEqual(onscreen.terminationStatus, 0)
                     let pixels = try XCTUnwrap(NSBitmapImageRep(data: Data(contentsOf: regionURL)))
                     measurements[measurements.count - 1]["onscreenColoredBodyPixels"] = coloredPixels(pixels)
-                    measurements[measurements.count - 1]["onscreenHeaderRGB"] = meanRGB(pixels, region: NSRect(x: 320, y: 12, width: 480, height: 26))
+                    measurements[measurements.count - 1]["onscreenHeaderRGB"] = meanRGB(pixels, region: headerRegion(in: pixels, window: controller.window))
                 }
             }
             sampledHeaders.append(headerMeans[0])
@@ -205,8 +210,23 @@ final class NativeHeaderRenderingTests: XCTestCase {
                     let top = web.convert(web.bounds, to: nil).maxY - web.obscuredContentInsets.top
                     XCTAssertEqual(top, controller.window.contentLayoutRect.maxY, accuracy: 1,
                                    "fullscreen and hidden-toolbar transitions must update real editing bounds")
+                    let viewport = try await web.evaluateJavaScript("""
+                    (() => {
+                      const cue = document.createElement("div");
+                      cue.style.cssText = "position:fixed;top:0;width:1px;height:1px";
+                      document.body.appendChild(cue);
+                      const result = {height:innerHeight, fixedTop:cue.getBoundingClientRect().top};
+                      cue.remove();
+                      return result;
+                    })()
+                    """) as? [String: Double]
+                    let coordinates = try XCTUnwrap(viewport)
+                    XCTAssertEqual(try XCTUnwrap(coordinates["height"]),
+                                   (web.bounds.height - web.obscuredContentInsets.top) / web.pageZoom, accuracy: 1)
+                    XCTAssertEqual(try XCTUnwrap(coordinates["fixedTop"]), 0, accuracy: 1)
                     fullscreenStates.append(["fullscreen": fullscreen, "toolbarVisible": visible,
-                                             "webTop": top, "nativeLayoutTop": controller.window.contentLayoutRect.maxY])
+                                             "webTop": top, "nativeLayoutTop": controller.window.contentLayoutRect.maxY,
+                                             "viewport": coordinates])
                 }
             }
             measurements[0]["fullscreenStates"] = fullscreenStates
@@ -241,6 +261,26 @@ final class NativeHeaderRenderingTests: XCTestCase {
         capture.waitUntilExit()
         XCTAssertEqual(capture.terminationStatus, 0)
         return try XCTUnwrap(NSBitmapImageRep(data: Data(contentsOf: url)))
+    }
+
+    private func headerRegion(in bitmap: NSBitmapImageRep, window: NSWindow) -> NSRect {
+        func panel(in view: NSView) -> NSView? {
+            if view.identifier?.rawValue == "OuroMDDocumentHeaderBackdrop" { return view }
+            return view.subviews.lazy.compactMap { panel(in: $0) }.first
+        }
+        let band: NSRect
+        if let content = window.contentView, let glass = panel(in: content) {
+            band = glass.convert(glass.bounds, to: nil)
+        } else {
+            band = NSRect(x: 0, y: window.contentLayoutRect.maxY, width: window.frame.width,
+                          height: window.frame.height - window.contentLayoutRect.maxY)
+        }
+        XCTAssertGreaterThan(band.height, 0)
+        let scaleX = CGFloat(bitmap.pixelsWide) / window.frame.width
+        let scaleY = CGFloat(bitmap.pixelsHigh) / window.frame.height
+        return NSRect(x: (band.minX + band.width * 0.32) * scaleX,
+                      y: (window.frame.height - band.maxY + band.height * 0.25) * scaleY,
+                      width: band.width * 0.48 * scaleX, height: band.height * 0.5 * scaleY)
     }
 
     private func pumpNativeApplicationEvents() {

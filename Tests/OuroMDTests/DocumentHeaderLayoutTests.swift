@@ -51,10 +51,20 @@ final class DocumentHeaderLayoutTests: XCTestCase {
             XCTAssertEqual(app.activationPolicy(), .prohibited)
         }
         let web = try XCTUnwrap(editor(in: host))
-        web.loadHTMLString("""
-        <!doctype html><style>body{margin:0}#flow{height:4000px}#fixed{position:fixed;top:0}</style>
-        <div id="flow">SYNTHETIC VIEWPORT FIXTURE</div><div id="fixed">FIXED CUE</div>
-        """, baseURL: nil)
+        for _ in 0..<200 {
+            if model.isReady { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertTrue(model.isReady, "wait for the production editor before inserting synthetic viewport cues")
+        _ = try await web.evaluateJavaScript("""
+        (() => {
+          const flow = document.createElement("div"), fixed = document.createElement("div");
+          flow.id = "flow"; flow.style.height = "4000px"; flow.textContent = "SYNTHETIC VIEWPORT FIXTURE";
+          fixed.id = "fixed"; fixed.style.cssText = "position:fixed;top:0"; fixed.textContent = "FIXED CUE";
+          document.body.prepend(flow); document.body.append(fixed);
+          window.scrollTo(0, 0);
+        })()
+        """)
         for zoom in [0.75, 1.0, 2.0] {
             EditorZoom.apply(zoom, to: web)
             let expectedHeight = (web.bounds.height - 52) / zoom
@@ -71,7 +81,10 @@ final class DocumentHeaderLayoutTests: XCTestCase {
                 if abs((coordinates?["height"] ?? 0) - expectedHeight) <= 1 { break }
                 try await Task.sleep(for: .milliseconds(50))
             }
-            let values = try XCTUnwrap(coordinates)
+            let fixtureState = try await web.evaluateJavaScript("""
+            ({url:location.href, ready:document.readyState, fixture:!!document.getElementById("flow")})
+            """)
+            let values = try XCTUnwrap(coordinates, "fixture did not become ready: \(fixtureState)")
             print("HEADER_VIEWPORT zoom=\(zoom) \(values)")
             XCTAssertEqual(try XCTUnwrap(values["height"]), expectedHeight, accuracy: 1)
             XCTAssertEqual(try XCTUnwrap(values["flow"]), 0, accuracy: 1)
