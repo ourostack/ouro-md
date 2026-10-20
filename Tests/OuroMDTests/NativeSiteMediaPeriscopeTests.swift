@@ -5,10 +5,10 @@ import WebKit
 import XCTest
 @testable import OuroMD
 
-/// Two short website dramatizations on the fictional Nautilus periscope design doc,
+/// Two short website dramatizations on an agent's plan for importing recipes into Spoonjoy,
 /// captured only in a disposable hosted desktop session:
 /// - typing: the document grows as if typed and renders as it goes;
-/// - agent: an outside writer fills the empty Depth trials table and ticks two checklist items.
+/// - agent: an outside writer fills the empty Test recipes table and ticks two checklist items.
 @MainActor
 final class NativeSiteMediaPeriscopeTests: XCTestCase {
     private var records: [[String: Any]] = []
@@ -24,7 +24,7 @@ final class NativeSiteMediaPeriscopeTests: XCTestCase {
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         let fixtures = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
             .deletingLastPathComponent().appendingPathComponent("Fixtures")
-        let full = try String(contentsOf: fixtures.appendingPathComponent("Periscope design.md"), encoding: .utf8)
+        let full = try String(contentsOf: fixtures.appendingPathComponent("Recipe import plan.md"), encoding: .utf8)
         defer {
             try? JSONSerialization.data(withJSONObject: [
                 "os": ProcessInfo.processInfo.operatingSystemVersionString,
@@ -49,17 +49,15 @@ final class NativeSiteMediaPeriscopeTests: XCTestCase {
         let sample = output.appendingPathComponent("typing-\(theme)", isDirectory: true)
         try FileManager.default.createDirectory(at: sample, withIntermediateDirectories: true)
         let typedStart = try XCTUnwrap(full.range(of: "## At a glance"))
-        let typedEnd = try XCTUnwrap(full.range(of: "## Optics"))
+        let typedEnd = try XCTUnwrap(full.range(of: "## Test recipes"))
         let start = String(full[..<typedStart.lowerBound])
         let typed = String(full[typedStart.lowerBound..<typedEnd.lowerBound])
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        let document = sample.appendingPathComponent("Periscope design.md")
+        let document = sample.appendingPathComponent("Recipe import plan.md")
         try start.write(to: document, atomically: true, encoding: .utf8)
-        try FileManager.default.copyItem(at: fixtures.appendingPathComponent("Periscope optics.svg"),
-                                        to: sample.appendingPathComponent("Periscope optics.svg"))
-        try initRepository(sample, committing: ["Periscope optics.svg"])
+        try initRepository(sample, committing: [])
 
-        let (controller, web) = try await open(document, theme: theme, until: "Nautilus OS")
+        let (controller, web) = try await open(document, theme: theme, until: "Recipe import")
         defer { close(controller) }
         _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
 
@@ -107,7 +105,7 @@ final class NativeSiteMediaPeriscopeTests: XCTestCase {
         try await finishRecorder(recorder)
         try captureWindow(controller.window, to: output.appendingPathComponent("typing-\(theme)-poster.png"))
         let value = try await web.evaluateJavaScript("window.ouro.getValue()") as? String ?? ""
-        XCTAssertTrue(value.contains("Relay to salon"), "the typed document must reach the diagram")
+        XCTAssertTrue(value.contains("Ari reviews"), "the typed document must reach the diagram")
         records.append([
             "clip": "typing", "theme": theme, "movie": movie.lastPathComponent,
             "poster": "typing-\(theme)-poster.png", "steps": steps.count,
@@ -168,18 +166,16 @@ final class NativeSiteMediaPeriscopeTests: XCTestCase {
     private func agentClip(theme: String, full: String, fixtures: URL, output: URL) async throws {
         let sample = output.appendingPathComponent("agent-\(theme)", isDirectory: true)
         try FileManager.default.createDirectory(at: sample, withIntermediateDirectories: true)
-        let document = sample.appendingPathComponent("Periscope design.md")
+        let document = sample.appendingPathComponent("Recipe import plan.md")
         try full.write(to: document, atomically: true, encoding: .utf8)
-        try FileManager.default.copyItem(at: fixtures.appendingPathComponent("Periscope optics.svg"),
-                                        to: sample.appendingPathComponent("Periscope optics.svg"))
-        try initRepository(sample, committing: ["Periscope design.md", "Periscope optics.svg"])
+        try initRepository(sample, committing: ["Recipe import plan.md"])
 
-        let (controller, web) = try await open(document, theme: theme, until: "Depth trials")
+        let (controller, web) = try await open(document, theme: theme, until: "Test recipes")
         defer { close(controller) }
         let geometry = """
         (function () {
           var root = document.querySelector('.vditor-ir .vditor-reset');
-          var h = [...root.querySelectorAll('h2')].find(function (n) { return n.textContent.includes('Depth trials'); });
+          var h = [...root.querySelectorAll('h2')].find(function (n) { return n.textContent.includes('Test recipes'); });
           var s = document.scrollingElement;
           var top = h.getBoundingClientRect().top + s.scrollTop - 14;
           return Math.max(0, Math.min(top, s.scrollHeight - s.clientHeight));
@@ -201,18 +197,18 @@ final class NativeSiteMediaPeriscopeTests: XCTestCase {
         XCTAssertTrue(before.contains(emptyRows))
         let revised = before
             .replacingOccurrences(of: emptyRows, with: """
-            | 10 m | 16 s | Sharp | Calm sea, Crespo Island in view |
-            | 14 m | 18 s | Steady | Force 4 swell, damper held |
-            | 18 m | Held | None | Guard refused, as designed |
+            | Mushroom risotto | 9 | 12 of 12 | Clean |
+            | Sourdough focaccia | 11 | 9 of 10 | Guessed "a pinch" of salt |
+            | Weeknight dal | 7 | 10 of 10 | Clean |
 
             """)
-            .replacingOccurrences(of: "- [ ] Run the depth trials", with: "- [x] Run the depth trials")
-            .replacingOccurrences(of: "- [ ] Calibrate the wave damper", with: "- [x] Calibrate the wave damper")
+            .replacingOccurrences(of: "- [ ] Run the test recipes", with: "- [x] Run the test recipes")
+            .replacingOccurrences(of: "- [ ] Place ingredients on their steps", with: "- [x] Place ingredients on their steps")
         XCTAssertNotEqual(revised, before)
         let agentWrite = ProcessInfo.processInfo.systemUptime - recordingStart
         try revised.write(to: document, atomically: true, encoding: .utf8)
         try revised.write(to: output.appendingPathComponent("agent-revised.md"), atomically: true, encoding: .utf8)
-        try await wait(web, "window.ouro.getValue().includes('Crespo Island')")
+        try await wait(web, "window.ouro.getValue().includes('Sourdough focaccia')")
         let landed = ProcessInfo.processInfo.systemUptime - recordingStart
         try await wait(web, "document.querySelectorAll('.ouro-change-mark').length >= 1")
         let state = try await web.evaluateJavaScript("""
@@ -276,11 +272,11 @@ final class NativeSiteMediaPeriscopeTests: XCTestCase {
 
     private func initRepository(_ directory: URL, committing files: [String]) throws {
         try git(["-c", "init.defaultBranch=main", "init"], in: directory)
-        try git(["config", "user.name", "Nautilus Crew"], in: directory)
-        try git(["config", "user.email", "crew@nautilus.invalid"], in: directory)
+        try git(["config", "user.name", "Demo Agent"], in: directory)
+        try git(["config", "user.email", "agent@demo.invalid"], in: directory)
         try git(["config", "core.quotePath", "false"], in: directory)
-        try git(["add", "--"] + files, in: directory)
-        try git(["-c", "commit.gpgsign=false", "commit", "-m", "Periscope design baseline"], in: directory)
+        if !files.isEmpty { try git(["add", "--"] + files, in: directory) }
+        try git(["-c", "commit.gpgsign=false", "commit", "--allow-empty", "-m", "Recipe import plan baseline"], in: directory)
     }
 
     private func jsString(_ value: String) -> String {
