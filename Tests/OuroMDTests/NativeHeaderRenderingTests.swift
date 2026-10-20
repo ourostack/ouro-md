@@ -63,6 +63,42 @@ final class NativeHeaderRenderingTests: XCTestCase {
         for theme in ["quartz", "graphite"] {
             controller.model.setTheme(id: theme)
             controller.syncChrome()
+            controller.model.bridge?.setMarkdown("# HEADER ECHO FIXTURE\n\nOnly synthetic document content.")
+            try await Task.sleep(for: .seconds(1))
+            var topHeaders: [[Double]] = []
+            for marked in [false, true] {
+                let geometry = try await web.evaluateJavaScript("""
+                (() => {
+                  const root = document.querySelector(".vditor-ir .vditor-reset");
+                  if (!root || !root.textContent.includes("HEADER ECHO FIXTURE")) { return null; }
+                  const first = root.firstElementChild;
+                  first.style.cssText = "margin:0;min-height:200px;font-size:48px;";
+                  first.style.setProperty("background", \(marked ? "\"#ee2211\"" : "getComputedStyle(document.body).backgroundColor"), "important");
+                  first.style.setProperty("color", \(marked ? "\"black\"" : "\"transparent\""), "important");
+                  window.scrollTo(0, 0);
+                  return {scroll:scrollY, firstTop:first.getBoundingClientRect().top,
+                    firstBottom:first.getBoundingClientRect().bottom, viewport:innerHeight};
+                })()
+                """)
+                let values = try XCTUnwrap(geometry as? [String: Any])
+                XCTAssertEqual(values["scroll"] as? Double, 0, "the regression must be at true scroll-top")
+                XCTAssertGreaterThanOrEqual(values["firstTop"] as? Double ?? -1, 0,
+                                           "the high-contrast fixture must not actually have scrolled under the header")
+                try await Task.sleep(for: .seconds(1))
+                pumpNativeApplicationEvents()
+                let state = marked ? "top-marked" : "top-blank"
+                let bitmap = try captureWindow(controller.window, to: output.appendingPathComponent("\(theme)-\(state)-window.png"))
+                topHeaders.append(meanRGB(bitmap, region: NSRect(x: 320, y: 12, width: 480, height: 26)))
+                measurements.append(["theme": theme, "state": state, "headerRGB": topHeaders.last!,
+                                     "layout": values, "coloredBodyPixels": coloredPixels(bitmap)])
+                if marked && env["OURO_HEADER_REQUIRE_LIVE_PAINT"] == "1" {
+                    XCTAssertGreaterThan(coloredPixels(bitmap), 1000, "a blank native capture cannot certify no text echo")
+                }
+            }
+            let topChange = zip(topHeaders[0], topHeaders[1]).map { abs($0 - $1) }.max() ?? 0
+            if env["OURO_HEADER_REQUIRE_LIVE_PAINT"] == "1" {
+                XCTAssertLessThan(topChange, 3, "content entirely below the header must not be mirrored into it at scroll-top")
+            }
             let document = (1...30).map {
                 "## Passage \($0)\n\nMoving document backdrop \($0). Native title and toolbar controls must remain readable."
             }.joined(separator: "\n\n")
@@ -108,13 +144,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 content.displayIfNeeded()
                 CATransaction.flush()
                 let imageURL = output.appendingPathComponent("\(theme)-\(name)-window.png")
-                let capture = Process()
-                capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-                capture.arguments = ["-x", "-o", "-l", "\(controller.window.windowNumber)", imageURL.path]
-                try capture.run()
-                capture.waitUntilExit()
-                XCTAssertEqual(capture.terminationStatus, 0)
-                let bitmap = try XCTUnwrap(NSBitmapImageRep(data: Data(contentsOf: imageURL)))
+                let bitmap = try captureWindow(controller.window, to: imageURL)
                 let header = meanRGB(bitmap, region: NSRect(x: 320, y: 12, width: 480, height: 26))
                 headerMeans.append(header)
                 let frame = web.convert(web.bounds, to: nil)
@@ -166,10 +196,12 @@ final class NativeHeaderRenderingTests: XCTestCase {
                     for _ in 0..<20 {
                         pumpNativeApplicationEvents()
                         content.layoutSubtreeIfNeeded()
-                        if abs(web.convert(web.bounds, to: nil).maxY - controller.window.contentLayoutRect.maxY) <= 1 { break }
+                        var editingTop = web.convert(web.bounds, to: nil).maxY
+                        editingTop -= web.obscuredContentInsets.top
+                        if abs(editingTop - controller.window.contentLayoutRect.maxY) <= 1 { break }
                         try await Task.sleep(for: .milliseconds(100))
                     }
-                    let top = web.convert(web.bounds, to: nil).maxY
+                    let top = web.convert(web.bounds, to: nil).maxY - web.obscuredContentInsets.top
                     XCTAssertEqual(top, controller.window.contentLayoutRect.maxY, accuracy: 1,
                                    "fullscreen and hidden-toolbar transitions must update real editing bounds")
                     fullscreenStates.append(["fullscreen": fullscreen, "toolbarVisible": visible,
@@ -183,7 +215,8 @@ final class NativeHeaderRenderingTests: XCTestCase {
         measurements[0]["nativeReduceTransparency"] = NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
         try JSONSerialization.data(withJSONObject: measurements, options: [.prettyPrinted, .sortedKeys])
             .write(to: output.appendingPathComponent("measurements.json"))
-        let liveBodyPaints = measurements.allSatisfy { ($0["coloredBodyPixels"] as? Int ?? 0) > 1000 }
+        let liveBodyPaints = measurements.filter { ($0["state"] as? String)?.hasPrefix("top-") != true }
+            .allSatisfy { ($0["coloredBodyPixels"] as? Int ?? 0) > 1000 }
         if env["OURO_HEADER_REQUIRE_LIVE_PAINT"] == "1" {
             XCTAssertTrue(liveBodyPaints, "blank native captures cannot certify glass, even when WK snapshots paint")
             for index in stride(from: 0, to: sampledHeaders.count, by: 2) {
@@ -195,6 +228,18 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 }
             }
         }
+    }
+
+    private func captureWindow(_ window: NSWindow, to url: URL) throws -> NSBitmapImageRep {
+        window.contentView?.displayIfNeeded()
+        CATransaction.flush()
+        let capture = Process()
+        capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        capture.arguments = ["-x", "-o", "-l", "\(window.windowNumber)", url.path]
+        try capture.run()
+        capture.waitUntilExit()
+        XCTAssertEqual(capture.terminationStatus, 0)
+        return try XCTUnwrap(NSBitmapImageRep(data: Data(contentsOf: url)))
     }
 
     private func pumpNativeApplicationEvents() {
