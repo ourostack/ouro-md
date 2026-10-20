@@ -35,6 +35,9 @@ struct EditorWebView: NSViewRepresentable {
         EditorZoom.apply(model.zoom, to: webView)
         webView.allowsBackForwardNavigationGestures = false
         webView.registerForDraggedTypes([.fileURL])
+        if #available(macOS 26, *) {
+            webView.obscuredContentInsets = NSEdgeInsets(top: headerInset, left: 0, bottom: 0, right: 0)
+        }
 
         context.coordinator.webView = webView
         context.coordinator.observeWritingTools(on: webView)
@@ -45,22 +48,14 @@ struct EditorWebView: NSViewRepresentable {
             // references by absolute or (resolved) relative file paths.
             webView.loadFileURL(indexURL, allowingReadAccessTo: URL(fileURLWithPath: "/"))
         }
-        if #available(macOS 26, *) {
-            let extensionView = DocumentBackgroundExtensionView()
-            extensionView.automaticallyPlacesContentView = false
-            extensionView.headerInset = headerInset
-            extensionView.contentView = webView
-            return extensionView
-        }
         return webView
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
         guard let webView = context.coordinator.webView else { return }
         Self.applyLayerBackground(model.theme.backgroundHex, to: webView)
-        if #available(macOS 26, *), let extensionView = nsView as? DocumentBackgroundExtensionView {
-            extensionView.headerInset = headerInset
-            extensionView.needsLayout = true
+        if #available(macOS 26, *) {
+            webView.obscuredContentInsets = NSEdgeInsets(top: headerInset, left: 0, bottom: 0, right: 0)
         }
     }
 

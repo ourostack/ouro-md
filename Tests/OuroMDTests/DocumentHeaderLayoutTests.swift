@@ -6,7 +6,7 @@ import XCTest
 
 @MainActor
 final class DocumentHeaderLayoutTests: XCTestCase {
-    func testEditorPaintsBehindHeaderWithoutReplicatingItsTopEdge() throws {
+    func testEditorPaintsBehindHeaderWithoutReplicatingItsTopEdge() async throws {
         try XCTSkipUnless(SystemDesign.usesGlass)
         guard #available(macOS 26, *) else { return }
         let app = NSApplication.shared
@@ -35,7 +35,7 @@ final class DocumentHeaderLayoutTests: XCTestCase {
             host.rootView = EditorWebView(model: model, headerInset: inset)
             window.setContentSize(size)
             host.layoutSubtreeIfNeeded()
-            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
+            try await Task.sleep(for: .milliseconds(100))
             host.layoutSubtreeIfNeeded()
             let web = try XCTUnwrap(editor(in: host))
             let painted = web.convert(web.bounds, to: host)
@@ -48,6 +48,39 @@ final class DocumentHeaderLayoutTests: XCTestCase {
             XCTAssertFalse(window.isVisible)
             XCTAssertFalse(window.canBecomeKey)
             XCTAssertFalse(window.canBecomeMain)
+            XCTAssertEqual(app.activationPolicy(), .prohibited)
+        }
+        let web = try XCTUnwrap(editor(in: host))
+        web.loadHTMLString("""
+        <!doctype html><style>body{margin:0}#flow{height:4000px}#fixed{position:fixed;top:0}</style>
+        <div id="flow">SYNTHETIC VIEWPORT FIXTURE</div><div id="fixed">FIXED CUE</div>
+        """, baseURL: nil)
+        for zoom in [0.75, 1.0, 2.0] {
+            EditorZoom.apply(zoom, to: web)
+            let expectedHeight = (web.bounds.height - 52) / zoom
+            var coordinates: [String: Double]?
+            for _ in 0..<100 {
+                coordinates = try await web.evaluateJavaScript("""
+                (() => {
+                  const flow = document.getElementById("flow"), fixed = document.getElementById("fixed");
+                  if (!flow || !fixed) { return null; }
+                  return {height:innerHeight, flow:flow.getBoundingClientRect().top,
+                    fixed:fixed.getBoundingClientRect().top, scroll:scrollY};
+                })()
+                """) as? [String: Double]
+                if abs((coordinates?["height"] ?? 0) - expectedHeight) <= 1 { break }
+                try await Task.sleep(for: .milliseconds(50))
+            }
+            let values = try XCTUnwrap(coordinates)
+            print("HEADER_VIEWPORT zoom=\(zoom) \(values)")
+            XCTAssertEqual(try XCTUnwrap(values["height"]), expectedHeight, accuracy: 1)
+            XCTAssertEqual(try XCTUnwrap(values["flow"]), 0, accuracy: 1)
+            XCTAssertEqual(try XCTUnwrap(values["fixed"]), 0, accuracy: 1,
+                           "WebKit must avoid chrome itself; CSS must not double-inset fixed editing cues")
+            XCTAssertEqual(try XCTUnwrap(values["scroll"]), 0, accuracy: 1)
+            XCTAssertFalse(window.isVisible)
+            XCTAssertFalse(window.isKeyWindow)
+            XCTAssertFalse(window.isMainWindow)
             XCTAssertEqual(app.activationPolicy(), .prohibited)
         }
     }

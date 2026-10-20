@@ -88,8 +88,9 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 pumpNativeApplicationEvents()
                 let state = marked ? "top-marked" : "top-blank"
                 let bitmap = try captureWindow(controller.window, to: output.appendingPathComponent("\(theme)-\(state)-window.png"))
-                topHeaders.append(meanRGB(bitmap, region: NSRect(x: 320, y: 12, width: 480, height: 26)))
-                measurements.append(["theme": theme, "state": state, "headerRGB": topHeaders.last!,
+                let header = meanRGB(bitmap, region: NSRect(x: 320, y: 12, width: 480, height: 26))
+                topHeaders.append(header)
+                measurements.append(["theme": theme, "state": state, "headerRGB": header,
                                      "layout": values, "coloredBodyPixels": coloredPixels(bitmap)])
                 if marked && env["OURO_HEADER_REQUIRE_LIVE_PAINT"] == "1" {
                     XCTAssertGreaterThan(coloredPixels(bitmap), 1000, "a blank native capture cannot certify no text echo")

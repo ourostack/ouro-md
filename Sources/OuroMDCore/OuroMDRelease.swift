@@ -4,11 +4,12 @@ public enum OuroMDRelease {
     public static let appName = "Ouro MD"
     public static let bundleIdentifier = "bot.ouro.md"
     public static let repository = "ourostack/ouro-md"
-    public static let version = "0.9.104"
+    public static let version = "0.9.105"
     public static let userAgent = "OuroMD/\(version)"
-    public static let releaseDate = "2026-10-14"
+    public static let releaseDate = "2026-10-20"
     public static let positioningSubtitle = "Local Markdown workspace for Mac files."
     public static let releaseHighlights = [
+        "Keep the glass header quiet at the top of a document, without reflecting text that has not scrolled beneath it.",
         "Start print previews fitted to the whole page, including large paper sizes.",
         "Keep zoom buttons in sync with the actual scale and preserve manual zoom across layout changes.",
         "Refresh capture feedback smoothly without delaying the first page, cancellation, or complete-output readiness.",

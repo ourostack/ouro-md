@@ -50,7 +50,7 @@ final class DocumentWindowControllerTests: XCTestCase {
         }
     }
 
-    func testNativeExtensionAndGlassUnderlapWhileEditingStaysInSafeArea() throws {
+    func testNativeGlassUnderlapWhileEditingStaysInSafeArea() throws {
         try XCTSkipUnless(SystemDesign.usesGlass, "native toolbar geometry is for the system design")
         let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
         defer { controller.window.close() }
@@ -68,11 +68,6 @@ final class DocumentWindowControllerTests: XCTestCase {
             if view.identifier?.rawValue == "OuroMDDocumentHeaderBackdrop" { return view }
             return view.subviews.lazy.compactMap { nativeBackdrop(in: $0) }.first
         }
-        func nativeExtension(in view: NSView) -> NSView? {
-            if #available(macOS 26, *), view is NSBackgroundExtensionView { return view }
-            return view.subviews.lazy.compactMap { nativeExtension(in: $0) }.first
-        }
-
         for size in [NSSize(width: 1080, height: 800), NSSize(width: 600, height: 420)] {
             window.setContentSize(size)
             for visible in [true, false, true] {
@@ -83,27 +78,24 @@ final class DocumentWindowControllerTests: XCTestCase {
                 let webView = try XCTUnwrap(editor(in: content))
                 waitUntil(timeout: 1) {
                     content.layoutSubtreeIfNeeded()
-                    return abs(webView.convert(webView.bounds, to: nil).maxY - window.contentLayoutRect.maxY) <= 1
+                    var editingTop = webView.convert(webView.bounds, to: nil).maxY
+                    if #available(macOS 26, *) { editingTop -= webView.obscuredContentInsets.top }
+                    return abs(editingTop - window.contentLayoutRect.maxY) <= 1
                 }
                 let frame = webView.convert(webView.bounds, to: nil)
                 XCTAssertGreaterThan(frame.height, 0)
                 if #available(macOS 26, *) {
-                    let extensionView = try XCTUnwrap(nativeExtension(in: content) as? NSBackgroundExtensionView,
-                                                       "native background extension must paint moving document backdrop behind chrome")
-                    let extensionFrame = extensionView.convert(extensionView.bounds, to: nil)
-                    XCTAssertEqual(extensionFrame.maxY, content.convert(content.bounds, to: nil).maxY, accuracy: 1)
-                    XCTAssertTrue(extensionView.contentView === webView)
-                    XCTAssertEqual(frame.maxY, window.contentLayoutRect.maxY, accuracy: 1,
-                                   "native extension keeps real editing in its safe area without a second WebKit inset")
-                    let occlusion = max(0, extensionFrame.maxY - frame.maxY)
-                    XCTAssertEqual(webView.obscuredContentInsets.top, 0)
+                    XCTAssertEqual(frame.maxY, content.convert(content.bounds, to: nil).maxY, accuracy: 1)
+                    XCTAssertEqual(frame.maxY - webView.obscuredContentInsets.top, window.contentLayoutRect.maxY, accuracy: 1,
+                                   "real underlap uses a native viewport inset to keep editing clear of the header")
+                    let occlusion = webView.obscuredContentInsets.top
                     if visible {
                         XCTAssertGreaterThan(occlusion, 0, "a visible toolbar needs document backdrop beneath it")
                     }
                     let backdrop = try XCTUnwrap(nativeBackdrop(in: content) as? NSGlassEffectView,
                                                  "the header needs an actual native glass panel, not raw underlap alone")
                     let glassFrame = backdrop.convert(backdrop.bounds, to: nil)
-                    XCTAssertEqual(glassFrame.maxY, extensionFrame.maxY, accuracy: 1)
+                    XCTAssertEqual(glassFrame.maxY, frame.maxY, accuracy: 1)
                     XCTAssertEqual(glassFrame.minY, window.contentLayoutRect.maxY, accuracy: 1,
                                    "glass must stop at the native header edge, never fade into readable text")
                     XCTAssertEqual(glassFrame.width, frame.width, accuracy: 1)
