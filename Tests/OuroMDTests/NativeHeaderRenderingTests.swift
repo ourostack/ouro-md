@@ -1,5 +1,6 @@
 import AppKit
 import QuartzCore
+import SwiftUI
 import WebKit
 import XCTest
 @testable import OuroMD
@@ -16,14 +17,49 @@ final class NativeHeaderRenderingTests: XCTestCase {
             XCTAssertFalse(NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
             XCTAssertFalse(NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency)
         }
+
+        @available(macOS 26, *)
+        private struct HeaderProbeBackdrop: NSViewRepresentable {
+            func makeNSView(context: Context) -> NSGlassEffectView {
+                let view = HeaderProbeGlass()
+                view.style = .regular
+                view.cornerRadius = 0
+                view.contentView = NSView()
+                view.identifier = NSUserInterfaceItemIdentifier("OuroMDDocumentHeaderBackdrop")
+                view.setAccessibilityElement(false)
+                return view
+            }
+
+            func updateNSView(_ nsView: NSGlassEffectView, context: Context) {}
+        }
+
+        @available(macOS 26, *)
+        private final class HeaderProbeGlass: NSGlassEffectView {
+            override func hitTest(_ point: NSPoint) -> NSView? { nil }
+        }
         NSApplication.shared.setActivationPolicy(.regular)
         NSApplication.shared.finishLaunching()
         let output = URL(fileURLWithPath: env["OURO_HEADER_OUTPUT"] ?? ".build/header-rendering", isDirectory: true)
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         let expectsGlass = env["OURO_HEADER_EXPECT_GLASS"] != "0"
+        let probesPublicViewport = env["OURO_HEADER_PUBLIC_VIEWPORT_PROBE"] == "1"
         let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
         defer { controller.window.close() }
         controller.window.setContentSize(NSSize(width: 1000, height: 700))
+        if probesPublicViewport, #available(macOS 26, *) {
+            controller.window.contentView = NSHostingView(rootView: GeometryReader { geometry in
+                ZStack(alignment: .top) {
+                    EditorWebView(model: controller.model)
+                        .ignoresSafeArea(.container, edges: .top)
+                    VStack(spacing: 0) {
+                        HeaderProbeBackdrop().frame(height: geometry.safeAreaInsets.top)
+                        Spacer(minLength: 0)
+                    }
+                    .ignoresSafeArea(.container, edges: .top)
+                    .allowsHitTesting(false)
+                }
+            })
+        }
         controller.show(cascadeFrom: nil)
         pumpNativeApplicationEvents()
         let content = try XCTUnwrap(controller.window.contentView)
@@ -37,6 +73,17 @@ final class NativeHeaderRenderingTests: XCTestCase {
         }
         XCTAssertTrue(controller.model.isReady, "must prove real editor readiness, not capture a blank body")
         let web = try XCTUnwrap(editor(in: content))
+        let nativeHeaderInset = controller.window.frame.height - controller.window.contentLayoutRect.maxY
+        if probesPublicViewport, #available(macOS 26, *) {
+            web.obscuredContentInsets = .zero
+            _ = try await web.evaluateJavaScript("""
+            (() => {
+              const css = document.createElement("style");
+              css.textContent = "html{scroll-padding-top:\(nativeHeaderInset / web.pageZoom)px!important}body{padding-top:\(nativeHeaderInset / web.pageZoom)px!important}";
+              document.head.appendChild(css);
+            })()
+            """)
+        }
         if expectsGlass, #available(macOS 26, *) {
             func panel(in view: NSView) -> NSGlassEffectView? {
                 if let glass = view as? NSGlassEffectView,
@@ -83,7 +130,8 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 """)
                 let values = try XCTUnwrap(geometry as? [String: Any])
                 XCTAssertEqual(values["scroll"] as? Double, 0, "the regression must be at true scroll-top")
-                XCTAssertEqual(try XCTUnwrap(values["firstTop"] as? Double), 30, accuracy: 1,
+                XCTAssertEqual(try XCTUnwrap(values["firstTop"] as? Double),
+                               30 + (probesPublicViewport ? nativeHeaderInset / web.pageZoom : 0), accuracy: 1,
                                "the fixture must occupy the document edge below the header, not evade the mirrored region")
                 try await Task.sleep(for: .seconds(1))
                 pumpNativeApplicationEvents()
@@ -179,7 +227,66 @@ final class NativeHeaderRenderingTests: XCTestCase {
             sampledHeaders.append(headerMeans[0])
             sampledHeaders.append(headerMeans[1])
         }
-        if expectsGlass && env["OURO_HEADER_REQUIRE_FULLSCREEN"] == "1", #available(macOS 26, *) {
+        if probesPublicViewport {
+            controller.model.bridge?.setMarkdown((1...80).map { "Native caret paragraph \($0)." }.joined(separator: "\n\n"))
+            try await Task.sleep(for: .seconds(1))
+            var caretStates: [[String: Any]] = []
+            for avoidsHeader in [false, true] {
+                let inset = avoidsHeader ? nativeHeaderInset / web.pageZoom : 0
+                _ = try await web.evaluateJavaScript("""
+                (() => {
+                  document.documentElement.style.setProperty("scroll-padding-top", "\(inset)px", "important");
+                  const root = document.querySelector(".vditor-ir .vditor-reset");
+                  const node = root.children[30].firstChild;
+                  root.focus({preventScroll:true});
+                  const range = document.createRange();
+                  range.setStart(node, 2); range.collapse(true);
+                  const selection = getSelection();
+                  selection.removeAllRanges(); selection.addRange(range);
+                  window.scrollTo(0, scrollY + range.getBoundingClientRect().top - \(nativeHeaderInset / web.pageZoom + 5));
+                })()
+                """)
+                XCTAssertTrue(controller.window.makeFirstResponder(web))
+                for _ in 0..<12 {
+                    let event = try XCTUnwrap(NSEvent.keyEvent(
+                        with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
+                        windowNumber: controller.window.windowNumber, context: nil,
+                        characters: "\u{F700}", charactersIgnoringModifiers: "\u{F700}",
+                        isARepeat: false, keyCode: 126
+                    ))
+                    controller.window.sendEvent(event)
+                    pumpNativeApplicationEvents()
+                    try await Task.sleep(for: .milliseconds(100))
+                }
+                let result = try await web.evaluateJavaScript("""
+                (() => {
+                  const selection = getSelection(), range = selection.getRangeAt(0), rect = range.getBoundingClientRect();
+                  return {top:rect.top,bottom:rect.bottom,height:rect.height,scroll:scrollY,
+                    text:selection.anchorNode.textContent,offset:selection.anchorOffset,
+                    paragraph:Array.from(document.querySelector(".vditor-ir .vditor-reset").children)
+                      .indexOf(selection.anchorNode.parentElement.closest("p"))};
+                })()
+                """)
+                var values = try XCTUnwrap(result as? [String: Any])
+                values["avoidsHeader"] = avoidsHeader
+                caretStates.append(values)
+                XCTAssertGreaterThan(try XCTUnwrap(values["height"] as? Double), 0)
+                let paragraph = try XCTUnwrap(values["paragraph"] as? Int)
+                XCTAssertGreaterThanOrEqual(paragraph, 0)
+                XCTAssertLessThan(paragraph, 30, "native arrow input must actually move the caret")
+                if avoidsHeader {
+                    XCTAssertGreaterThanOrEqual(try XCTUnwrap(values["top"] as? Double),
+                                               nativeHeaderInset / web.pageZoom - 1,
+                                               "standard scroll-padding must keep native keyboard editing below the glass")
+                } else {
+                    XCTAssertLessThan(try XCTUnwrap(values["top"] as? Double),
+                                      nativeHeaderInset / web.pageZoom - 5,
+                                      "the unprotected control must expose native caret occlusion")
+                }
+            }
+            measurements[0]["publicViewportCaretProbe"] = caretStates
+        }
+        if expectsGlass && !probesPublicViewport && env["OURO_HEADER_REQUIRE_FULLSCREEN"] == "1", #available(macOS 26, *) {
             var fullscreenStates: [[String: Any]] = []
             for fullscreen in [true, false] {
                 var completed = false
@@ -231,7 +338,8 @@ final class NativeHeaderRenderingTests: XCTestCase {
             }
             measurements[0]["fullscreenStates"] = fullscreenStates
         }
-        measurements[0]["fullscreenVerificationRequired"] = env["OURO_HEADER_REQUIRE_FULLSCREEN"] == "1"
+        measurements[0]["publicViewportProbe"] = probesPublicViewport
+        measurements[0]["fullscreenVerificationRequired"] = !probesPublicViewport && env["OURO_HEADER_REQUIRE_FULLSCREEN"] == "1"
         measurements[0]["nativeReduceMotion"] = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         measurements[0]["nativeReduceTransparency"] = NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
         try JSONSerialization.data(withJSONObject: measurements, options: [.prettyPrinted, .sortedKeys])
