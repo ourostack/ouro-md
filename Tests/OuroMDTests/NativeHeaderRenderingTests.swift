@@ -18,25 +18,6 @@ final class NativeHeaderRenderingTests: XCTestCase {
             XCTAssertFalse(NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency)
         }
 
-        @available(macOS 26, *)
-        private struct HeaderProbeBackdrop: NSViewRepresentable {
-            func makeNSView(context: Context) -> NSGlassEffectView {
-                let view = HeaderProbeGlass()
-                view.style = .regular
-                view.cornerRadius = 0
-                view.contentView = NSView()
-                view.identifier = NSUserInterfaceItemIdentifier("OuroMDDocumentHeaderBackdrop")
-                view.setAccessibilityElement(false)
-                return view
-            }
-
-            func updateNSView(_ nsView: NSGlassEffectView, context: Context) {}
-        }
-
-        @available(macOS 26, *)
-        private final class HeaderProbeGlass: NSGlassEffectView {
-            override func hitTest(_ point: NSPoint) -> NSView? { nil }
-        }
         NSApplication.shared.setActivationPolicy(.regular)
         NSApplication.shared.finishLaunching()
         let output = URL(fileURLWithPath: env["OURO_HEADER_OUTPUT"] ?? ".build/header-rendering", isDirectory: true)
@@ -424,4 +405,24 @@ final class NativeHeaderRenderingTests: XCTestCase {
         }
         return count
     }
+}
+
+@available(macOS 26, *)
+private struct HeaderProbeBackdrop: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSGlassEffectView {
+        let view = HeaderProbeGlass()
+        view.style = .regular
+        view.cornerRadius = 0
+        view.contentView = NSView()
+        view.identifier = NSUserInterfaceItemIdentifier("OuroMDDocumentHeaderBackdrop")
+        view.setAccessibilityElement(false)
+        return view
+    }
+
+    func updateNSView(_ nsView: NSGlassEffectView, context: Context) {}
+}
+
+@available(macOS 26, *)
+private final class HeaderProbeGlass: NSGlassEffectView {
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }
