@@ -36,6 +36,7 @@ struct EditorWebView: NSViewRepresentable {
         webView.allowsBackForwardNavigationGestures = false
         webView.registerForDraggedTypes([.fileURL])
         if #available(macOS 26, *) {
+            webView.underPageBackgroundColor = .clear
             webView.obscuredContentInsets = NSEdgeInsets(top: headerInset, left: 0, bottom: 0, right: 0)
         }
 
