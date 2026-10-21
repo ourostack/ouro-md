@@ -54,13 +54,13 @@ final class NativeHeaderRenderingTests: XCTestCase {
         }
         XCTAssertTrue(controller.model.isReady, "must prove real editor readiness, not capture a blank body")
         let web = try XCTUnwrap(editor(in: content))
-        let nativeHeaderInset = controller.window.frame.height - controller.window.contentLayoutRect.maxY
+        let cssHeaderInset = Double((controller.window.frame.height - controller.window.contentLayoutRect.maxY) / web.pageZoom)
         if probesPublicViewport, #available(macOS 26, *) {
-            web.obscuredContentInsets = .zero
+            web.obscuredContentInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
             _ = try await web.evaluateJavaScript("""
             (() => {
               const css = document.createElement("style");
-              css.textContent = "html{scroll-padding-top:\(nativeHeaderInset / web.pageZoom)px!important}body{padding-top:\(nativeHeaderInset / web.pageZoom)px!important}";
+              css.textContent = "html{scroll-padding-top:\(cssHeaderInset)px!important}body{padding-top:\(cssHeaderInset)px!important}";
               document.head.appendChild(css);
             })()
             """)
@@ -112,7 +112,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 let values = try XCTUnwrap(geometry as? [String: Any])
                 XCTAssertEqual(values["scroll"] as? Double, 0, "the regression must be at true scroll-top")
                 XCTAssertEqual(try XCTUnwrap(values["firstTop"] as? Double),
-                               30 + (probesPublicViewport ? nativeHeaderInset / web.pageZoom : 0), accuracy: 1,
+                               30.0 + (probesPublicViewport ? cssHeaderInset : 0.0), accuracy: 1,
                                "the fixture must occupy the document edge below the header, not evade the mirrored region")
                 try await Task.sleep(for: .seconds(1))
                 pumpNativeApplicationEvents()
@@ -213,7 +213,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
             try await Task.sleep(for: .seconds(1))
             var caretStates: [[String: Any]] = []
             for avoidsHeader in [false, true] {
-                let inset = avoidsHeader ? nativeHeaderInset / web.pageZoom : 0
+                let inset = avoidsHeader ? cssHeaderInset : 0
                 _ = try await web.evaluateJavaScript("""
                 (() => {
                   document.documentElement.style.setProperty("scroll-padding-top", "\(inset)px", "important");
@@ -224,7 +224,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
                   range.setStart(node, 2); range.collapse(true);
                   const selection = getSelection();
                   selection.removeAllRanges(); selection.addRange(range);
-                  window.scrollTo(0, scrollY + range.getBoundingClientRect().top - \(nativeHeaderInset / web.pageZoom + 5));
+                  window.scrollTo(0, scrollY + range.getBoundingClientRect().top - \(cssHeaderInset + 5));
                 })()
                 """)
                 XCTAssertTrue(controller.window.makeFirstResponder(web))
@@ -257,11 +257,11 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 XCTAssertLessThan(paragraph, 30, "native arrow input must actually move the caret")
                 if avoidsHeader {
                     XCTAssertGreaterThanOrEqual(try XCTUnwrap(values["top"] as? Double),
-                                               nativeHeaderInset / web.pageZoom - 1,
+                                               cssHeaderInset - 1,
                                                "standard scroll-padding must keep native keyboard editing below the glass")
                 } else {
                     XCTAssertLessThan(try XCTUnwrap(values["top"] as? Double),
-                                      nativeHeaderInset / web.pageZoom - 5,
+                                      cssHeaderInset - 5,
                                       "the unprotected control must expose native caret occlusion")
                 }
             }
