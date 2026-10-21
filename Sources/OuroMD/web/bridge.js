@@ -1844,8 +1844,7 @@
   }
 
   // Scrolls just enough to show the change, clear of the floating status pill.
-  // The native background extension keeps editing inside the safe area; the
-  // toolbar is outside this layout viewport. Do not inset cues a second time.
+  // WebKit's native obscured inset excludes the toolbar from this layout viewport; do not inset cues a second time.
   // If either end is on screen it leaves
   // the view alone (a long paste keeps the caret where WebKit put it); a change
   // taller than the screen shows its end, where the caret is.
