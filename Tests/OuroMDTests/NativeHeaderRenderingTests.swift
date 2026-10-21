@@ -7,7 +7,7 @@ import XCTest
 /// Interactive rendering is strictly confined to the dedicated hosted job.
 @MainActor
 final class NativeHeaderRenderingTests: XCTestCase {
-    func testHostedNativeHeaderDoesNotReflectDocumentEdges() async throws {
+    func testHostedNativeHeaderShowsRealContentWithoutReflectingDocumentEdges() async throws {
         let env = ProcessInfo.processInfo.environment
         try XCTSkipUnless(env["GITHUB_ACTIONS"] == "true" && env["OURO_HEADER_RENDERING"] == "1",
                           "never present test windows on an operator's Mac")
@@ -242,10 +242,10 @@ final class NativeHeaderRenderingTests: XCTestCase {
             XCTAssertTrue(liveBodyPaints, "blank native captures cannot certify glass, even when WK snapshots paint")
             for index in stride(from: 0, to: sampledHeaders.count, by: 2) {
                 let change = zip(sampledHeaders[index], sampledHeaders[index + 1]).map { abs($0 - $1) }.max() ?? 0
-                if env["OURO_HEADER_EXPECT_ECHO"] == "1" {
-                    XCTAssertGreaterThan(change, 5, "the reflected-edge control must visibly sample moving document colors")
+                if expectsGlass && env["OURO_HEADER_EXPECT_OPAQUE"] != "1" {
+                    XCTAssertGreaterThan(change, 5, "real document content passing behind glass must remain visible; an opaque band is not a fix")
                 } else {
-                    XCTAssertLessThan(change, 3, "native viewport chrome must not reflect the document while it scrolls")
+                    XCTAssertLessThan(change, 3, "the flat or opaque control must remain distinguishable from real document translucency")
                 }
             }
         }
