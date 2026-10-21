@@ -1,7 +1,6 @@
 name: Window chrome
 
-# Captures real moving editor content plus native chrome, with a released
-# flat-layout and reflected-edge controls. Interactive tests run only on the hosted Mac.
+# Captures real scrolling content plus quiet native chrome, with flat-layout and reflected-edge controls. Interactive tests run only on the hosted Mac.
 
 on:
   pull_request:
@@ -42,11 +41,11 @@ jobs:
           fi
           xcodebuild -version
           sw_vers
-      - name: Render the live native header over moving document content
+      - name: Verify quiet native header while real document content scrolls
         env:
           OURO_HEADER_RENDERING: '1'
           OURO_NATIVE_PREFERENCE_PROOF: '1'
-          OURO_HEADER_EXPECT_UNDERLAP: '1'
+          OURO_HEADER_EXPECT_GLASS: '1'
           OURO_HEADER_REQUIRE_LIVE_PAINT: ${{ matrix.runner == 'macos-26-intel' && '1' || '0' }}
           OURO_HEADER_REQUIRE_FULLSCREEN: ${{ matrix.runner == 'xcode-27' && '1' || '0' }}
           OURO_HEADER_ONSCREEN_DIAGNOSTIC: ${{ matrix.runner == 'xcode-27' && '1' || '0' }}
@@ -64,7 +63,7 @@ jobs:
         env:
           OURO_HEADER_RENDERING: '1'
           OURO_NATIVE_PREFERENCE_PROOF: '1'
-          OURO_HEADER_EXPECT_UNDERLAP: '0'
+          OURO_HEADER_EXPECT_GLASS: '0'
           OURO_HEADER_REQUIRE_LIVE_PAINT: ${{ matrix.runner == 'macos-26-intel' && '1' || '0' }}
           OURO_HEADER_REQUIRE_FULLSCREEN: '0'
           OURO_MD_TELEMETRY_DISABLED: '1'
@@ -80,12 +79,12 @@ jobs:
         with:
           ref: v0.9.104
           path: .ci/header-echo
-      - name: Prove the old reflection remains distinguishable from real underlap
+      - name: Prove the old reflected header remains distinguishable from quiet chrome
         if: always()
         env:
           OURO_HEADER_RENDERING: '1'
           OURO_NATIVE_PREFERENCE_PROOF: '1'
-          OURO_HEADER_EXPECT_UNDERLAP: '1'
+          OURO_HEADER_EXPECT_GLASS: '1'
           OURO_HEADER_EXPECT_ECHO: '1'
           OURO_HEADER_REQUIRE_LIVE_PAINT: ${{ matrix.runner == 'macos-26-intel' && '1' || '0' }}
           OURO_HEADER_REQUIRE_FULLSCREEN: '0'

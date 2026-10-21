@@ -7,7 +7,7 @@ import XCTest
 /// Interactive rendering is strictly confined to the dedicated hosted job.
 @MainActor
 final class NativeHeaderRenderingTests: XCTestCase {
-    func testHostedMovingDocumentBackdropBehindNativeHeader() async throws {
+    func testHostedNativeHeaderDoesNotReflectDocumentEdges() async throws {
         let env = ProcessInfo.processInfo.environment
         try XCTSkipUnless(env["GITHUB_ACTIONS"] == "true" && env["OURO_HEADER_RENDERING"] == "1",
                           "never present test windows on an operator's Mac")
@@ -20,7 +20,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
         NSApplication.shared.finishLaunching()
         let output = URL(fileURLWithPath: env["OURO_HEADER_OUTPUT"] ?? ".build/header-rendering", isDirectory: true)
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
-        let underlap = env["OURO_HEADER_EXPECT_UNDERLAP"] != "0"
+        let expectsGlass = env["OURO_HEADER_EXPECT_GLASS"] != "0"
         let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
         defer { controller.window.close() }
         controller.window.setContentSize(NSSize(width: 1000, height: 700))
@@ -37,7 +37,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
         }
         XCTAssertTrue(controller.model.isReady, "must prove real editor readiness, not capture a blank body")
         let web = try XCTUnwrap(editor(in: content))
-        if underlap, #available(macOS 26, *) {
+        if expectsGlass, #available(macOS 26, *) {
             func panel(in view: NSView) -> NSGlassEffectView? {
                 if let glass = view as? NSGlassEffectView,
                    glass.identifier?.rawValue == "OuroMDDocumentHeaderBackdrop" { return glass }
@@ -179,7 +179,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
             sampledHeaders.append(headerMeans[0])
             sampledHeaders.append(headerMeans[1])
         }
-        if underlap && env["OURO_HEADER_REQUIRE_FULLSCREEN"] == "1", #available(macOS 26, *) {
+        if expectsGlass && env["OURO_HEADER_REQUIRE_FULLSCREEN"] == "1", #available(macOS 26, *) {
             var fullscreenStates: [[String: Any]] = []
             for fullscreen in [true, false] {
                 var completed = false
@@ -242,10 +242,10 @@ final class NativeHeaderRenderingTests: XCTestCase {
             XCTAssertTrue(liveBodyPaints, "blank native captures cannot certify glass, even when WK snapshots paint")
             for index in stride(from: 0, to: sampledHeaders.count, by: 2) {
                 let change = zip(sampledHeaders[index], sampledHeaders[index + 1]).map { abs($0 - $1) }.max() ?? 0
-                if underlap {
-                    XCTAssertGreaterThan(change, 5, "the native header must visibly sample moving document colors")
+                if env["OURO_HEADER_EXPECT_ECHO"] == "1" {
+                    XCTAssertGreaterThan(change, 5, "the reflected-edge control must visibly sample moving document colors")
                 } else {
-                    XCTAssertLessThan(change, 3, "released flat chrome is the unchanged-header negative control")
+                    XCTAssertLessThan(change, 3, "native viewport chrome must not reflect the document while it scrolls")
                 }
             }
         }

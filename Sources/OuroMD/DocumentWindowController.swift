@@ -193,7 +193,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
     private static let sidebarToggleItem = NSToolbarItem.Identifier("OuroMDToggleSidebar")
     private static let fileStatusItem = NSToolbarItem.Identifier("OuroMDFileStatus")
 
-    /// On macOS 26+, a native toolbar sits over glass and real editor content; WebKit's obscured viewport inset keeps editing clear of the controls. Earlier systems keep the transparent title bar.
+    /// On macOS 26+, a native toolbar sits over glass and WebKit's reserved viewport band, keeping editing clear of the controls. Earlier systems keep the transparent title bar.
     private func adoptSystemToolbar() {
         guard SystemDesign.usesGlass else { return }
         window.styleMask.insert(.fullSizeContentView)

@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// On macOS 26+, system glass covers a real editor backdrop with a native obscured viewport inset; earlier systems retain their material.
+/// On macOS 26+, system glass covers WebKit's native obscured viewport band; earlier systems retain their material.
 enum SystemDesign {
     static var usesGlass: Bool {
         if #available(macOS 26, *) { return true }
@@ -9,7 +9,7 @@ enum SystemDesign {
     }
 }
 
-/// Covers real scrolling content without reflecting its top edge; foreground chrome stays system-owned.
+/// Covers WebKit's native header band without reflecting document edges; foreground chrome stays system-owned.
 struct DocumentHeaderBackdrop: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let view: NSView

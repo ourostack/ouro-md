@@ -50,7 +50,7 @@ final class DocumentWindowControllerTests: XCTestCase {
         }
     }
 
-    func testNativeGlassUnderlapWhileEditingStaysInSafeArea() throws {
+    func testNativeGlassHeaderPreservesEditingSafeArea() throws {
         try XCTSkipUnless(SystemDesign.usesGlass, "native toolbar geometry is for the system design")
         let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
         defer { controller.window.close() }
@@ -87,10 +87,10 @@ final class DocumentWindowControllerTests: XCTestCase {
                 if #available(macOS 26, *) {
                     XCTAssertEqual(frame.maxY, content.convert(content.bounds, to: nil).maxY, accuracy: 1)
                     XCTAssertEqual(frame.maxY - webView.obscuredContentInsets.top, window.contentLayoutRect.maxY, accuracy: 1,
-                                   "real underlap uses a native viewport inset to keep editing clear of the header")
+                                   "the native viewport inset keeps editing clear of the header")
                     let occlusion = webView.obscuredContentInsets.top
                     if visible {
-                        XCTAssertGreaterThan(occlusion, 0, "a visible toolbar needs document backdrop beneath it")
+                        XCTAssertGreaterThan(occlusion, 0, "a visible toolbar needs a reserved native viewport band")
                     }
                     let backdrop = try XCTUnwrap(nativeBackdrop(in: content) as? NSGlassEffectView,
                                                  "the header needs an actual native glass panel, not raw underlap alone")

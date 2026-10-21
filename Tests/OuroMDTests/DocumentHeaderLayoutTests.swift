@@ -6,7 +6,7 @@ import XCTest
 
 @MainActor
 final class DocumentHeaderLayoutTests: XCTestCase {
-    func testEditorPaintsBehindHeaderWithoutReplicatingItsTopEdge() async throws {
+    func testEditorUsesFullNativeViewportWithoutReplicatingItsTopEdge() async throws {
         try XCTSkipUnless(SystemDesign.usesGlass)
         guard #available(macOS 26, *) else { return }
         let app = NSApplication.shared
@@ -41,7 +41,7 @@ final class DocumentHeaderLayoutTests: XCTestCase {
             let painted = web.convert(web.bounds, to: host)
             XCTAssertEqual(painted.minY, host.bounds.minY, accuracy: 1)
             XCTAssertEqual(painted.maxY, host.bounds.maxY, accuracy: 1,
-                           "the real editor must paint the header band, not synthesize it from text below")
+                           "WebKit must own the full viewport and native header band, not synthesize it from text below")
             XCTAssertEqual(painted.width, host.bounds.width, accuracy: 1)
             XCTAssertEqual(web.obscuredContentInsets.top, inset,
                            "native viewport insets keep editing clear of the toolbar without mirroring text")
