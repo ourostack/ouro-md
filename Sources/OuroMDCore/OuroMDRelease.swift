@@ -4,12 +4,12 @@ public enum OuroMDRelease {
     public static let appName = "Ouro MD"
     public static let bundleIdentifier = "bot.ouro.md"
     public static let repository = "ourostack/ouro-md"
-    public static let version = "0.9.105"
+    public static let version = "0.9.106"
     public static let userAgent = "OuroMD/\(version)"
-    public static let releaseDate = "2026-10-20"
+    public static let releaseDate = "2026-10-21"
     public static let positioningSubtitle = "Local Markdown workspace for Mac files."
     public static let releaseHighlights = [
-        "Keep the glass header quiet while reading and scrolling, without reflecting document text into the title bar.",
+        "Restore real document translucency behind the glass header, without false text reflections at the top.",
         "Start print previews fitted to the whole page, including large paper sizes.",
         "Keep zoom buttons in sync with the actual scale and preserve manual zoom across layout changes.",
         "Refresh capture feedback smoothly without delaying the first page, cancellation, or complete-output readiness.",
@@ -36,7 +36,7 @@ public enum OuroMDRelease {
         "Built for macOS 27: the window adopts the current system design, with a glass toolbar and a floating status pill.",
         "Writing Tools rewrites text in place in the editor, and one undo reverts the whole rewrite.",
         "Siri, Shortcuts and Spotlight can open, read and add to your Markdown documents, including recent ones and unsaved edits.",
-        "Native glass and WebKit's reserved header band keep document text clear of the toolbar, with no custom fade.",
+        "Keep keyboard editing, document anchors and change cues clear of the toolbar while real content scrolls behind native glass.",
         "Full-screen native toolbar glass follows the system toolbar lifecycle, including the auto-hidden toolbar when revealed.",
         "Click the filename for native Name, Tags, Where and lock controls; moving a document keeps pending edits and relative images intact.",
         "Pastes and Siri edits glow briefly; agent changes get quiet margin marks that clear as you scroll past, with Next change for off-screen edits.",

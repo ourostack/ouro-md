@@ -46,7 +46,6 @@ jobs:
           OURO_HEADER_RENDERING: '1'
           OURO_NATIVE_PREFERENCE_PROOF: '1'
           OURO_HEADER_EXPECT_GLASS: '1'
-          OURO_HEADER_PUBLIC_VIEWPORT_PROBE: '1'
           OURO_HEADER_REQUIRE_LIVE_PAINT: ${{ matrix.runner == 'macos-26-intel' && '1' || '0' }}
           OURO_HEADER_REQUIRE_FULLSCREEN: ${{ matrix.runner == 'xcode-27' && '1' || '0' }}
           OURO_HEADER_ONSCREEN_DIAGNOSTIC: ${{ matrix.runner == 'xcode-27' && '1' || '0' }}

@@ -1,6 +1,5 @@
 import AppKit
 import QuartzCore
-import SwiftUI
 import WebKit
 import XCTest
 @testable import OuroMD
@@ -23,24 +22,10 @@ final class NativeHeaderRenderingTests: XCTestCase {
         let output = URL(fileURLWithPath: env["OURO_HEADER_OUTPUT"] ?? ".build/header-rendering", isDirectory: true)
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         let expectsGlass = env["OURO_HEADER_EXPECT_GLASS"] != "0"
-        let probesPublicViewport = env["OURO_HEADER_PUBLIC_VIEWPORT_PROBE"] == "1"
+        let expectsUnderlap = expectsGlass && env["OURO_HEADER_EXPECT_ECHO"] != "1" && env["OURO_HEADER_EXPECT_OPAQUE"] != "1"
         let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
         defer { controller.window.close() }
         controller.window.setContentSize(NSSize(width: 1000, height: 700))
-        if probesPublicViewport, #available(macOS 26, *) {
-            controller.window.contentView = NSHostingView(rootView: GeometryReader { geometry in
-                ZStack(alignment: .top) {
-                    EditorWebView(model: controller.model)
-                        .ignoresSafeArea(.container, edges: .top)
-                    VStack(spacing: 0) {
-                        HeaderProbeBackdrop().frame(height: geometry.safeAreaInsets.top)
-                        Spacer(minLength: 0)
-                    }
-                    .ignoresSafeArea(.container, edges: .top)
-                    .allowsHitTesting(false)
-                }
-            })
-        }
         controller.show(cascadeFrom: nil)
         pumpNativeApplicationEvents()
         let content = try XCTUnwrap(controller.window.contentView)
@@ -54,17 +39,8 @@ final class NativeHeaderRenderingTests: XCTestCase {
         }
         XCTAssertTrue(controller.model.isReady, "must prove real editor readiness, not capture a blank body")
         let web = try XCTUnwrap(editor(in: content))
+        controller.model.setTextScale(1)
         let cssHeaderInset = Double((controller.window.frame.height - controller.window.contentLayoutRect.maxY) / web.pageZoom)
-        if probesPublicViewport, #available(macOS 26, *) {
-            web.obscuredContentInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
-            _ = try await web.evaluateJavaScript("""
-            (() => {
-              const css = document.createElement("style");
-              css.textContent = "html{scroll-padding-top:\(cssHeaderInset)px!important}body{padding-top:\(cssHeaderInset)px!important}";
-              document.head.appendChild(css);
-            })()
-            """)
-        }
         if expectsGlass, #available(macOS 26, *) {
             func panel(in view: NSView) -> NSGlassEffectView? {
                 if let glass = view as? NSGlassEffectView,
@@ -88,7 +64,11 @@ final class NativeHeaderRenderingTests: XCTestCase {
         }
         var measurements: [[String: Any]] = []
         var sampledHeaders: [[Double]] = []
-        for theme in ["quartz", "graphite"] {
+        for (theme, mode) in [("quartz", "ir"), ("graphite", "ir"), ("quartz", "sv"), ("graphite", "sv")] {
+            let selector = mode == "ir" ? ".vditor-ir .vditor-reset" : ".vditor-sv"
+            let prefix = "\(theme)-\(mode)"
+            controller.model.setMode(mode)
+            try await Task.sleep(for: .seconds(1))
             controller.model.setTheme(id: theme)
             controller.syncChrome()
             controller.model.bridge?.setMarkdown("# HEADER ECHO FIXTURE\n\nOnly synthetic document content.")
@@ -97,30 +77,30 @@ final class NativeHeaderRenderingTests: XCTestCase {
             for marked in [false, true] {
                 let geometry = try await web.evaluateJavaScript("""
                 (() => {
-                  const root = document.querySelector(".vditor-ir .vditor-reset");
+                  const root = document.querySelector("\(selector)");
                   if (!root || !root.textContent.includes("HEADER ECHO FIXTURE")) { return null; }
                   const first = root.firstElementChild;
-                  first.style.cssText = "margin:0;min-height:200px;font-size:48px;";
+                  first.style.cssText = "display:block;margin:0;min-height:200px;font-size:48px;";
                   first.style.setProperty("margin", "0", "important");
                   first.style.setProperty("background", \(marked ? "\"#ee2211\"" : "getComputedStyle(document.body).backgroundColor"), "important");
                   first.style.setProperty("color", \(marked ? "\"black\"" : "\"transparent\""), "important");
-                  window.scrollTo(0, 0);
-                  return {scroll:scrollY, firstTop:first.getBoundingClientRect().top,
+                  [document.documentElement, document.body, root].forEach(node => { node.scrollTop = 0; });
+                  return {scroll:scrollY + document.body.scrollTop, firstTop:first.getBoundingClientRect().top,
                     firstBottom:first.getBoundingClientRect().bottom, viewport:innerHeight};
                 })()
                 """)
                 let values = try XCTUnwrap(geometry as? [String: Any])
                 XCTAssertEqual(values["scroll"] as? Double, 0, "the regression must be at true scroll-top")
                 XCTAssertEqual(try XCTUnwrap(values["firstTop"] as? Double),
-                               30.0 + (probesPublicViewport ? cssHeaderInset : 0.0), accuracy: 1,
+                               30.0 + (expectsUnderlap ? cssHeaderInset : 0.0), accuracy: 1,
                                "the fixture must occupy the document edge below the header, not evade the mirrored region")
                 try await Task.sleep(for: .seconds(1))
                 pumpNativeApplicationEvents()
                 let state = marked ? "top-marked" : "top-blank"
-                let bitmap = try captureWindow(controller.window, to: output.appendingPathComponent("\(theme)-\(state)-window.png"))
+                let bitmap = try captureWindow(controller.window, to: output.appendingPathComponent("\(prefix)-\(state)-window.png"))
                 let header = meanRGB(bitmap, region: headerRegion(in: bitmap, window: controller.window))
                 topHeaders.append(header)
-                measurements.append(["theme": theme, "state": state, "headerRGB": header,
+                measurements.append(["theme": theme, "mode": mode, "state": state, "headerRGB": header,
                                      "layout": values, "coloredBodyPixels": coloredPixels(bitmap)])
                 if marked && env["OURO_HEADER_REQUIRE_LIVE_PAINT"] == "1" {
                     XCTAssertGreaterThan(coloredPixels(bitmap), 1000, "a blank native capture cannot certify no text echo")
@@ -141,12 +121,15 @@ final class NativeHeaderRenderingTests: XCTestCase {
             try await Task.sleep(for: .seconds(1))
             let prepared = try await web.evaluateJavaScript("""
             (() => {
-              const root = document.querySelector(".vditor-ir .vditor-reset");
+              const root = document.querySelector("\(selector)");
               if (!root || !root.textContent.includes("Moving document backdrop")) { return false; }
               Array.from(root.children).forEach((node, i) => {
+                node.style.display = "block";
                 node.style.minHeight = "200px";
                 node.style.setProperty("background", i % 4 < 2 ? "#ee6655" : "#3388ee", "important");
               });
+              window.__ouroHeaderFixtureScroller = document.body.classList.contains("ouro-source-mode")
+                && document.body.scrollHeight > document.body.clientHeight ? document.body : document.scrollingElement;
               return getComputedStyle(root.children[1]).backgroundColor === "rgb(238, 102, 85)"
                 && getComputedStyle(root.children[3]).backgroundColor === "rgb(51, 136, 238)";
             })()
@@ -156,17 +139,17 @@ final class NativeHeaderRenderingTests: XCTestCase {
             for (name, index) in [("warm", 1), ("cool", 3)] {
                 _ = try await web.evaluateJavaScript("""
                 (() => {
-                  const node = document.querySelector(".vditor-ir .vditor-reset").children[\(index)];
-                  window.scrollTo(0, scrollY + node.getBoundingClientRect().top + 80);
+                  const node = document.querySelector("\(selector)").children[\(index)];
+                  window.__ouroHeaderFixtureScroller.scrollTop += node.getBoundingClientRect().top + 80;
                 })()
                 """)
                 try await Task.sleep(for: .seconds(1))
                 pumpNativeApplicationEvents()
                 let geometry = try await web.evaluateJavaScript("""
-                ({scroll:scrollY, viewport:innerHeight,
-                  sampleTop:document.querySelector(".vditor-ir .vditor-reset").children[\(index)].getBoundingClientRect().top,
-                  sampleBottom:document.querySelector(".vditor-ir .vditor-reset").children[\(index)].getBoundingClientRect().bottom,
-                  sampleColor:getComputedStyle(document.querySelector(".vditor-ir .vditor-reset").children[\(index)]).backgroundColor})
+                ({scroll:window.__ouroHeaderFixtureScroller.scrollTop, viewport:innerHeight,
+                  sampleTop:document.querySelector("\(selector)").children[\(index)].getBoundingClientRect().top,
+                  sampleBottom:document.querySelector("\(selector)").children[\(index)].getBoundingClientRect().bottom,
+                  sampleColor:getComputedStyle(document.querySelector("\(selector)").children[\(index)]).backgroundColor})
                 """)
                 let values = try XCTUnwrap(geometry as? [String: Any])
                 XCTAssertGreaterThan(values["scroll"] as? Double ?? 0, 0)
@@ -175,15 +158,15 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 let snapshot = try await web.takeSnapshot(configuration: nil)
                 let webBitmap = try XCTUnwrap(NSBitmapImageRep(data: try XCTUnwrap(snapshot.tiffRepresentation)))
                 try XCTUnwrap(webBitmap.representation(using: .png, properties: [:]))
-                    .write(to: output.appendingPathComponent("\(theme)-\(name)-web.png"))
+                    .write(to: output.appendingPathComponent("\(prefix)-\(name)-web.png"))
                 content.displayIfNeeded()
                 CATransaction.flush()
-                let imageURL = output.appendingPathComponent("\(theme)-\(name)-window.png")
+                let imageURL = output.appendingPathComponent("\(prefix)-\(name)-window.png")
                 let bitmap = try captureWindow(controller.window, to: imageURL)
                 let header = meanRGB(bitmap, region: headerRegion(in: bitmap, window: controller.window))
                 headerMeans.append(header)
                 let frame = web.convert(web.bounds, to: nil)
-                measurements.append(["theme": theme, "state": name, "headerRGB": header,
+                measurements.append(["theme": theme, "mode": mode, "state": name, "headerRGB": header,
                                      "coloredBodyPixels": coloredPixels(bitmap),
                                      "webHeight": web.bounds.height, "webTop": frame.maxY,
                                      "contentLayoutTop": controller.window.contentLayoutRect.maxY,
@@ -193,7 +176,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
                     let screen = try XCTUnwrap(controller.window.screen)
                     let rect = controller.window.frame
                     let region = "\(Int(rect.minX)),\(Int(screen.frame.maxY - rect.maxY)),\(Int(rect.width)),\(Int(rect.height))"
-                    let regionURL = output.appendingPathComponent("\(theme)-\(name)-onscreen.png")
+                    let regionURL = output.appendingPathComponent("\(prefix)-\(name)-onscreen.png")
                     let onscreen = Process()
                     onscreen.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
                     onscreen.arguments = ["-x", "-R", region, regionURL.path]
@@ -208,66 +191,113 @@ final class NativeHeaderRenderingTests: XCTestCase {
             sampledHeaders.append(headerMeans[0])
             sampledHeaders.append(headerMeans[1])
         }
-        if probesPublicViewport {
-            controller.model.bridge?.setMarkdown((1...80).map { "Native caret paragraph \($0)." }.joined(separator: "\n\n"))
-            try await Task.sleep(for: .seconds(1))
+        if expectsUnderlap {
+            let fixture = (1...80).map { "Native caret paragraph \($0)." }.joined(separator: "\n\n")
             var caretStates: [[String: Any]] = []
-            for avoidsHeader in [false, true] {
-                let inset = avoidsHeader ? cssHeaderInset : 0
-                _ = try await web.evaluateJavaScript("""
-                (() => {
-                  document.documentElement.style.setProperty("scroll-padding-top", "\(inset)px", "important");
-                  const root = document.querySelector(".vditor-ir .vditor-reset");
-                  const node = root.children[30].firstChild;
-                  root.focus({preventScroll:true});
-                  const range = document.createRange();
-                  range.setStart(node, 2); range.collapse(true);
-                  const selection = getSelection();
-                  selection.removeAllRanges(); selection.addRange(range);
-                  window.scrollTo(0, scrollY + range.getBoundingClientRect().top - \(cssHeaderInset + 5));
-                })()
-                """)
-                XCTAssertTrue(controller.window.makeFirstResponder(web))
-                for _ in 0..<12 {
-                    let event = try XCTUnwrap(NSEvent.keyEvent(
-                        with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
-                        windowNumber: controller.window.windowNumber, context: nil,
-                        characters: "\u{F700}", charactersIgnoringModifiers: "\u{F700}",
-                        isARepeat: false, keyCode: 126
-                    ))
-                    controller.window.sendEvent(event)
-                    pumpNativeApplicationEvents()
-                    try await Task.sleep(for: .milliseconds(100))
-                }
-                let result = try await web.evaluateJavaScript("""
-                (() => {
-                  const selection = getSelection(), range = selection.getRangeAt(0), rect = range.getBoundingClientRect();
-                  return {top:rect.top,bottom:rect.bottom,height:rect.height,scroll:scrollY,
-                    text:selection.anchorNode.textContent,offset:selection.anchorOffset,
-                    paragraph:Array.from(document.querySelector(".vditor-ir .vditor-reset").children)
-                      .indexOf(selection.anchorNode.parentElement.closest("p"))};
-                })()
-                """)
-                var values = try XCTUnwrap(result as? [String: Any])
-                values["avoidsHeader"] = avoidsHeader
-                caretStates.append(values)
-                XCTAssertGreaterThan(try XCTUnwrap(values["height"] as? Double), 0)
-                let paragraph = try XCTUnwrap(values["paragraph"] as? Int)
-                XCTAssertGreaterThanOrEqual(paragraph, 0)
-                XCTAssertLessThan(paragraph, 30, "native arrow input must actually move the caret")
-                if avoidsHeader {
-                    XCTAssertGreaterThanOrEqual(try XCTUnwrap(values["top"] as? Double),
-                                               cssHeaderInset - 1,
-                                               "standard scroll-padding must keep native keyboard editing below the glass")
-                } else {
-                    XCTAssertLessThan(try XCTUnwrap(values["top"] as? Double),
-                                      cssHeaderInset - 5,
-                                      "the unprotected control must expose native caret occlusion")
+            for mode in ["ir", "sv"] {
+                controller.model.setMode(mode)
+                try await Task.sleep(for: .seconds(1))
+                let selector = mode == "ir" ? ".vditor-ir .vditor-reset" : ".vditor-sv"
+                for zoom in [0.75, 1.0, 2.0] {
+                    controller.model.setTextScale(zoom)
+                    controller.model.bridge?.setMarkdown(fixture)
+                    try await Task.sleep(for: .seconds(1))
+                    let inset = Double(controller.window.frame.height - controller.window.contentLayoutRect.maxY) / zoom
+                    for avoidsHeader in [false, true] {
+                        _ = try await web.evaluateJavaScript("""
+                        (() => {
+                          const root = document.querySelector("\(selector)");
+                          const scrollers = [document.documentElement, document.body, ...document.querySelectorAll("#editor .vditor-reset,.vditor-preview")];
+                          scrollers.forEach(node => {
+                            \(avoidsHeader ? "node.style.removeProperty('scroll-padding-top');" : "node.style.setProperty('scroll-padding-top','0px','important');")
+                          });
+                          const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+                          let node;
+                          while ((node = walker.nextNode())) {
+                            if (node.textContent.includes("Native caret paragraph 31.")) { break; }
+                          }
+                          if (!node) { throw new Error("native caret fixture did not render"); }
+                          root.focus({preventScroll:true});
+                          const range = document.createRange();
+                          range.setStart(node, node.textContent.indexOf("Native caret paragraph 31.") + 2);
+                          range.collapse(true);
+                          const selection = getSelection();
+                          selection.removeAllRanges(); selection.addRange(range);
+                          const before = document.createRange();
+                          before.selectNodeContents(root); before.setEnd(range.startContainer, range.startOffset);
+                          window.__ouroNativeCaretOffset = before.toString().length;
+                          const scroller = document.body.classList.contains("ouro-source-mode")
+                            && document.body.scrollHeight > document.body.clientHeight ? document.body : document.scrollingElement;
+                          scroller.scrollTop += range.getBoundingClientRect().top - \(inset + 5);
+                        })()
+                        """)
+                        XCTAssertTrue(controller.window.makeFirstResponder(web))
+                        for _ in 0..<12 {
+                            try sendKey("\u{F700}", code: 126, to: controller.window)
+                            try await Task.sleep(for: .milliseconds(100))
+                        }
+                        let result = try await web.evaluateJavaScript("""
+                        (() => {
+                          const selection = getSelection(), range = selection.getRangeAt(0), rect = range.getBoundingClientRect();
+                          const before = document.createRange();
+                          before.selectNodeContents(document.querySelector("\(selector)"));
+                          before.setEnd(range.startContainer, range.startOffset);
+                          return {top:rect.top,bottom:rect.bottom,height:rect.height,scroll:scrollY,
+                            moved:window.__ouroNativeCaretOffset - before.toString().length};
+                        })()
+                        """)
+                        var values = try XCTUnwrap(result as? [String: Any])
+                        values["mode"] = mode
+                        values["zoom"] = zoom
+                        values["avoidsHeader"] = avoidsHeader
+                        caretStates.append(values)
+                        XCTAssertGreaterThan(try XCTUnwrap(values["height"] as? Double), 0)
+                        XCTAssertGreaterThan(try XCTUnwrap(values["moved"] as? Double), 20,
+                                             "native arrow input must actually move the caret")
+                        if avoidsHeader {
+                            XCTAssertGreaterThanOrEqual(try XCTUnwrap(values["top"] as? Double), inset - 1,
+                                                       "native keyboard editing must remain below the glass")
+                            try sendKey("z", code: 6, to: controller.window)
+                            let inserted = try await web.evaluateJavaScript("window.ouro.getValue().includes('z')")
+                            XCTAssertEqual(inserted as? Bool, true, "native typing must edit the real Markdown buffer")
+                            try sendKey("\u{F700}", code: 126, modifiers: .shift, to: controller.window)
+                            let selected = try await web.evaluateJavaScript("getSelection().toString().length")
+                            XCTAssertGreaterThan(try XCTUnwrap(selected as? Int), 0, "native selection must remain operable")
+                        } else {
+                            XCTAssertLessThan(try XCTUnwrap(values["top"] as? Double), inset - 5,
+                                              "the unprotected control must expose native caret occlusion")
+                        }
+                    }
                 }
             }
-            measurements[0]["publicViewportCaretProbe"] = caretStates
+            measurements[0]["nativeCaretStates"] = caretStates
+            controller.model.setMode("ir")
+            controller.model.setTextScale(1)
+            try await Task.sleep(for: .seconds(1))
+            controller.model.bridge?.setMarkdown("# Opening\n\n" + fixture + "\n\n## Header target\n\n" + fixture)
+            try await Task.sleep(for: .seconds(1))
+            controller.model.bridge?.scrollToAnchor("header-target")
+            try await Task.sleep(for: .seconds(1))
+            let anchorTop = try await web.evaluateJavaScript("document.querySelector('.vditor-ir h2').getBoundingClientRect().top")
+            XCTAssertEqual(try XCTUnwrap(anchorTop as? Double), cssHeaderInset, accuracy: 1,
+                           "real document anchors must land below native chrome")
+            controller.model.bridge?.find("Native caret paragraph 40.", backward: false, caseSensitive: false, wholeWord: false, regexp: false)
+            try await Task.sleep(for: .seconds(1))
+            let found = try await web.evaluateJavaScript("""
+            (() => {
+              const selection = getSelection(), rect = selection.getRangeAt(0).getBoundingClientRect();
+              return {text:selection.toString(),top:rect.top,bottom:rect.bottom,viewport:innerHeight};
+            })()
+            """) as? [String: Any]
+            let foundRange = try XCTUnwrap(found)
+            XCTAssertEqual(foundRange["text"] as? String, "Native caret paragraph 40.")
+            XCTAssertGreaterThanOrEqual(try XCTUnwrap(foundRange["top"] as? Double), cssHeaderInset - 1)
+            XCTAssertLessThanOrEqual(try XCTUnwrap(foundRange["bottom"] as? Double),
+                                     try XCTUnwrap(foundRange["viewport"] as? Double) - 32)
+            measurements[0]["anchorTop"] = anchorTop
+            measurements[0]["findRange"] = foundRange
         }
-        if expectsGlass && !probesPublicViewport && env["OURO_HEADER_REQUIRE_FULLSCREEN"] == "1", #available(macOS 26, *) {
+        if expectsUnderlap && env["OURO_HEADER_REQUIRE_FULLSCREEN"] == "1", #available(macOS 26, *) {
             var fullscreenStates: [[String: Any]] = []
             for fullscreen in [true, false] {
                 var completed = false
@@ -290,18 +320,20 @@ final class NativeHeaderRenderingTests: XCTestCase {
                     for _ in 0..<20 {
                         pumpNativeApplicationEvents()
                         content.layoutSubtreeIfNeeded()
-                        var editingTop = web.convert(web.bounds, to: nil).maxY
-                        editingTop -= web.obscuredContentInsets.top
+                        let cssInset = try await web.evaluateJavaScript("parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop)")
+                        let editingTop = web.convert(web.bounds, to: nil).maxY - CGFloat(try XCTUnwrap(cssInset as? Double)) * web.pageZoom
                         if abs(editingTop - controller.window.contentLayoutRect.maxY) <= 1 { break }
                         try await Task.sleep(for: .milliseconds(100))
                     }
-                    let top = web.convert(web.bounds, to: nil).maxY - web.obscuredContentInsets.top
+                    let cssInset = try await web.evaluateJavaScript("parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop)")
+                    let header = try XCTUnwrap(cssInset as? Double)
+                    let top = web.convert(web.bounds, to: nil).maxY - CGFloat(header) * web.pageZoom
                     XCTAssertEqual(top, controller.window.contentLayoutRect.maxY, accuracy: 1,
                                    "fullscreen and hidden-toolbar transitions must update real editing bounds")
                     let viewport = try await web.evaluateJavaScript("""
                     (() => {
                       const cue = document.createElement("div");
-                      cue.style.cssText = "position:fixed;top:0;width:1px;height:1px";
+                      cue.style.cssText = "position:fixed;top:var(--ouro-header-inset,0px);width:1px;height:1px";
                       document.body.appendChild(cue);
                       const result = {height:innerHeight, fixedTop:cue.getBoundingClientRect().top};
                       cue.remove();
@@ -310,8 +342,9 @@ final class NativeHeaderRenderingTests: XCTestCase {
                     """) as? [String: Double]
                     let coordinates = try XCTUnwrap(viewport)
                     XCTAssertEqual(try XCTUnwrap(coordinates["height"]),
-                                   (web.bounds.height - web.obscuredContentInsets.top) / web.pageZoom, accuracy: 1)
-                    XCTAssertEqual(try XCTUnwrap(coordinates["fixedTop"]), 0, accuracy: 1)
+                                   Double(web.bounds.height / web.pageZoom), accuracy: 1)
+                    XCTAssertEqual(try XCTUnwrap(coordinates["fixedTop"]), header, accuracy: 1)
+                    XCTAssertEqual(web.obscuredContentInsets.top, 0)
                     fullscreenStates.append(["fullscreen": fullscreen, "toolbarVisible": visible,
                                              "webTop": top, "nativeLayoutTop": controller.window.contentLayoutRect.maxY,
                                              "viewport": coordinates])
@@ -319,8 +352,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
             }
             measurements[0]["fullscreenStates"] = fullscreenStates
         }
-        measurements[0]["publicViewportProbe"] = probesPublicViewport
-        measurements[0]["fullscreenVerificationRequired"] = !probesPublicViewport && env["OURO_HEADER_REQUIRE_FULLSCREEN"] == "1"
+        measurements[0]["fullscreenVerificationRequired"] = env["OURO_HEADER_REQUIRE_FULLSCREEN"] == "1"
         measurements[0]["nativeReduceMotion"] = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         measurements[0]["nativeReduceTransparency"] = NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
         try JSONSerialization.data(withJSONObject: measurements, options: [.prettyPrinted, .sortedKeys])
@@ -338,6 +370,17 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 }
             }
         }
+    }
+
+    private func sendKey(_ characters: String, code: UInt16, modifiers: NSEvent.ModifierFlags = [], to window: NSWindow) throws {
+        let event = try XCTUnwrap(NSEvent.keyEvent(
+            with: .keyDown, location: .zero, modifierFlags: modifiers, timestamp: 0,
+            windowNumber: window.windowNumber, context: nil,
+            characters: characters, charactersIgnoringModifiers: characters,
+            isARepeat: false, keyCode: code
+        ))
+        window.sendEvent(event)
+        pumpNativeApplicationEvents()
     }
 
     private func captureWindow(_ window: NSWindow, to url: URL) throws -> NSBitmapImageRep {
@@ -405,24 +448,4 @@ final class NativeHeaderRenderingTests: XCTestCase {
         }
         return count
     }
-}
-
-@available(macOS 26, *)
-private struct HeaderProbeBackdrop: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSGlassEffectView {
-        let view = HeaderProbeGlass()
-        view.style = .regular
-        view.cornerRadius = 0
-        view.contentView = NSView()
-        view.identifier = NSUserInterfaceItemIdentifier("OuroMDDocumentHeaderBackdrop")
-        view.setAccessibilityElement(false)
-        return view
-    }
-
-    func updateNSView(_ nsView: NSGlassEffectView, context: Context) {}
-}
-
-@available(macOS 26, *)
-private final class HeaderProbeGlass: NSGlassEffectView {
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }
