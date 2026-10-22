@@ -14,7 +14,7 @@ struct EditorWebView: NSViewRepresentable {
         let configuration = WKWebViewConfiguration()
         let controller = WKUserContentController()
         controller.addUserScript(WKUserScript(
-            source: Self.initialThemeBootstrapScript(for: model.theme),
+            source: Self.initialThemeBootstrapScript(for: model.theme, headerInset: headerInset / CGFloat(model.zoom)),
             injectionTime: .atDocumentStart,
             forMainFrameOnly: true
         ))
@@ -35,11 +35,8 @@ struct EditorWebView: NSViewRepresentable {
         EditorZoom.apply(model.zoom, to: webView)
         webView.allowsBackForwardNavigationGestures = false
         webView.registerForDraggedTypes([.fileURL])
-        if #available(macOS 26, *) {
-            webView.obscuredContentInsets = NSEdgeInsets(top: headerInset, left: 0, bottom: 0, right: 0)
-        }
-
         context.coordinator.webView = webView
+        context.coordinator.setHeaderInset(headerInset)
         context.coordinator.observeWritingTools(on: webView)
         model.bridge = context.coordinator
 
@@ -54,12 +51,10 @@ struct EditorWebView: NSViewRepresentable {
     func updateNSView(_ nsView: NSView, context: Context) {
         guard let webView = context.coordinator.webView else { return }
         Self.applyLayerBackground(model.theme.backgroundHex, to: webView)
-        if #available(macOS 26, *) {
-            webView.obscuredContentInsets = NSEdgeInsets(top: headerInset, left: 0, bottom: 0, right: 0)
-        }
+        context.coordinator.setHeaderInset(headerInset)
     }
 
-    static func initialThemeBootstrapScript(for theme: Theme) -> String {
+    static func initialThemeBootstrapScript(for theme: Theme, headerInset: CGFloat = 0) -> String {
         let codeTheme = theme.uiMode == "dark" ? "github-dark" : "github"
         return """
         (function () {
@@ -91,6 +86,9 @@ struct EditorWebView: NSViewRepresentable {
           setBackground(document.documentElement);
           ensureInitialBackgroundStyle();
           function applyInitialTheme() {
+            if (document.documentElement && !document.documentElement.style.getPropertyValue("--ouro-header-inset")) {
+              document.documentElement.style.setProperty("--ouro-header-inset", "\(headerInset)px");
+            }
             var target = document.head || document.documentElement;
             var tag = document.getElementById("ouro-theme");
             if (!tag && target) {
@@ -130,6 +128,7 @@ struct EditorWebView: NSViewRepresentable {
         let pageSetupChooser: (NSPrintInfo) -> Bool
         let printPanelChooser: (NSPrintInfo) -> Bool
         weak var webView: WKWebView?
+        private var headerInset: CGFloat = 0
 
         init(
             model: AppModel,
@@ -154,6 +153,7 @@ struct EditorWebView: NSViewRepresentable {
             guard let body = message.body as? [String: Any], let type = body["type"] as? String else { return }
             switch type {
             case "ready":
+                applyHeaderInset()
                 model.editorDidBecomeReady()
             case "dirty":
                 if let dirty = body["dirty"] as? Bool { model.setDirty(dirty) }
@@ -594,7 +594,23 @@ struct EditorWebView: NSViewRepresentable {
             }
         }
 
-        func setZoom(_ factor: Double) { if let webView { EditorZoom.apply(factor, to: webView) } }
+        func setZoom(_ factor: Double) {
+            guard let webView else { return }
+            EditorZoom.apply(factor, to: webView)
+            applyHeaderInset()
+        }
+
+        func setHeaderInset(_ inset: CGFloat) {
+            guard headerInset != inset else { return }
+            headerInset = inset
+            applyHeaderInset()
+        }
+
+        private func applyHeaderInset() {
+            guard let webView else { return }
+            let inset = headerInset / webView.pageZoom
+            eval("document.documentElement && document.documentElement.style.setProperty('--ouro-header-inset', '\(inset)px')")
+        }
 
         private func eval(_ js: String) {
             webView?.evaluateJavaScript(js, completionHandler: nil)

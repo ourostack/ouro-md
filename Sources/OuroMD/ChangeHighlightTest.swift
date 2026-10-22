@@ -12,6 +12,7 @@ import WebKit
 final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     private var webView: WKWebView!
     private let theme = ThemeStore.shared.defaultTheme
+    private let headerInset: CGFloat = SystemDesign.usesGlass ? 52 : 0
     private var results: [(String, Bool, String)] = []
     private var started = false
 
@@ -23,17 +24,16 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
         HeadlessHarness.configure()
         let configuration = WKWebViewConfiguration()
         let controller = WKUserContentController()
+        controller.addUserScript(WKUserScript(
+            source: EditorWebView.initialThemeBootstrapScript(for: theme, headerInset: headerInset),
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true
+        ))
         controller.add(self, name: "ouro")
         configuration.userContentController = controller
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
         let frame = NSRect(x: 0, y: 0, width: 800, height: 600)
         webView = WKWebView(frame: frame, configuration: configuration)
-        if #available(macOS 26, *) {
-            // Also exercise WebKit's layout-viewport exclusion. Like the
-            // production extension's safe-area placement, its viewport starts
-            // below chrome and must not receive a second JavaScript offset.
-            webView.obscuredContentInsets = NSEdgeInsets(top: 52, left: 0, bottom: 0, right: 0)
-        }
         webView.navigationDelegate = self
         guard let indexURL = OuroResources.web("index", "html") else {
             FileHandle.standardError.write(Data("changehighlighttest: index.html not found\n".utf8)); exit(1)
@@ -123,7 +123,8 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
             let text = (during?["text"] as? String)?.trimmingCharacters(in: .whitespaces)
             self.record("pasted text is highlighted exactly", text == "PASTED-TEXT", "\(text ?? "none")")
             let top = during?["top"] as? Double ?? -1, bottom = during?["bottom"] as? Double ?? -1, viewport = during?["viewport"] as? Double ?? 0
-            self.record("paste below the fold is scrolled into view", top >= 0 && bottom <= viewport, "top=\(top) bottom=\(bottom) viewport=\(viewport)")
+            self.record("paste below the fold is revealed below the header", top >= Double(self.headerInset) && bottom <= viewport,
+                        "top=\(top) bottom=\(bottom) viewport=\(viewport)")
             // One continuous fade with no hold: strong once the change is on
             // screen. (Timers are throttled off-screen, so the curve itself is
             // checked through its timing rather than by sampling it.)
@@ -179,7 +180,8 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
             let text = (during?["text"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             self.record("assistant edit is highlighted", text.contains("ASSISTANT-ADDED paragraph."), "\(text) last=\(r["last"] ?? "")")
             let top = during?["top"] as? Double ?? -1, bottom = during?["bottom"] as? Double ?? -1, viewport = during?["viewport"] as? Double ?? 0
-            self.record("assistant edit is brought into view", top >= 0 && bottom <= viewport, "top=\(top) bottom=\(bottom) viewport=\(viewport)")
+            self.record("assistant edit is revealed below the header", top >= Double(self.headerInset) && bottom <= viewport,
+                        "top=\(top) bottom=\(bottom) viewport=\(viewport)")
             self.agentCase()
         }
     }
@@ -292,7 +294,7 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
         const unseenSurvives = marks();
         button().click();
         await sleep(150);
-        const jumped = paragraph(55).getBoundingClientRect().top >= 0
+        const jumped = paragraph(55).getBoundingClientRect().top >= parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop)
           && paragraph(55).getBoundingClientRect().bottom < window.innerHeight;
         const reachedStays = marks();
         scroller.scrollTop = 0;
@@ -399,21 +401,27 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
 
     private func viewportEdgeCase() {
         let script = Self.probe + #"""
-        window.ouro.setValue("First paragraph.\n\nSecond paragraph.\n");
+        const fixture = "First paragraph.\n\nSecond paragraph.\n\n" + Array.from({length:80}, (_,i) => "Filler paragraph " + i + ".").join("\n\n");
+        window.ouro.setValue(fixture);
         await sleep(400);
         scroller.scrollTop = 0;
-        window.ouro.reloadValue("First AGENT paragraph.\n\nSecond paragraph.\n");
+        window.ouro.reloadValue(fixture.replace("First paragraph.", "First AGENT paragraph."));
         await sleep(400);
         const overlay = document.getElementById("ouro-change-marks").getBoundingClientRect();
         const mark = document.querySelector(".ouro-change-mark");
         const rect = mark && mark.getBoundingClientRect();
-        return { overlayTop: overlay.top, markTop: rect && rect.top,
-          unclipped: !!rect && rect.top >= overlay.top && rect.bottom <= overlay.bottom };
+        const unclipped = !!rect && rect.top >= overlay.top && rect.bottom <= overlay.bottom;
+        const first = document.querySelector("#editor .vditor-ir .vditor-reset > p");
+        scroller.scrollTop += first.getBoundingClientRect().bottom - (overlay.top - 12);
+        await sleep(150);
+        return { overlayTop: overlay.top, markTop: rect && rect.top, unclipped,
+          clearedBehindHeader: document.querySelectorAll(".ouro-change-mark").length === 0 };
         """#
         webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { [weak self] result in
             guard let self else { return }
             guard case .success(let value) = result, let r = value as? [String: Any] else { self.fail("viewport edge script failed: \(result)") }
-            self.record("a cue at the native viewport top is not hidden behind an artificial toolbar band", (r["overlayTop"] as? Double) == 0 && (r["unclipped"] as? Bool) == true, "\(r)")
+            self.record("a cue clears the actual header exactly once", (r["overlayTop"] as? Double) == Double(self.headerInset) && (r["unclipped"] as? Bool) == true, "\(r)")
+            self.record("a reached cue clears while passing behind the header", (r["clearedBehindHeader"] as? Bool) == true, "\(r)")
             self.finish()
         }
     }

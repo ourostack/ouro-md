@@ -1,6 +1,6 @@
 name: Window chrome
 
-# Captures real scrolling content plus quiet native chrome, with flat-layout and reflected-edge controls. Interactive tests run only on the hosted Mac.
+# Requires genuine document translucency without false top-edge reflections. Interactive tests run only on the hosted Mac.
 
 on:
   pull_request:
@@ -31,7 +31,7 @@ jobs:
       matrix:
         runner: [xcode-27, macos-26-intel]
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v5
       - name: Select native rendering toolchain
@@ -41,7 +41,7 @@ jobs:
           fi
           xcodebuild -version
           sw_vers
-      - name: Verify quiet native header while real document content scrolls
+      - name: Verify real translucency without reflected document edges
         env:
           OURO_HEADER_RENDERING: '1'
           OURO_NATIVE_PREFERENCE_PROOF: '1'
@@ -53,13 +53,11 @@ jobs:
           OURO_MD_TELEMETRY_DISABLED: '1'
         run: ./scripts/run-hosted-native-proof.sh header
       - name: Checkout the flat released negative control
-        if: always()
         uses: actions/checkout@v5
         with:
           ref: v0.9.95
           path: .ci/header-baseline
       - name: Render the same document in the released flat layout
-        if: always()
         env:
           OURO_HEADER_RENDERING: '1'
           OURO_NATIVE_PREFERENCE_PROOF: '1'
@@ -74,13 +72,11 @@ jobs:
           cd .ci/header-baseline
           "$OURO_PROOF_RUNNER" header
       - name: Checkout the reflected-edge regression control
-        if: always()
         uses: actions/checkout@v5
         with:
           ref: v0.9.104
           path: .ci/header-echo
       - name: Prove the old reflected header remains distinguishable from quiet chrome
-        if: always()
         env:
           OURO_HEADER_RENDERING: '1'
           OURO_NATIVE_PREFERENCE_PROOF: '1'
@@ -95,6 +91,26 @@ jobs:
           export OURO_PROOF_RUNNER="$PWD/scripts/run-hosted-native-proof.sh"
           cd .ci/header-echo
           "$OURO_PROOF_RUNNER" header
+      - name: Checkout the opaque-header regression control
+        uses: actions/checkout@v5
+        with:
+          ref: v0.9.105
+          path: .ci/header-opaque
+      - name: Prove the opaque header is distinguishable from real translucency
+        env:
+          OURO_HEADER_RENDERING: '1'
+          OURO_NATIVE_PREFERENCE_PROOF: '1'
+          OURO_HEADER_EXPECT_GLASS: '1'
+          OURO_HEADER_EXPECT_OPAQUE: '1'
+          OURO_HEADER_REQUIRE_LIVE_PAINT: ${{ matrix.runner == 'macos-26-intel' && '1' || '0' }}
+          OURO_HEADER_REQUIRE_FULLSCREEN: '0'
+          OURO_MD_TELEMETRY_DISABLED: '1'
+        run: |
+          cp Tests/OuroMDTests/NativeHeaderRenderingTests.swift .ci/header-opaque/Tests/OuroMDTests/
+          export OURO_HEADER_OUTPUT="$PWD/.build/header-rendering/opaque-v0.9.105"
+          export OURO_PROOF_RUNNER="$PWD/scripts/run-hosted-native-proof.sh"
+          cd .ci/header-opaque
+          "$OURO_PROOF_RUNNER" header
       - name: Restore owned preferences after interrupted native capture
         if: always()
         env:
@@ -102,6 +118,7 @@ jobs:
         run: |
           OURO_HEADER_OUTPUT=.build/header-rendering/flat-v0.9.95 ./scripts/run-hosted-native-proof.sh header --restore
           OURO_HEADER_OUTPUT=.build/header-rendering/echo-v0.9.104 ./scripts/run-hosted-native-proof.sh header --restore
+          OURO_HEADER_OUTPUT=.build/header-rendering/opaque-v0.9.105 ./scripts/run-hosted-native-proof.sh header --restore
           OURO_HEADER_OUTPUT=.build/header-rendering/current ./scripts/run-hosted-native-proof.sh header --restore
       - uses: actions/upload-artifact@v6
         if: always()
