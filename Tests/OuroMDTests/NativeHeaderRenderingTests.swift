@@ -127,38 +127,41 @@ final class NativeHeaderRenderingTests: XCTestCase {
             }.joined(separator: "\n\n")
             controller.model.bridge?.setMarkdown(document)
             try await Task.sleep(for: .seconds(1))
-            let prepared = try await web.evaluateJavaScript("""
+            let prepared = try await evaluate("""
             (() => {
               const root = document.querySelector("\(selector)");
-              if (!root || !root.textContent.includes("Moving document backdrop")) { return false; }
-              Array.from(root.children).forEach((node, i) => {
+              if (!root || !root.textContent.includes("Moving document backdrop")) { throw new Error("scroll fixture did not render in \(mode)"); }
+              const nodes = Array.from(root.matches(".vditor-sv") ? root.querySelectorAll("span[data-type='text']") : root.children);
+              if (nodes.length < 4) { throw new Error("scroll fixture needs text passages; root children=" + root.children.length + ", passages=" + nodes.length); }
+              nodes.forEach((node, i) => {
                 node.style.display = "block";
                 node.style.minHeight = "200px";
                 node.style.setProperty("background", i % 4 < 2 ? "#ee6655" : "#3388ee", "important");
               });
+              window.__ouroHeaderFixtureNodes = nodes;
               window.__ouroHeaderFixtureScroller = document.body.classList.contains("ouro-source-mode")
                 && document.body.scrollHeight > document.body.clientHeight ? document.body : document.scrollingElement;
-              return getComputedStyle(root.children[1]).backgroundColor === "rgb(238, 102, 85)"
-                && getComputedStyle(root.children[3]).backgroundColor === "rgb(51, 136, 238)";
+              return getComputedStyle(nodes[1]).backgroundColor === "rgb(238, 102, 85)"
+                && getComputedStyle(nodes[3]).backgroundColor === "rgb(51, 136, 238)";
             })()
-            """)
+            """, in: web, phase: "\(prefix) prepare scrolling fixture")
             XCTAssertEqual(prepared as? Bool, true, "capture requires actual rendered document text and contrasting colors")
             var headerMeans: [[Double]] = []
             for (name, index) in [("warm", 1), ("cool", 3)] {
-                _ = try await web.evaluateJavaScript("""
+                _ = try await evaluate("""
                 (() => {
-                  const node = document.querySelector("\(selector)").children[\(index)];
+                  const node = window.__ouroHeaderFixtureNodes[\(index)];
                   window.__ouroHeaderFixtureScroller.scrollTop += node.getBoundingClientRect().top + 80;
                 })()
-                """)
+                """, in: web, phase: "\(prefix) \(name) scroll")
                 try await Task.sleep(for: .seconds(1))
                 pumpNativeApplicationEvents()
-                let geometry = try await web.evaluateJavaScript("""
+                let geometry = try await evaluate("""
                 ({scroll:window.__ouroHeaderFixtureScroller.scrollTop, viewport:innerHeight,
-                  sampleTop:document.querySelector("\(selector)").children[\(index)].getBoundingClientRect().top,
-                  sampleBottom:document.querySelector("\(selector)").children[\(index)].getBoundingClientRect().bottom,
-                  sampleColor:getComputedStyle(document.querySelector("\(selector)").children[\(index)]).backgroundColor})
-                """)
+                  sampleTop:window.__ouroHeaderFixtureNodes[\(index)].getBoundingClientRect().top,
+                  sampleBottom:window.__ouroHeaderFixtureNodes[\(index)].getBoundingClientRect().bottom,
+                  sampleColor:getComputedStyle(window.__ouroHeaderFixtureNodes[\(index)]).backgroundColor})
+                """, in: web, phase: "\(prefix) \(name) geometry")
                 let values = try XCTUnwrap(geometry as? [String: Any])
                 XCTAssertGreaterThan(values["scroll"] as? Double ?? 0, 0)
                 XCTAssertLessThan(values["sampleTop"] as? Double ?? 0, -52)
@@ -385,16 +388,37 @@ final class NativeHeaderRenderingTests: XCTestCase {
         pumpNativeApplicationEvents()
     }
 
+    private func evaluate(_ script: String, in web: WKWebView, phase: String) async throws -> Any {
+        print("HEADER_PHASE begin \(phase)")
+        do {
+            let result = try await web.evaluateJavaScript(script)
+            print("HEADER_PHASE end \(phase)")
+            return result
+        } catch {
+            let detail = error as NSError
+            print("HEADER_FAILURE \(phase): \(String(reflecting: type(of: error))) \(detail.domain) \(detail.code) \(detail.userInfo)")
+            throw error
+        }
+    }
+
     private func captureWindow(_ window: NSWindow, to url: URL) throws -> NSBitmapImageRep {
+        print("HEADER_CAPTURE begin \(url.lastPathComponent)")
         window.contentView?.displayIfNeeded()
         CATransaction.flush()
         let capture = Process()
         capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
         capture.arguments = ["-x", "-o", "-l", "\(window.windowNumber)", url.path]
-        try capture.run()
+        do {
+            try capture.run()
+        } catch {
+            print("HEADER_CAPTURE_FAILURE \(url.lastPathComponent): \(String(reflecting: error))")
+            throw error
+        }
         capture.waitUntilExit()
         XCTAssertEqual(capture.terminationStatus, 0)
-        return try XCTUnwrap(NSBitmapImageRep(data: Data(contentsOf: url)))
+        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: Data(contentsOf: url)))
+        print("HEADER_CAPTURE end \(url.lastPathComponent)")
+        return bitmap
     }
 
     private func headerRegion(in bitmap: NSBitmapImageRep, window: NSWindow) -> NSRect {

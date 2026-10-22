@@ -53,13 +53,11 @@ jobs:
           OURO_MD_TELEMETRY_DISABLED: '1'
         run: ./scripts/run-hosted-native-proof.sh header
       - name: Checkout the flat released negative control
-        if: always()
         uses: actions/checkout@v5
         with:
           ref: v0.9.95
           path: .ci/header-baseline
       - name: Render the same document in the released flat layout
-        if: always()
         env:
           OURO_HEADER_RENDERING: '1'
           OURO_NATIVE_PREFERENCE_PROOF: '1'
@@ -74,13 +72,11 @@ jobs:
           cd .ci/header-baseline
           "$OURO_PROOF_RUNNER" header
       - name: Checkout the reflected-edge regression control
-        if: always()
         uses: actions/checkout@v5
         with:
           ref: v0.9.104
           path: .ci/header-echo
       - name: Prove the old reflected header remains distinguishable from quiet chrome
-        if: always()
         env:
           OURO_HEADER_RENDERING: '1'
           OURO_NATIVE_PREFERENCE_PROOF: '1'
@@ -96,13 +92,11 @@ jobs:
           cd .ci/header-echo
           "$OURO_PROOF_RUNNER" header
       - name: Checkout the opaque-header regression control
-        if: always()
         uses: actions/checkout@v5
         with:
           ref: v0.9.105
           path: .ci/header-opaque
       - name: Prove the opaque header is distinguishable from real translucency
-        if: always()
         env:
           OURO_HEADER_RENDERING: '1'
           OURO_NATIVE_PREFERENCE_PROOF: '1'

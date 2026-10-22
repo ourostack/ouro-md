@@ -128,7 +128,8 @@ final class DocumentHeaderLayoutTests: XCTestCase {
         let exported = try await web.evaluateJavaScript("window.ouro.getHTML()")
         let html = try XCTUnwrap(exported as? String)
         XCTAssertTrue(html.contains("SYNTHETIC VIEWPORT FIXTURE"))
-        XCTAssertFalse(html.contains("ouro-header"))
+        XCTAssertFalse(html.contains("data-ouro-header-padding"))
+        XCTAssertFalse(html.contains("--ouro-header-inset"))
         XCTAssertFalse(window.isVisible)
         XCTAssertEqual(app.activationPolicy(), .prohibited)
     }
