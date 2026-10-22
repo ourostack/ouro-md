@@ -94,6 +94,7 @@ final class DocumentHeaderLayoutTests: XCTestCase {
             let values = try XCTUnwrap(coordinates, "fixture did not become ready: \(fixtureState)")
             print("HEADER_VIEWPORT zoom=\(zoom) \(values)")
             XCTAssertEqual(try XCTUnwrap(values["height"]), expectedHeight, accuracy: 1)
+            // Built-in themes use 30 CSS pixels of content padding and zero first-heading margin.
             XCTAssertEqual(try XCTUnwrap(values["flow"]), 30 + expectedInset, accuracy: 1)
             XCTAssertEqual(try XCTUnwrap(values["fixed"]), expectedInset, accuracy: 1,
                            "fixed editing cues must clear the real header exactly once")

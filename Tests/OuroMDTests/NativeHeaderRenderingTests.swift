@@ -63,6 +63,14 @@ final class NativeHeaderRenderingTests: XCTestCase {
             XCTAssertEqual(controller.model.sidebarVisible, before)
         }
         var measurements: [[String: Any]] = []
+        defer {
+            do {
+                try JSONSerialization.data(withJSONObject: measurements, options: [.prettyPrinted, .sortedKeys])
+                    .write(to: output.appendingPathComponent("measurements.json"), options: .atomic)
+            } catch {
+                XCTFail("could not retain native header measurements: \(error)")
+            }
+        }
         var sampledHeaders: [[Double]] = []
         for (theme, mode) in [("quartz", "ir"), ("graphite", "ir"), ("quartz", "sv"), ("graphite", "sv")] {
             let selector = mode == "ir" ? ".vditor-ir .vditor-reset" : ".vditor-sv"
@@ -155,10 +163,6 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 XCTAssertGreaterThan(values["scroll"] as? Double ?? 0, 0)
                 XCTAssertLessThan(values["sampleTop"] as? Double ?? 0, -52)
                 XCTAssertGreaterThan(values["sampleBottom"] as? Double ?? 0, 0)
-                let snapshot = try await web.takeSnapshot(configuration: nil)
-                let webBitmap = try XCTUnwrap(NSBitmapImageRep(data: try XCTUnwrap(snapshot.tiffRepresentation)))
-                try XCTUnwrap(webBitmap.representation(using: .png, properties: [:]))
-                    .write(to: output.appendingPathComponent("\(prefix)-\(name)-web.png"))
                 content.displayIfNeeded()
                 CATransaction.flush()
                 let imageURL = output.appendingPathComponent("\(prefix)-\(name)-window.png")
@@ -355,12 +359,10 @@ final class NativeHeaderRenderingTests: XCTestCase {
         measurements[0]["fullscreenVerificationRequired"] = env["OURO_HEADER_REQUIRE_FULLSCREEN"] == "1"
         measurements[0]["nativeReduceMotion"] = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         measurements[0]["nativeReduceTransparency"] = NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
-        try JSONSerialization.data(withJSONObject: measurements, options: [.prettyPrinted, .sortedKeys])
-            .write(to: output.appendingPathComponent("measurements.json"))
         let liveBodyPaints = measurements.filter { ($0["state"] as? String)?.hasPrefix("top-") != true }
             .allSatisfy { ($0["coloredBodyPixels"] as? Int ?? 0) > 1000 }
         if env["OURO_HEADER_REQUIRE_LIVE_PAINT"] == "1" {
-            XCTAssertTrue(liveBodyPaints, "blank native captures cannot certify glass, even when WK snapshots paint")
+            XCTAssertTrue(liveBodyPaints, "blank native captures cannot certify glass")
             for index in stride(from: 0, to: sampledHeaders.count, by: 2) {
                 let change = zip(sampledHeaders[index], sampledHeaders[index + 1]).map { abs($0 - $1) }.max() ?? 0
                 if expectsGlass && env["OURO_HEADER_EXPECT_OPAQUE"] != "1" {
