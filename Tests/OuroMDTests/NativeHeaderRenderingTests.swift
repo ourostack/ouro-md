@@ -232,30 +232,46 @@ final class NativeHeaderRenderingTests: XCTestCase {
                           const before = document.createRange();
                           before.selectNodeContents(root); before.setEnd(range.startContainer, range.startOffset);
                           window.__ouroNativeCaretOffset = before.toString().length;
+                          window.__ouroNativeCaretGeometry = () => {
+                            const selection = getSelection(), range = selection.getRangeAt(0);
+                            const raw = range.getBoundingClientRect();
+                            let rect = raw, source = "range";
+                            if (rect.height === 0) {
+                              const element = range.startContainer.nodeType === Node.TEXT_NODE
+                                ? range.startContainer.parentElement : range.startContainer;
+                              const newline = element.closest("[data-type='newline']");
+                              const lineBreak = newline && newline.querySelector("br");
+                              if (!lineBreak) {
+                                throw new Error("native caret has no measurable line: " + element.outerHTML);
+                              }
+                              rect = lineBreak.getBoundingClientRect();
+                              source = "source-newline-br";
+                            }
+                            if (rect.height <= 0) { throw new Error("native caret line has no rendered geometry"); }
+                            const before = document.createRange();
+                            before.selectNodeContents(root); before.setEnd(range.startContainer, range.startOffset);
+                            return {top:rect.top,bottom:rect.bottom,height:rect.height,scroll:scrollY,
+                              rawTop:raw.top,rawHeight:raw.height,geometrySource:source,
+                              moved:window.__ouroNativeCaretOffset - before.toString().length};
+                          };
                           window.scrollTo(0, scrollY + range.getBoundingClientRect().top - \(inset + 5));
                           return {top:range.getBoundingClientRect().top,scroll:scrollY};
                         })()
                         """, in: web, phase: "\(mode) zoom \(zoom) caret fixture protected=\(avoidsHeader)")
                         let initialValues = try XCTUnwrap(initial as? [String: Any])
-                        XCTAssertEqual(try XCTUnwrap(initialValues["top"] as? Double), inset + 5, accuracy: 2,
+                        XCTAssertEqual(try XCTUnwrap(initialValues["top"] as? Double), inset + 5, accuracy: 2 / zoom,
                                        "position the real caret at the header before exercising native navigation")
                         var values: [String: Any] = [:]
+                        var navigation: [[String: Any]] = []
                         var minimumTop = Double.greatestFiniteMagnitude
                         var steps = 0
                         for _ in 0..<(avoidsHeader ? 12 : 24) {
                             try sendKey("\u{F700}", code: 126, to: controller.window)
                             try await Task.sleep(for: .milliseconds(100))
-                            let result = try await web.evaluateJavaScript("""
-                            (() => {
-                              const selection = getSelection(), range = selection.getRangeAt(0), rect = range.getBoundingClientRect();
-                              const before = document.createRange();
-                              before.selectNodeContents(document.querySelector("\(selector)"));
-                              before.setEnd(range.startContainer, range.startOffset);
-                              return {top:rect.top,bottom:rect.bottom,height:rect.height,scroll:scrollY,
-                                moved:window.__ouroNativeCaretOffset - before.toString().length};
-                            })()
-                            """)
+                            let result = try await evaluate("window.__ouroNativeCaretGeometry()", in: web,
+                                                            phase: "\(mode) zoom \(zoom) native up \(steps + 1) protected=\(avoidsHeader)")
                             values = try XCTUnwrap(result as? [String: Any])
+                            navigation.append(values)
                             let top = try XCTUnwrap(values["top"] as? Double)
                             minimumTop = min(minimumTop, top)
                             steps += 1
@@ -269,6 +285,7 @@ final class NativeHeaderRenderingTests: XCTestCase {
                         values["initialTop"] = initialValues["top"]
                         values["minimumTop"] = minimumTop
                         values["steps"] = steps
+                        values["navigation"] = navigation
                         values["mode"] = mode
                         values["zoom"] = zoom
                         values["avoidsHeader"] = avoidsHeader
