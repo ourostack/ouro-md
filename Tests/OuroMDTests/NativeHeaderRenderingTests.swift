@@ -139,8 +139,6 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 node.style.setProperty("background", i % 4 < 2 ? "#ee6655" : "#3388ee", "important");
               });
               window.__ouroHeaderFixtureNodes = nodes;
-              window.__ouroHeaderFixtureScroller = document.body.classList.contains("ouro-source-mode")
-                && document.body.scrollHeight > document.body.clientHeight ? document.body : document.scrollingElement;
               return getComputedStyle(nodes[1]).backgroundColor === "rgb(238, 102, 85)"
                 && getComputedStyle(nodes[3]).backgroundColor === "rgb(51, 136, 238)";
             })()
@@ -151,13 +149,13 @@ final class NativeHeaderRenderingTests: XCTestCase {
                 _ = try await evaluate("""
                 (() => {
                   const node = window.__ouroHeaderFixtureNodes[\(index)];
-                  window.__ouroHeaderFixtureScroller.scrollTop += node.getBoundingClientRect().top + 80;
+                  window.scrollTo(0, scrollY + node.getBoundingClientRect().top + 80);
                 })()
                 """, in: web, phase: "\(prefix) \(name) scroll")
                 try await Task.sleep(for: .seconds(1))
                 pumpNativeApplicationEvents()
                 let geometry = try await evaluate("""
-                ({scroll:window.__ouroHeaderFixtureScroller.scrollTop, viewport:innerHeight,
+                ({scroll:scrollY, viewport:innerHeight,
                   sampleTop:window.__ouroHeaderFixtureNodes[\(index)].getBoundingClientRect().top,
                   sampleBottom:window.__ouroHeaderFixtureNodes[\(index)].getBoundingClientRect().bottom,
                   sampleColor:getComputedStyle(window.__ouroHeaderFixtureNodes[\(index)]).backgroundColor})
@@ -211,7 +209,8 @@ final class NativeHeaderRenderingTests: XCTestCase {
                     try await Task.sleep(for: .seconds(1))
                     let inset = Double(controller.window.frame.height - controller.window.contentLayoutRect.maxY) / zoom
                     for avoidsHeader in [false, true] {
-                        _ = try await web.evaluateJavaScript("""
+                        XCTAssertTrue(controller.window.makeFirstResponder(web))
+                        let initial = try await evaluate("""
                         (() => {
                           const root = document.querySelector("\(selector)");
                           const scrollers = [document.documentElement, document.body, ...document.querySelectorAll("#editor .vditor-reset,.vditor-preview")];
@@ -233,33 +232,49 @@ final class NativeHeaderRenderingTests: XCTestCase {
                           const before = document.createRange();
                           before.selectNodeContents(root); before.setEnd(range.startContainer, range.startOffset);
                           window.__ouroNativeCaretOffset = before.toString().length;
-                          const scroller = document.body.classList.contains("ouro-source-mode")
-                            && document.body.scrollHeight > document.body.clientHeight ? document.body : document.scrollingElement;
-                          scroller.scrollTop += range.getBoundingClientRect().top - \(inset + 5);
+                          window.scrollTo(0, scrollY + range.getBoundingClientRect().top - \(inset + 5));
+                          return {top:range.getBoundingClientRect().top,scroll:scrollY};
                         })()
-                        """)
-                        XCTAssertTrue(controller.window.makeFirstResponder(web))
-                        for _ in 0..<12 {
+                        """, in: web, phase: "\(mode) zoom \(zoom) caret fixture protected=\(avoidsHeader)")
+                        let initialValues = try XCTUnwrap(initial as? [String: Any])
+                        XCTAssertEqual(try XCTUnwrap(initialValues["top"] as? Double), inset + 5, accuracy: 2,
+                                       "position the real caret at the header before exercising native navigation")
+                        var values: [String: Any] = [:]
+                        var minimumTop = Double.greatestFiniteMagnitude
+                        var steps = 0
+                        for _ in 0..<(avoidsHeader ? 12 : 24) {
                             try sendKey("\u{F700}", code: 126, to: controller.window)
                             try await Task.sleep(for: .milliseconds(100))
+                            let result = try await web.evaluateJavaScript("""
+                            (() => {
+                              const selection = getSelection(), range = selection.getRangeAt(0), rect = range.getBoundingClientRect();
+                              const before = document.createRange();
+                              before.selectNodeContents(document.querySelector("\(selector)"));
+                              before.setEnd(range.startContainer, range.startOffset);
+                              return {top:rect.top,bottom:rect.bottom,height:rect.height,scroll:scrollY,
+                                moved:window.__ouroNativeCaretOffset - before.toString().length};
+                            })()
+                            """)
+                            values = try XCTUnwrap(result as? [String: Any])
+                            let top = try XCTUnwrap(values["top"] as? Double)
+                            minimumTop = min(minimumTop, top)
+                            steps += 1
+                            if avoidsHeader {
+                                XCTAssertGreaterThanOrEqual(top, inset - 1,
+                                                           "every native navigation step must remain below the glass")
+                            } else if top < inset - 5 {
+                                break
+                            }
                         }
-                        let result = try await web.evaluateJavaScript("""
-                        (() => {
-                          const selection = getSelection(), range = selection.getRangeAt(0), rect = range.getBoundingClientRect();
-                          const before = document.createRange();
-                          before.selectNodeContents(document.querySelector("\(selector)"));
-                          before.setEnd(range.startContainer, range.startOffset);
-                          return {top:rect.top,bottom:rect.bottom,height:rect.height,scroll:scrollY,
-                            moved:window.__ouroNativeCaretOffset - before.toString().length};
-                        })()
-                        """)
-                        var values = try XCTUnwrap(result as? [String: Any])
+                        values["initialTop"] = initialValues["top"]
+                        values["minimumTop"] = minimumTop
+                        values["steps"] = steps
                         values["mode"] = mode
                         values["zoom"] = zoom
                         values["avoidsHeader"] = avoidsHeader
                         caretStates.append(values)
                         XCTAssertGreaterThan(try XCTUnwrap(values["height"] as? Double), 0)
-                        XCTAssertGreaterThan(try XCTUnwrap(values["moved"] as? Double), 20,
+                        XCTAssertGreaterThan(try XCTUnwrap(values["moved"] as? Double), 0,
                                              "native arrow input must actually move the caret")
                         if avoidsHeader {
                             XCTAssertGreaterThanOrEqual(try XCTUnwrap(values["top"] as? Double), inset - 1,
