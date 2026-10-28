@@ -5,6 +5,8 @@
   "use strict";
 
   var vditor = null;
+  var largeDocument = null;
+  var readingLute = null;
   var ready = false;
   var dirty = false;
   // True while a Writing Tools session (rewrite, proofread, "Write with Siri")
@@ -26,8 +28,9 @@
     root: function () { return ready ? changeRoot() : null; },
     text: changeText,
     mode: function () { return state.mode; },
-    markdown: function () { return ready && vditor ? vditor.getValue() : state.value; },
+    markdown: function () { return largeDocument ? largeDocument.value() : ready && vditor ? vditor.getValue() : state.value; },
     renderMarkdown: function (md) {
+      if (largeDocument) { return largeDocument.renderMarkdown(md); }
       return ready && vditor ? vditor.vditor.lute.Md2VditorIRDOM(md) : null;
     }
   });
@@ -378,7 +381,7 @@
       // External links keep the established ⌘-click gesture so ordinary clicks
       // remain available for editing. A rendered local Markdown link opens on a
       // normal click: it stays inside Ouro MD, in another document window.
-      if (!e.metaKey && !(localMarkdown && e.type === "click")) { return; }
+      if (!e.metaKey && !(localMarkdown && e.type === "click") && !(largeDocument && e.type === "click")) { return; }
       // Swallow the whole gesture (caret placement, Vditor handlers, the
       // synthesized click) so the link opens instead of editing/navigating.
       e.preventDefault();
@@ -1193,6 +1196,7 @@
   }
 
   function renderedAnchorRoot() {
+    if (largeDocument) { return largeDocument.root(); }
     if (state.mode === "sv") {
       return document.querySelector("#editor .vditor-preview .vditor-reset") ||
         document.querySelector("#editor .vditor-preview.vditor-reset");
@@ -1269,6 +1273,7 @@
 
   // Vditor has no live mode switch; recreate while preserving content.
   function rebuild() {
+    if (largeDocument) { largeDocument.mode(state.mode); return; }
     if (vditor) {
       try { state.value = vditor.getValue(); } catch (e) { /* ignore */ }
       try { vditor.destroy(); } catch (e) { /* ignore */ }
@@ -1439,6 +1444,7 @@
   }
 
   function currentMarkdown() {
+    if (largeDocument) { return largeDocument.value(); }
     try { return vditor ? vditor.getValue() : state.value; } catch (e) { return state.value; }
   }
 
@@ -1596,6 +1602,7 @@
 
   function postRender() {
     var started = Date.now();
+    if (largeDocument) { changeMarks.update(); return; }
     if (writingToolsActive) { return; }
     try { restoreTableCellSpaces(true); } catch (e) { /* never block a render */ }
     rewriteRelativeImages();
@@ -2351,10 +2358,59 @@
     referenceError: function () { return referenceLinkError; }
   };
 
+  function announceDocumentMode() {
+    post("documentMode", { large: !!largeDocument, source: state.mode === "sv", thresholdBytes: 524288 });
+  }
+
+  function selectDocumentSurface(md, newDocument, previous) {
+    if (newDocument && largeDocument && !window.OuroLargeDocument.accepts(md)) {
+      largeDocument.destroy(); largeDocument = null; state.value = md;
+      create(); announceDocumentMode();
+      return false;
+    }
+    if (largeDocument) { return true; }
+    if (!window.OuroLargeDocument.accepts(md)) { return false; }
+    readingLute = vditor && vditor.vditor && vditor.vditor.lute || readingLute;
+    if (!readingLute) { throw new Error("Bundled Markdown renderer is not ready"); }
+    if (vditor) { vditor.destroy(); vditor = null; }
+    window.__ouroEditor = null;
+    ready = true;
+    state.value = previous == null ? md : previous;
+    document.body.classList.remove("ouro-focus");
+    largeDocument = window.OuroLargeDocument.create({
+      value: state.value,
+      editable: state.editable,
+      event: perfEvent,
+      render: function (markdown) {
+        perfEvent("large.render.start");
+        var html = readingLute.Md2HTML(markdown);
+        perfEvent("large.render.html", { length: html.length });
+        html = normalizeHeadingIDsInHTML(html);
+        perfEvent("large.render.end");
+        return html;
+      },
+      changed: function (value) {
+        state.value = value;
+        invalidateReferenceLinkCache(); cancelAnchorRequests();
+        setDirty(true); postCount(value);
+      },
+      rendered: function () { rewriteRelativeImages(); postOutline(); changeMarks.update(); },
+      requestSource: function () { window.ouro.setMode("sv"); }
+    });
+    largeDocument.mode(state.mode);
+    announceDocumentMode();
+    return true;
+  }
+
   window.ouro = {
+    documentMode: function () { return { large: !!largeDocument, source: state.mode === "sv", thresholdBytes: 524288 }; },
     setValue: function (md) {
       changeMarks.reset();
       state.value = (md == null) ? "" : md;
+      if (selectDocumentSurface(state.value, true)) {
+        largeDocument.load(state.value);
+        dirty = false; postCount(state.value); return;
+      }
       invalidateReferenceLinkCache();
       cancelAnchorRequests();
       if (vditor && ready) { vditor.setValue(state.value, true); }
@@ -2370,6 +2426,17 @@
     // reading a stale affordance. Used by the headless table-wrap probe.
     refreshDecorations: function () { postRender(); },
     reloadValue: function (md) {
+      if (largeDocument || window.OuroLargeDocument.accepts(md || "")) {
+        var before = window.ouro.getValue();
+        var y = (document.scrollingElement || document.documentElement).scrollTop;
+        state.value = md == null ? "" : md;
+        selectDocumentSurface(state.value, false);
+        largeDocument.load(state.value);
+        changeMarks.compareMarkdown(before);
+        dirty = false; postCount(state.value);
+        requestAnimationFrame(function () { (document.scrollingElement || document.documentElement).scrollTop = y; });
+        return;
+      }
       // Like setValue, but preserves the reader's scroll position — used when
       // the open file is rewritten externally (agent edit) and we live-reload.
       var scroller = document.scrollingElement || document.documentElement;
@@ -2398,6 +2465,13 @@
       // undoable step, keep the reader's place, and mark the document edited so
       // autosave persists it.
       var next = (md == null) ? "" : md;
+      if (!state.editable) { return; }
+      if (largeDocument) { largeDocument.edit(next); return; }
+      if (window.OuroLargeDocument.accepts(next)) {
+        var previous = window.ouro.getValue();
+        selectDocumentSurface(next, false, previous);
+        largeDocument.edit(next); return;
+      }
       if (!vditor || !ready) { state.value = next; setDirty(true); postCount(next); return; }
       var beforeText = "";
       try { beforeText = changeText(changeRoot()); } catch (e) { beforeText = ""; }
@@ -2444,12 +2518,14 @@
       changeMarks.clearReview();
     },
     getValue: function () {
+      if (largeDocument) { return largeDocument.value(); }
       // Repair lute's dropped table-cell boundary spaces before serializing, so
       // a save never writes `word**bold**` for the author's `word **bold**`.
       try { restoreTableCellSpaces(); } catch (e) { /* never block a save */ }
       try { return vditor ? vditor.getValue() : state.value; } catch (e) { return state.value; }
     },
     getHTML: function () {
+      if (largeDocument) { return largeDocument.html(); }
       try { return vditor ? normalizeHeadingIDsInHTML(vditor.getHTML()) : ""; } catch (e) { return ""; }
     },
     setTheme: function (uiMode, css, codeTheme, background) {
@@ -2488,20 +2564,24 @@
     setMode: function (mode) {
       if (!mode || mode === state.mode) { return; }
       state.mode = mode;
+      if (largeDocument) { largeDocument.mode(mode); announceDocumentMode(); return; }
       rebuild();
     },
     setOutline: function (on) {
       on = !!on;
       if (on === state.outline) { return; }
       state.outline = on;
+      if (largeDocument) { postOutline(); return; }
       rebuild();
     },
     setFocusMode: function (on) {
+      if (largeDocument) { return false; }
       state.focus = !!on;
       document.body.classList.toggle("ouro-focus", state.focus);
       if (state.focus) { updateActiveBlock(); }
     },
     setTypewriter: function (on) {
+      if (largeDocument) { return false; }
       on = !!on;
       if (on === state.typewriter) { return; }
       state.typewriter = on;
@@ -2509,6 +2589,7 @@
     },
     setAutoPair: function (on) { autoPair = !!on; },
     setWritingToolsActive: function (on) {
+      if (largeDocument) { return false; }
       var next = !!on;
       // Returns, at the end of a session, whether Writing Tools changed the text.
       if (next === writingToolsActive) { return false; }
@@ -2517,6 +2598,7 @@
     },
     isWritingToolsActive: function () { return writingToolsActive; },
     exec: function (cmd) {
+      if (largeDocument) { largeDocument.exec(cmd); return; }
       if (!state.editable) { return; }
       switch (cmd) {
         case "bold": wrapSelection("**", "**"); break;
@@ -2550,12 +2632,14 @@
     },
     setEditable: function (editable) {
       state.editable = !!editable;
+      if (largeDocument) { largeDocument.editable(state.editable); return; }
       if (vditor) {
         if (state.editable) { vditor.enable(); } else { vditor.disabled(); }
       }
     },
     markSaved: function () { dirty = false; },
     undo: function () {
+      if (largeDocument) { largeDocument.undo(); return; }
       if (!state.editable) { return; }
       if (!vditor || !vditor.vditor || !vditor.vditor.undo) { return; }
       try {
@@ -2568,6 +2652,7 @@
       } catch (e) { /* ignore */ }
     },
     redo: function () {
+      if (largeDocument) { largeDocument.redo(); return; }
       if (!state.editable) { return; }
       if (!vditor || !vditor.vditor || !vditor.vditor.undo) { return; }
       try {
@@ -2579,8 +2664,8 @@
         postCount(state.value);
       } catch (e) { /* ignore */ }
     },
-    focus: function () { if (vditor) { try { vditor.focus(); } catch (e) { /* ignore */ } } },
-    insertText: function (text) { if (text) { insertAtCursor(text); } },
+    focus: function () { if (largeDocument) { largeDocument.focus(); return; } if (vditor) { try { vditor.focus(); } catch (e) { /* ignore */ } } },
+    insertText: function (text) { if (largeDocument) { return largeDocument.insert(text); } if (state.editable && text) { insertAtCursor(text); } },
     // Explicit Edit ▸ Copy as ▸ {markdown, plain, html}. Sets the mode for the
     // unified copy handler above, then fires a synthetic copy so that handler
     // writes the requested flavor to the clipboard.
@@ -2604,12 +2689,14 @@
     find: function (query, opts) {
       if (!query) { return; }
       opts = opts || {};
+      if (largeDocument) { return largeDocument.find(buildSearchRegex(query, opts, true), null, !!opts.backward); }
       try {
         window.find(query, !!opts.caseSensitive, !!opts.backward, true, !!opts.wholeWord, false, false);
       } catch (e) { /* ignore */ }
     },
     revealSearchMatch: function (opts) {
       opts = opts || {};
+      if (largeDocument) { return largeDocument.find(buildSearchRegex(opts.query || opts.matchedText || "", opts, true), opts.matchOrdinal || 0, false); }
       var ordinal = Math.max(0, opts.matchOrdinal || 0);
       var text = opts.matchedText || "";
       var query = opts.query || text;
@@ -2646,6 +2733,7 @@
   // Replace on the markdown source (correct for a markdown editor), preserving
   // scroll and marking the buffer dirty so auto-save picks it up. Returns count.
   function doReplace(query, replacement, opts, all) {
+    if (largeDocument) { return query ? largeDocument.replace(buildSearchRegex(query, opts, true), replacement, all) : 0; }
     if (!query || !vditor || !state.editable) { return 0; }
     var re = buildSearchRegex(query, opts, all);
     if (!re) { return 0; }

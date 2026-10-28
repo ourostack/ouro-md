@@ -25,6 +25,15 @@
   @font-face { font-family: "Open Sans"; font-style: italic; font-weight: 700; font-display: swap; src: url("fonts/open-sans-700i.woff2") format("woff2"); }
   html, body { margin: 0; padding: 0; background: transparent; }
   body { min-height: 100vh; }
+  #ouro-large-note { position: sticky; top: 0; z-index: 4; padding: 10px 24px; background: Canvas; color: CanvasText; font: 12px/1.5 system-ui; border-bottom: 1px solid GrayText; }
+  #ouro-large-note button { font: inherit; margin-left: 8px; }
+  #ouro-large-reading { padding: 24px 48px 80px; }
+  #ouro-large-reading > * { content-visibility: auto; contain-intrinsic-size: auto 100px; }
+  #ouro-large-reading table { max-width: 100%; }
+  #ouro-large-source { display: block; box-sizing: border-box; width: 100%; flex: 1; min-height: 0; resize: none; padding: 24px; border: 0; outline: none; font: 14px/22px ui-monospace, monospace; color: inherit; background: transparent; tab-size: 4; }
+  body.ouro-large-document.ouro-source-mode #editor { display: flex; flex-direction: column; height: 100vh !important; }
+  #ouro-large-source[hidden], #ouro-large-reading[hidden] { display: none; }
+  @media print { #ouro-large-note { display: none !important; } #ouro-large-reading > * { content-visibility: visible; contain-intrinsic-size: none; } }
   body.ouro-source-mode {
     height: 100vh;
     overflow: hidden;
@@ -122,6 +131,7 @@
   <script src="vditor/dist/index.min.js"></script>
   <script src="unicode-case-fold.js"></script>
   <script src="change-marks.js"></script>
+  <script src="large-document.js"></script>
   <script src="bridge.js"></script>
 </body>
 </html>
