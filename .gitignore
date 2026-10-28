@@ -25,3 +25,5 @@ worker/tasks/*/render-fixture.png
 
 # macOS
 .DS_Store
+.playwright-mcp/
+report.*.json
