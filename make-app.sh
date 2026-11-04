@@ -90,7 +90,15 @@ INTENTS_WORK="$(mktemp -d)"
 # The executable target OuroMD builds in the product's (ouro-md) directory.
 CONST_DIR=".build/out/Intermediates.noindex/ouro-md.build/$(echo "${CONFIG:0:1}" | tr a-z A-Z)${CONFIG:1}/ouro-md-p.build/Objects-normal/$(uname -m)"
 find "${PWD}/${CONST_DIR}" -name "*.swiftconstvalues" -print 2>/dev/null > "${INTENTS_WORK}/constvalues.txt" || true
-[[ -s "${INTENTS_WORK}/constvalues.txt" ]] || { echo "error: no App Intents const values were emitted" >&2; exit 1; }
+# Xcode 26's SwiftPM (the native build system) writes them beside the target's objects instead.
+if [[ ! -s "${INTENTS_WORK}/constvalues.txt" ]]; then
+  find "$(cd "${BIN_DIR}" && pwd -P)/OuroMD.build" -name "*.swiftconstvalues" -print 2>/dev/null > "${INTENTS_WORK}/constvalues.txt" || true
+fi
+[[ -s "${INTENTS_WORK}/constvalues.txt" ]] || {
+  echo "error: no App Intents const values were emitted" >&2
+  find .build -name "*.swiftconstvalues" 2>/dev/null | head -5 >&2
+  exit 1
+}
 find "${PWD}/Sources/OuroMD" -name "*.swift" > "${INTENTS_WORK}/sources.txt"
 xcrun appintentsmetadataprocessor \
   --output "${APP}/Contents/Resources" \
