@@ -9,7 +9,7 @@ public enum OuroMDRelease {
     public static let releaseDate = "2026-11-03"
     public static let positioningSubtitle = "Local Markdown workspace for Mac files."
     public static let releaseHighlights = [
-        "Siri and Shortcuts get clearer answers: every error says what to do next, and replacing a whole document asks you first.",
+        "Siri and Shortcuts get clearer answers: every error says what to do next, and replacing a whole document asks you first. Ouro MD now needs macOS 15 or later.",
         "Restore real document translucency behind the glass header, without false text reflections at the top.",
         "Start print previews fitted to the whole page, including large paper sizes.",
         "Keep zoom buttons in sync with the actual scale and preserve manual zoom across layout changes.",

@@ -35,6 +35,7 @@ enum DocumentIntentError: Error, Equatable, CustomLocalizedStringResourceConvert
     case noDocument
     case unreadable(String)
     case writingToolsActive(String)
+    case locked(String)
     case needsOpenDocument(String)
 
     var problem: OuroAX.Problem {
@@ -47,6 +48,8 @@ enum DocumentIntentError: Error, Equatable, CustomLocalizedStringResourceConvert
             return .init(code: "unreadable", exit: 1, thing: name, problem: "Ouro MD can't read it", fix: "Check that the file still exists and that Ouro MD may open it, then try again")
         case .writingToolsActive(let name):
             return .init(code: "writing-tools-active", exit: 1, thing: name, problem: "Writing Tools is editing it", fix: "Finish or cancel Writing Tools, then try again")
+        case .locked(let name):
+            return .init(code: "locked", exit: 1, thing: name, problem: "the file is locked", fix: "Unlock it in the Finder (File > Get Info), then try again")
         case .needsOpenDocument(let name):
             return .init(code: "not-utf8", exit: 1, thing: name, problem: "it isn't UTF-8 text", fix: "Open it in Ouro MD first, then try again")
         }
@@ -87,7 +90,8 @@ struct MarkdownDocumentEntity: AppEntity, Transferable {
         id = url.path
         name = url.deletingPathExtension().lastPathComponent
         folder = url.deletingLastPathComponent().lastPathComponent
-        modified = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
+        // Inside the remembered access, so the sandboxed build can read a recent file's date.
+        modified = DocumentAccess.withAccess(to: url) { (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate }
     }
 
     var displayRepresentation: DisplayRepresentation {
@@ -223,12 +227,14 @@ struct ReplaceMarkdownDocumentIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let workspace = try liveWorkspace()
-        // The same rule as every door: Replace asks the person first.
+        // The same rule as every door: Replace asks the person first. The confirmed edit goes to the document the
+        // person was asked about, even if another window comes to the front while they answer.
         let asking = try check(await DocumentActions.replace(with: markdown, in: document?.url, confirmed: false, in: workspace))
-        if asking.state == .needsHuman, let target = asking.target {
-            try await Self.confirm(self, "Replace all of \(target.name ?? target.id) with the new Markdown?")
+        guard asking.state == .needsHuman, let target = asking.target else {
+            throw OuroAX.Problem(code: "not-confirmed", exit: 1, thing: "Replace", problem: "Ouro MD couldn't ask before replacing, so nothing was changed", fix: "Try again")
         }
-        let outcome = try check(await DocumentActions.replace(with: markdown, in: document?.url, confirmed: true, in: workspace))
+        try await Self.confirm(self, "Replace all of \(target.name ?? target.id) with the new Markdown?")
+        let outcome = try check(await DocumentActions.replace(with: markdown, in: URL(fileURLWithPath: target.id), confirmed: true, in: workspace))
         return .result(dialog: outcome.dialog)
     }
 }

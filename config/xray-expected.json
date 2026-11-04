@@ -19,7 +19,7 @@
   "open": {
     "intent.tool": "needs the Xcode 27.3 SDK: earlier metadata cannot mark tool intents; the ToolIntent conformances are fenced until then",
     "entity.property-description": "needs the Xcode 27.3 SDK: earlier @Property takes no description; the descriptions are fenced until then",
-    "intent.error-names-fix": "behaviour stage: AppIntentsTesting refuses an ad-hoc-signed app on macOS (AppIntentsServicesSecurityErrorDomain 800); needs an Apple Development certificate in CI. Unit tests check every error's fix",
+    "intent.error-names-fix": "behaviour stage: AppIntentsTesting refuses an ad-hoc-signed app on macOS (AppIntentsServicesSecurityErrorDomain 800); needs an Apple Development certificate in CI and refusal runs against a disposable copy (--disposable). Unit tests check every error's fix",
     "entity.indexed": "behaviour stage: needs an Apple Development certificate in CI (error 800 when ad-hoc signed)",
     "entity.ids-resolve": "behaviour stage: needs an Apple Development certificate in CI (error 800 when ad-hoc signed)",
     "entity.transfer-round-trip": "behaviour stage: needs an Apple Development certificate in CI (error 800 when ad-hoc signed)",

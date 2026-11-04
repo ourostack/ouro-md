@@ -1,4 +1,5 @@
 import Foundation
+import Markdown
 import OuroAX
 
 /// What Ouro MD does with a document, once, for every door: the App Intents (Siri, Shortcuts, Spotlight) and the MCP
@@ -67,6 +68,10 @@ enum DocumentActions {
         case .success(let found): target = found
         }
         guard confirmed else {
+            // Ask only about a document that can be replaced, so the person isn't asked and then refused.
+            guard await workspace.markdown(for: target) != nil else {
+                return refused("replace", .unreadable(target.lastPathComponent), target: target)
+            }
             return OuroAX.Outcome(
                 action: "replace",
                 state: .needsHuman,
@@ -104,20 +109,20 @@ enum DocumentActions {
         }
         let receipt = OuroAX.Receipt(id: UUID().uuidString, at: Date(), by: actor, why: nil)
         let readBack = await workspace.markdown(for: target)
-        if let readBack, collapsed(readBack) == collapsed(text) {
+        if let readBack, sameMarkdown(readBack, text) {
             return OuroAX.Outcome(
                 action: action, state: .done, summary: "\(verb) \(name(of: target)).", target: ref(target),
                 postcondition: .init(checked: true, holds: true, how: "read \(name(of: target)) back after the edit"),
                 receipt: receipt
             )
         }
-        // The editor may format Markdown its own way (a `*` list becomes `-`), so a different read-back is not proof
-        // the edit failed; the agent should look before it edits again.
+        // Formatting is compared away (the editor writes `*` lists, `_` emphasis), so a difference left is real text the
+        // agent should look at before it edits again. The person hears only the summary.
         return OuroAX.Outcome(
             action: action, state: .uncertain,
-            summary: "\(verb) \(name(of: target)), but reading it back shows different text, perhaps the editor's own formatting.",
+            summary: "\(verb) \(name(of: target)).",
             target: ref(target),
-            postcondition: .init(checked: true, holds: nil, how: "read \(name(of: target)) back after the edit; it differs from what was sent"),
+            postcondition: .init(checked: true, holds: nil, how: "read \(name(of: target)) back after the edit; its text differs from what was sent, beyond Markdown formatting"),
             receipt: receipt,
             next: [.init("read_document {\"document\": \(json(target.path))}", why: "see the text as it is now before editing again")]
         )
@@ -141,9 +146,23 @@ enum DocumentActions {
 
     static func ref(_ url: URL) -> OuroAX.Ref { .init(kind: "document", id: url.path, name: name(of: url)) }
 
-    /// Whitespace runs as one space, ends trimmed: what a read-back must keep.
-    private static func collapsed(_ text: String) -> String {
-        text.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression).trimmingCharacters(in: .whitespaces)
+    /// Whether two Markdown texts say the same thing: each is formatted the one swift-markdown way (list markers,
+    /// emphasis, escaping), then compared line by line with runs of spaces and tabs as one and blank-line runs as one.
+    /// Paragraphs still count: "a\n\nb" is not "a b".
+    static func sameMarkdown(_ a: String, _ b: String) -> Bool {
+        canonical(a) == canonical(b)
+    }
+
+    private static func canonical(_ text: String) -> [String] {
+        let formatted = Document(parsing: text.replacingOccurrences(of: "\r\n", with: "\n")).format()
+        var lines: [String] = []
+        for raw in formatted.split(separator: "\n", omittingEmptySubsequences: false) {
+            let line = raw.replacingOccurrences(of: "[ \t]+", with: " ", options: .regularExpression).trimmingCharacters(in: .whitespaces)
+            if line.isEmpty, lines.last?.isEmpty ?? true { continue }
+            lines.append(line)
+        }
+        while lines.last?.isEmpty == true { lines.removeLast() }
+        return lines
     }
 
     private static func json(_ string: String) -> String {

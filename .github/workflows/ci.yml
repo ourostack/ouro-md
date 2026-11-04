@@ -216,12 +216,11 @@ jobs:
       - name: Find the ouro-ui-apple release Ouro MD pins
         id: pin
         run: |
-          version="$(python3 -I -c 'import json,sys; print(next(p["state"]["version"] for p in json.load(open(sys.argv[1]))["pins"] if p["identity"] == "ouro-ui-apple"))' Package.resolved)"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+          python3 -I -c 'import json,sys; p = next(p for p in json.load(open(sys.argv[1]))["pins"] if p["identity"] == "ouro-ui-apple"); print("version=" + p["state"]["version"]); print("revision=" + p["state"]["revision"])' Package.resolved >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v5
         with:
           repository: ourostack/ouro-ui-apple
-          ref: v${{ steps.pin.outputs.version }}
+          ref: ${{ steps.pin.outputs.revision }}
           path: .ci/ouro-ui-apple
           persist-credentials: false
       - name: Toolchain

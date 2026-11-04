@@ -39,9 +39,10 @@ def check(report, expected):
         if not reason.strip():
             problems.append(f"{claim}: listed as open with no reason. Fix: say why it can't hold yet in config/xray-expected.json.")
     found = statuses(report)
+    for claim in sorted(hold & set(open_)):
+        problems.append(f"{claim}: listed under both hold and open. Fix: keep it in one of them in config/xray-expected.json.")
     for claim in sorted((hold | set(open_)) - set(found)):
-        if claim not in found:
-            problems.append(f"{claim}: not in the report (claim set {report['claimSet']['version']}). Fix: remove it from config/xray-expected.json, or check the app still has what it covers.")
+        problems.append(f"{claim}: not in the report (claim set {report['claimSet']['version']}). Fix: remove it from config/xray-expected.json, or check the app still has what it covers.")
     for claim, status in found.items():
         notes = "; ".join(r["note"] for r in report["results"] if r["claim"] == claim and r["verdict"] != "pass")
         if status == "fail":
@@ -93,6 +94,7 @@ def selftest():
         ("an open claim with no reason", check(good, {"hold": ["a"], "open": {"b": " ", "c": "x"}}), 1),
         ("a held claim that skips", check(report([("a", "skip"), ("b", "skip"), ("c", "skip")], claims), expected), 1),
         ("a claim the set dropped", check(good, {"hold": ["a", "z"], "open": {"b": "x", "c": "y"}}), 1),
+        ("a claim listed twice", check(good, {"hold": ["a"], "open": {"a": "x", "b": "y", "c": "z"}}), 1),
     ]
     ok = True
     for name, problems, want in cases:

@@ -29,16 +29,17 @@ private final class FakeWorkspace: MarkdownDocumentWorkspace {
     func open(_ url: URL) { opened.append(url) }
 }
 
-/// Writes through to the fake but reads back what an editor that reformats lists would show.
+/// Writes through to the fake but reads back the text as `readBack` changes it, as an editor might.
 @MainActor
 private class FakeWorkspaceProxy: MarkdownDocumentWorkspace {
     let inner: FakeWorkspace
-    init(_ inner: FakeWorkspace) { self.inner = inner }
+    let readBack: (String) -> String
+    init(_ inner: FakeWorkspace, readBack: @escaping (String) -> String) { self.inner = inner; self.readBack = readBack }
     func knownDocumentURLs() -> [URL] { inner.knownDocumentURLs() }
     func isReadable(_ url: URL) -> Bool { inner.isReadable(url) }
     func frontDocumentURL() -> URL? { inner.frontDocumentURL() }
     func markdown(for url: URL) async -> String? {
-        await inner.markdown(for: url).map { $0.replacingOccurrences(of: "* item", with: "- item") }
+        await inner.markdown(for: url).map(readBack)
     }
     func replaceMarkdown(_ markdown: String, in url: URL) async throws { try await inner.replaceMarkdown(markdown, in: url) }
     func open(_ url: URL) { inner.open(url) }
@@ -134,8 +135,42 @@ final class DocumentIntentsTests: XCTestCase {
         XCTAssertTrue(workspace.replacements.isEmpty)
     }
 
+    func testConfirmedReplaceGoesToTheDocumentThePersonWasAskedAbout() async throws {
+        let plan = workspace.order[0]
+        let notes = workspace.order[1]
+        ReplaceMarkdownDocumentIntent.confirm = { [workspace] _, prompt in
+            XCTAssertTrue(prompt.contains("Plan"), prompt)
+            workspace!.front = notes // another window comes forward while the person answers
+        }
+        var replace = ReplaceMarkdownDocumentIntent()
+        replace.markdown = "# New plan\n"
+        _ = try await replace.perform()
+        XCTAssertEqual(workspace.replacements.map(\.0), [plan])
+        XCTAssertEqual(workspace.documents[notes], "notes")
+    }
+
+    func testReplaceRefusesBeforeAskingWhenTheDocumentCantBeRead() async {
+        workspace.front = URL(fileURLWithPath: "/tmp/ouro-md-intents/Gone.md")
+        var asked = false
+        ReplaceMarkdownDocumentIntent.confirm = { _, _ in asked = true }
+        let outcome = await DocumentActions.replace(with: "x", in: nil, confirmed: false, in: workspace)
+        XCTAssertEqual(outcome.state, .refused)
+        XCTAssertEqual(outcome.error?.code, "unreadable")
+        var replace = ReplaceMarkdownDocumentIntent()
+        replace.markdown = "x"
+        do {
+            _ = try await replace.perform()
+            XCTFail("expected a refusal")
+        } catch let problem as OuroAX.Problem {
+            XCTAssertEqual(problem.code, "unreadable")
+        } catch {
+            XCTFail("unexpected \(error)")
+        }
+        XCTAssertFalse(asked)
+    }
+
     func testEveryErrorSaysWhatToDoNext() {
-        let errors: [DocumentIntentError] = [.appNotReady, .noDocument, .unreadable("Plan.md"), .writingToolsActive("Plan.md"), .needsOpenDocument("Plan.md")]
+        let errors: [DocumentIntentError] = [.appNotReady, .noDocument, .unreadable("Plan.md"), .writingToolsActive("Plan.md"), .locked("Plan.md"), .needsOpenDocument("Plan.md")]
         for error in errors {
             let problem = error.problem
             XCTAssertNotNil(problem.fix, "\(error)")
@@ -204,10 +239,28 @@ final class DocumentIntentsTests: XCTestCase {
         XCTAssertTrue(outcome.validate().ok, "\(outcome.validate())")
     }
 
+    func testAnEditorsOwnFormattingStillCountsAsDone() async {
+        // Vditor's Lute writes `*` lists and `*` emphasis; that is the same Markdown.
+        let lute = FakeWorkspaceProxy(workspace) { $0.replacingOccurrences(of: "- [ ]", with: "* [ ]").replacingOccurrences(of: "_now_", with: "*now*") }
+        let outcome = await DocumentActions.append("- [ ] Ship it _now_", to: nil, in: lute)
+        XCTAssertEqual(outcome.state, .done, outcome.summary)
+        XCTAssertEqual(outcome.postcondition.holds, true)
+    }
+
+    func testSameMarkdownIgnoresFormattingButNotText() {
+        XCTAssertTrue(DocumentActions.sameMarkdown("- a\n- b\n", "* a\n* b"))
+        XCTAssertTrue(DocumentActions.sameMarkdown("_x_ and **y**", "*x* and __y__\n\n"))
+        XCTAssertTrue(DocumentActions.sameMarkdown("a\r\n\r\n\r\nb", "a\n\nb"))
+        XCTAssertFalse(DocumentActions.sameMarkdown("a\n\nb", "a b"), "paragraphs count")
+        XCTAssertFalse(DocumentActions.sameMarkdown("- [ ] call", "- [x] call"))
+        XCTAssertFalse(DocumentActions.sameMarkdown("Ship it.", "Ship it!"))
+    }
+
     func testAReadBackThatDiffersIsUncertain() async {
-        let reformatting = FakeWorkspaceProxy(workspace)
-        let outcome = await DocumentActions.append("* item", to: nil, in: reformatting)
+        let dropping = FakeWorkspaceProxy(workspace) { $0.replacingOccurrences(of: "item", with: "") }
+        let outcome = await DocumentActions.append("* item", to: nil, in: dropping)
         XCTAssertEqual(outcome.state, .uncertain)
+        XCTAssertEqual(outcome.summary, "Added to Plan.", "the person hears only what was done")
         XCTAssertNil(outcome.postcondition.holds)
         XCTAssertFalse(outcome.next.isEmpty)
         XCTAssertTrue(outcome.validate().ok, "\(outcome.validate())")
