@@ -38,7 +38,8 @@ let package = Package(
                 .product(name: "OuroAppShellCore", package: "ouro-native-apple-app-shell"),
                 .product(name: "OuroAppShellUI", package: "ouro-native-apple-app-shell"),
                 .product(name: "Markdown", package: "swift-markdown"),
-                .product(name: "OuroAX", package: "ouro-ui-apple")
+                .product(name: "OuroAX", package: "ouro-ui-apple"),
+                .product(name: "OuroHX", package: "ouro-ui-apple")
             ],
             resources: [
                 .copy("web")

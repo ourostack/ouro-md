@@ -1,4 +1,5 @@
 import AppKit
+import OuroHX
 import WebKit
 
 /// Headless `--changehighlighttest`: checks that pasted text, an assistant's
@@ -128,10 +129,12 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
             // One continuous fade with no hold: strong once the change is on
             // screen. (Timers are throttled off-screen, so the curve itself is
             // checked through its timing rather than by sampling it.)
-            // Reduce Motion shows the glow steadily, then clears it.
+            // Reduce Motion shows the glow steadily, then crossfades it out over
+            // Ouro HX's reduced-motion crossfade.
             let flash = r["flash"] as? Double ?? 0, hold = r["hold"] as? Double ?? -1, fade = r["fade"] as? Double ?? 0
             let reduceMotion = r["reduceMotion"] as? Bool ?? false
-            let curve = reduceMotion ? (hold > 0 && fade == 0) : (hold == 0 && fade >= 800)
+            let crossfade = (OuroMotion.reducedMotionCrossfade * 1000).rounded()
+            let curve = reduceMotion ? (hold > 0 && fade == crossfade) : (hold == 0 && fade >= 800)
             self.record("highlight fades in one continuous step", flash > 0.3 && curve, "--ouro-flash=\(flash) hold=\(hold) fade=\(fade) reduceMotion=\(reduceMotion)")
             // Sample the painted highlight against the same text once it clears.
             let rect = CGRect(x: during?["left"] as? Double ?? 0, y: top, width: (during?["right"] as? Double ?? 0) - (during?["left"] as? Double ?? 0), height: bottom - top)

@@ -1,7 +1,18 @@
 import XCTest
+import OuroHX
 @testable import OuroMD
 
 final class EditorWebViewTests: XCTestCase {
+    func testTheEditorPageGetsOuroHXsReducedMotionCrossfade() {
+        // Ouro HX: under Reduce Motion, what moves becomes a crossfade of OuroTokens.Duration.base (0.2 s).
+        XCTAssertEqual(OuroMotion.reducedMotionCrossfade, OuroTokens.Duration.base)
+        let script = EditorWebView.initialThemeBootstrapScript(for: ThemeStore.shared.theme(id: "quartz"))
+        XCTAssertTrue(script.contains("window.__ouroMotion = {reducedMotionCrossfadeMs:200};"), script.prefix(300).description)
+        let bridge = try? String(contentsOf: URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .appendingPathComponent("../../Sources/OuroMD/web/bridge.js").standardizedFileURL, encoding: .utf8)
+        XCTAssertTrue(bridge?.contains("fade = reduce ? crossfade : 1100") ?? false, "the glow crossfades out under Reduce Motion")
+    }
+
     func testInitialThemeBootstrapSeedsDarkThemeBeforeEditorReady() {
         let script = EditorWebView.initialThemeBootstrapScript(for: ThemeStore.shared.theme(id: "graphite"))
 
