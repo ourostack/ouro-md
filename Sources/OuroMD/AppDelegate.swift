@@ -664,7 +664,9 @@ extension AppDelegate: MarkdownDocumentWorkspace {
     func replaceMarkdown(_ markdown: String, in url: URL) async throws {
         if let controller = controller(for: url) {
             guard controller.model.applyAssistantEdit(markdown) else {
-                throw DocumentIntentError.writingToolsActive(url.lastPathComponent)
+                throw controller.model.isFileLocked
+                    ? DocumentIntentError.locked(url.lastPathComponent)
+                    : DocumentIntentError.writingToolsActive(url.lastPathComponent)
             }
             return
         }

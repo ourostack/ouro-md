@@ -572,4 +572,15 @@ private final class InstallerHarness {
             }
         )
     }
+
+    func testAnUpdateThatNeedsANewerMacOSIsNotInstalled() {
+        let sonoma = OperatingSystemVersion(majorVersion: 14, minorVersion: 7, patchVersion: 1)
+        let sequoia = OperatingSystemVersion(majorVersion: 15, minorVersion: 0, patchVersion: 0)
+        XCTAssertFalse(OuroMDUpdateInstaller.runs(minimum: "15.0", on: sonoma))
+        XCTAssertTrue(OuroMDUpdateInstaller.runs(minimum: "15.0", on: sequoia))
+        XCTAssertTrue(OuroMDUpdateInstaller.runs(minimum: "13", on: sonoma))
+        XCTAssertFalse(OuroMDUpdateInstaller.runs(minimum: "14.8", on: sonoma))
+        XCTAssertEqual(OuroMDUpdateInstaller.InstallError.needsNewerMacOS("15.0").errorDescription,
+                       "This update needs macOS 15.0 or later, so Ouro MD stays on the version you have.")
+    }
 }
