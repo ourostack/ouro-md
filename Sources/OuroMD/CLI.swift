@@ -22,6 +22,8 @@ enum OuroCLI {
       ouro-md --render FILE [opts]   Render FILE to a self-contained HTML document
                                      on stdout (no window).
       ouro-md --list-themes          List available themes and exit.
+      ouro-md --mcp --root DIR       Serve the Markdown documents under DIR to an
+                                     agent over MCP (stdio). --root may repeat.
       ouro-md --roundtrip FILE       Load FILE through the live editor and print
                                      the Markdown value returned by Vditor.
       ouro-md --renderprobe          Verify live rich-rendering support.

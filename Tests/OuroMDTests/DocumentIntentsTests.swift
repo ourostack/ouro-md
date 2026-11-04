@@ -254,6 +254,7 @@ final class DocumentIntentsTests: XCTestCase {
         XCTAssertFalse(DocumentActions.sameMarkdown("a\n\nb", "a b"), "paragraphs count")
         XCTAssertFalse(DocumentActions.sameMarkdown("- [ ] call", "- [x] call"))
         XCTAssertFalse(DocumentActions.sameMarkdown("Ship it.", "Ship it!"))
+        XCTAssertFalse(DocumentActions.sameMarkdown("- a\n  - b", "- a\n- b"), "nesting counts")
     }
 
     func testAReadBackThatDiffersIsUncertain() async {

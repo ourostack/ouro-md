@@ -13,6 +13,7 @@ planning artifacts or task bundles.
 - [Uninstall / Reset](UNINSTALL_RESET.md): removal and reset procedures.
 - [V1 Acceptance](V1_ACCEPTANCE.md): acceptance criteria for the v1 product
   surface.
+- [MCP door](mcp-door.md): `ouro-md --mcp`, its decisions and prior art.
 - [Shipped CLI And Harness Policy](shipped-cli-and-harness-policy.json):
   machine-checked inventory of public CLI and hidden diagnostic harness modes.
 - [Vditor Vendor Manifest](vditor-vendor-manifest.json): vendored editor

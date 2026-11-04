@@ -671,24 +671,7 @@ extension AppDelegate: MarkdownDocumentWorkspace {
             return
         }
         guard isReadable(url) else { throw DocumentIntentError.unreadable(url.lastPathComponent) }
-        try DocumentAccess.withAccess(to: url) {
-            let file = url.resolvingSymlinksInPath()
-            let data = try Data(contentsOf: file)
-            guard let original = String(data: data, encoding: .utf8) else {
-                // Rewriting a non-UTF-8 file with no window and no undo would
-                // silently change its encoding; the editor handles that case.
-                throw DocumentIntentError.needsOpenDocument(url.lastPathComponent)
-            }
-            let text = DocumentIntentsFileText.matchingLineEndings(markdown, of: original)
-            do {
-                try text.write(to: file, atomically: true, encoding: .utf8)
-            } catch CocoaError.fileWriteNoPermission where DocumentAccess.isSandboxed {
-                // An atomic write makes a temporary file beside the original,
-                // which a grant for the file alone doesn't allow; rewrite the
-                // file in place instead.
-                try Data(text.utf8).write(to: file, options: [])
-            }
-        }
+        try DocumentAccess.withAccess(to: url) { try DocumentIntentsFileText.write(markdown, to: url) }
     }
 
     func open(_ url: URL) {
