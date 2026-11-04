@@ -1,4 +1,5 @@
 import Foundation
+import OuroHX
 
 /// A visual theme: standalone-document CSS (for `--render` / export) and
 /// in-editor CSS (scoped to the web editor's content), plus the web editor's
@@ -352,7 +353,7 @@ private func editorCSS(_ p: Palette) -> String {
     /* Focus mode. */
     body.ouro-focus .vditor-reset>*{opacity:.3;transition:opacity .18s ease;}
     body.ouro-focus .vditor-reset>.ouro-active,body.ouro-focus .vditor-reset>.ouro-active *{opacity:1;}
-    @media (prefers-reduced-motion:reduce){body.ouro-focus .vditor-reset>*{transition:none!important;}}
+    @media (prefers-reduced-motion:reduce){body.ouro-focus .vditor-reset>*{transition:opacity \(reducedMotionCrossfadeCSS) ease-in-out!important;}}
 
     ::selection{background:\(p.selection);}
     .vditor-reset ::selection{background:\(p.selection);}
@@ -369,3 +370,6 @@ private func editorCSS(_ p: Palette) -> String {
     \(codeSyntaxCSS(p))
     """
 }
+
+/// Ouro HX's Reduce Motion rule: what moves becomes a crossfade of `OuroMotion.reducedMotionCrossfade`, as CSS.
+let reducedMotionCrossfadeCSS = "\(Int((OuroMotion.reducedMotionCrossfade * 1000).rounded()))ms"

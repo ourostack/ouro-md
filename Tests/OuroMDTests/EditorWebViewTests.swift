@@ -10,7 +10,10 @@ final class EditorWebViewTests: XCTestCase {
         XCTAssertTrue(script.contains("window.__ouroMotion = {reducedMotionCrossfadeMs:200};"), script.prefix(300).description)
         let bridge = try? String(contentsOf: URL(fileURLWithPath: #filePath).deletingLastPathComponent()
             .appendingPathComponent("../../Sources/OuroMD/web/bridge.js").standardizedFileURL, encoding: .utf8)
-        XCTAssertTrue(bridge?.contains("fade = reduce ? crossfade : 1100") ?? false, "the glow crossfades out under Reduce Motion")
+        XCTAssertTrue(bridge?.contains("reducedMotionCrossfadeMs") ?? false, "the glow reads the crossfade")
+        // Focus mode's dimming crossfades too, instead of snapping.
+        XCTAssertTrue(ThemeStore.shared.theme(id: "quartz").editorCSS.contains(
+            "@media (prefers-reduced-motion:reduce){body.ouro-focus .vditor-reset>*{transition:opacity 200ms ease-in-out!important;}}"))
     }
 
     func testInitialThemeBootstrapSeedsDarkThemeBeforeEditorReady() {
