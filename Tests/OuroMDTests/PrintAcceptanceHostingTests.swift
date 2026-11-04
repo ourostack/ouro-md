@@ -300,7 +300,7 @@ final class PrintAcceptanceHostingTests: XCTestCase {
 
     private func waitForNavigationReady(_ fixture: NavigationFixture) async throws {
         let root = try XCTUnwrap(fixture.session.panelForTesting.contentView)
-        let deadline = ProcessInfo.processInfo.systemUptime + 10
+        let deadline = ProcessInfo.processInfo.systemUptime + 30 // returns once ready; a 200-page capture needs more on CI's free, slower Mac runners
         while !descendants(of: root).compactMap({ $0 as? NSTextField }).contains(where: { $0.stringValue.hasPrefix("Preview ready —") }), ProcessInfo.processInfo.systemUptime < deadline { try await Task.sleep(nanoseconds: 5_000_000) }
         XCTAssertTrue(descendants(of: root).compactMap { $0 as? NSTextField }.contains { $0.stringValue.hasPrefix("Preview ready —") })
     }
