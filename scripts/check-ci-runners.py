@@ -12,22 +12,30 @@ import sys
 from pathlib import Path
 
 
-RUNNER = re.compile(r"^\s*(runs-on|[A-Za-z_-]*runner[A-Za-z_-]*|os)\s*:.*\bxcode-27\b|^\s*-\s*xcode-27\s*$", re.MULTILINE)
+TRIGGER = re.compile(r"^on:.*\bpull_request|^\s*-?\s*pull_request(_target)?\b", re.MULTILINE)
+# The job runs only on pushes: the condition starts with the push check and adds anything else only with &&.
+PUSH_ONLY = re.compile(r"^    if:\s*(\$\{\{\s*)?github\.event_name\s*==\s*'push'\s*(&&|\}\}|$)", re.MULTILINE)
 
 
 def problems(name, text):
-    if not re.search(r"^\s*pull_request(_target)?\s*:", text, re.MULTILINE):
+    """Each job a pull request can trigger that picks xcode-27 anywhere before its steps (runs-on, matrix, include,
+    labels). Not followed: runs-on built at run time (fromJSON(vars.X)) and reusable workflows a job calls."""
+    if not TRIGGER.search(text):
+        return []
+    parts = re.split(r"^jobs:.*$", text, maxsplit=1, flags=re.MULTILINE)
+    if len(parts) < 2:
         return []
     out = []
-    # Split into jobs: two-space-indented keys under `jobs:`.
-    jobs = text.split("\njobs:\n", 1)[1] if "\njobs:\n" in text else ""
-    for block in re.split(r"\n(?=  [A-Za-z0-9_-]+:\s*\n)", "\n" + jobs):
-        head = re.match(r"\s*([A-Za-z0-9_-]+):", block)
-        # Only where a job picks its runner (runs-on, or a matrix value), not names, comments or scripts.
-        if not head or not RUNNER.search(block):
+    for block in re.split(r"\n(?=  [A-Za-z0-9_-]+:\s*(#.*)?\n)", "\n" + parts[1]):
+        if block is None:
             continue
-        gated = re.search(r"^    if: .*github\.event_name == 'push'", block, re.MULTILINE)
-        if not gated:
+        head = re.match(r"\s*([A-Za-z0-9_-]+):", block)
+        if not head:
+            continue
+        setup = re.split(r"^    steps:", block, maxsplit=1, flags=re.MULTILINE)[0]
+        picks = [line for line in setup.splitlines()
+                 if re.search(r"\bxcode-27\b", line) and not re.match(r"\s*(#|name:)", line)]
+        if picks and not PUSH_ONLY.search(setup):
             out.append(f"{name}: job {head.group(1)} can run on xcode-27 for a pull request. "
                        "Fix: run it on macos-26, or gate it with `if: github.event_name == 'push' && ...`.")
     return out
@@ -54,7 +62,18 @@ def selftest():
     push_only = "on:\n  push:\n    branches: [main]\njobs:\n  b:\n    runs-on: xcode-27\n"
     named = "on:\n  pull_request:\njobs:\n  a:\n    runs-on: macos-26\n    steps:\n      - name: no xcode-27 here\n"
     listed = "on:\n  pull_request:\njobs:\n  a:\n    strategy:\n      matrix:\n        runner:\n          - xcode-27\n"
-    cases = [("named", named, 0), ("listed", listed, 1), ("free", free, 0), ("billed", billed, 1), ("matrix", matrix, 1), ("gated", gated, 0), ("push only", push_only, 0)]
+    short = "on: [pull_request, push]\njobs:\n  b:\n    runs-on: xcode-27\n"
+    inline = "on: pull_request\njobs:\n  b:\n    runs-on: xcode-27\n"
+    include = ("on:\n  pull_request:\njobs:\n  a:\n    strategy:\n      matrix:\n        include:\n"
+               "          - runner: xcode-27\n    runs-on: ${{ matrix.runner }}\n")
+    labels = "on:\n  pull_request:\njobs:\n  a:\n    runs-on: {group: x, labels: xcode-27}\n"
+    in_steps = "on:\n  pull_request:\njobs:\n  a:\n    runs-on: macos-26\n    steps:\n      - uses: x\n        with: {os: xcode-27}\n"
+    loose = "on:\n  pull_request:\njobs:\n  b:\n    if: github.event_name == 'push' || true\n    runs-on: xcode-27\n"
+    negated = "on:\n  pull_request:\njobs:\n  b:\n    if: \"!(github.event_name == 'push')\"\n    runs-on: xcode-27\n"
+    commented = "on:\n  pull_request:\njobs: # all\n  b:\n    runs-on: xcode-27\n"
+    cases = [("short trigger", short, 1), ("inline trigger", inline, 1), ("include", include, 1), ("labels", labels, 1),
+             ("in steps", in_steps, 0), ("loose gate", loose, 1), ("negated gate", negated, 1),
+             ("commented jobs", commented, 1),("named", named, 0), ("listed", listed, 1), ("free", free, 0), ("billed", billed, 1), ("matrix", matrix, 1), ("gated", gated, 0), ("push only", push_only, 0)]
     ok = True
     for name, text, want in cases:
         got = len(problems(name, text))
