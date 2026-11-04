@@ -195,6 +195,8 @@ jobs:
           swift --version
           xcrun --sdk macosx --show-sdk-version
       - name: Enforce 100% line+region coverage on pure support targets
+        env:
+          OURO_TEST_MAX_SECONDS: "3"
         run: ./scripts/check-coverage.sh
       - name: Upload coverage test timings
         if: always()
