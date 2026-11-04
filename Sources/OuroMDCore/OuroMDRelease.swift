@@ -4,11 +4,12 @@ public enum OuroMDRelease {
     public static let appName = "Ouro MD"
     public static let bundleIdentifier = "bot.ouro.md"
     public static let repository = "ourostack/ouro-md"
-    public static let version = "0.9.107"
+    public static let version = "0.9.108"
     public static let userAgent = "OuroMD/\(version)"
     public static let releaseDate = "2026-11-03"
     public static let positioningSubtitle = "Local Markdown workspace for Mac files."
     public static let releaseHighlights = [
+        "Built with Xcode 27.2 and the macOS 27.2 SDK.",
         "Siri and Shortcuts get clearer answers: every error says what to do next, and replacing a whole document asks you first. Ouro MD now needs macOS 15 or later.",
         "Restore real document translucency behind the glass header, without false text reflections at the top.",
         "Start print previews fitted to the whole page, including large paper sizes.",
