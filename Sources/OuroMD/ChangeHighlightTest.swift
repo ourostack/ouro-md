@@ -41,7 +41,9 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
         }
         HeadlessHarness.offscreenHost(webView, size: frame.size)
         webView.loadFileURL(indexURL, allowingReadAccessTo: indexURL.deletingLastPathComponent())
-        DispatchQueue.main.asyncAfter(deadline: .now() + 40) {
+        // Under the scenario runner's 90 s limit, with room for a slow free
+        // runner to report which check failed rather than only "timed out".
+        DispatchQueue.main.asyncAfter(deadline: .now() + 75) {
             FileHandle.standardError.write(Data("changehighlighttest: timed out\n".utf8)); exit(1)
         }
         app.run()
@@ -143,22 +145,27 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
             // landed after it ended, so lit and cleared matched.
             let rect = CGRect(x: during?["left"] as? Double ?? 0, y: top, width: (during?["right"] as? Double ?? 0) - (during?["left"] as? Double ?? 0), height: bottom - top)
             let changeColor = (r["changeColor"] as? String) ?? ""
-            self.page(Self.awaitGlowCleared) {
+            self.clearedCase {
                 self.snapshotTint(in: rect) { cleared in
-                    self.page(Self.showPastedHighlight) {
+                    self.webView.callAsyncJavaScript(Self.showPastedHighlight, arguments: [:], in: nil, in: .page) { shown in
+                        let saved = (try? shown.get()) as? Bool ?? false
                         // An off-screen page can commit the new paint a little
-                        // late, so look again for up to 2 s; a highlight that
+                        // late, so look again up to 10 times; a highlight that
                         // never paints still fails.
                         func sampleLit(_ attempt: Int) {
                             self.snapshotTint(in: rect) { lit in
                                 let accent = self.isTinted(lit, towards: changeColor, against: cleared)
-                                if !accent && attempt < 10 {
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { sampleLit(attempt + 1) }
+                                if saved && !accent && attempt < 10 {
+                                    // Show it again too, in case a late timer of the glow's cleared it.
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                        self.page(Self.showPastedHighlight) { sampleLit(attempt + 1) }
+                                    }
                                     return
                                 }
                                 self.page(Self.hidePastedHighlight) {
-                                    self.record("highlight paints in the theme's change colour", accent, "colour=\(changeColor) lit=\(lit) cleared=\(cleared) snapshots=\(attempt)")
-                                    self.clearedCase()
+                                    self.record("highlight paints in the theme's change colour", saved && accent,
+                                                saved ? "colour=\(changeColor) lit=\(lit) cleared=\(cleared) snapshots=\(attempt)" : "the paste registered no ouro-change highlight")
+                                    self.assistantCase()
                                 }
                             }
                         }
@@ -169,11 +176,6 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
         }
     }
 
-    private static let awaitGlowCleared = probe + #"""
-    const flashLevel = () => getComputedStyle(document.documentElement).getPropertyValue("--ouro-flash").trim();
-    for (let i = 0; i < 200 && (live() || flashLevel() !== "0"); i++) { await sleep(50); }
-    """#
-
     /// The paste's own highlight, at the glow's full strength, held still for a snapshot.
     private static let showPastedHighlight = #"""
     const saved = window.__ouroTestPastedHighlight;
@@ -181,6 +183,7 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
     document.documentElement.style.setProperty("--ouro-flash", "1");
     // Off-screen pages draw no animation frames; give style a moment to apply.
     await new Promise((resolve) => setTimeout(resolve, 100));
+    return !!saved;
     """#
 
     private static let hidePastedHighlight = #"""
@@ -189,23 +192,29 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
     window.__ouroTestPastedHighlight = null;
     """#
 
-    /// Runs a page script, then continues on the main queue whatever it returned.
+    /// Runs a page script, then continues whatever it returned.
     private func page(_ script: String, then next: @escaping () -> Void) {
         webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { _ in next() }
     }
 
-    private func clearedCase() {
+    /// The glow clears on its own within 3.6 s of starting, as it did when this
+    /// check ran 1.6 s after the paste and then waited up to 2 s. Then waits
+    /// past the bridge's backup finish (fade + 250 ms), so it cannot clear the
+    /// highlight the paint check shows again.
+    private func clearedCase(then next: @escaping () -> Void) {
         let script = Self.probe + #"""
         const flashLevel = () => getComputedStyle(document.documentElement).getPropertyValue("--ouro-flash").trim();
-        for (let i = 0; i < 40 && (live() || flashLevel() !== "0"); i++) { await sleep(50); }
-        return { after: live(), flash: flashLevel() };
+        for (let i = 0; i < 72 && (live() || flashLevel() !== "0"); i++) { await sleep(50); }
+        const result = { after: live(), flash: flashLevel() };
+        await sleep(400);
+        return result;
         """#
         webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { [weak self] result in
             guard let self else { return }
             guard case .success(let value) = result, let r = value as? [String: Any] else { self.fail("clear script failed: \(result)") }
             let cleared = (r["after"] == nil || r["after"] is NSNull) && (r["flash"] as? String) == "0"
             self.record("highlight clears after its fade", cleared, "after=\(String(describing: r["after"])) flash=\(r["flash"] ?? "nil")")
-            self.assistantCase()
+            next()
         }
     }
 
