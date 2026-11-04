@@ -147,7 +147,8 @@ enum DocumentActions {
     static func ref(_ url: URL) -> OuroAX.Ref { .init(kind: "document", id: url.path, name: name(of: url)) }
 
     /// Whether two Markdown texts say the same thing: each is formatted the one swift-markdown way (list markers,
-    /// emphasis, escaping), then compared line by line with runs of spaces and tabs as one and blank-line runs as one.
+    /// emphasis, escaping), then compared line by line, keeping each line's indent, with inner runs of spaces and tabs as
+    /// one and blank-line runs as one.
     /// Paragraphs still count: "a\n\nb" is not "a b".
     static func sameMarkdown(_ a: String, _ b: String) -> Bool {
         canonical(a) == canonical(b)
@@ -157,7 +158,11 @@ enum DocumentActions {
         let formatted = Document(parsing: text.replacingOccurrences(of: "\r\n", with: "\n")).format()
         var lines: [String] = []
         for raw in formatted.split(separator: "\n", omittingEmptySubsequences: false) {
-            let line = raw.replacingOccurrences(of: "[ \t]+", with: " ", options: .regularExpression).trimmingCharacters(in: .whitespaces)
+            // Leading indent is kept (it nests lists and code); inner runs collapse and the end is trimmed.
+            let indent = raw.prefix { $0 == " " || $0 == "\t" }
+            let rest = raw.dropFirst(indent.count).replacingOccurrences(of: "[ \t]+", with: " ", options: .regularExpression)
+                .replacingOccurrences(of: " +$", with: "", options: .regularExpression)
+            let line = rest.isEmpty ? "" : indent + rest
             if line.isEmpty, lines.last?.isEmpty ?? true { continue }
             lines.append(line)
         }

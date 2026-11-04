@@ -260,6 +260,7 @@ ouro-md notes.md                      # open in the editor
 ouro-md --render notes.md > out.html  # render to a themed HTML document
 ouro-md --render notes.md --theme graphite > out.html
 ouro-md --list-themes
+ouro-md --mcp --root ~/notes            # serve ~/notes to an agent over MCP (stdio)
 ouro-md --help
 ```
 
@@ -288,6 +289,20 @@ and replace your Markdown documents. They follow [Ouro AX for Apple](https://git
 - **App skills.** `Resources/Skills.skillsbundle` tells Siri how to use the intents (macOS 27.3 and later).
 - **The X-ray.** CI's `AX X-ray` job builds the app, runs ouro-ui-apple's `ouro-ax-xray` on it and checks the result
   against `config/xray-expected.json`, which lists each claim that holds and why each other one can't yet.
+
+### Agents over MCP
+
+`ouro-md --mcp --root <folder>` serves the Markdown documents under a folder to an agent over MCP (stdio), with four
+tools: `list_documents`, `read_document`, `append_to_document` and `replace_document`. They run the same code as the
+intents, and `replace_document` changes nothing until the agent sends `confirmed: true` after you've said yes. Nothing
+outside the `--root` folders is listed, read or written. For Claude Code:
+
+```sh
+claude mcp add ouro-md -- "/Applications/Ouro MD.app/Contents/MacOS/ouro-md" --mcp --root ~/Documents/notes
+```
+
+It needs the direct-download app; the App Store build is sandboxed. Decisions and prior art:
+[docs/mcp-door.md](docs/mcp-door.md).
 
 ### Siri AI
 

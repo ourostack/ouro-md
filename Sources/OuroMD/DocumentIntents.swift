@@ -307,4 +307,21 @@ enum DocumentIntentsFileText {
         guard original.contains("\r\n") else { return text }
         return text.replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\n", with: "\r\n")
     }
+    /// Rewrites a closed document's file with new Markdown, keeping its line endings. A file that isn't UTF-8 is
+    /// refused: rewriting it with no window and no undo would silently change its encoding.
+    static func write(_ markdown: String, to url: URL) throws {
+        let file = url.resolvingSymlinksInPath()
+        let data = try Data(contentsOf: file)
+        guard let original = String(data: data, encoding: .utf8) else {
+            throw DocumentIntentError.needsOpenDocument(url.lastPathComponent)
+        }
+        let text = matchingLineEndings(markdown, of: original)
+        do {
+            try text.write(to: file, atomically: true, encoding: .utf8)
+        } catch CocoaError.fileWriteNoPermission where DocumentAccess.isSandboxed {
+            // An atomic write makes a temporary file beside the original, which a grant for the file alone doesn't
+            // allow; rewrite the file in place instead.
+            try Data(text.utf8).write(to: file, options: [])
+        }
+    }
 }
