@@ -252,7 +252,7 @@ final class OuroMDMCPServer {
         // Too many to show whole: the first page of names, and how to ask for fewer.
         let cut = String(text.prefix(Self.pageSize))
         let shown = cut[..<(cut.lastIndex(of: "\n") ?? cut.endIndex)]
-        return ["content": [["type": "text", "text": shown + "\n\n[\(documents.count) documents; not all are shown. Narrow it: list_documents {\"query\": \"<words in the name or folder>\"}]"]], "isError": false]
+        return ["content": [["type": "text", "text": String(shown) + "\n\n[\(documents.count) documents; not all are shown. Narrow it: list_documents {\"query\": \"<words in the name or folder>\"}]"]], "isError": false]
     }
 
     private func read(_ arguments: [String: Any]) async -> [String: Any] {
@@ -355,7 +355,7 @@ final class FolderMarkdownWorkspace: MarkdownDocumentWorkspace {
                 visited += 1
                 if visited > Self.visitLimit { break }
                 guard AppModel.isMarkdownDocumentURL(url), isReadable(url),
-                      (try? url.resourceValues(forKeys: [.isRegularFileKey]))?.isRegularFile == true else { continue }
+                      (try? url.resolvingSymlinksInPath().resourceValues(forKeys: [.isRegularFileKey]))?.isRegularFile == true else { continue }
                 here.append(url.standardizedFileURL)
                 if found.count + here.count >= Self.limit { break }
             }

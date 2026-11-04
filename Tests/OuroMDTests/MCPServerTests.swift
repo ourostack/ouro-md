@@ -262,6 +262,9 @@ final class MCPServerTests: XCTestCase {
         let listed = try await call("list_documents")
         XCTAssertFalse(text(listed).contains("Folder"), text(listed))
         XCTAssertFalse(text(listed).contains("Todo"), text(listed))
+        try FileManager.default.createSymbolicLink(at: root.appendingPathComponent("Alias.md"), withDestinationURL: root.appendingPathComponent("Plan.md"))
+        let relisted = try await call("list_documents")
+        XCTAssertTrue(text(relisted).contains("Alias"), "a link to Markdown inside the folder is listed: \(text(relisted))")
         _ = try await call("append_to_document", ["document": "Todo.md", "markdown": "x"])
         XCTAssertEqual(try disk("todo.txt"), "not markdown")
     }
