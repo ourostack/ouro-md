@@ -153,6 +153,18 @@ final class MCPServerTests: XCTestCase {
         XCTAssertTrue(text(missing).contains("list_documents"), text(missing))
     }
 
+    func testASymlinkOutOfTheRootsIsNeitherListedNorRead() async throws {
+        try FileManager.default.createSymbolicLink(at: root.appendingPathComponent("Link.md"), withDestinationURL: outside.appendingPathComponent("Private.md"))
+        let listed = try await call("list_documents")
+        XCTAssertFalse(text(listed).contains("Link"), text(listed))
+        let read = try await call("read_document", ["document": "Link.md"])
+        XCTAssertEqual(errorCode(read), "outside-roots")
+        XCTAssertFalse(text(read).contains("secret"))
+        let append = try await call("append_to_document", ["document": "Link.md", "markdown": "x"])
+        XCTAssertEqual(errorCode(append), "outside-roots")
+        XCTAssertEqual(try String(contentsOf: outside.appendingPathComponent("Private.md"), encoding: .utf8), "secret")
+    }
+
     func testReadingALongDocumentComesInPages() async throws {
         let long = String(repeating: "word ", count: 6_000)
         try long.write(to: root.appendingPathComponent("Long.md"), atomically: true, encoding: .utf8)

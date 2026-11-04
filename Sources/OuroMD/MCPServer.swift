@@ -323,7 +323,7 @@ final class FolderMarkdownWorkspace: MarkdownDocumentWorkspace {
         for root in roots {
             guard let walk = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsHiddenFiles, .skipsPackageDescendants]) else { continue }
             var here: [URL] = []
-            for case let url as URL in walk where AppModel.isMarkdownDocumentURL(url) {
+            for case let url as URL in walk where AppModel.isMarkdownDocumentURL(url) && contains(url) {
                 here.append(url.standardizedFileURL)
                 if found.count + here.count >= Self.limit { break }
             }
