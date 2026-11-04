@@ -12,7 +12,7 @@ ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
 in careful typography on a centered page. Type Markdown and watch it render in
 place — switch themes live, and read the same document four different ways.
 
-> **Status:** v0.9.107. Reads and edits Markdown today. Release tooling produces Developer-ID signed/notarized public artifacts — see [First launch](#first-launch).
+> **Status:** v0.9.108. Reads and edits Markdown today. Release tooling produces Developer-ID signed/notarized public artifacts — see [First launch](#first-launch).
 
 ---
 
@@ -192,6 +192,26 @@ unverified, never replaced with a synthetic media-query override. macOS 27
 on-screen/per-window capture comparisons are diagnostics until the native
 document body demonstrably paints; blank bodies are not publication assets or
 platform glass qualification.
+
+### CI runners
+
+Pull requests run only on GitHub's free standard runners (`macos-26`, `macos-26-intel`, `macos-15`). The billed
+`xcode-27` runner is for checks that truly need Xcode 27 and the macOS 27 SDK the app ships with, and runs only on
+pushes to `main` and for releases: the **Xcode 27 SDK** job in `ci.yml` and the harness and release jobs in
+`release.yml`. They select Xcode 27.2 (`/Applications/Xcode_27.2.app`), the same SDK as local builds: the image's
+`Xcode_27.app` is 27.0, whose macOS 27.0 SDK lacks APIs Ouro HX uses from 27.1. On the 2026-10-26 image that
+path is the 27.2 release candidate (27B48); it builds only main-branch checks and releases, which are Developer ID
+direct downloads, so App Store rules on release-candidate Xcodes don't apply. Prefer a final `Xcode_27.2.app` once the
+image carries one. `scripts/check-ci-runners.py` fails CI if a pull request job could use it. Code that needs a newer SDK
+than the free image's must be fenced with `canImport(..., _version:)`, as ouro-ui-apple does, so it compiles to nothing
+there. A $15-a-month GitHub Actions budget scoped to `ourostack/ouro-md` stops further billed use when reached and
+alerts `arimendelow`.
+
+When the free macOS image carries Xcode 27:
+
+1. Delete the `xcode-27-sdk` job in `ci.yml`, or move it to that image if its SDK check is still worth running.
+2. In `release.yml`, change `runs-on: xcode-27` to that image and delete the `Select Xcode 27.2` steps.
+3. Delete this repository's Actions budget if no billed runner is left.
 
 ## Usage
 
