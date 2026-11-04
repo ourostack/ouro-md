@@ -198,7 +198,8 @@ platform glass qualification.
 Pull requests run only on GitHub's free standard runners (`macos-26`, `macos-26-intel`, `macos-15`). The billed
 `xcode-27` runner is for checks that truly need Xcode 27 and the macOS 27 SDK the app ships with, and runs only on
 pushes to `main` and for releases: the **Xcode 27 SDK** job in `ci.yml` and the harness and release jobs in
-`release.yml`. `scripts/check-ci-runners.py` fails CI if a pull request job could use it. Code that needs a newer SDK
+`release.yml`. They select Xcode 27.2 (`/Applications/Xcode_27.2.app`), the same SDK as local builds: the image's
+`Xcode_27.app` is 27.0, whose macOS 27.0 SDK lacks APIs Ouro HX uses from 27.1. `scripts/check-ci-runners.py` fails CI if a pull request job could use it. Code that needs a newer SDK
 than the free image's must be fenced with `canImport(..., _version:)`, as ouro-ui-apple does, so it compiles to nothing
 there. A $15-a-month GitHub Actions budget scoped to `ourostack/ouro-md` stops further billed use when reached and
 alerts `arimendelow`.
@@ -206,7 +207,7 @@ alerts `arimendelow`.
 When the free macOS image carries Xcode 27:
 
 1. Delete the `xcode-27-sdk` job in `ci.yml`, or move it to that image if its SDK check is still worth running.
-2. In `release.yml`, change `runs-on: xcode-27` to that image and delete the `Select Xcode 27` steps.
+2. In `release.yml`, change `runs-on: xcode-27` to that image and delete the `Select Xcode 27.2` steps.
 3. Delete this repository's Actions budget if no billed runner is left.
 
 ## Usage
