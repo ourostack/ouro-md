@@ -1924,8 +1924,10 @@
     // One continuous fade from full strength, easing in and out so it reads
     // as a single glow; when the page scrolled to show the change, it starts
     // once the scroll has settled, so the reader sees it whole. Reduce Motion
-    // shows the glow steadily and then clears it.
-    var reduce = prefersReducedMotion(), hold = reduce ? 900 : 0, fade = reduce ? 0 : 1100, start = 0;
+    // shows the glow steadily, then crossfades it out over Ouro HX's
+    // reduced-motion crossfade (window.__ouroMotion, set by the app).
+    var motion = window.__ouroMotion || {}, crossfade = motion.reducedMotionCrossfadeMs || 0;
+    var reduce = prefersReducedMotion(), hold = reduce ? 900 : 0, fade = reduce ? crossfade : 1100, start = 0;
     if (window.__ouroLastChangeFlash) { window.__ouroLastChangeFlash.timing = { hold: hold, fade: fade }; }
     var finish = function () {
       if (block) { block.classList.remove("ouro-change-flash"); }

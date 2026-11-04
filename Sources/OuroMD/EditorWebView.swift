@@ -1,4 +1,5 @@
 import AppKit
+import OuroHX
 import OuroMDAppSupport
 import SwiftUI
 import WebKit
@@ -54,10 +55,16 @@ struct EditorWebView: NSViewRepresentable {
         context.coordinator.setHeaderInset(headerInset)
     }
 
+    /// Ouro HX's motion for the editor page: under Reduce Motion, what moves becomes a crossfade of this length.
+    static var motionTokens: String {
+        "{reducedMotionCrossfadeMs:\(Int((OuroMotion.reducedMotionCrossfade * 1000).rounded()))}"
+    }
+
     static func initialThemeBootstrapScript(for theme: Theme, headerInset: CGFloat = 0) -> String {
         let codeTheme = theme.uiMode == "dark" ? "github-dark" : "github"
         return """
         (function () {
+          window.__ouroMotion = \(motionTokens);
           var theme = {
             uiMode: \(Coordinator.jsString(theme.uiMode)),
             codeTheme: \(Coordinator.jsString(codeTheme)),

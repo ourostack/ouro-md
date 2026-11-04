@@ -49,6 +49,8 @@ jobs:
           python3 -I scripts/check-ci-runners.py
       - name: Verify version bump guard
         run: ./scripts/bump-version.sh --selftest
+      - name: Verify the per-test time budget and its stall retry
+        run: ./scripts/swift-test-budget.sh --selftest
       - name: Scan source policy
         run: ./scripts/release-policy.sh scan .
       - name: Verify shared shell dependency freshness
