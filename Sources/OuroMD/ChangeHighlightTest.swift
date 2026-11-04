@@ -107,6 +107,7 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
         if (root.textContent.indexOf("PASTED-TEXT") < 0) { document.execCommand("insertText", false, pasted); }
         // The glow begins once any reveal scroll has come to rest.
         await glowBegun();
+        window.__ouroTestPastedHighlight = window.CSS && CSS.highlights && CSS.highlights.get("ouro-change");
         const during = live();
         const flashLevel = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ouro-flash"));
         const flash = flashLevel();
@@ -136,19 +137,61 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
             let crossfade = (OuroMotion.reducedMotionCrossfade * 1000).rounded()
             let curve = reduceMotion ? (hold > 0 && fade == crossfade) : (hold == 0 && fade >= 800)
             self.record("highlight fades in one continuous step", flash > 0.3 && curve, "--ouro-flash=\(flash) hold=\(hold) fade=\(fade) reduceMotion=\(reduceMotion)")
-            // Sample the painted highlight against the same text once it clears.
+            // Sample the same text once the glow has cleared on its own, then
+            // with the paste's highlight shown again at full strength. Sampling
+            // the live glow raced its 1.1 s fade: a slow runner's snapshot
+            // landed after it ended, so lit and cleared matched.
             let rect = CGRect(x: during?["left"] as? Double ?? 0, y: top, width: (during?["right"] as? Double ?? 0) - (during?["left"] as? Double ?? 0), height: bottom - top)
             let changeColor = (r["changeColor"] as? String) ?? ""
-            self.snapshotTint(in: rect) { lit in
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-                    self.snapshotTint(in: rect) { cleared in
-                        let accent = self.isTinted(lit, towards: changeColor, against: cleared)
-                        self.record("highlight paints in the theme's change colour", accent, "colour=\(changeColor) lit=\(lit) cleared=\(cleared)")
-                        self.clearedCase()
+            self.page(Self.awaitGlowCleared) {
+                self.snapshotTint(in: rect) { cleared in
+                    self.page(Self.showPastedHighlight) {
+                        // An off-screen page can commit the new paint a little
+                        // late, so look again for up to 2 s; a highlight that
+                        // never paints still fails.
+                        func sampleLit(_ attempt: Int) {
+                            self.snapshotTint(in: rect) { lit in
+                                let accent = self.isTinted(lit, towards: changeColor, against: cleared)
+                                if !accent && attempt < 10 {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { sampleLit(attempt + 1) }
+                                    return
+                                }
+                                self.page(Self.hidePastedHighlight) {
+                                    self.record("highlight paints in the theme's change colour", accent, "colour=\(changeColor) lit=\(lit) cleared=\(cleared) snapshots=\(attempt)")
+                                    self.clearedCase()
+                                }
+                            }
+                        }
+                        sampleLit(1)
                     }
                 }
             }
         }
+    }
+
+    private static let awaitGlowCleared = probe + #"""
+    const flashLevel = () => getComputedStyle(document.documentElement).getPropertyValue("--ouro-flash").trim();
+    for (let i = 0; i < 200 && (live() || flashLevel() !== "0"); i++) { await sleep(50); }
+    """#
+
+    /// The paste's own highlight, at the glow's full strength, held still for a snapshot.
+    private static let showPastedHighlight = #"""
+    const saved = window.__ouroTestPastedHighlight;
+    if (saved) { CSS.highlights.set("ouro-change", saved); }
+    document.documentElement.style.setProperty("--ouro-flash", "1");
+    // Off-screen pages draw no animation frames; give style a moment to apply.
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    """#
+
+    private static let hidePastedHighlight = #"""
+    if (window.CSS && CSS.highlights) { CSS.highlights.delete("ouro-change"); }
+    document.documentElement.style.setProperty("--ouro-flash", "0");
+    window.__ouroTestPastedHighlight = null;
+    """#
+
+    /// Runs a page script, then continues on the main queue whatever it returned.
+    private func page(_ script: String, then next: @escaping () -> Void) {
+        webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { _ in next() }
     }
 
     private func clearedCase() {
