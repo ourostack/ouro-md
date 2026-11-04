@@ -43,6 +43,10 @@ jobs:
         run: ./scripts/release-policy.sh selftest-app-store-resubmission
       - name: Verify release policy path classification
         run: ./scripts/release-policy.sh selftest-paths
+      - name: Verify no pull request job uses the billed xcode-27 runner
+        run: |
+          python3 -I scripts/check-ci-runners.py --selftest
+          python3 -I scripts/check-ci-runners.py
       - name: Verify version bump guard
         run: ./scripts/bump-version.sh --selftest
       - name: Scan source policy
@@ -147,8 +151,9 @@ jobs:
 
   rendered-text-audit:
     name: Rendered text audit
-    # Vision text recognition fails on the Xcode 27 image, so the shell label
-    # check runs the same binary on macos-15, where it works.
+    # Vision text recognition failed on the Xcode 27 image, so the shell label
+    # check runs the same binary on macos-15, where it works. (The verifier now
+    # runs on macos-26; folding this back in is a later change.)
     needs: native-scenario-verifier
     runs-on: macos-15
     timeout-minutes: 15
@@ -246,8 +251,8 @@ jobs:
     name: Xcode 27 SDK
     # Runners: every check above runs on GitHub's free images. Only this job needs Xcode 27 (the macOS 27 SDK the app
     # ships with), and it runs on the billed xcode-27 runner only for pushes to main, never on pull requests. Ouro MD's
-    # Actions budget caps the spend at $15 a month. When the free macos image carries Xcode 27, delete this job and the
-    # xcode-27 jobs in release.yml switch to that image (see README, "CI runners").
+    # Actions budget caps the spend at $15 a month. When the free macOS image carries Xcode 27, follow README's
+    # "CI runners" to drop this lane.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: xcode-27
     timeout-minutes: 30
@@ -263,5 +268,11 @@ jobs:
           xcrun --sdk macosx --show-sdk-version
       - name: Build the app bundle against the macOS 27 SDK
         run: OURO_MD_TELEMETRY_DISABLED=1 ./make-app.sh
+      - name: Verify the bundle carries the macOS 27 SDK and its App Intents metadata
+        env:
+          OURO_MD_MIN_SDK_MAJOR: "27"
+          OURO_MD_ALLOW_UNCONFIGURED_TELEMETRY: "1"
+          OURO_MD_RENDERED_TEXT_AUDIT_ELSEWHERE: "1"
+        run: ./scripts/verify-packaged-app.sh OuroMD.app
       - name: Run tests with Xcode 27
         run: ./scripts/swift-test-budget.sh

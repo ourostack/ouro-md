@@ -8,6 +8,6 @@
 
 ## CI runners
 
-- Pull request jobs run on GitHub's free runners only (`macos-26`, `macos-26-intel`, `macos-15`, `ubuntu-latest`). Never put `xcode-27` on a pull request job.
+- Pull request jobs run on GitHub's free runners only (`macos-26`, `macos-26-intel`, `macos-15`; `ubuntu-latest` for anything that needs no Mac). Never put `xcode-27` on a pull request job; `scripts/check-ci-runners.py` enforces it.
 - `xcode-27` is billed. Use it only for a check that truly needs Xcode 27, and only on pushes to `main` and releases (`ci.yml`'s `xcode-27-sdk`, `release.yml`). Fence newer-SDK code with `canImport(..., _version:)` so the free image compiles it to nothing.
 - A $15-a-month Actions budget scoped to this repository caps the billed spend. When the free image has Xcode 27, follow README's "CI runners" to drop the billed lane.
