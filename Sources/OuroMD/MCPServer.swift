@@ -40,6 +40,16 @@ final class OuroMDMCPServer {
                 i += 1
             }
         }
+        for root in roots {
+            var isFolder: ObjCBool = false
+            guard FileManager.default.fileExists(atPath: root.path, isDirectory: &isFolder), isFolder.boolValue else {
+                throw OuroAX.Problem(code: "bad-root", exit: 2, thing: root.path, problem: "it isn't a folder",
+                                     fix: "give --root an existing folder of Markdown documents")
+            }
+        }
+        if arguments.last == "--root" {
+            throw OuroAX.Problem(code: "missing-arg", exit: 2, thing: "--root", problem: "it needs a folder after it", fix: "ouro-md --mcp --root ~/Documents/notes")
+        }
         guard !roots.isEmpty else {
             throw OuroAX.Problem(code: "missing-arg", exit: 2, thing: "--mcp", problem: "it needs at least one folder of documents to serve",
                                  fix: "ouro-md --mcp --root ~/Documents/notes")
@@ -60,7 +70,7 @@ final class OuroMDMCPServer {
         }
         Task { @MainActor in
             let server = OuroMDMCPServer(roots: roots)
-            await server.serve(lines: FileHandle.standardInput.bytes.lines) { line in
+            await server.serve(lines: NewlineFramedLines(bytes: FileHandle.standardInput.bytes)) { line in
                 FileHandle.standardOutput.write(Data((line + "\n").utf8))
             }
             exit(0)
@@ -152,7 +162,7 @@ final class OuroMDMCPServer {
             return [
                 "name": name, "title": title, "description": description,
                 "inputSchema": ["type": "object", "properties": properties, "required": arguments.filter(\.required).map(\.name), "additionalProperties": false],
-                "annotations": ["title": title, "readOnlyHint": readOnly, "destructiveHint": destructive, "idempotentHint": readOnly, "openWorldHint": false],
+                "annotations": ["title": title, "readOnlyHint": readOnly, "destructiveHint": destructive, "openWorldHint": false],
             ]
         }
     }
@@ -166,10 +176,10 @@ final class OuroMDMCPServer {
              readOnly: true, destructive: false),
         Tool(name: "read_document", title: "Read a Markdown document",
              description: "Returns a document's Markdown as saved, \(pageSize) characters at a time; a longer document says where the next page starts. Changes nothing.",
-             arguments: [documentArgument, Argument(name: "from", type: "integer", description: "The character to start at, for the next page of a long document; 0 when left out.", required: false)],
+             arguments: [documentArgument, Argument(name: "from", type: "integer", description: "The character (counted as a person sees letters) to start at, for the next page of a long document; 0 when left out.", required: false)],
              readOnly: true, destructive: false),
         Tool(name: "append_to_document", title: "Add to a Markdown document",
-             description: "Adds Markdown to the end of a document as a new paragraph and saves it; an open Ouro MD window picks up the change. Only the person sees it. Returns the outcome, checked by reading the document back.",
+             description: "Adds Markdown to the end of a document as a new paragraph and saves it; an open Ouro MD window picks up the change. It changes only this file. Returns the outcome, checked by reading the document back.",
              arguments: [documentArgument, Argument(name: "markdown", type: "string", description: "The Markdown to add, such as \"- [ ] Call the harbor master\".", required: true)],
              readOnly: false, destructive: false),
         Tool(name: "replace_document", title: "Replace a Markdown document",
@@ -236,7 +246,13 @@ final class OuroMDMCPServer {
         let text = documents.isEmpty
             ? "No Markdown documents\(query.map { " match \"\($0)\"" } ?? "") under \(roots.map(\.path).joined(separator: ", "))."
             : lines.joined(separator: "\n")
-        return ["content": [["type": "text", "text": text]], "structuredContent": ["documents": documents], "isError": false]
+        guard text.count > Self.pageSize else {
+            return ["content": [["type": "text", "text": text]], "structuredContent": ["documents": documents], "isError": false]
+        }
+        // Too many to show whole: the first page of names, and how to ask for fewer.
+        let cut = String(text.prefix(Self.pageSize))
+        let shown = cut[..<(cut.lastIndex(of: "\n") ?? cut.endIndex)]
+        return ["content": [["type": "text", "text": shown + "\n\n[\(documents.count) documents; not all are shown. Narrow it: list_documents {\"query\": \"<words in the name or folder>\"}]"]], "isError": false]
     }
 
     private func read(_ arguments: [String: Any]) async -> [String: Any] {
@@ -247,7 +263,8 @@ final class OuroMDMCPServer {
         }
         let (text, outcome) = await DocumentActions.read(url, in: workspace)
         guard let text else { return Self.outcomeResult(outcome) }
-        let from = min(arguments["from"] as? Int ?? 0, text.count)
+        let asked = (arguments["from"] as? NSNumber)?.doubleValue ?? 0
+        let from = asked >= Double(text.count) ? text.count : Int(asked)
         let start = text.index(text.startIndex, offsetBy: from)
         let end = text.index(start, offsetBy: Self.pageSize, limitedBy: text.endIndex) ?? text.endIndex
         let page = String(text[start..<end])
@@ -313,17 +330,32 @@ final class OuroMDMCPServer {
 @MainActor
 final class FolderMarkdownWorkspace: MarkdownDocumentWorkspace {
     let roots: [URL]
-    /// Enough for a notes folder; a walk stops here so a home folder can't stall a call.
+    /// The roots with symlinks resolved, once.
+    private let resolvedRoots: [String]
+    /// Enough for a notes folder: a walk returns at most this many documents.
     static let limit = 2_000
+    /// A walk looks at no more than this many files and folders, so a home folder can't stall a call.
+    static let visitLimit = 50_000
 
-    init(roots: [URL]) { self.roots = roots }
+    init(roots: [URL]) {
+        self.roots = roots
+        resolvedRoots = roots.map { root in
+            let base = root.resolvingSymlinksInPath().path
+            return base.hasSuffix("/") ? base : base + "/"
+        }
+    }
 
     func knownDocumentURLs() -> [URL] {
         var found: [URL] = []
         for root in roots {
             guard let walk = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsHiddenFiles, .skipsPackageDescendants]) else { continue }
             var here: [URL] = []
-            for case let url as URL in walk where AppModel.isMarkdownDocumentURL(url) && contains(url) {
+            var visited = 0
+            for case let url as URL in walk {
+                visited += 1
+                if visited > Self.visitLimit { break }
+                guard AppModel.isMarkdownDocumentURL(url), isReadable(url),
+                      (try? url.resourceValues(forKeys: [.isRegularFileKey]))?.isRegularFile == true else { continue }
                 here.append(url.standardizedFileURL)
                 if found.count + here.count >= Self.limit { break }
             }
@@ -339,14 +371,13 @@ final class FolderMarkdownWorkspace: MarkdownDocumentWorkspace {
 
     func contains(_ url: URL) -> Bool {
         let path = url.standardizedFileURL.resolvingSymlinksInPath().path
-        return roots.contains { root in
-            let base = root.resolvingSymlinksInPath().path
-            return path == base || path.hasPrefix(base.hasSuffix("/") ? base : base + "/")
-        }
+        return resolvedRoots.contains { base in path + "/" == base || path.hasPrefix(base) }
     }
 
     func isReadable(_ url: URL) -> Bool {
-        AppModel.isMarkdownDocumentURL(url) && contains(url) && FileManager.default.isReadableFile(atPath: url.path)
+        // The name and, through a symlink, what it points to must both be Markdown.
+        AppModel.isMarkdownDocumentURL(url) && AppModel.isMarkdownDocumentURL(url.resolvingSymlinksInPath())
+            && contains(url) && FileManager.default.isReadableFile(atPath: url.path)
     }
 
     func frontDocumentURL() -> URL? { nil }
@@ -366,7 +397,7 @@ final class FolderMarkdownWorkspace: MarkdownDocumentWorkspace {
         NSWorkspace.shared.open(url)
     }
 
-    /// The document an agent named: a path (absolute, or relative to the first root) or a name from list_documents.
+    /// The document an agent named: a path (absolute, or relative to any served folder) or a name from list_documents.
     func locate(_ reference: String) -> Result<URL, OuroAX.Problem> {
         let trimmed = reference.trimmingCharacters(in: .whitespacesAndNewlines)
         let looksLikePath = trimmed.contains("/") || AppModel.isMarkdownDocumentURL(URL(fileURLWithPath: trimmed))
@@ -390,8 +421,34 @@ final class FolderMarkdownWorkspace: MarkdownDocumentWorkspace {
             return .failure(.init(code: "ambiguous", exit: 2, thing: trimmed, problem: "\(exact.count) documents have that name",
                                   fix: "name it by path: \(exact.map(\.id).joined(separator: " or "))"))
         }
-        let near = DocumentActions.find(trimmed, in: self).prefix(3).map(\.name)
+        let near = known.compactMap { entity in OuroAX.EntityMatch.score(trimmed, in: [entity.name, entity.folder]).map { ($0, entity.name) } }
+            .sorted { $0.0 < $1.0 }.prefix(3).map(\.1)
         return .failure(.notFound(kind: "document", id: trimmed,
                                   fix: near.isEmpty ? "call list_documents to see the documents" : "one of \(near.joined(separator: ", ")), or call list_documents"))
     }
+}
+
+/// Lines split at "\n" bytes only, as MCP's stdio transport frames them. (`AsyncLineSequence` also splits at U+2028 and
+/// U+2029, which JSON may carry unescaped inside a string.)
+struct NewlineFramedLines<Bytes: AsyncSequence>: AsyncSequence where Bytes.Element == UInt8 {
+    typealias Element = String
+    let bytes: Bytes
+
+    struct AsyncIterator: AsyncIteratorProtocol {
+        var inner: Bytes.AsyncIterator
+        var done = false
+
+        mutating func next() async throws -> String? {
+            guard !done else { return nil }
+            var line: [UInt8] = []
+            while let byte = try await inner.next() {
+                if byte == 0x0A { return String(decoding: line, as: UTF8.self) }
+                line.append(byte)
+            }
+            done = true
+            return line.isEmpty ? nil : String(decoding: line, as: UTF8.self)
+        }
+    }
+
+    func makeAsyncIterator() -> AsyncIterator { AsyncIterator(inner: bytes.makeAsyncIterator()) }
 }

@@ -20,7 +20,9 @@ to and replace the Markdown documents under the folders it is given. It is the a
 - **Ouro AX for web's `ax-mcp`, by hand.** Newline-delimited JSON-RPC 2.0; protocol versions 2025-06-18, 2025-03-26 and
   2024-11-05; one tool per action with a description, input schema and `readOnlyHint`/`destructiveHint`/`openWorldHint`;
   arguments checked before anything runs; errors as `OuroAX.Problem` (`{error: {code, exit, thing, problem, fix,
-  message}}`); reads cut into pages of 20,000 characters. About 400 lines with no new dependency.
+  message}}`); reads cut into pages of 20,000 characters, and a list too long to show whole says how to narrow it.
+  Lines are framed at `\n` bytes only. JSON-RPC batch arrays are not supported, as in the web reference. About 450
+  lines with no new dependency.
 - **Not in the App Store build.** The sandboxed build can't read folders it wasn't granted, so the door is for the
   direct-download app.
 

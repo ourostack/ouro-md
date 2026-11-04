@@ -219,10 +219,69 @@ final class MCPServerTests: XCTestCase {
     }
 
     func testArgumentsParseRootsAndRefuseNone() throws {
-        let parsed = try OuroMDMCPServer.roots(from: ["--mcp", "--root", root.path, "--root", "relative"], cwd: URL(fileURLWithPath: "/work"))
-        XCTAssertEqual(parsed.map(\.path), [root.standardizedFileURL.path, "/work/relative"])
+        let parsed = try OuroMDMCPServer.roots(from: ["--mcp", "--root", root.path, "--root", "elsewhere"], cwd: root.deletingLastPathComponent())
+        XCTAssertEqual(parsed.map(\.path), [root.standardizedFileURL.path, outside.standardizedFileURL.path])
         XCTAssertThrowsError(try OuroMDMCPServer.roots(from: ["--mcp"], cwd: root)) { error in
             XCTAssertTrue("\(error)".contains("Fix: ouro-md --mcp --root"), "\(error)")
         }
+    }
+
+    func testTheResumeCallFromNeedsHumanWorksAsSent() async throws {
+        let asked = try await call("replace_document", ["document": "Plan", "markdown": "# Kept\n"])
+        let human = try XCTUnwrap(structured(asked)["human"] as? [String: Any])
+        let command = try XCTUnwrap((human["resume"] as? [String: Any])?["command"] as? String)
+        XCTAssertTrue(command.hasPrefix("replace_document "), command)
+        let arguments = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(command.dropFirst("replace_document ".count).utf8)) as? [String: Any])
+        let done = try await call("replace_document", arguments)
+        XCTAssertEqual(structured(done)["state"] as? String, "done", text(done))
+        XCTAssertEqual(try disk("Plan.md"), "# Kept\n")
+    }
+
+    func testLinesSplitOnlyAtNewlineBytes() async throws {
+        let message = #"{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"append_to_document","arguments":{"document":"Plan","markdown":"a\#u{2028}b"}}}"# + "\n"
+        let stream = AsyncStream<UInt8> { continuation in
+            for byte in Data(message.utf8) { continuation.yield(byte) }
+            continuation.finish()
+        }
+        var out: [String] = []
+        await server.serve(lines: NewlineFramedLines(bytes: stream)) { out.append($0) }
+        XCTAssertEqual(out.count, 1, "\(out)")
+        XCTAssertTrue(out.first?.contains(#""id":7"#) ?? false)
+        XCTAssertTrue(try disk("Plan.md").hasSuffix("a\u{2028}b\n"))
+    }
+
+    func testTheBoundaryHoldsForLookalikesFoldersAndLinkedNonMarkdown() async throws {
+        let sibling = root.deletingLastPathComponent().appendingPathComponent("notes-private")
+        try FileManager.default.createDirectory(at: sibling, withIntermediateDirectories: true)
+        try "hidden".write(to: sibling.appendingPathComponent("Diary.md"), atomically: true, encoding: .utf8)
+        let escape = try await call("read_document", ["document": sibling.appendingPathComponent("Diary.md").path])
+        XCTAssertEqual(errorCode(escape), "outside-roots")
+
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("Folder.md"), withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: root.appendingPathComponent("Todo.md"), withDestinationURL: root.appendingPathComponent("todo.txt"))
+        let listed = try await call("list_documents")
+        XCTAssertFalse(text(listed).contains("Folder"), text(listed))
+        XCTAssertFalse(text(listed).contains("Todo"), text(listed))
+        _ = try await call("append_to_document", ["document": "Todo.md", "markdown": "x"])
+        XCTAssertEqual(try disk("todo.txt"), "not markdown")
+    }
+
+    func testAHugeFromReadsNothingAndBadRootsAreRefused() async throws {
+        let read = try await call("read_document", ["document": "Plan", "from": 1e30])
+        XCTAssertEqual(structured(read)["markdown"] as? String, "")
+        XCTAssertThrowsError(try OuroMDMCPServer.roots(from: ["--mcp", "--root", root.appendingPathComponent("Plan.md").path], cwd: root))
+        XCTAssertThrowsError(try OuroMDMCPServer.roots(from: ["--mcp", "--root", root.path, "--root"], cwd: root))
+    }
+
+    func testAVeryLongListIsCutWithAWayToNarrowIt() async throws {
+        let many = root.appendingPathComponent("many")
+        try FileManager.default.createDirectory(at: many, withIntermediateDirectories: true)
+        for i in 0..<400 {
+            try "x".write(to: many.appendingPathComponent("A long document name to fill the list \(i).md"), atomically: false, encoding: .utf8)
+        }
+        let listed = try await call("list_documents")
+        XCTAssertLessThanOrEqual(text(listed).count, OuroMDMCPServer.pageSize + 200)
+        XCTAssertTrue(text(listed).contains("list_documents {\"query\""), String(text(listed).suffix(200)))
+        XCTAssertNil(listed["structuredContent"])
     }
 }

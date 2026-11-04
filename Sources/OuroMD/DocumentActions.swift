@@ -79,11 +79,18 @@ enum DocumentActions {
                 target: ref(target),
                 human: .init(
                     reason: "Replace overwrites all of \(name(of: target)); only the person can say that is what they want",
-                    resume: .init("replace_document {\"document\": \(json(target.path)), \"confirmed\": true}", why: "run it again once the person has confirmed")
+                    resume: .init(resumeReplace(target, markdown), why: "run it again once the person has confirmed")
                 )
             )
         }
         return await write(markdown, to: target, action: "replace", verb: "Replaced", in: workspace)
+    }
+
+    /// The call that does the replace once the person has said yes: the same arguments with `confirmed: true`. Long
+    /// Markdown is not repeated; the agent sends what it sent before.
+    static func resumeReplace(_ target: URL, _ markdown: String) -> String {
+        let text = markdown.count <= 2_000 ? json(markdown) : "<the same Markdown as before>"
+        return "replace_document {\"document\": \(json(target.path)), \"markdown\": \(text), \"confirmed\": true}"
     }
 
     /// Joins with one blank line, as a new paragraph, and ends with a newline.
