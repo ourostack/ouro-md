@@ -12,15 +12,14 @@ permissions:
 jobs:
   swift-test:
     name: Swift tests
-    runs-on: xcode-27
+    runs-on: macos-26
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - name: Select Xcode 27 (macOS 27 SDK)
+      - name: Show the toolchain (the free image's default Xcode)
         run: |
-          sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
           xcodebuild -version
           swift --version
           xcrun --sdk macosx --show-sdk-version
@@ -97,15 +96,14 @@ jobs:
 
   app-bundle:
     name: App bundle
-    runs-on: xcode-27
+    runs-on: macos-26
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - name: Select Xcode 27 (macOS 27 SDK)
+      - name: Show the toolchain (the free image's default Xcode)
         run: |
-          sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
           xcodebuild -version
           swift --version
           xcrun --sdk macosx --show-sdk-version
@@ -119,15 +117,14 @@ jobs:
 
   native-scenario-verifier:
     name: Native scenario verifier
-    runs-on: xcode-27
+    runs-on: macos-26
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - name: Select Xcode 27 (macOS 27 SDK)
+      - name: Show the toolchain (the free image's default Xcode)
         run: |
-          sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
           xcodebuild -version
           swift --version
           xcrun --sdk macosx --show-sdk-version
@@ -151,7 +148,7 @@ jobs:
   rendered-text-audit:
     name: Rendered text audit
     # Vision text recognition fails on the Xcode 27 image, so the shell label
-    # check runs the same binary on a runner where it works.
+    # check runs the same binary on macos-15, where it works.
     needs: native-scenario-verifier
     runs-on: macos-15
     timeout-minutes: 15
@@ -179,15 +176,14 @@ jobs:
 
   coverage:
     name: Coverage
-    runs-on: xcode-27
+    runs-on: macos-26
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - name: Select Xcode 27 (macOS 27 SDK)
+      - name: Show the toolchain (the free image's default Xcode)
         run: |
-          sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
           xcodebuild -version
           swift --version
           xcrun --sdk macosx --show-sdk-version
@@ -245,3 +241,27 @@ jobs:
         with:
           name: ax-xray
           path: .build/xray
+
+  xcode-27-sdk:
+    name: Xcode 27 SDK
+    # Runners: every check above runs on GitHub's free images. Only this job needs Xcode 27 (the macOS 27 SDK the app
+    # ships with), and it runs on the billed xcode-27 runner only for pushes to main, never on pull requests. Ouro MD's
+    # Actions budget caps the spend at $15 a month. When the free macos image carries Xcode 27, delete this job and the
+    # xcode-27 jobs in release.yml switch to that image (see README, "CI runners").
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: xcode-27
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Select Xcode 27 (macOS 27 SDK)
+        run: |
+          sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
+          xcodebuild -version
+          swift --version
+          xcrun --sdk macosx --show-sdk-version
+      - name: Build the app bundle against the macOS 27 SDK
+        run: OURO_MD_TELEMETRY_DISABLED=1 ./make-app.sh
+      - name: Run tests with Xcode 27
+        run: ./scripts/swift-test-budget.sh

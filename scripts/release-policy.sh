@@ -1104,7 +1104,7 @@ workflow_needles = [
     "schedule:",
     "contents: write",
     "pull-requests: write",
-    "xcode-27",
+    "runs-on: macos-26",
     "./scripts/check-shell-dependency.sh",
     "./scripts/refresh-shell-dependency.sh",
     "automation/ouro-md-refresh-shell-dependency",

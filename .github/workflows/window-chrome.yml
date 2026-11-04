@@ -29,16 +29,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [xcode-27, macos-26-intel]
+        runner: [macos-26, macos-26-intel]
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v5
       - name: Select native rendering toolchain
         run: |
-          if [[ '${{ matrix.runner }}' == 'xcode-27' ]]; then
-            sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
-          fi
           xcodebuild -version
           sw_vers
       - name: Verify real translucency without reflected document edges
@@ -47,8 +44,8 @@ jobs:
           OURO_NATIVE_PREFERENCE_PROOF: '1'
           OURO_HEADER_EXPECT_GLASS: '1'
           OURO_HEADER_REQUIRE_LIVE_PAINT: ${{ matrix.runner == 'macos-26-intel' && '1' || '0' }}
-          OURO_HEADER_REQUIRE_FULLSCREEN: ${{ matrix.runner == 'xcode-27' && '1' || '0' }}
-          OURO_HEADER_ONSCREEN_DIAGNOSTIC: ${{ matrix.runner == 'xcode-27' && '1' || '0' }}
+          OURO_HEADER_REQUIRE_FULLSCREEN: ${{ matrix.runner == 'macos-26' && '1' || '0' }}
+          OURO_HEADER_ONSCREEN_DIAGNOSTIC: ${{ matrix.runner == 'macos-26' && '1' || '0' }}
           OURO_HEADER_OUTPUT: .build/header-rendering/current
           OURO_MD_TELEMETRY_DISABLED: '1'
         run: ./scripts/run-hosted-native-proof.sh header

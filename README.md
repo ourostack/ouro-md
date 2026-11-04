@@ -193,6 +193,19 @@ on-screen/per-window capture comparisons are diagnostics until the native
 document body demonstrably paints; blank bodies are not publication assets or
 platform glass qualification.
 
+### CI runners
+
+Pull requests run only on GitHub's free standard runners (`macos-26`, `macos-26-intel`, `macos-15`). The billed
+`xcode-27` runner is for checks that truly need Xcode 27 and the macOS 27 SDK the app ships with, and runs only on
+pushes to `main` and for releases: the **Xcode 27 SDK** job in `ci.yml` and the harness and release jobs in
+`release.yml`. Code that needs a newer SDK than the free image's is fenced with `canImport(..., _version:)`, as
+ouro-ui-apple does, so it compiles to nothing there. A $15-a-month GitHub Actions budget scoped to `ourostack/ouro-md`
+stops further billed use when reached and alerts `arimendelow`.
+
+When the free macOS image carries Xcode 27: delete the `xcode-27-sdk` job in `ci.yml`, change `release.yml`'s
+`runs-on: xcode-27` to that image and drop its `xcode-select` steps, then delete this repository's budget if no billed
+runner is left.
+
 ## Usage
 
 ### As an app
