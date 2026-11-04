@@ -4,9 +4,67 @@
 # GitHub Actions, and fails when any individual XCTest exceeds the configured
 # budget. This catches "one test quietly ate a minute" regressions before they
 # become normal.
+#
+# GitHub's free macOS runners sometimes stall one WebKit test for a minute while
+# every other test runs at normal speed. A test over budget in the suite run is
+# therefore timed once more on its own, from the already-built bundle, with its
+# coverage profile written to a throwaway path. It fails the budget only if it
+# is still over (or fails) on its own: a real slowdown repeats, a runner stall
+# does not. OURO_TEST_STALL_RETRY=0 turns the retry off.
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+if [[ "${1:-}" == "--selftest" ]]; then
+  # Drives this script against stub `swift` and `xcrun` commands, so the
+  # budget and stall-retry rules are checked without building anything.
+  work="$(mktemp -d "${TMPDIR:-/tmp}/ouro-test-budget-selftest.XXXXXX")"
+  mkdir -p "$work/bin" "$work/OuroMDTests.xctest"
+  cat > "$work/bin/swift" <<'STUB'
+#!/usr/bin/env bash
+echo "Test Case '-[OuroMDTests.FastTests testQuick]' passed (0.100 seconds)."
+echo "Test Case '-[OuroMDTests.PrintTests testStalls]' passed (${STUB_FIRST_SECONDS:-66.000} seconds)."
+exit "${STUB_SWIFT_STATUS:-0}"
+STUB
+  cat > "$work/bin/xcrun" <<'STUB'
+#!/usr/bin/env bash
+echo "$*" >> "$STUB_XCRUN_CALLS"
+[[ "$1" == "xctest" && "$2" == "-XCTest" && "$3" == "OuroMDTests.PrintTests/testStalls" ]] || exit 64
+[[ "$LLVM_PROFILE_FILE" == *ouro-test-budget-retry* ]] || exit 65
+echo "Test Case '-[OuroMDTests.PrintTests testStalls]' ${STUB_RETRY_RESULT:-passed} (${STUB_RETRY_SECONDS:-2.000} seconds)."
+[[ "${STUB_RETRY_RESULT:-passed}" == passed ]]
+STUB
+  chmod +x "$work/bin/swift" "$work/bin/xcrun"
+  failures=0
+  expect() {
+    local name="$1" want="$2" want_calls="$3" needle="$4"; shift 4
+    local calls="$work/$name.calls" out="$work/$name.out" got
+    : > "$calls"
+    set +e
+    env PATH="$work/bin:$PATH" STUB_XCRUN_CALLS="$calls" OURO_TEST_BUNDLE="$work/OuroMDTests.xctest" \
+      OURO_TEST_LOG="$work/$name.log" OURO_TEST_TIMINGS="$work/$name.tsv" "$@" \
+      "${BASH_SOURCE[0]}" > "$out" 2>&1
+    got=$?
+    set -e
+    local got_calls; got_calls="$(wc -l < "$calls" | tr -d ' ')"
+    if [[ "$got" != "$want" || "$got_calls" != "$want_calls" ]] || ! grep -q -- "$needle" "$out"; then
+      echo "selftest FAIL $name: exit $got (want $want), retries $got_calls (want $want_calls), needle '$needle'" >&2
+      sed 's/^/    /' "$out" >&2
+      failures=$((failures + 1))
+    else
+      echo "selftest ok   $name"
+    fi
+  }
+  expect within-budget 0 0 "slowest XCTest cases" STUB_FIRST_SECONDS=3.000
+  expect stall-then-fast-retry 0 1 "isolated retry took 2.000s" STUB_RETRY_SECONDS=2.000
+  expect slow-again-on-retry 3 1 "budget exceeded" STUB_RETRY_SECONDS=25.000
+  expect retry-fails 3 1 "budget exceeded" STUB_RETRY_RESULT=failed
+  expect retry-disabled 3 0 "budget exceeded" OURO_TEST_STALL_RETRY=0
+  expect swift-failure-keeps-status 1 0 "budget exceeded" STUB_SWIFT_STATUS=1
+  [[ "$failures" -eq 0 ]] || { echo "swift-test-budget selftest: $failures failure(s); work dir $work" >&2; exit 1; }
+  echo "swift-test-budget selftest passed"
+  exit 0
+fi
 
 max_seconds="${OURO_TEST_MAX_SECONDS:-20}"
 slow_count="${OURO_TEST_SLOW_COUNT:-15}"
@@ -55,18 +113,69 @@ else:
             print(f"::notice title=Slow XCTest::{seconds:.3f}s {name}")
 
 over = [(seconds, name, status) for seconds, name, status in cases if seconds > max_seconds]
-if over:
-    print()
-    print(f"FAIL: XCTest case budget exceeded ({max_seconds:.3f}s max)", file=sys.stderr)
+with open(timings_path + ".over", "w", encoding="utf-8") as out:
     for seconds, name, _ in over:
-        print(f"::error title=XCTest budget exceeded::{seconds:.3f}s > {max_seconds:.3f}s {name}")
-        print(f"  {seconds:.3f}s  {name}", file=sys.stderr)
+        out.write(f"{seconds:.3f}\t{name}\n")
+if over:
     sys.exit(3)
 PY
 budget_status=$?
 set -e
 
+budget_failures=()
+if [[ "$budget_status" -eq 3 ]]; then
+  retry="${OURO_TEST_STALL_RETRY:-1}"
+  # A failing suite is reported as-is; retries are only for timing.
+  [[ "$swift_status" -eq 0 ]] || retry=0
+  retry_dir="$(dirname "$timings")/ouro-test-budget-retry"
+  while IFS=$'\t' read -r seconds name; do
+    [[ -n "$name" ]] || continue
+    if [[ "$retry" == 0 ]]; then
+      budget_failures+=("${seconds}s > ${max_seconds}s ${name}")
+      continue
+    fi
+    # "-[Module.Class testName]" becomes "Module.Class/testName".
+    inner="${name#-[}"; inner="${inner%]}"
+    filter="${inner%% *}/${inner#* }"
+    module="${filter%%.*}"
+    bundle="${OURO_TEST_BUNDLE:-}"
+    if [[ -z "$bundle" ]]; then
+      # Xcode 27 builds one bundle per test target; Xcode 26 builds one combined bundle.
+      bundle="$(find .build -type d -name "${module}.xctest" ! -path '*dSYM*' 2>/dev/null | head -1)"
+      [[ -n "$bundle" ]] || bundle="$(find .build -type d -name '*PackageTests.xctest' ! -path '*dSYM*' 2>/dev/null | head -1)"
+    fi
+    mkdir -p "$retry_dir"
+    retry_log="$retry_dir/$(echo "$filter" | tr '/.' '__').log"
+    echo "==> ${name} took ${seconds}s in the suite run; timing it once on its own"
+    set +e
+    LLVM_PROFILE_FILE="$retry_dir/ouro-test-budget-retry-%p.profraw" \
+      xcrun xctest -XCTest "$filter" "$bundle" > "$retry_log" 2>&1
+    set -e
+    retry_line="$(grep -F "Test Case '${name}'" "$retry_log" | grep -E '(passed|failed) \([0-9.]+ seconds\)' | tail -1 || true)"
+    retry_seconds="$(echo "$retry_line" | sed -nE 's/.*passed \(([0-9.]+) seconds\).*/\1/p')"
+    if [[ -n "$retry_seconds" ]] && python3 -c 'import sys; sys.exit(0 if float(sys.argv[1]) <= float(sys.argv[2]) else 1)' "$retry_seconds" "$max_seconds"; then
+      echo "isolated retry took ${retry_seconds}s; counting the ${seconds}s suite run as a runner stall"
+      if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+        echo "::warning title=XCTest runner stall::${name} took ${seconds}s in the suite run and ${retry_seconds}s on its own"
+      fi
+    else
+      tail -20 "$retry_log" | sed 's/^/    /' >&2
+      budget_failures+=("${seconds}s > ${max_seconds}s ${name} (on its own: ${retry_seconds:-did not pass})")
+    fi
+  done < "${timings}.over"
+fi
+
+if [[ "${#budget_failures[@]}" -gt 0 ]]; then
+  echo
+  echo "FAIL: XCTest case budget exceeded (${max_seconds}s max)" >&2
+  for failure in "${budget_failures[@]}"; do
+    echo "::error title=XCTest budget exceeded::${failure}"
+    echo "  ${failure}" >&2
+  done
+fi
+
 if [[ "$swift_status" -ne 0 ]]; then
   exit "$swift_status"
 fi
-exit "$budget_status"
+[[ "${#budget_failures[@]}" -eq 0 ]] || exit 3
+exit 0
