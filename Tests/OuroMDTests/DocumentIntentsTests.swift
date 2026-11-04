@@ -1,4 +1,5 @@
 import XCTest
+import OuroAX
 @testable import OuroMD
 
 @MainActor
@@ -19,11 +20,28 @@ private final class FakeWorkspace: MarkdownDocumentWorkspace {
     func isReadable(_ url: URL) -> Bool { documents[url] != nil }
     func frontDocumentURL() -> URL? { front }
     func markdown(for url: URL) async -> String? { documents[url] }
+    var refuseEdits: DocumentIntentError?
     func replaceMarkdown(_ markdown: String, in url: URL) async throws {
+        if let refuseEdits { throw refuseEdits }
         replacements.append((url, markdown))
         documents[url] = markdown
     }
     func open(_ url: URL) { opened.append(url) }
+}
+
+/// Writes through to the fake but reads back what an editor that reformats lists would show.
+@MainActor
+private class FakeWorkspaceProxy: MarkdownDocumentWorkspace {
+    let inner: FakeWorkspace
+    init(_ inner: FakeWorkspace) { self.inner = inner }
+    func knownDocumentURLs() -> [URL] { inner.knownDocumentURLs() }
+    func isReadable(_ url: URL) -> Bool { inner.isReadable(url) }
+    func frontDocumentURL() -> URL? { inner.frontDocumentURL() }
+    func markdown(for url: URL) async -> String? {
+        await inner.markdown(for: url).map { $0.replacingOccurrences(of: "* item", with: "- item") }
+    }
+    func replaceMarkdown(_ markdown: String, in url: URL) async throws { try await inner.replaceMarkdown(markdown, in: url) }
+    func open(_ url: URL) { inner.open(url) }
 }
 
 @MainActor
@@ -37,6 +55,7 @@ final class DocumentIntentsTests: XCTestCase {
 
     override func tearDown() async throws {
         DocumentIntentsWorkspace.current = nil
+        ReplaceMarkdownDocumentIntent.confirm = ReplaceMarkdownDocumentIntent.askThePerson
         workspace = nil
     }
 
@@ -73,10 +92,13 @@ final class DocumentIntentsTests: XCTestCase {
     }
 
     func testReplaceAndOpen() async throws {
+        var asked: [String] = []
+        ReplaceMarkdownDocumentIntent.confirm = { _, prompt in asked.append(prompt) }
         var replace = ReplaceMarkdownDocumentIntent()
         replace.markdown = "# New\n"
         _ = try await replace.perform()
         XCTAssertEqual(workspace.documents[workspace.order[0]], "# New\n")
+        XCTAssertEqual(asked, ["Replace all of Plan with the new Markdown?"])
 
         var open = OpenMarkdownDocumentIntent()
         open.document = MarkdownDocumentEntity(url: workspace.order[1])
@@ -89,10 +111,115 @@ final class DocumentIntentsTests: XCTestCase {
         do {
             _ = try await GetMarkdownDocumentIntent().perform()
             XCTFail("expected noDocument")
-        } catch DocumentIntentError.noDocument {
+        } catch let problem as OuroAX.Problem {
+            XCTAssertEqual(problem.code, "no-document")
+            XCTAssertEqual(problem.message, "Ouro MD: no Markdown document is open. Fix: Open one in Ouro MD, or name the document to use.")
         } catch {
             XCTFail("unexpected \(error)")
         }
+    }
+
+    func testReplaceWritesNothingWhenThePersonDeclines() async {
+        struct Declined: Error {}
+        ReplaceMarkdownDocumentIntent.confirm = { _, _ in throw Declined() }
+        var replace = ReplaceMarkdownDocumentIntent()
+        replace.markdown = "# Gone\n"
+        do {
+            _ = try await replace.perform()
+            XCTFail("expected the decline to stop the intent")
+        } catch is Declined {
+        } catch {
+            XCTFail("unexpected \(error)")
+        }
+        XCTAssertTrue(workspace.replacements.isEmpty)
+    }
+
+    func testEveryErrorSaysWhatToDoNext() {
+        let errors: [DocumentIntentError] = [.appNotReady, .noDocument, .unreadable("Plan.md"), .writingToolsActive("Plan.md"), .needsOpenDocument("Plan.md")]
+        for error in errors {
+            let problem = error.problem
+            XCTAssertNotNil(problem.fix, "\(error)")
+            XCTAssertTrue(problem.message.contains(". Fix: "), problem.message)
+            XCTAssertFalse(problem.message.contains("Domain="), problem.message)
+            XCTAssertEqual(String(localized: error.localizedStringResource), problem.message)
+        }
+        XCTAssertEqual(Set(errors.map(\.problem.code)).count, errors.count, "each error has its own code")
+    }
+
+    func testEntityExposesNameFolderAndModifiedAsProperties() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("ouro-md-entity-\(UUID().uuidString)/Harbor")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir.deletingLastPathComponent()) }
+        let file = dir.appendingPathComponent("Route.md")
+        try "x".write(to: file, atomically: true, encoding: .utf8)
+        let entity = MarkdownDocumentEntity(url: file)
+        XCTAssertEqual(entity.name, "Route")
+        XCTAssertEqual(entity.folder, "Harbor")
+        XCTAssertNotNil(entity.modified)
+        XCTAssertNil(MarkdownDocumentEntity(url: dir.appendingPathComponent("Missing.md")).modified)
+    }
+
+    // MARK: - One implementation for every door
+
+    func testAppendOutcomeIsDoneAndChecked() async throws {
+        let outcome = await DocumentActions.append("More notes.", to: workspace.order[1], in: workspace)
+        XCTAssertEqual(outcome.state, .done)
+        XCTAssertEqual(outcome.action, "append")
+        XCTAssertEqual(outcome.target, OuroAX.Ref(kind: "document", id: workspace.order[1].path, name: "Notes"))
+        XCTAssertEqual(outcome.postcondition.checked, true)
+        XCTAssertEqual(outcome.postcondition.holds, true)
+        XCTAssertNotNil(outcome.receipt)
+        XCTAssertTrue(outcome.validate().ok, "\(outcome.validate())")
+        XCTAssertEqual(workspace.documents[workspace.order[1]], "notes\n\nMore notes.\n")
+    }
+
+    func testEmptyAppendIsRefusedWithAFix() async {
+        let outcome = await DocumentActions.append("  \n", to: nil, in: workspace)
+        XCTAssertEqual(outcome.state, .refused)
+        XCTAssertEqual(outcome.error?.code, "empty-markdown")
+        XCTAssertNotNil(outcome.error?.fix)
+        XCTAssertTrue(workspace.replacements.isEmpty)
+        XCTAssertTrue(outcome.validate().ok, "\(outcome.validate())")
+    }
+
+    func testReplaceNeedsThePersonUntilConfirmed() async {
+        let asked = await DocumentActions.replace(with: "# New\n", in: nil, confirmed: false, in: workspace)
+        XCTAssertEqual(asked.state, .needsHuman)
+        XCTAssertNotNil(asked.human)
+        XCTAssertTrue(workspace.replacements.isEmpty)
+        XCTAssertTrue(asked.validate().ok, "\(asked.validate())")
+
+        let done = await DocumentActions.replace(with: "# New\n", in: nil, confirmed: true, in: workspace)
+        XCTAssertEqual(done.state, .done)
+        XCTAssertEqual(done.postcondition.holds, true)
+        XCTAssertEqual(workspace.documents[workspace.order[0]], "# New\n")
+        XCTAssertTrue(done.validate().ok, "\(done.validate())")
+    }
+
+    func testARefusedEditIsAnOutcomeWithItsProblem() async {
+        workspace.refuseEdits = .writingToolsActive("Plan.md")
+        let outcome = await DocumentActions.append("x", to: nil, in: workspace)
+        XCTAssertEqual(outcome.state, .refused)
+        XCTAssertEqual(outcome.error, DocumentIntentError.writingToolsActive("Plan.md").problem)
+        XCTAssertTrue(outcome.validate().ok, "\(outcome.validate())")
+    }
+
+    func testAReadBackThatDiffersIsUncertain() async {
+        let reformatting = FakeWorkspaceProxy(workspace)
+        let outcome = await DocumentActions.append("* item", to: nil, in: reformatting)
+        XCTAssertEqual(outcome.state, .uncertain)
+        XCTAssertNil(outcome.postcondition.holds)
+        XCTAssertFalse(outcome.next.isEmpty)
+        XCTAssertTrue(outcome.validate().ok, "\(outcome.validate())")
+    }
+
+    func testReadAndFindShareTheIntentsPaths() async throws {
+        let (text, outcome) = await DocumentActions.read(nil, in: workspace)
+        XCTAssertEqual(text, "# Plan\n\nShip it.\n")
+        XCTAssertEqual(outcome.state, .done)
+        XCTAssertTrue(outcome.validate().ok, "\(outcome.validate())")
+        XCTAssertEqual(DocumentActions.find("note", in: workspace).map(\.name), ["Notes"])
+        XCTAssertEqual(DocumentActions.find(nil, in: workspace).map(\.name), ["Plan", "Notes"])
     }
 
     func testEntityTransfersItsMarkdownText() async throws {

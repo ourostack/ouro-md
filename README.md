@@ -12,7 +12,7 @@ ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
 in careful typography on a centered page. Type Markdown and watch it render in
 place — switch themes live, and read the same document four different ways.
 
-> **Status:** v0.9.106. Reads and edits Markdown today. Release tooling produces Developer-ID signed/notarized public artifacts — see [First launch](#first-launch).
+> **Status:** v0.9.107. Reads and edits Markdown today. Release tooling produces Developer-ID signed/notarized public artifacts — see [First launch](#first-launch).
 
 ---
 
@@ -145,7 +145,7 @@ should make a live notary credential call.
 
 ## Build
 
-Requires macOS 13+ and a recent Swift toolchain (Xcode 15+ / Swift 5.9+).
+Requires macOS 15+ and Xcode 26 or later (Swift 6.2).
 
 ```sh
 # Build and run during development
@@ -255,6 +255,26 @@ It appears in the **Themes** menu by file name (a file containing `dark` or
 `night` in its name is treated as a dark theme). Built-in themes style the
 standalone export (`.markdown-body`) and the live editor (`.vditor-reset`) from
 a shared palette; custom CSS is applied to both.
+
+## Siri, Shortcuts and agents
+
+Ouro MD's App Intents (`Sources/OuroMD/DocumentIntents.swift`) let Siri, Shortcuts and Spotlight open, read, add to
+and replace your Markdown documents. They follow [Ouro AX for Apple](https://github.com/ourostack/ouro-ui-apple):
+
+- **One implementation.** `Sources/OuroMD/DocumentActions.swift` does the work and returns an `OuroAX.Outcome`; the
+  intents speak its summary, and a refusal is an `OuroAX.Problem` whose fix says what to do next.
+- **Replace asks first.** Replacing a whole document asks you to confirm; adding to one doesn't, and either is one
+  undo in an open window.
+- **App skills.** `Resources/Skills.skillsbundle` tells Siri how to use the intents (macOS 27.3 and later).
+- **The X-ray.** CI's `AX X-ray` job builds the app, runs ouro-ui-apple's `ouro-ax-xray` on it and checks the result
+  against `config/xray-expected.json`, which lists each claim that holds and why each other one can't yet.
+
+### Siri AI
+
+The Siri AI Developer Preview needs the Xcode 27.3 beta SDK. Until Ouro MD builds with it, two things compile to
+nothing, behind `#if OURO_SIRI_AI_SDK || canImport(AppIntents, _version: 301.2)`: the intents' `ToolIntent`
+conformances (so Siri can call them as tools) and the descriptions on the document's properties. Once CI's image has
+27.3, move `intent.tool` and `entity.property-description` to `hold` in `config/xray-expected.json`.
 
 ## Architecture
 

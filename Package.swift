@@ -4,14 +4,16 @@ import PackageDescription
 let package = Package(
     name: "ouro-md",
     platforms: [
-        .macOS(.v13)
+        .macOS(.v15)
     ],
     products: [
         .executable(name: "ouro-md", targets: ["OuroMD"])
     ],
     dependencies: [
         .package(url: "https://github.com/ourostack/ouro-native-apple-app-shell.git", branch: "main"),
-        .package(url: "https://github.com/apple/swift-markdown.git", revision: "4661b550c55abde97d14e35b89e094084669f40a")
+        .package(url: "https://github.com/apple/swift-markdown.git", revision: "4661b550c55abde97d14e35b89e094084669f40a"),
+        // Ouro AX for Apple: outcomes, problems and entity matching for the App Intents and the MCP door.
+        .package(url: "https://github.com/ourostack/ouro-ui-apple.git", from: "0.2.0")
     ],
     targets: [
         .target(
@@ -35,7 +37,8 @@ let package = Package(
                 .product(name: "OuroAppShellContract", package: "ouro-native-apple-app-shell"),
                 .product(name: "OuroAppShellCore", package: "ouro-native-apple-app-shell"),
                 .product(name: "OuroAppShellUI", package: "ouro-native-apple-app-shell"),
-                .product(name: "Markdown", package: "swift-markdown")
+                .product(name: "Markdown", package: "swift-markdown"),
+                .product(name: "OuroAX", package: "ouro-ui-apple")
             ],
             resources: [
                 .copy("web")

@@ -202,3 +202,47 @@ jobs:
             .build/ouro-coverage-swift-test.log
             .build/ouro-coverage-test-timings.tsv
             .build/ouro-coverage.json
+
+  ax-xray:
+    name: AX X-ray
+    # Ouro AX for Apple's X-ray reads the built app's App Intents metadata and lints its app skills. Xcode 26 on the
+    # free image writes that metadata, so this runs on every pull request without the billed runner. The behaviour
+    # stage (AppIntentsTesting) is a named skip: macOS refuses it for an ad-hoc-signed app (error 800), and CI holds
+    # no Apple Development certificate. config/xray-expected.json lists what holds and why the rest is open.
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Find the ouro-ui-apple release Ouro MD pins
+        id: pin
+        run: |
+          version="$(python3 -I -c 'import json,sys; print(next(p["state"]["version"] for p in json.load(open(sys.argv[1]))["pins"] if p["identity"] == "ouro-ui-apple"))' Package.resolved)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v5
+        with:
+          repository: ourostack/ouro-ui-apple
+          ref: v${{ steps.pin.outputs.version }}
+          path: .ci/ouro-ui-apple
+          persist-credentials: false
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Check the X-ray checker
+        run: python3 -I scripts/check-xray.py --selftest
+      - name: Build the X-ray
+        working-directory: .ci/ouro-ui-apple
+        run: swift build -c release --product ouro-ax-xray
+      - name: Build the app
+        run: OURO_MD_TELEMETRY_DISABLED=1 ./make-app.sh
+      - name: X-ray the App Intents and app skills
+        run: |
+          .ci/ouro-ui-apple/.build/release/ouro-ax-xray --app OuroMD.app --commit "$(git rev-parse --short HEAD)" \
+            --name "Ouro MD" --out .build/xray --format md >> "$GITHUB_STEP_SUMMARY"
+      - name: Check what it proves
+        run: python3 -I scripts/check-xray.py .build/xray/report.json
+      - if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ax-xray
+          path: .build/xray
