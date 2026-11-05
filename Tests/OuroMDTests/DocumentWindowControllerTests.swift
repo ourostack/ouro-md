@@ -22,9 +22,7 @@ final class DocumentWindowControllerTests: XCTestCase {
         // unordered window editor readiness need not precede viewport layout.
         for zoom in [0.75, 1.0, 2.0] {
             EditorZoom.apply(zoom, to: web)
-            var height = web.bounds.height
-            if #available(macOS 26, *) { height -= web.obscuredContentInsets.top }
-            let expected = height / zoom
+            let expected = web.bounds.height / zoom
             var result: [String: Double]?
             waitUntil(timeout: 5) {
                 web.evaluateJavaScript("""
@@ -46,11 +44,12 @@ final class DocumentWindowControllerTests: XCTestCase {
             XCTAssertFalse(controller.window.isVisible)
             XCTAssertEqual(try XCTUnwrap(coordinates["height"]), expected, accuracy: 1)
             XCTAssertEqual(try XCTUnwrap(coordinates["top"]), 0, accuracy: 1,
-                           "WebKit's layout viewport already excludes the header; adding its inset again would double-offset cues")
+                           "the paint viewport starts at zero; editor cues use the shared header boundary explicitly")
+            if #available(macOS 26, *) { XCTAssertEqual(web.obscuredContentInsets.top, 0) }
         }
     }
 
-    func testNativeExtensionAndGlassUnderlapWhileEditingStaysInSafeArea() throws {
+    func testNativeGlassHeaderPreservesEditingSafeArea() throws {
         try XCTSkipUnless(SystemDesign.usesGlass, "native toolbar geometry is for the system design")
         let controller = DocumentWindowController(filePath: nil, selfTest: false, useAutosave: false)
         defer { controller.window.close() }
@@ -68,11 +67,6 @@ final class DocumentWindowControllerTests: XCTestCase {
             if view.identifier?.rawValue == "OuroMDDocumentHeaderBackdrop" { return view }
             return view.subviews.lazy.compactMap { nativeBackdrop(in: $0) }.first
         }
-        func nativeExtension(in view: NSView) -> NSView? {
-            if #available(macOS 26, *), view is NSBackgroundExtensionView { return view }
-            return view.subviews.lazy.compactMap { nativeExtension(in: $0) }.first
-        }
-
         for size in [NSSize(width: 1080, height: 800), NSSize(width: 600, height: 420)] {
             window.setContentSize(size)
             for visible in [true, false, true] {
@@ -81,29 +75,31 @@ final class DocumentWindowControllerTests: XCTestCase {
                 content.layoutSubtreeIfNeeded()
                 waitUntil(timeout: 1) { editor(in: content) != nil }
                 let webView = try XCTUnwrap(editor(in: content))
-                waitUntil(timeout: 1) {
+                var cssInset: Double?
+                waitUntil(timeout: 10) {
                     content.layoutSubtreeIfNeeded()
-                    return abs(webView.convert(webView.bounds, to: nil).maxY - window.contentLayoutRect.maxY) <= 1
+                    webView.evaluateJavaScript("document.documentElement ? parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) : null") { value, _ in
+                        cssInset = value as? Double
+                    }
+                    guard controller.model.isReady, let cssInset else { return false }
+                    let editingTop = webView.convert(webView.bounds, to: nil).maxY - CGFloat(cssInset) * webView.pageZoom
+                    return abs(editingTop - window.contentLayoutRect.maxY) <= 1
                 }
                 let frame = webView.convert(webView.bounds, to: nil)
                 XCTAssertGreaterThan(frame.height, 0)
                 if #available(macOS 26, *) {
-                    let extensionView = try XCTUnwrap(nativeExtension(in: content) as? NSBackgroundExtensionView,
-                                                       "native background extension must paint moving document backdrop behind chrome")
-                    let extensionFrame = extensionView.convert(extensionView.bounds, to: nil)
-                    XCTAssertEqual(extensionFrame.maxY, content.convert(content.bounds, to: nil).maxY, accuracy: 1)
-                    XCTAssertTrue(extensionView.contentView === webView)
-                    XCTAssertEqual(frame.maxY, window.contentLayoutRect.maxY, accuracy: 1,
-                                   "native extension keeps real editing in its safe area without a second WebKit inset")
-                    let occlusion = max(0, extensionFrame.maxY - frame.maxY)
-                    XCTAssertEqual(webView.obscuredContentInsets.top, 0)
+                    XCTAssertEqual(frame.maxY, content.convert(content.bounds, to: nil).maxY, accuracy: 1)
+                    let occlusion = CGFloat(try XCTUnwrap(cssInset)) * webView.pageZoom
+                    XCTAssertEqual(frame.maxY - occlusion, window.contentLayoutRect.maxY, accuracy: 1,
+                                   "the browser's editing boundary must follow the actual native header")
+                    XCTAssertEqual(webView.obscuredContentInsets.top, 0, "native reserved paint would remove real translucency")
                     if visible {
-                        XCTAssertGreaterThan(occlusion, 0, "a visible toolbar needs document backdrop beneath it")
+                        XCTAssertGreaterThan(occlusion, 0, "a visible toolbar needs an actual editing exclusion")
                     }
                     let backdrop = try XCTUnwrap(nativeBackdrop(in: content) as? NSGlassEffectView,
                                                  "the header needs an actual native glass panel, not raw underlap alone")
                     let glassFrame = backdrop.convert(backdrop.bounds, to: nil)
-                    XCTAssertEqual(glassFrame.maxY, extensionFrame.maxY, accuracy: 1)
+                    XCTAssertEqual(glassFrame.maxY, frame.maxY, accuracy: 1)
                     XCTAssertEqual(glassFrame.minY, window.contentLayoutRect.maxY, accuracy: 1,
                                    "glass must stop at the native header edge, never fade into readable text")
                     XCTAssertEqual(glassFrame.width, frame.width, accuracy: 1)

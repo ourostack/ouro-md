@@ -46,7 +46,7 @@ if [[ "${OURO_MD_DISTRIBUTION_CHANNEL}" == "app-store" ]]; then
 fi
 
 # Stamp the binary with the SDK it is built against. Xcode 27's SwiftPM build
-# system writes the deployment target (13.0) as the SDK version in
+# system writes the deployment target (15.0) as the SDK version in
 # LC_BUILD_VERSION, and macOS uses that stamp to decide whether an app gets the
 # current system design and behavior or runs in compatibility mode. Passing the
 # real SDK version to the linker keeps Ouro MD on the current design.
@@ -81,13 +81,24 @@ cp -R "${RES_BUNDLE}" "${APP}/Contents/Resources/"
 if [[ -f "Resources/AppIcon.icns" ]]; then
   cp "Resources/AppIcon.icns" "${APP}/Contents/Resources/AppIcon.icns"
 fi
+# App skills for Siri (the Siri AI Developer Preview, macOS 27.3): guidance Siri
+# loads beside the App Intents. Earlier systems ignore the bundle.
+cp -R "Resources/Skills.skillsbundle" "${APP}/Contents/Resources/"
 
 echo "==> Compiling App Intents metadata…"
 INTENTS_WORK="$(mktemp -d)"
 # The executable target OuroMD builds in the product's (ouro-md) directory.
 CONST_DIR=".build/out/Intermediates.noindex/ouro-md.build/$(echo "${CONFIG:0:1}" | tr a-z A-Z)${CONFIG:1}/ouro-md-p.build/Objects-normal/$(uname -m)"
 find "${PWD}/${CONST_DIR}" -name "*.swiftconstvalues" -print 2>/dev/null > "${INTENTS_WORK}/constvalues.txt" || true
-[[ -s "${INTENTS_WORK}/constvalues.txt" ]] || { echo "error: no App Intents const values were emitted" >&2; exit 1; }
+# Xcode 26's SwiftPM (the native build system) writes them beside the target's objects instead.
+if [[ ! -s "${INTENTS_WORK}/constvalues.txt" ]]; then
+  find "$(cd "${BIN_DIR}" && pwd -P)/OuroMD.build" -name "*.swiftconstvalues" -print 2>/dev/null > "${INTENTS_WORK}/constvalues.txt" || true
+fi
+[[ -s "${INTENTS_WORK}/constvalues.txt" ]] || {
+  echo "error: no App Intents const values were emitted" >&2
+  find .build -name "*.swiftconstvalues" 2>/dev/null | head -5 >&2
+  exit 1
+}
 find "${PWD}/Sources/OuroMD" -name "*.swift" > "${INTENTS_WORK}/sources.txt"
 xcrun appintentsmetadataprocessor \
   --output "${APP}/Contents/Resources" \
@@ -121,7 +132,7 @@ cat > "${APP}/Contents/Info.plist" <<PLIST
     <key>CFBundleExecutable</key><string>${BIN_NAME}</string>
     <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>CFBundlePackageType</key><string>APPL</string>
-    <key>LSMinimumSystemVersion</key><string>13.0</string>
+    <key>LSMinimumSystemVersion</key><string>${MIN_MACOS}</string>
     <key>LSApplicationCategoryType</key><string>${APP_CATEGORY}</string>
     <key>NSHumanReadableCopyright</key><string>Copyright © 2026 Ari Mendelow.</string>
     <key>ITSAppUsesNonExemptEncryption</key><false/>

@@ -121,8 +121,8 @@
     return result;
   }
 
-  function passed(mark, rect, viewport) {
-    return mark.seen && (rect.bottom <= 0 || rect.top >= viewport - 32);
+  function passed(mark, rect, viewport, top) {
+    return mark.seen && (rect.bottom <= (top || 0) || rect.top >= viewport - 32);
   }
 
   function create(options) {
@@ -189,6 +189,7 @@
       offscreen = [];
       if (options.mode() === "sv" || !options.root()) { nextButton.hidden = true; return; }
       var root = options.root();
+      var top = options.viewportTop ? options.viewportTop() : 0;
       if (resizeObserver && (observedRoot !== root || observedNodes.length !== current.nodes.length
           || current.nodes.some(function (node, index) { return node !== observedNodes[index]; }))) {
         resizeObserver.disconnect(); resizeObserver.observe(root); observedRoot = root;
@@ -204,14 +205,14 @@
         var bounds = mark.deletion
           ? { top: mark.atEnd ? rect.bottom - 3 : rect.top, bottom: mark.atEnd ? rect.bottom : rect.top + 3 }
           : rect;
-        var visible = bounds.bottom > 0 && bounds.top < window.innerHeight - 32;
-        if (scrolled && passed(mark, bounds, window.innerHeight)) { mark.marked = false; return; }
+        var visible = bounds.bottom > top && bounds.top < window.innerHeight - 32;
+        if (scrolled && passed(mark, bounds, window.innerHeight, top)) { mark.marked = false; return; }
         if (visible) { mark.seen = true; }
         else { offscreen.push({ node: node, rect: bounds }); }
         var bar = document.createElement("span");
         bar.className = "ouro-change-mark" + (mark.deletion ? " ouro-change-deletion" : "");
         bar.style.left = Math.max(3, rect.left - 10) + "px";
-        bar.style.top = bounds.top + "px";
+        bar.style.top = bounds.top - top + "px";
         bar.style.height = Math.max(3, bounds.bottom - bounds.top) + "px";
         overlay.appendChild(bar);
       });
@@ -234,7 +235,8 @@
       var next = offscreen.find(function (item) { return item.rect.top >= window.innerHeight - 32; }) || offscreen[0];
       if (!next) { return; }
       var scroller = document.scrollingElement || document.documentElement;
-      window.scrollBy({ top: next.rect.top - 80, behavior: "auto" });
+      var top = options.viewportTop ? options.viewportTop() : 0;
+      window.scrollBy({ top: next.rect.top - top - 80, behavior: "auto" });
       // Source/preview panes can have their own scroll container.
       if (scroller.scrollTop === 0 && next.rect.top > window.innerHeight) {
         next.node.scrollIntoView({ block: "center", behavior: "auto" });

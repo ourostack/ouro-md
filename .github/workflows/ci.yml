@@ -12,15 +12,14 @@ permissions:
 jobs:
   swift-test:
     name: Swift tests
-    runs-on: xcode-27
+    runs-on: macos-26
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - name: Select Xcode 27 (macOS 27 SDK)
+      - name: Show the toolchain (the free image's default Xcode)
         run: |
-          sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
           xcodebuild -version
           swift --version
           xcrun --sdk macosx --show-sdk-version
@@ -44,8 +43,14 @@ jobs:
         run: ./scripts/release-policy.sh selftest-app-store-resubmission
       - name: Verify release policy path classification
         run: ./scripts/release-policy.sh selftest-paths
+      - name: Verify no pull request job uses the billed xcode-27 runner
+        run: |
+          python3 -I scripts/check-ci-runners.py --selftest
+          python3 -I scripts/check-ci-runners.py
       - name: Verify version bump guard
         run: ./scripts/bump-version.sh --selftest
+      - name: Verify the per-test time budget and its stall retry
+        run: ./scripts/swift-test-budget.sh --selftest
       - name: Scan source policy
         run: ./scripts/release-policy.sh scan .
       - name: Verify shared shell dependency freshness
@@ -93,18 +98,18 @@ jobs:
           path: |
             .build/ouro-swift-test.log
             .build/ouro-test-timings.tsv
+            .build/print-layout-test-artifacts/preview-state-screenshots-*/*.png
 
   app-bundle:
     name: App bundle
-    runs-on: xcode-27
+    runs-on: macos-26
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - name: Select Xcode 27 (macOS 27 SDK)
+      - name: Show the toolchain (the free image's default Xcode)
         run: |
-          sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
           xcodebuild -version
           swift --version
           xcrun --sdk macosx --show-sdk-version
@@ -118,15 +123,14 @@ jobs:
 
   native-scenario-verifier:
     name: Native scenario verifier
-    runs-on: xcode-27
+    runs-on: macos-26
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - name: Select Xcode 27 (macOS 27 SDK)
+      - name: Show the toolchain (the free image's default Xcode)
         run: |
-          sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
           xcodebuild -version
           swift --version
           xcrun --sdk macosx --show-sdk-version
@@ -149,8 +153,9 @@ jobs:
 
   rendered-text-audit:
     name: Rendered text audit
-    # Vision text recognition fails on the Xcode 27 image, so the shell label
-    # check runs the same binary on a runner where it works.
+    # Vision text recognition failed on the Xcode 27 image, so the shell label
+    # check runs the same binary on macos-15, where it works. (The verifier now
+    # runs on macos-26; folding this back in is a later change.)
     needs: native-scenario-verifier
     runs-on: macos-15
     timeout-minutes: 15
@@ -178,15 +183,14 @@ jobs:
 
   coverage:
     name: Coverage
-    runs-on: xcode-27
+    runs-on: macos-26
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - name: Select Xcode 27 (macOS 27 SDK)
+      - name: Show the toolchain (the free image's default Xcode)
         run: |
-          sudo xcode-select -s /Applications/Xcode_27.app/Contents/Developer
           xcodebuild -version
           swift --version
           xcrun --sdk macosx --show-sdk-version
@@ -201,3 +205,76 @@ jobs:
             .build/ouro-coverage-swift-test.log
             .build/ouro-coverage-test-timings.tsv
             .build/ouro-coverage.json
+
+  ax-xray:
+    name: AX X-ray
+    # Ouro AX for Apple's X-ray reads the built app's App Intents metadata and lints its app skills. Xcode 26 on the
+    # free image writes that metadata, so this runs on every pull request without the billed runner. The behaviour
+    # stage (AppIntentsTesting) is a named skip: macOS refuses it for an ad-hoc-signed app (error 800), and CI holds
+    # no Apple Development certificate. config/xray-expected.json lists what holds and why the rest is open.
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Find the ouro-ui-apple release Ouro MD pins
+        id: pin
+        run: |
+          python3 -I -c 'import json,sys; p = next(p for p in json.load(open(sys.argv[1]))["pins"] if p["identity"] == "ouro-ui-apple"); print("version=" + p["state"]["version"]); print("revision=" + p["state"]["revision"])' Package.resolved >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v5
+        with:
+          repository: ourostack/ouro-ui-apple
+          ref: ${{ steps.pin.outputs.revision }}
+          path: .ci/ouro-ui-apple
+          persist-credentials: false
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Check the X-ray checker
+        run: python3 -I scripts/check-xray.py --selftest
+      - name: Build the X-ray
+        working-directory: .ci/ouro-ui-apple
+        run: swift build -c release --product ouro-ax-xray
+      - name: Build the app
+        run: OURO_MD_TELEMETRY_DISABLED=1 ./make-app.sh
+      - name: X-ray the App Intents and app skills
+        run: |
+          .ci/ouro-ui-apple/.build/release/ouro-ax-xray --app OuroMD.app --commit "$(git rev-parse --short HEAD)" \
+            --name "Ouro MD" --out .build/xray --format md >> "$GITHUB_STEP_SUMMARY"
+      - name: Check what it proves
+        run: python3 -I scripts/check-xray.py .build/xray/report.json
+      - if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ax-xray
+          path: .build/xray
+
+  xcode-27-sdk:
+    name: Xcode 27 SDK
+    # Runners: every check above runs on GitHub's free images. Only this job needs Xcode 27 (the macOS 27 SDK the app
+    # ships with), and it runs on the billed xcode-27 runner only for pushes to main, never on pull requests. Ouro MD's
+    # Actions budget caps the spend at $15 a month. When the free macOS image carries Xcode 27, follow README's
+    # "CI runners" to drop this lane.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: xcode-27
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Select Xcode 27.2 (macOS 27.2 SDK)
+        run: |
+          sudo xcode-select -s /Applications/Xcode_27.2.app/Contents/Developer
+          xcodebuild -version
+          swift --version
+          xcrun --sdk macosx --show-sdk-version
+      - name: Build the app bundle against the macOS 27 SDK
+        run: OURO_MD_TELEMETRY_DISABLED=1 ./make-app.sh
+      - name: Verify the bundle carries the macOS 27 SDK and its App Intents metadata
+        env:
+          OURO_MD_MIN_SDK_MAJOR: "27"
+          OURO_MD_ALLOW_UNCONFIGURED_TELEMETRY: "1"
+          OURO_MD_RENDERED_TEXT_AUDIT_ELSEWHERE: "1"
+        run: ./scripts/verify-packaged-app.sh OuroMD.app
+      - name: Run tests with Xcode 27
+        run: ./scripts/swift-test-budget.sh

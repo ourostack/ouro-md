@@ -24,6 +24,7 @@
   var state = { mode: "ir", value: "", outline: false, editable: true, uiTheme: initialTheme.uiMode || "classic", focus: false, typewriter: false, codeTheme: initialTheme.codeTheme || "github" };
   var changeMarks = window.OuroChangeMarks.create({
     root: function () { return ready ? changeRoot() : null; },
+    viewportTop: editorViewportTop,
     text: changeText,
     mode: function () { return state.mode; },
     markdown: function () { return ready && vditor ? vditor.getValue() : state.value; },
@@ -66,6 +67,20 @@
   }
 
   applyThemeBackground(initialTheme.background || "");
+
+  function editorViewportTop() {
+    return parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ouro-header-inset")) || 0;
+  }
+
+  // Preserve each theme's own spacing while letting real content scroll behind native glass.
+  function applyHeaderFlowPadding() {
+    var roots = document.querySelectorAll("#editor .vditor-reset");
+    roots.forEach(function (root) {
+      root.removeAttribute("data-ouro-header-padding");
+      root.style.setProperty("--ouro-content-padding-top", getComputedStyle(root).paddingTop);
+      root.setAttribute("data-ouro-header-padding", "");
+    });
+  }
 
   function setDirty(d) {
     if (d === dirty) { return; }
@@ -1139,6 +1154,7 @@
           ? container.querySelector(".vditor-preview__action")
           : null;
         var offset = toolbar ? toolbar.getBoundingClientRect().height : 0;
+        offset += Math.max(0, editorViewportTop() - container.getBoundingClientRect().top);
         container.scrollTop += target.getBoundingClientRect().top -
           container.getBoundingClientRect().top - offset;
         return;
@@ -1244,6 +1260,7 @@
       },
       after: function () {
         ready = true;
+        applyHeaderFlowPadding();
         attachImageHandlers();
         installEditorQOL();
         installWritingToolsGuard();
@@ -1844,8 +1861,6 @@
   }
 
   // Scrolls just enough to show the change, clear of the floating status pill.
-  // The native background extension keeps editing inside the safe area; the
-  // toolbar is outside this layout viewport. Do not inset cues a second time.
   // If either end is on screen it leaves
   // the view alone (a long paste keeps the caret where WebKit put it); a change
   // taller than the screen shows its end, where the caret is.
@@ -1855,7 +1870,7 @@
     var first = rects[0], last = rects[rects.length - 1];
     var top = first.top, bottom = last.bottom, viewport = window.innerHeight;
     if (!(bottom - top > 0)) { return false; }
-    var topMargin = 0, bottomMargin = 72, delta = 0;
+    var topMargin = editorViewportTop(), bottomMargin = 72, delta = 0;
     var onScreen = function (y) { return y >= topMargin && y <= viewport - bottomMargin; };
     if (onScreen(top) || onScreen(bottom) || (top < topMargin && bottom > viewport - bottomMargin)) { return false; }
     if (bottom - top > viewport - topMargin - bottomMargin) { delta = bottom - (viewport - bottomMargin); }
@@ -1909,8 +1924,10 @@
     // One continuous fade from full strength, easing in and out so it reads
     // as a single glow; when the page scrolled to show the change, it starts
     // once the scroll has settled, so the reader sees it whole. Reduce Motion
-    // shows the glow steadily and then clears it.
-    var reduce = prefersReducedMotion(), hold = reduce ? 900 : 0, fade = reduce ? 0 : 1100, start = 0;
+    // shows the glow steadily, then crossfades it out over Ouro HX's
+    // reduced-motion crossfade (window.__ouroMotion, set by the app).
+    var motion = window.__ouroMotion || {}, crossfade = motion.reducedMotionCrossfadeMs || 0;
+    var reduce = prefersReducedMotion(), hold = reduce ? 900 : 0, fade = reduce ? crossfade : 1100, start = 0;
     if (window.__ouroLastChangeFlash) { window.__ouroLastChangeFlash.timing = { hold: hold, fade: fade }; }
     var finish = function () {
       if (block) { block.classList.remove("ouro-change-flash"); }
@@ -2175,7 +2192,7 @@
     if (el && el.scrollIntoView) {
       el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
     } else if (rect && rect.top) {
-      window.scrollTo({ top: Math.max(0, window.scrollY + rect.top - 120), behavior: "smooth" });
+      window.scrollTo({ top: Math.max(0, window.scrollY + rect.top - editorViewportTop() - 120), behavior: "smooth" });
     }
     recordRevealDiagnostic({
       phase: "selected",
@@ -2428,8 +2445,18 @@
       try { restoreTableCellSpaces(); } catch (e) { /* never block a save */ }
       try { return vditor ? vditor.getValue() : state.value; } catch (e) { return state.value; }
     },
-    getHTML: function () {
-      try { return vditor ? normalizeHeadingIDsInHTML(vditor.getHTML()) : ""; } catch (e) { return ""; }
+    getHTML: function (profilePreparation) {
+      try {
+        if (!vditor) { return ""; }
+        var start = profilePreparation ? performance.now() : 0;
+        var html = vditor.getHTML();
+        var normalizedStart = profilePreparation ? performance.now() : 0;
+        var normalized = normalizeHeadingIDsInHTML(html);
+        if (profilePreparation) {
+          window.__ouroPrintHTMLProfile = {render_html: normalizedStart - start, normalize_headings: performance.now() - normalizedStart};
+        }
+        return normalized;
+      } catch (e) { return ""; }
     },
     setTheme: function (uiMode, css, codeTheme, background) {
       var prevMode = state.uiTheme;
@@ -2445,6 +2472,7 @@
       var tag = document.getElementById("ouro-theme");
       if (tag) { tag.textContent = css || ""; }
       if (vditor) { try { vditor.setTheme(state.uiTheme, undefined, state.codeTheme); } catch (e) { /* ignore */ } }
+      applyHeaderFlowPadding();
       // Vditor.setTheme updates options.theme but does NOT re-render already-processed
       // Mermaid diagrams — Mermaid bakes light/dark colors into the SVG at render time
       // (the block is cached via data-processed). So a light↔dark switch would otherwise
@@ -2654,8 +2682,9 @@
   function updateActiveHeading() {
     var hs = document.querySelectorAll(".vditor-reset h1, .vditor-reset h2, .vditor-reset h3, .vditor-reset h4, .vditor-reset h5, .vditor-reset h6");
     var idx = hs.length ? 0 : -1;
+    var threshold = editorViewportTop() + 90;
     for (var i = 0; i < hs.length; i++) {
-      if (hs[i].getBoundingClientRect().top <= 90) { idx = i; } else { break; }
+      if (hs[i].getBoundingClientRect().top <= threshold) { idx = i; } else { break; }
     }
     if (idx !== activeHeadingIndex) { activeHeadingIndex = idx; post("activeHeading", { index: idx }); }
   }

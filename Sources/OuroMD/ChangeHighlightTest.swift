@@ -1,4 +1,5 @@
 import AppKit
+import OuroHX
 import WebKit
 
 /// Headless `--changehighlighttest`: checks that pasted text, an assistant's
@@ -12,6 +13,7 @@ import WebKit
 final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     private var webView: WKWebView!
     private let theme = ThemeStore.shared.defaultTheme
+    private let headerInset: CGFloat = SystemDesign.usesGlass ? 52 : 0
     private var results: [(String, Bool, String)] = []
     private var started = false
 
@@ -23,24 +25,25 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
         HeadlessHarness.configure()
         let configuration = WKWebViewConfiguration()
         let controller = WKUserContentController()
+        controller.addUserScript(WKUserScript(
+            source: EditorWebView.initialThemeBootstrapScript(for: theme, headerInset: headerInset),
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true
+        ))
         controller.add(self, name: "ouro")
         configuration.userContentController = controller
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
         let frame = NSRect(x: 0, y: 0, width: 800, height: 600)
         webView = WKWebView(frame: frame, configuration: configuration)
-        if #available(macOS 26, *) {
-            // Also exercise WebKit's layout-viewport exclusion. Like the
-            // production extension's safe-area placement, its viewport starts
-            // below chrome and must not receive a second JavaScript offset.
-            webView.obscuredContentInsets = NSEdgeInsets(top: 52, left: 0, bottom: 0, right: 0)
-        }
         webView.navigationDelegate = self
         guard let indexURL = OuroResources.web("index", "html") else {
             FileHandle.standardError.write(Data("changehighlighttest: index.html not found\n".utf8)); exit(1)
         }
         HeadlessHarness.offscreenHost(webView, size: frame.size)
         webView.loadFileURL(indexURL, allowingReadAccessTo: indexURL.deletingLastPathComponent())
-        DispatchQueue.main.asyncAfter(deadline: .now() + 40) {
+        // Under the scenario runner's 90 s limit, with room for a slow free
+        // runner to report which check failed rather than only "timed out".
+        DispatchQueue.main.asyncAfter(deadline: .now() + 75) {
             FileHandle.standardError.write(Data("changehighlighttest: timed out\n".utf8)); exit(1)
         }
         app.run()
@@ -106,6 +109,7 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
         if (root.textContent.indexOf("PASTED-TEXT") < 0) { document.execCommand("insertText", false, pasted); }
         // The glow begins once any reveal scroll has come to rest.
         await glowBegun();
+        window.__ouroTestPastedHighlight = window.CSS && CSS.highlights && CSS.highlights.get("ouro-change");
         const during = live();
         const flashLevel = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ouro-flash"));
         const flash = flashLevel();
@@ -123,42 +127,94 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
             let text = (during?["text"] as? String)?.trimmingCharacters(in: .whitespaces)
             self.record("pasted text is highlighted exactly", text == "PASTED-TEXT", "\(text ?? "none")")
             let top = during?["top"] as? Double ?? -1, bottom = during?["bottom"] as? Double ?? -1, viewport = during?["viewport"] as? Double ?? 0
-            self.record("paste below the fold is scrolled into view", top >= 0 && bottom <= viewport, "top=\(top) bottom=\(bottom) viewport=\(viewport)")
+            self.record("paste below the fold is revealed below the header", top >= Double(self.headerInset) && bottom <= viewport,
+                        "top=\(top) bottom=\(bottom) viewport=\(viewport)")
             // One continuous fade with no hold: strong once the change is on
             // screen. (Timers are throttled off-screen, so the curve itself is
             // checked through its timing rather than by sampling it.)
-            // Reduce Motion shows the glow steadily, then clears it.
+            // Reduce Motion shows the glow steadily, then crossfades it out over
+            // Ouro HX's reduced-motion crossfade.
             let flash = r["flash"] as? Double ?? 0, hold = r["hold"] as? Double ?? -1, fade = r["fade"] as? Double ?? 0
             let reduceMotion = r["reduceMotion"] as? Bool ?? false
-            let curve = reduceMotion ? (hold > 0 && fade == 0) : (hold == 0 && fade >= 800)
+            let crossfade = (OuroMotion.reducedMotionCrossfade * 1000).rounded()
+            let curve = reduceMotion ? (hold > 0 && fade == crossfade) : (hold == 0 && fade >= 800)
             self.record("highlight fades in one continuous step", flash > 0.3 && curve, "--ouro-flash=\(flash) hold=\(hold) fade=\(fade) reduceMotion=\(reduceMotion)")
-            // Sample the painted highlight against the same text once it clears.
+            // Sample the same text once the glow has cleared on its own, then
+            // with the paste's highlight shown again at full strength. Sampling
+            // the live glow raced its 1.1 s fade: a slow runner's snapshot
+            // landed after it ended, so lit and cleared matched.
             let rect = CGRect(x: during?["left"] as? Double ?? 0, y: top, width: (during?["right"] as? Double ?? 0) - (during?["left"] as? Double ?? 0), height: bottom - top)
             let changeColor = (r["changeColor"] as? String) ?? ""
-            self.snapshotTint(in: rect) { lit in
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-                    self.snapshotTint(in: rect) { cleared in
-                        let accent = self.isTinted(lit, towards: changeColor, against: cleared)
-                        self.record("highlight paints in the theme's change colour", accent, "colour=\(changeColor) lit=\(lit) cleared=\(cleared)")
-                        self.clearedCase()
+            self.clearedCase {
+                self.snapshotTint(in: rect) { cleared in
+                    self.webView.callAsyncJavaScript(Self.showPastedHighlight, arguments: [:], in: nil, in: .page) { shown in
+                        let saved = (try? shown.get()) as? Bool ?? false
+                        // An off-screen page can commit the new paint a little
+                        // late, so look again up to 10 times; a highlight that
+                        // never paints still fails.
+                        func sampleLit(_ attempt: Int) {
+                            self.snapshotTint(in: rect) { lit in
+                                let accent = self.isTinted(lit, towards: changeColor, against: cleared)
+                                if saved && !accent && attempt < 10 {
+                                    // Show it again too, in case a late timer of the glow's cleared it.
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                        self.page(Self.showPastedHighlight) { sampleLit(attempt + 1) }
+                                    }
+                                    return
+                                }
+                                self.page(Self.hidePastedHighlight) {
+                                    self.record("highlight paints in the theme's change colour", saved && accent,
+                                                saved ? "colour=\(changeColor) lit=\(lit) cleared=\(cleared) snapshots=\(attempt)" : "the paste registered no ouro-change highlight")
+                                    self.assistantCase()
+                                }
+                            }
+                        }
+                        sampleLit(1)
                     }
                 }
             }
         }
     }
 
-    private func clearedCase() {
+    /// The paste's own highlight, at the glow's full strength, held still for a snapshot.
+    private static let showPastedHighlight = #"""
+    const saved = window.__ouroTestPastedHighlight;
+    if (saved) { CSS.highlights.set("ouro-change", saved); }
+    document.documentElement.style.setProperty("--ouro-flash", "1");
+    // Off-screen pages draw no animation frames; give style a moment to apply.
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    return !!saved;
+    """#
+
+    private static let hidePastedHighlight = #"""
+    if (window.CSS && CSS.highlights) { CSS.highlights.delete("ouro-change"); }
+    document.documentElement.style.setProperty("--ouro-flash", "0");
+    window.__ouroTestPastedHighlight = null;
+    """#
+
+    /// Runs a page script, then continues whatever it returned.
+    private func page(_ script: String, then next: @escaping () -> Void) {
+        webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { _ in next() }
+    }
+
+    /// The glow clears on its own within 3.6 s of starting, as it did when this
+    /// check ran 1.6 s after the paste and then waited up to 2 s. Then waits
+    /// past the bridge's backup finish (fade + 250 ms), so it cannot clear the
+    /// highlight the paint check shows again.
+    private func clearedCase(then next: @escaping () -> Void) {
         let script = Self.probe + #"""
         const flashLevel = () => getComputedStyle(document.documentElement).getPropertyValue("--ouro-flash").trim();
-        for (let i = 0; i < 40 && (live() || flashLevel() !== "0"); i++) { await sleep(50); }
-        return { after: live(), flash: flashLevel() };
+        for (let i = 0; i < 72 && (live() || flashLevel() !== "0"); i++) { await sleep(50); }
+        const result = { after: live(), flash: flashLevel() };
+        await sleep(400);
+        return result;
         """#
         webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { [weak self] result in
             guard let self else { return }
             guard case .success(let value) = result, let r = value as? [String: Any] else { self.fail("clear script failed: \(result)") }
             let cleared = (r["after"] == nil || r["after"] is NSNull) && (r["flash"] as? String) == "0"
             self.record("highlight clears after its fade", cleared, "after=\(String(describing: r["after"])) flash=\(r["flash"] ?? "nil")")
-            self.assistantCase()
+            next()
         }
     }
 
@@ -179,7 +235,8 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
             let text = (during?["text"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             self.record("assistant edit is highlighted", text.contains("ASSISTANT-ADDED paragraph."), "\(text) last=\(r["last"] ?? "")")
             let top = during?["top"] as? Double ?? -1, bottom = during?["bottom"] as? Double ?? -1, viewport = during?["viewport"] as? Double ?? 0
-            self.record("assistant edit is brought into view", top >= 0 && bottom <= viewport, "top=\(top) bottom=\(bottom) viewport=\(viewport)")
+            self.record("assistant edit is revealed below the header", top >= Double(self.headerInset) && bottom <= viewport,
+                        "top=\(top) bottom=\(bottom) viewport=\(viewport)")
             self.agentCase()
         }
     }
@@ -292,7 +349,7 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
         const unseenSurvives = marks();
         button().click();
         await sleep(150);
-        const jumped = paragraph(55).getBoundingClientRect().top >= 0
+        const jumped = paragraph(55).getBoundingClientRect().top >= parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop)
           && paragraph(55).getBoundingClientRect().bottom < window.innerHeight;
         const reachedStays = marks();
         scroller.scrollTop = 0;
@@ -399,21 +456,27 @@ final class ChangeHighlightTester: NSObject, WKScriptMessageHandler, WKNavigatio
 
     private func viewportEdgeCase() {
         let script = Self.probe + #"""
-        window.ouro.setValue("First paragraph.\n\nSecond paragraph.\n");
+        const fixture = "First paragraph.\n\nSecond paragraph.\n\n" + Array.from({length:80}, (_,i) => "Filler paragraph " + i + ".").join("\n\n");
+        window.ouro.setValue(fixture);
         await sleep(400);
         scroller.scrollTop = 0;
-        window.ouro.reloadValue("First AGENT paragraph.\n\nSecond paragraph.\n");
+        window.ouro.reloadValue(fixture.replace("First paragraph.", "First AGENT paragraph."));
         await sleep(400);
         const overlay = document.getElementById("ouro-change-marks").getBoundingClientRect();
         const mark = document.querySelector(".ouro-change-mark");
         const rect = mark && mark.getBoundingClientRect();
-        return { overlayTop: overlay.top, markTop: rect && rect.top,
-          unclipped: !!rect && rect.top >= overlay.top && rect.bottom <= overlay.bottom };
+        const unclipped = !!rect && rect.top >= overlay.top && rect.bottom <= overlay.bottom;
+        const first = document.querySelector("#editor .vditor-ir .vditor-reset > p");
+        scroller.scrollTop += first.getBoundingClientRect().bottom - (overlay.top - 12);
+        await sleep(150);
+        return { overlayTop: overlay.top, markTop: rect && rect.top, unclipped,
+          clearedBehindHeader: document.querySelectorAll(".ouro-change-mark").length === 0 };
         """#
         webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { [weak self] result in
             guard let self else { return }
             guard case .success(let value) = result, let r = value as? [String: Any] else { self.fail("viewport edge script failed: \(result)") }
-            self.record("a cue at the native viewport top is not hidden behind an artificial toolbar band", (r["overlayTop"] as? Double) == 0 && (r["unclipped"] as? Bool) == true, "\(r)")
+            self.record("a cue clears the actual header exactly once", (r["overlayTop"] as? Double) == Double(self.headerInset) && (r["unclipped"] as? Bool) == true, "\(r)")
+            self.record("a reached cue clears while passing behind the header", (r["clearedBehindHeader"] as? Bool) == true, "\(r)")
             self.finish()
         }
     }

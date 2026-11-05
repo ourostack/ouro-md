@@ -1,3 +1,9 @@
+<!-- ourostack:brand:start -->
+<p align="center">
+  <a href="https://github.com/ourostack"><img src="https://raw.githubusercontent.com/ourostack/.github/main/brand/ouro-md.png" alt="Ouro MD" width="160" height="160"></a>
+</p>
+<!-- ourostack:brand:end -->
+
 # ouro-md
 
 A minimalist, beautiful, themable Markdown editor that's native to macOS.
@@ -6,8 +12,7 @@ ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
 in careful typography on a centered page. Type Markdown and watch it render in
 place — switch themes live, and read the same document four different ways.
 
-> **Status:** v0.9.99. Reads and edits Markdown today. Release tooling produces
-> Developer-ID signed/notarized public artifacts — see [First launch](#first-launch).
+> **Status:** v0.9.110. Reads and edits Markdown today. Release tooling produces Developer-ID signed/notarized public artifacts — see [First launch](#first-launch).
 
 ---
 
@@ -32,6 +37,7 @@ place — switch themes live, and read the same document four different ways.
   compact **status bar** (word/char count, mode, theme) sits a toggle away
   (**View ▸ Toggle Status Bar**) and is hidden by default.
 - **Export.** Save to themed, self-contained **HTML** or **PDF**.
+- **Print layout.** **File ▸ Print…** and **File ▸ Export ▸ PDF…** share a readable page preview with margins, font size, line spacing, page navigation and zoom. Choose **Page-bottom footnotes**, **Endnotes** or **Original links** under **Citations**; generated sources include web, email, phone and local or relative file destinations, so check that choice before sharing output. **New page before** starts each selected heading level on a fresh page; authored `<div class="page-break"></div>` and `<!-- pagebreak -->` markers also work. Use **Page Setup…** for paper size and orientation. The first page appears while the remaining pages prepare, and you can request output without waiting for the whole preview; only the complete document with your final settings is printed or exported. Folded sections expand in the print copy so their content is not silently omitted. Print settings do not change your Markdown or reading view.
 - **Images that just work.** Pasted or dropped images are embedded inline (as
   data URIs) — no upload server, no broken links.
 - **Headless render.** `ouro-md --render file.md` prints a styled HTML document
@@ -139,7 +145,7 @@ should make a live notary credential call.
 
 ## Build
 
-Requires macOS 13+ and a recent Swift toolchain (Xcode 15+ / Swift 5.9+).
+Requires macOS 15+ and Xcode 26 or later (Swift 6.2).
 
 ```sh
 # Build and run during development
@@ -186,6 +192,26 @@ unverified, never replaced with a synthetic media-query override. macOS 27
 on-screen/per-window capture comparisons are diagnostics until the native
 document body demonstrably paints; blank bodies are not publication assets or
 platform glass qualification.
+
+### CI runners
+
+Pull requests run only on GitHub's free standard runners (`macos-26`, `macos-26-intel`, `macos-15`). The billed
+`xcode-27` runner is for checks that truly need Xcode 27 and the macOS 27 SDK the app ships with, and runs only on
+pushes to `main` and for releases: the **Xcode 27 SDK** job in `ci.yml` and the harness and release jobs in
+`release.yml`. They select Xcode 27.2 (`/Applications/Xcode_27.2.app`), the same SDK as local builds: the image's
+`Xcode_27.app` is 27.0, whose macOS 27.0 SDK lacks APIs Ouro HX uses from 27.1. On the 2026-10-26 image that
+path is the 27.2 release candidate (27B48); it builds only main-branch checks and releases, which are Developer ID
+direct downloads, so App Store rules on release-candidate Xcodes don't apply. Prefer a final `Xcode_27.2.app` once the
+image carries one. `scripts/check-ci-runners.py` fails CI if a pull request job could use it. Code that needs a newer SDK
+than the free image's must be fenced with `canImport(..., _version:)`, as ouro-ui-apple does, so it compiles to nothing
+there. A $15-a-month GitHub Actions budget scoped to `ourostack/ouro-md` stops further billed use when reached and
+alerts `arimendelow`.
+
+When the free macOS image carries Xcode 27:
+
+1. Delete the `xcode-27-sdk` job in `ci.yml`, or move it to that image if its SDK check is still worth running.
+2. In `release.yml`, change `runs-on: xcode-27` to that image and delete the `Select Xcode 27.2` steps.
+3. Delete this repository's Actions budget if no billed runner is left.
 
 ## Usage
 
@@ -234,6 +260,7 @@ ouro-md notes.md                      # open in the editor
 ouro-md --render notes.md > out.html  # render to a themed HTML document
 ouro-md --render notes.md --theme graphite > out.html
 ouro-md --list-themes
+ouro-md --mcp --root ~/notes            # serve ~/notes to an agent over MCP (stdio)
 ouro-md --help
 ```
 
@@ -249,6 +276,40 @@ It appears in the **Themes** menu by file name (a file containing `dark` or
 `night` in its name is treated as a dark theme). Built-in themes style the
 standalone export (`.markdown-body`) and the live editor (`.vditor-reset`) from
 a shared palette; custom CSS is applied to both.
+
+## Siri, Shortcuts and agents
+
+Ouro MD's App Intents (`Sources/OuroMD/DocumentIntents.swift`) let Siri, Shortcuts and Spotlight open, read, add to
+and replace your Markdown documents. They follow [Ouro AX for Apple](https://github.com/ourostack/ouro-ui-apple):
+
+- **One implementation.** `Sources/OuroMD/DocumentActions.swift` does the work and returns an `OuroAX.Outcome`; the
+  intents speak its summary, and a refusal is an `OuroAX.Problem` whose fix says what to do next.
+- **Replace asks first.** Replacing a whole document asks you to confirm; adding to one doesn't, and either is one
+  undo in an open window.
+- **App skills.** `Resources/Skills.skillsbundle` tells Siri how to use the intents (macOS 27.3 and later).
+- **The X-ray.** CI's `AX X-ray` job builds the app, runs ouro-ui-apple's `ouro-ax-xray` on it and checks the result
+  against `config/xray-expected.json`, which lists each claim that holds and why each other one can't yet.
+
+### Agents over MCP
+
+`ouro-md --mcp --root <folder>` serves the Markdown documents under a folder to an agent over MCP (stdio), with four
+tools: `list_documents`, `read_document`, `append_to_document` and `replace_document`. They run the same code as the
+intents, and `replace_document` changes nothing until the agent sends `confirmed: true` after you've said yes. Nothing
+outside the `--root` folders is listed, read or written. For Claude Code:
+
+```sh
+claude mcp add ouro-md -- "/Applications/Ouro MD.app/Contents/MacOS/ouro-md" --mcp --root ~/Documents/notes
+```
+
+It needs the direct-download app; the App Store build is sandboxed. Decisions and prior art:
+[docs/mcp-door.md](docs/mcp-door.md).
+
+### Siri AI
+
+The Siri AI Developer Preview needs the Xcode 27.3 beta SDK. Until Ouro MD builds with it, two things compile to
+nothing, behind `#if OURO_SIRI_AI_SDK || canImport(AppIntents, _version: 301.2)`: the intents' `ToolIntent`
+conformances (so Siri can call them as tools) and the descriptions on the document's properties. Once CI's image has
+27.3, move `intent.tool` and `entity.property-description` to `hold` in `config/xray-expected.json`.
 
 ## Architecture
 
