@@ -30,6 +30,21 @@
       padding-top: calc(var(--ouro-content-padding-top,0px) + var(--ouro-header-inset,0px)) !important;
     }
   }
+  /* The document paints under the glass header, so the system indicator would
+     start under it too. A styled indicator lets its track start at the header's
+     lower edge; bridge.js sets .ouro-scrolling while it should show. */
+  @media screen {
+    html::-webkit-scrollbar { width: 12px; background: transparent; }
+    html::-webkit-scrollbar-track { background: transparent; margin-top: var(--ouro-header-inset,0px); }
+    html::-webkit-scrollbar-thumb {
+      background: transparent;
+      background-clip: padding-box;
+      border: 3px solid transparent;
+      border-radius: 6px;
+    }
+    html.ouro-scrolling::-webkit-scrollbar-thumb { background-color: color-mix(in srgb, var(--ouro-scroll-thumb, CanvasText) 45%, transparent); }
+    html::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--ouro-scroll-thumb, CanvasText) 60%, transparent); }
+  }
   body { min-height: 100vh; }
   body.ouro-source-mode {
     height: 100vh;

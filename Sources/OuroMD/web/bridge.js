@@ -2694,6 +2694,18 @@
     headingScrollTimer = setTimeout(function () { headingScrollTimer = null; updateActiveHeading(); }, 120);
   }, true);
 
+  // Show the page's scroll indicator while scrolling, then let it fade away.
+  var scrollIndicatorTimer = null;
+  window.addEventListener("scroll", function () {
+    var text = document.querySelector(".vditor-reset") || document.body;
+    document.documentElement.style.setProperty("--ouro-scroll-thumb", getComputedStyle(text).color);
+    document.documentElement.classList.add("ouro-scrolling");
+    clearTimeout(scrollIndicatorTimer);
+    scrollIndicatorTimer = setTimeout(function () {
+      document.documentElement.classList.remove("ouro-scrolling");
+    }, 1000);
+  }, { passive: true });
+
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", create);
   } else {
