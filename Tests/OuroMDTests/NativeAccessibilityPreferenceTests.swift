@@ -1,6 +1,7 @@
 import AppKit
 import ApplicationServices
 import WebKit
+import OuroHX
 import XCTest
 @testable import OuroMD
 
@@ -75,7 +76,9 @@ final class NativeAccessibilityPreferenceTests: XCTestCase {
         var glowSamples: [[String: Any]] = []
         let start = ProcessInfo.processInfo.systemUptime
         var observedFeedback = false
-        while ProcessInfo.processInfo.systemUptime - start < 5 {
+        // The glow starts when WebKit has processed the paste and any scroll has settled, which a slow runner can delay;
+        // the loop ends on the glow's own state (seen, then back to 0), and this bound only stops a glow that never ends.
+        while ProcessInfo.processInfo.systemUptime - start < 30 {
             pump()
             try await Task.sleep(for: .milliseconds(40))
             let level = try await editor.evaluateJavaScript(
@@ -89,12 +92,29 @@ final class NativeAccessibilityPreferenceTests: XCTestCase {
         evidence["nativePasteGlowSamples"] = glowSamples
         evidence["nativePasteGlowTiming"] = timing ?? [:]
         XCTAssertEqual(timing?["hold"] as? Int, expectedMotion ? 900 : 0)
-        XCTAssertEqual(timing?["fade"] as? Int, expectedMotion ? 0 : 1100)
+        // Reduce Motion holds the glow, then crossfades it out over Ouro HX's reduced-motion crossfade.
+        let crossfadeMs = Int((OuroMotion.reducedMotionCrossfade * 1000).rounded())
+        XCTAssertEqual(timing?["fade"] as? Int, expectedMotion ? crossfadeMs : 1100)
         let positiveLevels = glowSamples.compactMap { $0["level"] as? Double }.filter { $0 > 0 }
         XCTAssertTrue(observedFeedback, "real native Paste must produce visible feedback after WebKit processes it")
+        let timed = glowSamples.compactMap { sample -> (time: Double, level: Double)? in
+            guard let time = sample["time"] as? Double, let level = sample["level"] as? Double else { return nil }
+            return (time, level)
+        }
         if expectedMotion {
-            XCTAssertTrue(positiveLevels.allSatisfy { abs($0 - 1) <= 0.01 },
-                          "Reduce Motion holds steady feedback instead of fading")
+            // Held at full strength for most of the 900 ms hold, then gone within the crossfade; both are measured through
+            // samples, so each allows for how late the slowest sample came.
+            let slack = max(0.4, zip(timed, timed.dropFirst()).map { $1.time - $0.time }.max() ?? 0)
+            let firstShown = timed.first { $0.level > 0 }?.time
+            let firstFading = timed.first { $0.level > 0 && $0.level < 0.99 }?.time
+            let firstGone = timed.first { $0.time > (firstShown ?? .infinity) && $0.level == 0 }?.time
+            XCTAssertNotNil(firstShown)
+            if let firstShown, let firstGone {
+                XCTAssertGreaterThanOrEqual((firstFading ?? firstGone) - firstShown, 0.9 - slack,
+                                            "Reduce Motion holds the feedback at full strength before it crossfades")
+                XCTAssertLessThanOrEqual(firstGone - (firstFading ?? firstGone), Double(crossfadeMs) / 1000 + slack,
+                                         "Reduce Motion clears the feedback with the reduced-motion crossfade, not a long fade")
+            }
         } else {
             XCTAssertGreaterThan((positiveLevels.max() ?? 0) - (positiveLevels.min() ?? 0), 0.03,
                                  "actual non-reduced feedback must fade after it begins, not relative to action dispatch")
