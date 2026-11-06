@@ -76,7 +76,7 @@ final class OuroMDDistributionTests: XCTestCase {
 
         let privacy = try XCTUnwrap(store["privacy"] as? [String: Any])
         XCTAssertEqual(privacy["collectsData"] as? Bool, false)
-        XCTAssertEqual(privacy["policyUrl"] as? String, "https://ouro.bot/privacy/")
+        XCTAssertEqual(privacy["policyUrl"] as? String, "https://github.com/ourostack/ouro-md/blob/main/PRIVACY.md")
 
         let exportCompliance = try XCTUnwrap(store["exportCompliance"] as? [String: Any])
         XCTAssertEqual(exportCompliance["usesEncryption"] as? Bool, true)

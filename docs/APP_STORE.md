@@ -27,9 +27,14 @@ Create or confirm the app record before uploading:
 - Platform: macOS
 - Category: Developer Tools
 - Price: Free
-- Support URL: `https://ouro.bot/support/`
-- Marketing URL: `https://ouro.bot/apps/ouro-md/`
-- Privacy Policy URL: `https://ouro.bot/privacy/`
+- Support URL: `https://github.com/ourostack/ouro-md/issues`
+- Marketing URL: `https://ouroboros.bot/ouro-md/`
+- Privacy Policy URL: `https://github.com/ourostack/ouro-md/blob/main/PRIVACY.md`
+
+These three were set on the live record (version 0.9.81 and its app info)
+through the App Store Connect API on 2026-11-06, when ouro.bot was folded into
+ouroboros.bot. No new version was needed. `distribution/apple-distribution.json`
+holds the same values, so the next submission's request plan sends them too.
 
 Recommended privacy answers for the App Store build:
 
