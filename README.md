@@ -1,6 +1,6 @@
 <!-- ourostack:brand:start -->
 <p align="center">
-  <a href="https://github.com/ourostack"><img src="https://raw.githubusercontent.com/ourostack/.github/main/brand/ouro-md.png" alt="Ouro MD" width="160" height="160"></a>
+  <a href="https://github.com/ourostack"><img src="https://raw.githubusercontent.com/ourostack/.github/main/brand/headers/ouro-md.webp" alt="Ouro reading a clean page on a wooden lectern beside a lamp and a cup of tea, with pages drifting through the dawn air" width="100%"></a>
 </p>
 <!-- ourostack:brand:end -->
 
