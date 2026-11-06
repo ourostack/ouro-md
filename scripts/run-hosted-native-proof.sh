@@ -61,7 +61,7 @@ if [[ "$mode" != accessibility ]]; then
   defaults write com.apple.universalaccess reduceTransparency -bool false
   if [[ "$mode" == media ]]; then
     export OURO_SITE_MEDIA=1 OURO_SITE_MEDIA_STANDARD_PROFILE=1
-    swift test --filter NativeSiteMediaCaptureTests
+    swift test --filter NativeSiteMedia
   else
     export OURO_HEADER_RENDERING=1 OURO_HEADER_STANDARD_PROFILE=1
     swift test --filter NativeHeaderRenderingTests

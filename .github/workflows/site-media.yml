@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'Tests/OuroMDTests/NativeSiteMediaCaptureTests.swift'
+      - 'Tests/OuroMDTests/NativeSiteMediaPeriscopeTests.swift'
       - 'Tests/OuroMDTests/NativeAccessibilityPreferenceTests.swift'
       - 'Tests/Fixtures/**'
       - 'scripts/run-hosted-native-proof.sh'
@@ -25,7 +26,7 @@ jobs:
       matrix:
         runner: [macos-26-intel]
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 25
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
         with:
