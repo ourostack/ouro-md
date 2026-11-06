@@ -2694,7 +2694,8 @@
     headingScrollTimer = setTimeout(function () { headingScrollTimer = null; updateActiveHeading(); }, 120);
   }, true);
 
-  // Show the page's scroll indicator while scrolling, then let it fade away.
+  // Show the scroll indicator while the page or a pane scrolls, then let it fade away.
+  // Capture, because element scroll events do not bubble.
   var scrollIndicatorTimer = null;
   window.addEventListener("scroll", function () {
     var text = document.querySelector(".vditor-reset") || document.body;
@@ -2704,7 +2705,7 @@
     scrollIndicatorTimer = setTimeout(function () {
       document.documentElement.classList.remove("ouro-scrolling");
     }, 1000);
-  }, { passive: true });
+  }, { passive: true, capture: true });
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", create);

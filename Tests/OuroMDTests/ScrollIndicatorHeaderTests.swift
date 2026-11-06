@@ -17,8 +17,8 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
         let previousPolicy = app.activationPolicy()
         app.setActivationPolicy(.prohibited)
         defer { app.setActivationPolicy(previousPolicy) }
-        // Source mode scrolls inside its split panes, which this change leaves alone.
-        for (theme, mode) in [("quartz", "ir"), ("graphite", "ir"), ("manuscript", "ir")] {
+        for (theme, mode) in [("quartz", "ir"), ("graphite", "ir"), ("manuscript", "ir"),
+                              ("quartz", "sv"), ("graphite", "sv")] {
             try await verifyIndicator(theme: theme, mode: mode)
         }
     }
@@ -52,14 +52,17 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
         let web = try XCTUnwrap(editor(in: host))
         XCTAssertEqual(web.obscuredContentInsets.top, 0, "the native inset would make the header glass opaque")
         model.bridge?.setMarkdown((1...120).map { "Paragraph \($0) of the scroll indicator fixture." }.joined(separator: "\n\n"))
+        // Source mode scrolls its preview pane; the page itself does not scroll.
+        let scroller = mode == "sv" ? "document.querySelector('.vditor-preview')" : "window"
+        let scrollHeight = mode == "sv" ? "document.querySelector('.vditor-preview').scrollHeight" : "document.documentElement.scrollHeight"
         for _ in 0..<100 {
-            let height = try await web.evaluateJavaScript("document.documentElement.scrollHeight")
+            let height = try await web.evaluateJavaScript("(\(scrollHeight)) || 0")
             if (height as? Double ?? 0) > 3000 { break }
             try await Task.sleep(for: .milliseconds(50))
         }
         for scrollTo in [0.0, 1200.0] {
             // Nudge first so the page reports a scroll even when it is already at the target.
-            _ = try await web.evaluateJavaScript("window.scrollTo(0, 10); window.scrollTo(0, \(scrollTo)); true")
+            _ = try await web.evaluateJavaScript("(() => { const s = \(scroller); s.scrollTo(0, 10); s.scrollTo(0, \(scrollTo)); return true; })()")
             try await Task.sleep(for: .milliseconds(300))
             let bitmap = try await snapshot(of: web)
             let scale = Double(bitmap.pixelsWide) / Double(web.bounds.width)
