@@ -9,6 +9,12 @@ on:
 permissions:
   contents: read
 
+# A new push to a pull request cancels its older run, so stale runs stop holding the organization's few macOS runners.
+# Pushes to main each keep their own group and are never cancelled.
+concurrency:
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   swift-test:
     name: Swift tests
