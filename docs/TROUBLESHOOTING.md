@@ -11,7 +11,7 @@ Ouro MD is currently ad-hoc signed, not Developer-ID signed or notarized. The
 recommended installer clears quarantine for the downloaded app:
 
 ```sh
-curl -fsSL https://ouro.bot/ouro-md-install.sh | bash
+curl -fsSL https://ouroboros.bot/ouro-md-install.sh | bash
 ```
 
 If the app was copied manually and macOS blocks it, remove quarantine from the
@@ -38,7 +38,7 @@ Useful checks:
 For installer issues, include the terminal output from:
 
 ```sh
-curl -fsSL https://ouro.bot/ouro-md-install.sh | OURO_MD_NO_OPEN=1 bash
+curl -fsSL https://ouroboros.bot/ouro-md-install.sh | OURO_MD_NO_OPEN=1 bash
 ```
 
 ## Save, Reload, Or File Tree Issues

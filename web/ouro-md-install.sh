@@ -2,7 +2,7 @@
 #
 # Ouro MD — one-line installer.
 #
-#   curl -fsSL https://ouro.bot/ouro-md-install.sh | bash
+#   curl -fsSL https://ouroboros.bot/ouro-md-install.sh | bash
 #
 # Direct GitHub fallback:
 #   curl -fsSL https://raw.githubusercontent.com/ourostack/ouro-md/main/web/ouro-md-install.sh | bash

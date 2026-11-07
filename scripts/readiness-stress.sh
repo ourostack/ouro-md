@@ -186,8 +186,8 @@ APP_PATH="$ROOT/OuroMD.app"
 {
   LIVE_INSTALL="$TMP_ROOT/live-install"
   mkdir -p "$LIVE_INSTALL"
-  curl -fsSL https://ouro.bot/ouro-md-install.sh | OURO_MD_INSTALL_DIR="$LIVE_INSTALL" OURO_MD_NO_OPEN=1 bash
-  curl -fsSL https://ouro.bot/ouro-md-install.sh | OURO_MD_INSTALL_DIR="$LIVE_INSTALL" OURO_MD_NO_OPEN=1 bash
+  curl -fsSL https://ouroboros.bot/ouro-md-install.sh | OURO_MD_INSTALL_DIR="$LIVE_INSTALL" OURO_MD_NO_OPEN=1 bash
+  curl -fsSL https://ouroboros.bot/ouro-md-install.sh | OURO_MD_INSTALL_DIR="$LIVE_INSTALL" OURO_MD_NO_OPEN=1 bash
   /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$LIVE_INSTALL/Ouro MD.app/Contents/Info.plist"
   /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$LIVE_INSTALL/Ouro MD.app/Contents/Info.plist"
   /usr/bin/codesign --verify --deep --strict "$LIVE_INSTALL/Ouro MD.app"

@@ -8,7 +8,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-url="${OURO_MD_INSTALLER_URL:-https://ouro.bot/ouro-md-install.sh}"
+url="${OURO_MD_INSTALLER_URL:-https://ouroboros.bot/ouro-md-install.sh}"
 expected_version="${OURO_MD_EXPECT_VERSION:-$(./scripts/verify-release-version.sh --print)}"
 attempts="${OURO_MD_INSTALLER_ATTEMPTS:-12}"
 sleep_seconds="${OURO_MD_INSTALLER_RETRY_SECONDS:-5}"
