@@ -2,12 +2,34 @@ name: Window chrome
 
 # Requires genuine document translucency without false top-edge reflections. Interactive tests run only on the hosted Mac.
 
+# Two tiers. The capture holds two of the organization's macOS slots for about 12 minutes, so a pull request runs it
+# only when it changes the window chrome itself: the window controller, the system design and themes, the page the
+# header sits over, or this proof's own scripts and tests. Every push to main that changes Sources runs the full
+# capture, so a header regression from any other file still turns main red. Owner of a red main: whoever merged the
+# change that turned it red (AGENTS.md, "CI tiers").
 on:
   pull_request:
+    paths:
+      - 'Sources/OuroMD/DocumentWindowController.swift'
+      - 'Sources/OuroMD/SystemDesign.swift'
+      - 'Sources/OuroMD/Themes.swift'
+      - 'Sources/OuroMD/web/index.html'
+      - 'make-app.sh'
+      - 'Package.swift'
+      - 'Package.resolved'
+      - 'scripts/capture-window-chrome.sh'
+      - 'scripts/run-hosted-native-proof.sh'
+      - 'scripts/lib/window-id.swift'
+      - '.github/workflows/window-chrome.yml'
+      - 'Tests/OuroMDTests/NativeHeaderRenderingTests.swift'
+      - 'Tests/OuroMDTests/FullscreenBackdropTests.swift'
+  push:
+    branches: [main]
     paths:
       - 'Sources/**'
       - 'make-app.sh'
       - 'Package.swift'
+      - 'Package.resolved'
       - 'scripts/capture-window-chrome.sh'
       - 'scripts/run-hosted-native-proof.sh'
       - 'scripts/lib/window-id.swift'
@@ -19,9 +41,11 @@ on:
 permissions:
   contents: read
 
+# A newer push to a pull request cancels its older capture. Pushes to main keep one group per commit and are never
+# cancelled.
 concurrency:
-  group: native-window-chrome-${{ github.ref }}
-  cancel-in-progress: true
+  group: native-window-chrome-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   capture:
