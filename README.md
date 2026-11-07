@@ -4,9 +4,15 @@
 </p>
 <!-- ourostack:brand:end -->
 
-# ouro-md
+# Ouro MD
 
 A minimalist, beautiful, themable Markdown editor that's native to macOS.
+
+[Download for Mac](https://ouroboros.bot/ouro-md/download/) · [ouroboros.bot/ouro-md](https://ouroboros.bot/ouro-md/) · [Releases](https://github.com/ourostack/ouro-md/releases) · [More from Ouro](https://github.com/ourostack)
+
+```sh
+curl -fsSL https://ouroboros.bot/ouro-md-install.sh | bash
+```
 
 ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
 in careful typography on a centered page. Type Markdown and watch it render in
