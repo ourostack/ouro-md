@@ -12,7 +12,7 @@ ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
 in careful typography on a centered page. Type Markdown and watch it render in
 place — switch themes live, and read the same document four different ways.
 
-> **Status:** v0.9.112. Reads and edits Markdown today. Release tooling produces Developer-ID signed/notarized public artifacts — see [First launch](#first-launch).
+> **Status:** v0.9.113. Reads and edits Markdown today. Release tooling produces Developer-ID signed/notarized public artifacts — see [First launch](#first-launch).
 
 ---
 
@@ -48,7 +48,7 @@ place — switch themes live, and read the same document four different ways.
 **One line (recommended) — no checkout needed:**
 
 ```sh
-curl -fsSL https://ouro.bot/ouro-md-install.sh | bash
+curl -fsSL https://ouroboros.bot/ouro-md-install.sh | bash
 ```
 
 Downloads the latest [release](https://github.com/ourostack/ouro-md/releases),
@@ -59,7 +59,7 @@ it any time to update to the latest release, or use **Ouro MD ▸ Check for Upda
 inside the direct-download app.
 
 Prefer a Finder install? Download the signed, notarized DMG from
-`https://ouro.bot/apps/ouro-md/` or the latest GitHub release, then drag
+`https://ouroboros.bot/ouro-md/download/` or the latest GitHub release, then drag
 **Ouro MD.app** to Applications.
 
 **From source (for development):**

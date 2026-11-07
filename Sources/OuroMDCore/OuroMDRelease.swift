@@ -4,11 +4,12 @@ public enum OuroMDRelease {
     public static let appName = "Ouro MD"
     public static let bundleIdentifier = "bot.ouro.md"
     public static let repository = "ourostack/ouro-md"
-    public static let version = "0.9.112"
+    public static let version = "0.9.113"
     public static let userAgent = "OuroMD/\(version)"
-    public static let releaseDate = "2026-11-06"
+    public static let releaseDate = "2026-11-07"
     public static let positioningSubtitle = "Local Markdown workspace for Mac files."
     public static let releaseHighlights = [
+        "The one-line installer now lives at ouroboros.bot/ouro-md-install.sh, and the download page at ouroboros.bot/ouro-md/download/. The old ouro.bot addresses forward there.",
         "Source mode now shows a scroll indicator on its preview pane, starting below the header.",
         "The scroll indicator now starts below the header instead of sliding under it.",
         "Agents can now read and edit your notes: run ouro-md --mcp --root <folder> to give Claude or another MCP client a folder, and replacing a whole document still asks you first.",
