@@ -3,8 +3,9 @@ name: Window chrome
 # Requires genuine document translucency without false top-edge reflections. Interactive tests run only on the hosted Mac.
 
 # Two tiers. The capture holds two of the organization's macOS slots for about 12 minutes, so a pull request runs it
-# only when it changes the window chrome itself: the window controller, the system design and themes, the page the
-# header sits over, or this proof's own scripts and tests. Every push to main that changes Sources runs the full
+# only when it changes the window chrome itself: the window controller, the system design and themes, the sidebar,
+# the editor web view and the page under the header (its HTML and scripts, where past header fixes landed: #128,
+# #132, #143, #150, #151), or this proof's own scripts and tests. Every push to main that changes Sources runs the full
 # capture, so a header regression from any other file still turns main red. Owner of a red main: whoever merged the
 # change that turned it red (AGENTS.md, "CI tiers").
 on:
@@ -13,7 +14,10 @@ on:
       - 'Sources/OuroMD/DocumentWindowController.swift'
       - 'Sources/OuroMD/SystemDesign.swift'
       - 'Sources/OuroMD/Themes.swift'
+      - 'Sources/OuroMD/Sidebar.swift'
+      - 'Sources/OuroMD/EditorWebView.swift'
       - 'Sources/OuroMD/web/index.html'
+      - 'Sources/OuroMD/web/*.js'
       - 'make-app.sh'
       - 'Package.swift'
       - 'Package.resolved'
