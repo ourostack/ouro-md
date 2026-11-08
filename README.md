@@ -6,19 +6,24 @@
 
 # Ouro MD
 
-A minimalist, beautiful, themable Markdown editor that's native to macOS.
+**A minimalist, themable Markdown editor native to macOS, made for reading what your agents write.**
 
 [Download for Mac](https://ouroboros.bot/ouro-md/download/) · [ouroboros.bot/ouro-md](https://ouroboros.bot/ouro-md/) · [Releases](https://github.com/ourostack/ouro-md/releases) · [More from Ouro](https://github.com/ourostack)
 
-```sh
-curl -fsSL https://ouroboros.bot/ouro-md-install.sh | bash
-```
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme-agent-plan-dark.png">
+    <img src="docs/images/readme-agent-plan-light.png" alt="Ouro MD showing an agent's plan: a table of test recipes and a checklist of next steps, set on a quiet page" width="600">
+  </picture>
+</p>
 
-ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
+Ouro MD keeps the chrome out of your way: no busy toolbar, just your words set
 in careful typography on a centered page. Type Markdown and watch it render in
 place — switch themes live, and read the same document four different ways.
 
-> **Status:** v0.9.113. Reads and edits Markdown today. Release tooling produces Developer-ID signed/notarized public artifacts — see [First launch](#first-launch).
+**Agents:** `ouro-md --mcp --root <folder>` serves a folder of Markdown to an agent over MCP ([how](#siri-shortcuts-and-agents)).
+
+> **Status:** reads and edits Markdown today, signed and notarized for Mac. See [First launch](#first-launch).
 
 ---
 
