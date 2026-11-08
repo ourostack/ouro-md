@@ -4,22 +4,32 @@
 </p>
 <!-- ourostack:brand:end -->
 
-# ouro-md
+# Ouro MD
 
-A minimalist, beautiful, themable Markdown editor that's native to macOS.
+**A minimalist, themable Markdown editor native to macOS, made for reading what your agents write.**
 
-ouro-md keeps the chrome out of your way: no busy toolbar, just your words set
+[Download for Mac](https://ouroboros.bot/ouro-md/download/) · [ouroboros.bot/ouro-md](https://ouroboros.bot/ouro-md/) · [Releases](https://github.com/ourostack/ouro-md/releases) · [More from Ouro](https://github.com/ourostack)
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme-agent-plan-dark.png">
+    <img src="docs/images/readme-agent-plan-light.png" alt="Ouro MD showing an agent's plan: a table of test recipes and a checklist of next steps, set on a quiet page" width="600">
+  </picture>
+</p>
+
+Ouro MD keeps the chrome out of your way: no busy toolbar, just your words set
 in careful typography on a centered page. Type Markdown and watch it render in
 place — switch themes live, and read the same document four different ways.
 
-> **Status:** v0.9.113. Reads and edits Markdown today. Release tooling produces Developer-ID signed/notarized public artifacts — see [First launch](#first-launch).
+**Agents:** `"/Applications/Ouro MD.app/Contents/MacOS/ouro-md" --mcp --root <folder>` serves a folder of Markdown to an agent over MCP ([how](#siri-shortcuts-and-agents)).
+
+> **Status:** v0.9.113. Reads and edits Markdown today, signed and notarized for Mac. See [Install](#install).
 
 ---
 
 ## Features
 
-- **Instant rendering.** Type Markdown and see it render in place (live-preview
-  "IR" mode), with syntax markers kept subtle. Also offers WYSIWYG and
+- **Instant rendering.** Type Markdown and see it render in place (live preview), with syntax markers kept subtle. Also offers WYSIWYG and
   Split (source + preview) modes.
 - **Beautiful, themable.** Four built-in themes — **Quartz** (calm light),
   **Graphite** (focused dark), **Manuscript** (warm serif), and **Newsprint**
@@ -37,7 +47,7 @@ place — switch themes live, and read the same document four different ways.
   compact **status bar** (word/char count, mode, theme) sits a toggle away
   (**View ▸ Toggle Status Bar**) and is hidden by default.
 - **Export.** Save to themed, self-contained **HTML** or **PDF**.
-- **Print layout.** **File ▸ Print…** and **File ▸ Export ▸ PDF…** share a readable page preview with margins, font size, line spacing, page navigation and zoom. Choose **Page-bottom footnotes**, **Endnotes** or **Original links** under **Citations**; generated sources include web, email, phone and local or relative file destinations, so check that choice before sharing output. **New page before** starts each selected heading level on a fresh page; authored `<div class="page-break"></div>` and `<!-- pagebreak -->` markers also work. Use **Page Setup…** for paper size and orientation. The first page appears while the remaining pages prepare, and you can request output without waiting for the whole preview; only the complete document with your final settings is printed or exported. Folded sections expand in the print copy so their content is not silently omitted. Print settings do not change your Markdown or reading view.
+- **Print layout.** **File ▸ Print…** and **File ▸ Export ▸ PDF…** share a page preview with margins, font size, line spacing and zoom. Links can become page-bottom footnotes, endnotes or stay as they are, and **New page before** starts chosen heading levels on a fresh page. Printing never changes your Markdown.
 - **Images that just work.** Pasted or dropped images are embedded inline (as
   data URIs) — no upload server, no broken links.
 - **Headless render.** `ouro-md --render file.md` prints a styled HTML document
