@@ -297,7 +297,7 @@ and replace your Markdown documents. They follow [Ouro AX for Apple](https://git
 - **Replace asks first.** Replacing a whole document asks you to confirm; adding to one doesn't, and either is one
   undo in an open window.
 - **App skills.** `Resources/Skills.skillsbundle` tells Siri how to use the intents (macOS 27.3 and later).
-- **The X-ray.** CI's `AX X-ray` job builds the app, runs ouro-ui-apple's `ouro-ax-xray` on it and checks the result
+- **The X-ray.** CI's `App bundle` job builds the app, runs ouro-ui-apple's `ouro-ax-xray` on it and checks the result
   against `config/xray-expected.json`, which lists each claim that holds and why each other one can't yet.
 
 ### Agents over MCP

@@ -6,6 +6,12 @@
 - Keep Ouro MD-specific mappings in `Sources/OuroMD/OuroMDShellAdapter.swift`. If a new shared-looking surface needs glue, add the adapter there first; if it needs reusable behavior, move the behavior to `ouro-native-apple-app-shell` before using it in-app.
 - `scripts/check-shell-boundary.sh` is part of CI/preflight. Do not bypass it with an allowlist row unless the code is truly document-editor domain behavior or a narrow adapter.
 
+## CI tiers
+
+- Pull requests run the four required checks (`Swift tests`, `Native scenario verifier`, `App bundle`, `Coverage`), plus the hosted window-chrome capture only when a pull request changes the window chrome itself (`window-chrome.yml` lists the paths).
+- Every push to `main` that changes `Sources/` runs the full window-chrome capture. A red `main` run is fixed by whoever merged the change that turned it red, before their next pull request; if that agent is gone, the next agent to open a pull request here owns it.
+- Don't add a macOS job to every pull request when a step in an existing job will do: the organization shares five macOS slots, and each extra job waits for one.
+
 ## CI runners
 
 - Pull request jobs run on GitHub's free runners only (`macos-26`, `macos-26-intel`, `macos-15`; `ubuntu-latest` for anything that needs no Mac). Never put `xcode-27` on a pull request job; `scripts/check-ci-runners.py` enforces it.
