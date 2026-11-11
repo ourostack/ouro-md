@@ -27,3 +27,6 @@ worker/tasks/*/render-fixture.png
 .DS_Store
 .playwright-mcp/
 report.*.json
+
+# App Store frame renderer (scripts/store-frames)
+scripts/store-frames/node_modules/

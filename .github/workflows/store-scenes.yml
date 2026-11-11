@@ -1,0 +1,113 @@
+name: Store scenes
+
+# The Mac App Store screenshots and art, made from the commit: NativeStoreScenesTests photographs the real app window
+# on the Lantern Night folder (distribution/app-store/scenes), then scripts/store-frames/render.mjs frames each scene
+# with its caption from distribution/app-store/frames/spec.json, twice, and fails unless both renders match byte for
+# byte. The framed set is the store-frames artifact that staging uploads (docs/APP_STORE.md, "Store listing").
+#
+# The capture holds one macOS slot for about 15 minutes, so a pull request runs it only when it changes the scenes,
+# the frames or this workflow. Every push to main that changes Sources photographs again, so the artifact on main
+# always shows the app as it is.
+on:
+  pull_request:
+    paths:
+      - 'Tests/OuroMDTests/NativeStoreScenesTests.swift'
+      - 'distribution/app-store/**'
+      - 'scripts/store-frames/**'
+      - 'scripts/lib/display-mode.swift'
+      - 'scripts/run-hosted-native-proof.sh'
+      - '.github/workflows/store-scenes.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'Sources/**'
+      - 'Package.swift'
+      - 'Package.resolved'
+      - 'Tests/OuroMDTests/NativeStoreScenesTests.swift'
+      - 'distribution/app-store/**'
+      - 'scripts/store-frames/**'
+      - 'scripts/lib/display-mode.swift'
+      - '.github/workflows/store-scenes.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: store-scenes-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  scenes:
+    name: Photograph the scenes
+    runs-on: macos-26
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - name: Toolchain and display
+        run: |
+          sw_vers
+          xcodebuild -version
+          system_profiler SPDisplaysDataType
+      # A Retina mode, when the hosted display offers one, gives 2880x1800 scenes; otherwise they are 1440x900.
+      - name: Pick the sharpest display mode that fits a 1440x900 window
+        run: swift scripts/lib/display-mode.swift --best 1440 900
+      - name: Photograph the real app window
+        env:
+          OURO_NATIVE_PREFERENCE_PROOF: '1'
+          OURO_STORE_SCENES_OUTPUT: .build/store-scenes
+          OURO_MD_TELEMETRY_DISABLED: '1'
+        run: ./scripts/run-hosted-native-proof.sh store
+      - name: Restore owned preferences after an interrupted capture
+        if: always()
+        env:
+          OURO_NATIVE_PREFERENCE_PROOF: '1'
+          OURO_STORE_SCENES_OUTPUT: .build/store-scenes
+        run: ./scripts/run-hosted-native-proof.sh store --restore
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: store-scenes
+          path: |
+            .build/store-scenes/mac
+            .build/store-scenes/scenes.json
+          if-no-files-found: error
+
+  frames:
+    name: Frame the scenes
+    needs: scenes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v7
+        with:
+          name: store-scenes
+          path: .build/store-scenes
+      - name: Install the renderer
+        working-directory: scripts/store-frames
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install chromium
+      - name: Test the renderer
+        working-directory: scripts/store-frames
+        run: npm test
+      - name: Frame twice and compare
+        run: |
+          cat .build/store-scenes/scenes.json
+          node scripts/store-frames/render.mjs --scenes .build/store-scenes --out .build/store-frames --check
+          {
+            echo '### Store frames'
+            echo
+            echo '```'
+            jq -r '.frames | to_entries[] | "\(.value)  \(.key)"' .build/store-frames/manifest.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: store-frames
+          path: |
+            .build/store-frames/**/*.png
+            .build/store-frames/manifest.json
+            !.build/store-frames/.again/**
+          if-no-files-found: error

@@ -1,0 +1,12 @@
+{
+  "name": "ouro-md-store-frames",
+  "private": true,
+  "type": "module",
+  "description": "Frames the App Store scenes deterministically (render.mjs).",
+  "scripts": {
+    "test": "node --test test/render.test.mjs"
+  },
+  "dependencies": {
+    "playwright": "1.64.1"
+  }
+}
