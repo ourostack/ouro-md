@@ -19,6 +19,10 @@ if hasFlag("--help") || hasFlag("-h") {
     print(OuroCLI.helpText)
     exit(0)
 }
+if hasFlag("--mcp") {
+    // The MCP door: stdin and stdout belong to the protocol, so this runs before anything can print.
+    MainActor.assumeIsolated { OuroMDMCPServer.run(arguments: rawArgs) }
+}
 if hasFlag("--version") {
     print("ouro-md \(OuroCLI.versionDescription)")
     exit(0)

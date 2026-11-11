@@ -14,6 +14,15 @@ final class HeadlessHostWindow: NSWindow {
     }
 }
 
+final class NonActivatingHeadlessHostWindow: NSWindow {
+    override var canBecomeKey: Bool { false }
+    override var canBecomeMain: Bool { false }
+
+    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
+        frameRect
+    }
+}
+
 /// Shared setup for the headless CLI harnesses (`--tablewraptest`, `--undotest`,
 /// `--renderprobe`, …). These drive a real WebKit surface for probing, not to show
 /// UI — so they must never grab a Dock icon, pop a window onto the user's screen,
@@ -38,6 +47,18 @@ enum HeadlessHarness {
         window.contentView = view
         window.setFrameOrigin(NSPoint(x: -30000, y: -30000))
         window.makeKeyAndOrderFront(nil)
+        retainedWindows.append(window)
+        return window
+    }
+
+    @discardableResult
+    static func nonPresentingHost(_ view: NSView, size: NSSize) -> NSWindow {
+        let window = NonActivatingHeadlessHostWindow(contentRect: NSRect(x: -30000, y: -30000, width: size.width, height: size.height), styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.alphaValue = 0
+        window.ignoresMouseEvents = true
+        window.contentView = view
+        window.orderFront(nil)
         retainedWindows.append(window)
         return window
     }

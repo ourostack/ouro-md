@@ -47,6 +47,12 @@
       "privacy": "Prints local bundle/resource paths for packaging diagnostics."
     },
     {
+      "flag": "--mcp",
+      "category": "public-maintainer-cli",
+      "source": "Sources/OuroMD/main.swift",
+      "privacy": "Serves MCP over stdio to the agent that launched it: lists, reads and writes Markdown files only under the caller-provided --root folders, and sends nothing over the network."
+    },
+    {
       "flag": "--list-themes",
       "category": "public-maintainer-cli",
       "source": "Sources/OuroMD/main.swift",

@@ -60,8 +60,8 @@ final class OuroMDAppStoreRequestPlanTests: XCTestCase {
         XCTAssertEqual(versionLocalizationAttributes["promotionalText"], "Local Markdown workspace for Mac files: folder search, outline, command palette, themes, PDF/HTML export, no account.")
         XCTAssertTrue(versionLocalizationAttributes["description"]?.hasPrefix("Ouro MD is a local Markdown workspace") == true)
         XCTAssertEqual(versionLocalizationAttributes["keywords"], "markdown,local files,folder search,outline,command palette,pdf,html export,gfm,mac")
-        XCTAssertEqual(versionLocalizationAttributes["supportUrl"], "https://ouro.bot/support/")
-        XCTAssertEqual(versionLocalizationAttributes["marketingUrl"], "https://ouro.bot/apps/ouro-md/")
+        XCTAssertEqual(versionLocalizationAttributes["supportUrl"], "https://github.com/ourostack/ouro-md/issues")
+        XCTAssertEqual(versionLocalizationAttributes["marketingUrl"], "https://ouroboros.bot/ouro-md/")
         XCTAssertTrue(versionLocalizationAttributes["whatsNew"]?.localizedCaseInsensitiveContains("local Markdown files") == true)
         XCTAssertEqual(
             relationshipId(versionLocalizationData, relationship: "appStoreVersion", type: "appStoreVersions"),
@@ -77,7 +77,7 @@ final class OuroMDAppStoreRequestPlanTests: XCTestCase {
         XCTAssertEqual(appInfoLocalizationData["attributes"] as? [String: String], [
             "name": "Ouro MD",
             "subtitle": "Local Markdown Workspace",
-            "privacyPolicyUrl": "https://ouro.bot/privacy/"
+            "privacyPolicyUrl": "https://github.com/ourostack/ouro-md/blob/main/PRIVACY.md"
         ])
 
         let updateAppCategory = try request(in: requests, id: "update-app-category")
@@ -144,7 +144,7 @@ final class OuroMDAppStoreRequestPlanTests: XCTestCase {
         XCTAssertEqual(data["attributes"] as? [String: String], [
             "name": "Ouro MD",
             "subtitle": "Local Markdown Workspace",
-            "privacyPolicyUrl": "https://ouro.bot/privacy/"
+            "privacyPolicyUrl": "https://github.com/ourostack/ouro-md/blob/main/PRIVACY.md"
         ])
     }
 

@@ -25,7 +25,8 @@ final class ThemeAccessibilityTests: XCTestCase {
         for id in ["quartz", "graphite", "manuscript", "newsprint"] {
             let css = ThemeStore.shared.theme(id: id).editorCSS
             XCTAssertTrue(css.contains("@media (prefers-reduced-motion:reduce)"), "\(id) missing reduced-motion media query")
-            XCTAssertTrue(css.contains("transition:none!important"), "\(id) missing focus transition disable")
+            // Ouro HX's Reduce Motion rule: focus dimming crossfades over OuroMotion.reducedMotionCrossfade, never animates.
+            XCTAssertTrue(css.contains("transition:opacity \(reducedMotionCrossfadeCSS) ease-in-out!important"), "\(id) missing the reduced-motion crossfade")
         }
     }
 

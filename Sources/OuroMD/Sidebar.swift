@@ -441,7 +441,7 @@ struct EditorPane: View {
     }
 
     /// Only the document backdrop extends under native chrome. Floating editor
-    /// controls stay in the safe area; WebKit owns first-line/caret avoidance.
+    /// controls stay in the safe area; flow and scroll padding keep editing clear.
     @ViewBuilder private func editor(topInset: CGFloat) -> some View {
         VStack(spacing: 0) {
             ZStack {

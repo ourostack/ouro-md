@@ -86,7 +86,15 @@ test("only reached marks clear after scrolling past", () => {
   assert.equal(passed({ seen: true }, { top: -100, bottom: 700 }, 600), false);
 });
 
-test("a reached cue remains while visible at the native viewport top", () => {
+test("a reached cue remains visible in a viewport without overlapping chrome", () => {
   assert.equal(typeof context.window.OuroChangeMarks?.passed, "function");
   assert.equal(context.window.OuroChangeMarks.passed({ seen: true }, { top: 10, bottom: 30 }, 600), false);
+});
+
+test("reached cues clear behind the header but remain while partially exposed", () => {
+  const passed = context.window.OuroChangeMarks.passed;
+  assert.equal(passed({ seen: true }, { top: 10, bottom: 40 }, 600, 52), true);
+  assert.equal(passed({ seen: false }, { top: 10, bottom: 40 }, 600, 52), false);
+  assert.equal(passed({ seen: true }, { top: 40, bottom: 80 }, 600, 52), false);
+  assert.equal(passed({ seen: true }, { top: 52, bottom: 100 }, 600, 52), false);
 });

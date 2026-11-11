@@ -1,4 +1,5 @@
 import AppKit
+import OuroHX
 import OuroMDAppSupport
 import SwiftUI
 import WebKit
@@ -14,7 +15,7 @@ struct EditorWebView: NSViewRepresentable {
         let configuration = WKWebViewConfiguration()
         let controller = WKUserContentController()
         controller.addUserScript(WKUserScript(
-            source: Self.initialThemeBootstrapScript(for: model.theme),
+            source: Self.initialThemeBootstrapScript(for: model.theme, headerInset: headerInset / CGFloat(model.zoom)),
             injectionTime: .atDocumentStart,
             forMainFrameOnly: true
         ))
@@ -35,8 +36,8 @@ struct EditorWebView: NSViewRepresentable {
         EditorZoom.apply(model.zoom, to: webView)
         webView.allowsBackForwardNavigationGestures = false
         webView.registerForDraggedTypes([.fileURL])
-
         context.coordinator.webView = webView
+        context.coordinator.setHeaderInset(headerInset)
         context.coordinator.observeWritingTools(on: webView)
         model.bridge = context.coordinator
 
@@ -45,29 +46,25 @@ struct EditorWebView: NSViewRepresentable {
             // references by absolute or (resolved) relative file paths.
             webView.loadFileURL(indexURL, allowingReadAccessTo: URL(fileURLWithPath: "/"))
         }
-        if #available(macOS 26, *) {
-            let extensionView = DocumentBackgroundExtensionView()
-            extensionView.automaticallyPlacesContentView = false
-            extensionView.headerInset = headerInset
-            extensionView.contentView = webView
-            return extensionView
-        }
         return webView
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
         guard let webView = context.coordinator.webView else { return }
         Self.applyLayerBackground(model.theme.backgroundHex, to: webView)
-        if #available(macOS 26, *), let extensionView = nsView as? DocumentBackgroundExtensionView {
-            extensionView.headerInset = headerInset
-            extensionView.needsLayout = true
-        }
+        context.coordinator.setHeaderInset(headerInset)
     }
 
-    static func initialThemeBootstrapScript(for theme: Theme) -> String {
+    /// Ouro HX's motion for the editor page: under Reduce Motion, what moves becomes a crossfade of this length.
+    static var motionTokens: String {
+        "{reducedMotionCrossfadeMs:\(Int((OuroMotion.reducedMotionCrossfade * 1000).rounded()))}"
+    }
+
+    static func initialThemeBootstrapScript(for theme: Theme, headerInset: CGFloat = 0) -> String {
         let codeTheme = theme.uiMode == "dark" ? "github-dark" : "github"
         return """
         (function () {
+          window.__ouroMotion = \(motionTokens);
           var theme = {
             uiMode: \(Coordinator.jsString(theme.uiMode)),
             codeTheme: \(Coordinator.jsString(codeTheme)),
@@ -96,6 +93,9 @@ struct EditorWebView: NSViewRepresentable {
           setBackground(document.documentElement);
           ensureInitialBackgroundStyle();
           function applyInitialTheme() {
+            if (document.documentElement && !document.documentElement.style.getPropertyValue("--ouro-header-inset")) {
+              document.documentElement.style.setProperty("--ouro-header-inset", "\(headerInset)px");
+            }
             var target = document.head || document.documentElement;
             var tag = document.getElementById("ouro-theme");
             if (!tag && target) {
@@ -127,16 +127,30 @@ struct EditorWebView: NSViewRepresentable {
         let model: AppModel
         let externalURLOpener: (URL) -> Void
         let anchorScroller: ((String) -> Void)?
+        let printSettingsStore: PrintLayoutSettingsStore
+        var onPrintPhase: (@MainActor (PrintPreviewPhase) -> Void)?
+        var profilePrintLayout = false
+        private(set) var printPreparationProfile: [String: Double] = [:]
+        var printPresentation = PrintLayoutSession.Presentation.sheet
+        let pageSetupChooser: (NSPrintInfo) -> Bool
+        let printPanelChooser: (NSPrintInfo) -> Bool
         weak var webView: WKWebView?
+        private var headerInset: CGFloat = 0
 
         init(
             model: AppModel,
             externalURLOpener: @escaping (URL) -> Void = { _ = NSWorkspace.shared.open($0) },
-            anchorScroller: ((String) -> Void)? = nil
+            anchorScroller: ((String) -> Void)? = nil,
+            printSettingsStore: PrintLayoutSettingsStore = PrintLayoutSettingsStore(),
+            pageSetupChooser: @escaping (NSPrintInfo) -> Bool = { NSPageLayout().runModal(with: $0) == NSApplication.ModalResponse.OK.rawValue },
+            printPanelChooser: @escaping (NSPrintInfo) -> Bool = { NSPrintPanel().runModal(with: $0) == NSApplication.ModalResponse.OK.rawValue }
         ) {
             self.model = model
             self.externalURLOpener = externalURLOpener
             self.anchorScroller = anchorScroller
+            self.printSettingsStore = printSettingsStore
+            self.pageSetupChooser = pageSetupChooser
+            self.printPanelChooser = printPanelChooser
         }
 
         // MARK: JS -> native
@@ -146,6 +160,7 @@ struct EditorWebView: NSViewRepresentable {
             guard let body = message.body as? [String: Any], let type = body["type"] as? String else { return }
             switch type {
             case "ready":
+                applyHeaderInset()
                 model.editorDidBecomeReady()
             case "dirty":
                 if let dirty = body["dirty"] as? Bool { model.setDirty(dirty) }
@@ -236,9 +251,35 @@ struct EditorWebView: NSViewRepresentable {
         }
 
         func getHTML(_ completion: @escaping (String?) -> Void) {
-            guard let webView else { completion(nil); return }
-            webView.evaluateJavaScript("window.ouro ? window.ouro.getHTML() : null") { result, _ in
-                completion(result as? String)
+            getHTML(profilePreparation: false) { body, _ in completion(body) }
+        }
+
+        private func getHTML(profilePreparation: Bool, _ completion: @escaping (String?, [String: Double]) -> Void) {
+            guard let webView else { completion(nil, [:]); return }
+            let requested = profilePreparation ? floor(Date().timeIntervalSince1970 * 1_000) : 0
+            let script = profilePreparation ? """
+            (function(){
+              var entered=Date.now();
+              var body=window.ouro ? window.ouro.getHTML(true) : null;
+              return {body:body,entered:entered,finished:Date.now(),profile:window.__ouroPrintHTMLProfile};
+            })()
+            """ : "window.ouro ? window.ouro.getHTML(false) : null"
+            webView.evaluateJavaScript(script) { result, _ in
+                guard profilePreparation else { completion(result as? String, [:]); return }
+                let returned = floor(Date().timeIntervalSince1970 * 1_000)
+                let payload = result as? [String: Any]
+                var timings: [String: Double] = [:]
+                if let entered = payload?["entered"] as? Double,
+                   let finished = payload?["finished"] as? Double,
+                   let profile = payload?["profile"] as? [String: Double],
+                   let render = profile["render_html"], let normalize = profile["normalize_headings"] {
+                    // Queue and return transfer use millisecond wall clocks across the WebKit process boundary.
+                    timings["html_queue"] = entered - requested
+                    timings["html_render"] = render
+                    timings["html_normalize"] = normalize
+                    timings["html_return_transfer"] = returned - finished
+                }
+                completion(payload?["body"] as? String, timings)
             }
         }
 
@@ -350,10 +391,186 @@ struct EditorWebView: NSViewRepresentable {
         }
 
         func printDocument() {
-            guard let webView, let window = webView.window else { return }
-            let operation = webView.printOperation(with: NSPrintInfo.shared)
-            operation.view?.frame = webView.bounds
-            operation.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
+            guard let webView, let window = webView.window else {
+                reportPrintError(PrintLayoutSession.SessionError.unavailable("No editor window is available for printing."))
+                return
+            }
+            if let existing = PrintLayoutSession.activeSession(for: window) {
+                if existing.isPrintRequest {
+                    existing.bringToFront()
+                } else {
+                    reportPrintError(PrintLayoutSession.SessionError.unavailable("Another print or export request is already open for this document."))
+                }
+                return
+            }
+            makeInteractivePrintSession(parentWindow: window, action: .print).begin()
+        }
+
+        func exportPDF(
+            to url: URL,
+            settings: PrintLayoutSettings? = nil,
+            completion: @escaping (Result<Bool, Error>) -> Void
+        ) {
+            if let settings {
+                preparePrintDocument(settings: settings) { result in
+                    switch result {
+                    case .failure(let error):
+                        completion(.failure(error))
+                    case .success(let prepared):
+                        Task { @MainActor in
+                            defer { prepared.releaseHold() }
+                            do {
+                                try await prepared.writePDF(to: url)
+                                completion(.success(true))
+                            } catch {
+                                completion(.failure(error))
+                            }
+                        }
+                    }
+                }
+                return
+            }
+            guard let webView, let window = webView.window else {
+                completion(.failure(PrintLayoutSession.SessionError.unavailable("No editor window is available for interactive PDF export.")))
+                return
+            }
+            guard PrintLayoutSession.activeSession(for: window) == nil, window.attachedSheet == nil else {
+                completion(.failure(PrintLayoutSession.SessionError.unavailable("Another sheet or print layout is already open for this document.")))
+                return
+            }
+            makeInteractivePrintSession(parentWindow: window, action: .export(url, completion)).begin()
+        }
+
+        private func makeInteractivePrintSession(parentWindow: NSWindow, action: PrintLayoutSession.Action) -> PrintLayoutSession {
+            PrintLayoutSession(
+                settings: printSettingsStore.load(),
+                printInfo: .shared,
+                documentLoader: { [weak self] settings, info, onPhase in
+                    guard let self else { throw PrintLayoutSession.SessionError.unavailable("The editor is no longer available.") }
+                    self.printPreparationProfile = [:]
+                    let htmlStart = self.profilePrintLayout ? ProcessInfo.processInfo.systemUptime : nil
+                    let body = try await self.printHTML()
+                    if let htmlStart { self.printPreparationProfile["html_callback"] = (ProcessInfo.processInfo.systemUptime - htmlStart) * 1_000 }
+                    try Task.checkCancellation()
+                    let typographyStart = self.profilePrintLayout ? ProcessInfo.processInfo.systemUptime : nil
+                    let typography = try self.activePrintTypography()
+                    if let typographyStart { self.printPreparationProfile["typography_snapshot"] = (ProcessInfo.processInfo.systemUptime - typographyStart) * 1_000 }
+                    return try await PrintDocumentRenderer(profileLayout: self.profilePrintLayout).prepareDocument(
+                        bodyHTML: body, title: self.model.windowTitle,
+                        baseURL: self.model.currentURL?.deletingLastPathComponent(),
+                        settings: settings, printInfo: info,
+                        typography: typography,
+                        onPhase: onPhase
+                    )
+                },
+                parentWindow: parentWindow, action: action,
+                settingsStore: printSettingsStore,
+                pageSetupChooser: pageSetupChooser, printPanelChooser: printPanelChooser,
+                reportError: { [weak self] _, error in self?.reportPrintError(error) },
+                telemetry: { [weak self] event, properties in self?.model.telemetryHandler?(event, properties) },
+                onPhase: onPrintPhase,
+                presentation: printPresentation
+            )
+        }
+
+        private func activePrintTypography() throws -> PrintThemeTypography {
+            // Source mode prints rendered-document type, not the raw Markdown editor's monospace UI.
+            try PrintThemeTypography(theme: model.theme, editorMode: model.mode == "wysiwyg" ? .wysiwyg : .ir, onFontResourcesPrepared: profilePrintLayout ? { milliseconds in
+                self.printPreparationProfile["font_resources"] = milliseconds
+            } : nil)
+        }
+
+        @MainActor
+        private final class PrintHTMLRequest {
+            var continuation: CheckedContinuation<String, Error>?
+            var cancelled = false
+
+            func cancel() {
+                cancelled = true
+                let pending = continuation
+                continuation = nil
+                pending?.resume(throwing: CancellationError())
+            }
+
+            func resolve(_ body: String?) {
+                guard let pending = continuation else { return }
+                continuation = nil
+                if let body {
+                    pending.resume(returning: body)
+                } else {
+                    pending.resume(throwing: PrintLayoutSession.SessionError.unavailable("Print preview HTML is unavailable."))
+                }
+            }
+        }
+
+        @MainActor
+        private func printHTML() async throws -> String {
+            guard webView != nil else { throw PrintLayoutSession.SessionError.unavailable("The editor web view is unavailable.") }
+            let request = PrintHTMLRequest()
+            return try await withTaskCancellationHandler {
+                try Task.checkCancellation()
+                return try await withCheckedThrowingContinuation { continuation in
+                    guard !request.cancelled else { continuation.resume(throwing: CancellationError()); return }
+                    request.continuation = continuation
+                    getHTML(profilePreparation: profilePrintLayout) { [weak self] body, timings in
+                        guard !request.cancelled else { return }
+                        self?.printPreparationProfile.merge(timings) { _, latest in latest }
+                        request.resolve(body)
+                    }
+                }
+            } onCancel: {
+                Task { @MainActor in request.cancel() }
+            }
+        }
+
+        private func preparePrintDocument(
+            settings: PrintLayoutSettings? = nil,
+            completion: @escaping (Result<PreparedPrintDocument, Error>) -> Void
+        ) {
+            guard webView != nil else {
+                completion(.failure(PrintLayoutSession.SessionError.unavailable("The editor web view is unavailable.")))
+                return
+            }
+            onPrintPhase?(.extractingHTML)
+            getHTML { [weak self] body in
+                guard let self else {
+                    completion(.failure(PrintLayoutSession.SessionError.unavailable("The editor is no longer available for PDF preparation.")))
+                    return
+                }
+                guard let body else {
+                    completion(.failure(NSError(
+                        domain: "ouro-md",
+                        code: 1,
+                        userInfo: [NSLocalizedDescriptionKey: "Print preview HTML is unavailable."]
+                    )))
+                    return
+                }
+                Task { @MainActor in
+                    do {
+                        let renderer = PrintDocumentRenderer(profileLayout: self.profilePrintLayout)
+                        let settingsStore = self.printSettingsStore
+                        let prepared = try await renderer.prepareDocument(
+                            bodyHTML: body,
+                            title: self.model.windowTitle,
+                            baseURL: self.model.currentURL?.deletingLastPathComponent(),
+                            settings: settings ?? settingsStore.load(),
+                            printInfo: .shared,
+                            typography: try self.activePrintTypography(),
+                            onPhase: self.onPrintPhase
+                        )
+                        completion(.success(prepared))
+                    } catch {
+                        completion(.failure(error))
+                    }
+                }
+            }
+        }
+
+        private func reportPrintError(_ error: Error) {
+            if case PrintLayoutSession.SessionError.cancelled = error {
+                return
+            }
+            model.reportPrintError(error)
         }
 
         private var writingToolsObservation: NSKeyValueObservation?
@@ -384,7 +601,23 @@ struct EditorWebView: NSViewRepresentable {
             }
         }
 
-        func setZoom(_ factor: Double) { if let webView { EditorZoom.apply(factor, to: webView) } }
+        func setZoom(_ factor: Double) {
+            guard let webView else { return }
+            EditorZoom.apply(factor, to: webView)
+            applyHeaderInset()
+        }
+
+        func setHeaderInset(_ inset: CGFloat) {
+            guard headerInset != inset else { return }
+            headerInset = inset
+            applyHeaderInset()
+        }
+
+        private func applyHeaderInset() {
+            guard let webView else { return }
+            let inset = headerInset / webView.pageZoom
+            eval("document.documentElement && document.documentElement.style.setProperty('--ouro-header-inset', '\(inset)px')")
+        }
 
         private func eval(_ js: String) {
             webView?.evaluateJavaScript(js, completionHandler: nil)

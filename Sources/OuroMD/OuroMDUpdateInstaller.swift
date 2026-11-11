@@ -33,6 +33,7 @@ struct OuroMDUpdateInstaller: Sendable {
         case unzipFailed(String)
         case missingStagedApp
         case stagedIdentityMismatch(String)
+        case needsNewerMacOS(String)
         case codesignFailed(String)
 
         var errorDescription: String? {
@@ -49,6 +50,8 @@ struct OuroMDUpdateInstaller: Sendable {
                 return "The downloaded archive did not contain Ouro MD.app."
             case let .stagedIdentityMismatch(message):
                 return "The downloaded app failed its identity check: \(message)"
+            case let .needsNewerMacOS(minimum):
+                return "This update needs macOS \(minimum) or later, so Ouro MD stays on the version you have."
             case let .codesignFailed(message):
                 return "The downloaded app failed its code-signature check: \(message)"
             }
@@ -268,6 +271,18 @@ struct OuroMDUpdateInstaller: Sendable {
                 "version \(stagedVersion ?? "nil") != manifest \(manifest.version)"
             )
         }
+        // A release that raises the macOS floor must not replace an app that still opens with one that won't.
+        if let minimum = info?["LSMinimumSystemVersion"] as? String,
+           !Self.runs(minimum: minimum, on: ProcessInfo.processInfo.operatingSystemVersion) {
+            throw InstallError.needsNewerMacOS(minimum)
+        }
+    }
+
+    /// Whether a Mac on `system` meets an `LSMinimumSystemVersion` such as "15.0".
+    static func runs(minimum: String, on system: OperatingSystemVersion) -> Bool {
+        let parts = minimum.split(separator: ".").map { Int($0) ?? 0 } + [0, 0, 0]
+        let needed = (parts[0], parts[1], parts[2])
+        return (system.majorVersion, system.minorVersion, system.patchVersion) >= needed
     }
 
     private static func defaultData(from url: URL, userAgent: String) async throws -> Data {

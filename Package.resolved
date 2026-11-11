@@ -1,5 +1,5 @@
 {
-  "originHash" : "255ceeac218c3c10676090804d7419cf46eb11b175352ccdae7b10a7b6a638e3",
+  "originHash" : "a5458995b41e48b8f720c1012e511f3ab97489eb8c2138f7bbc69aa2800ad42e",
   "pins" : [
     {
       "identity" : "ouro-native-apple-app-shell",
@@ -8,6 +8,15 @@
       "state" : {
         "branch" : "main",
         "revision" : "c94f63cc1f3a1594d0cf3576b5784cdf867f1a74"
+      }
+    },
+    {
+      "identity" : "ouro-ui-apple",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ourostack/ouro-ui-apple.git",
+      "state" : {
+        "revision" : "c9a84aff2ec71b92981d70595df3158f7ba2c4d0",
+        "version" : "0.2.1"
       }
     },
     {

@@ -1,0 +1,37 @@
+{
+  "about": "What the Ouro AX X-ray proves about Ouro MD's App Intents in CI (scripts/check-xray.py). Claims under hold must hold; each open claim says why it can't hold in CI yet.",
+  "hold": [
+    "intent.title",
+    "intent.description",
+    "intent.parameter-title",
+    "intent.parameter-description",
+    "intent.tool-not-on-schema",
+    "intent.shortcuts",
+    "entity.type-name",
+    "entity.properties",
+    "entity.findable",
+    "entity.transferable",
+    "skill.bundle-shape",
+    "skill.names",
+    "skill.frontmatter",
+    "skill.body"
+  ],
+  "open": {
+    "intent.tool": "needs the Xcode 27.3 SDK: earlier metadata cannot mark tool intents; the ToolIntent conformances are fenced until then",
+    "entity.property-description": "needs the Xcode 27.3 SDK: earlier @Property takes no description; the descriptions are fenced until then",
+    "intent.error-names-fix": "behaviour stage: AppIntentsTesting refuses an ad-hoc-signed app on macOS (AppIntentsServicesSecurityErrorDomain 800); needs an Apple Development certificate in CI and refusal runs against a disposable copy (--disposable). Unit tests check every error's fix",
+    "entity.indexed": "behaviour stage: needs an Apple Development certificate in CI (error 800 when ad-hoc signed)",
+    "entity.ids-resolve": "behaviour stage: needs an Apple Development certificate in CI (error 800 when ad-hoc signed)",
+    "entity.transfer-round-trip": "behaviour stage: needs an Apple Development certificate in CI (error 800 when ad-hoc signed)",
+    "annotation.onscreen": "behaviour stage: needs an Apple Development certificate in CI (error 800 when ad-hoc signed), and an open document on screen",
+    "intent.confirms-what-others-see": "a person: Replace asks first (requestConfirmation; unit-tested), to be seen in Shortcuts and Siri",
+    "intent.reads-in-shortcuts": "a person: read each intent's summary in the Shortcuts action library",
+    "entity.private-properties": "a person: name, folder and modified date are not sensitive; to be reviewed",
+    "entity.display-representation": "a person: check the document's title, folder and icon in Spotlight and Shortcuts",
+    "intent.siri-calls": "SiriEvaluations: needs a 27.3 beta OS on an Apple Intelligence device",
+    "intent.siri-says-what-happened": "SiriEvaluations: needs a 27.3 beta OS on an Apple Intelligence device",
+    "entity.siri-finds": "SiriEvaluations: needs a 27.3 beta OS on an Apple Intelligence device",
+    "annotation.siri-onscreen": "SiriEvaluations: needs a 27.3 beta OS on an Apple Intelligence device",
+    "skill.loads": "SiriEvaluations: needs a 27.3 beta OS on an Apple Intelligence device"
+  }
+}
