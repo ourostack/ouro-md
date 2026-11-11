@@ -49,9 +49,10 @@ jobs:
           sw_vers
           xcodebuild -version
           system_profiler SPDisplaysDataType
-      # A Retina mode, when the hosted display offers one, gives 2880x1800 scenes; otherwise they are 1440x900.
+      # A Retina mode, when the hosted display offers one, gives 2880x1800 scenes; otherwise they are 1440x900. The
+      # extra 100 points leave room for the menu bar and Dock: on a 1600x900 screen AppKit shortens the window to 792.
       - name: Pick the sharpest display mode that fits a 1440x900 window
-        run: swift scripts/lib/display-mode.swift --best 1440 900
+        run: swift scripts/lib/display-mode.swift --best 1440 1000
       - name: Photograph the real app window
         env:
           OURO_NATIVE_PREFERENCE_PROOF: '1'

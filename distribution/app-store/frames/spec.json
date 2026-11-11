@@ -10,7 +10,7 @@
       "shots": [
         {
           "id": "01-plan",
-          "scene": "plan-outline",
+          "scene": "plan-page",
           "palette": "dawn",
           "kicker": "Read",
           "headline": "Your agent wrote it.\n*Read it like a page.*",
@@ -76,7 +76,7 @@
         "palette": "dawn",
         "scenes": [
           "theme-manuscript",
-          "plan-outline",
+          "plan-page",
           "theme-graphite"
         ]
       },
@@ -91,7 +91,7 @@
         "headline": "Read what\nyour agents *write*",
         "subline": "Markdown rendered in place, and every outside change shown where it landed.",
         "scenes": [
-          "plan-outline",
+          "plan-page",
           "agent-change"
         ]
       }

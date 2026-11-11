@@ -219,8 +219,10 @@ async function renderAll({ spec, scenes, out }) {
       const size = MAC_SIZES[[...scales][0]];
       const page = await browser.newPage({ viewport: { width: size[0], height: size[1] }, deviceScaleFactor: 1 });
       mkdirSync(join(out, setName), { recursive: true });
+      mkdirSync(join(out, ".pages", setName), { recursive: true });
       for (const shot of set.shots) {
-        const html = join(out, setName, `${shot.id}.html`);
+        // The pages sit apart from the frames, so the output folder is exactly what the stager uploads.
+        const html = join(out, ".pages", setName, `${shot.id}.html`);
         writeFileSync(html, frameHtml(size, shot, spec.palettes, shotScenes(shot).map((s) => paths[s])));
         manifest[`${setName}/${shot.id}.png`] = await shoot(page, html, join(out, setName, `${shot.id}.png`));
       }
@@ -230,10 +232,11 @@ async function renderAll({ spec, scenes, out }) {
     if (creative) {
       const source = spec.sets[creative.source_set];
       mkdirSync(join(out, "creative"), { recursive: true });
+      mkdirSync(join(out, ".pages", "creative"), { recursive: true });
       for (const poster of creative.posters) {
         const [w, h] = poster.size;
         const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
-        const html = join(out, "creative", `${poster.id}.html`);
+        const html = join(out, ".pages", "creative", `${poster.id}.html`);
         const paths = poster.scenes.map((s) => join(scenes, creative.source_set, `${s}.png`));
         paths.forEach((p) => sceneScale(p, source.window));
         writeFileSync(html, posterHtml(poster, spec.palettes, paths));

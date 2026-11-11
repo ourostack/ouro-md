@@ -62,7 +62,7 @@ test("1x scenes make the same 1440x900 frames twice, without alpha", { timeout: 
   delete spec.creative;
   writeFileSync(join(dir, "spec.json"), JSON.stringify(spec));
   mkdirSync(join(dir, "scenes/mac"), { recursive: true });
-  writeFileSync(join(dir, "scenes/mac/plan-outline.png"), encodeOpaque(solid(1440, 900, [250, 250, 250, 255])));
+  writeFileSync(join(dir, "scenes/mac/plan-page.png"), encodeOpaque(solid(1440, 900, [250, 250, 250, 255])));
   const out = execFileSync(process.execPath, [join(HERE, "../render.mjs"), "--spec", join(dir, "spec.json"), "--scenes", join(dir, "scenes"), "--out", join(dir, "out"), "--check"], { encoding: "utf8" });
   assert.match(out, /rendered twice, byte for byte the same/);
   const png = readFileSync(join(dir, "out/mac/01-plan.png"));

@@ -91,14 +91,14 @@ final class NativeStoreScenesTests: XCTestCase {
             await settle(0.8)
         }
 
-        // 1. The agent's plan, read as a finished page, with its outline.
+        // 1. The agent's plan, read as a finished page, beside the folder it lives in. (The outline sidebar would
+        // show one collapsed row for a document under a single H1, so it is not photographed.)
         await theme("quartz")
-        await sidebar(.outline)
+        await sidebar(.files)
         _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
-        try await capture("plan-outline")
+        try await capture("plan-page")
 
         // 2. The agent rewrites the file on disk; Ouro MD marks what changed and keeps the reader's place.
-        await sidebar(.files)
         let before = try String(contentsOf: plan, encoding: .utf8)
         let revised = before
             .replacingOccurrences(of: "Come down to Harbor Street on Friday night. Bring a lantern if you have one; we will have spares at the gate.",
@@ -131,7 +131,7 @@ final class NativeStoreScenesTests: XCTestCase {
         // 5. The same page in the other three themes.
         for id in ["graphite", "manuscript", "newsprint"] {
             await theme(id)
-            await sidebar(id == "graphite" ? .outline : nil)
+            await sidebar(id == "graphite" ? .files : nil)
             _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
             try await capture("theme-\(id)")
         }
