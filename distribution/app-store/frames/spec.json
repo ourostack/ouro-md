@@ -1,0 +1,126 @@
+{
+  "about": "Mac App Store frames. NativeStoreScenesTests photographs each scene in the real app window, on the Lantern Night folder in distribution/app-store/scenes; scripts/store-frames/render.mjs frames each scene with the caption here. Every caption must stay true of the build it ships with (Guideline 2.3). The first three shots are the ones search results show. *Emphasis* in a headline renders in italics with its asterisks left in, faintly, the way Ouro MD shows Markdown.",
+  "sets": {
+    "mac": {
+      "device": "mac",
+      "window": [
+        1440,
+        900
+      ],
+      "shots": [
+        {
+          "id": "01-plan",
+          "scene": "plan-page",
+          "palette": "dawn",
+          "kicker": "Read",
+          "headline": "Your agent wrote it.\n*Read it like a page.*",
+          "subline": "Markdown renders right where you type, on a quiet, centered page."
+        },
+        {
+          "id": "02-changes",
+          "scene": "agent-change",
+          "palette": "harbor",
+          "kicker": "Review",
+          "headline": "See *what changed*\nwhile you were away",
+          "subline": "When an agent rewrites the file, Ouro MD marks the changed lines and keeps your place."
+        },
+        {
+          "id": "03-themes",
+          "scenes": [
+            "theme-newsprint",
+            "theme-manuscript",
+            "theme-graphite"
+          ],
+          "palette": "manuscript",
+          "kicker": "Theme",
+          "headline": "One file,\n*four ways* to read it",
+          "subline": "Quartz, Graphite, Manuscript and Newsprint, switched live. Or add your own CSS."
+        },
+        {
+          "id": "04-search",
+          "scene": "folder-search",
+          "palette": "dawn",
+          "kicker": "Find",
+          "headline": "Search the *whole* folder",
+          "subline": "Open a folder of Markdown on your Mac and find a word across every file."
+        },
+        {
+          "id": "05-palette",
+          "scene": "command-palette",
+          "palette": "harbor",
+          "kicker": "Go",
+          "headline": "Every command,\n*a few keys* away",
+          "subline": "Export, themes, modes, headings and tables: type a few letters and press Return."
+        },
+        {
+          "id": "06-local",
+          "scene": "theme-graphite",
+          "palette": "graphite",
+          "kicker": "Local",
+          "headline": "Plain files,\n*in your folders*",
+          "subline": "Ouro MD edits the Markdown files you already have. No account, no hosted notes."
+        }
+      ]
+    }
+  },
+  "creative": {
+    "about": "The iOS 27 product page header (no caption: the App Store sets the app's name over it) and search results art. Whether the Mac App Store shows them is not documented; the stager reports it.",
+    "source_set": "mac",
+    "posters": [
+      {
+        "id": "header",
+        "size": [
+          3840,
+          1646
+        ],
+        "palette": "dawn",
+        "scenes": [
+          "theme-manuscript",
+          "plan-page",
+          "theme-graphite"
+        ]
+      },
+      {
+        "id": "search",
+        "size": [
+          3840,
+          2560
+        ],
+        "palette": "harbor",
+        "kicker": "Ouro MD",
+        "headline": "Read what\nyour agents *write*",
+        "subline": "Markdown rendered in place, and every outside change shown where it landed.",
+        "scenes": [
+          "plan-page",
+          "agent-change"
+        ]
+      }
+    ]
+  },
+  "palettes": {
+    "dawn": [
+      "#F7EBDD",
+      "#E7C9AA",
+      "#2A2018",
+      "#6A5442"
+    ],
+    "harbor": [
+      "#2A6FA8",
+      "#123553",
+      "#FFFFFF",
+      "#D3E3F3"
+    ],
+    "manuscript": [
+      "#F5EFE3",
+      "#E2D3B6",
+      "#43392C",
+      "#6F624E"
+    ],
+    "graphite": [
+      "#3A3A3D",
+      "#141416",
+      "#F0F0F2",
+      "#A6A6AB"
+    ]
+  }
+}

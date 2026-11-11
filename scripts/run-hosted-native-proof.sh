@@ -9,8 +9,9 @@ mode="${1:-}"
 case "$mode" in
   media) root="${OURO_SITE_MEDIA_OUTPUT:-.build/site-media}" ;;
   header) root="${OURO_HEADER_OUTPUT:-.build/header-rendering/current}" ;;
+  store) root="${OURO_STORE_SCENES_OUTPUT:-.build/store-scenes}" ;;
   accessibility) root=".build/accessibility-proof" ;;
-  *) echo "Usage: run-hosted-native-proof.sh media|header|accessibility" >&2; exit 2 ;;
+  *) echo "Usage: run-hosted-native-proof.sh media|header|store|accessibility" >&2; exit 2 ;;
 esac
 backup="$root/preferences"
 mkdir -p "$backup"
@@ -62,6 +63,9 @@ if [[ "$mode" != accessibility ]]; then
   if [[ "$mode" == media ]]; then
     export OURO_SITE_MEDIA=1 OURO_SITE_MEDIA_STANDARD_PROFILE=1
     swift test --filter NativeSiteMedia
+  elif [[ "$mode" == store ]]; then
+    export OURO_STORE_SCENES=1
+    swift test --filter NativeStoreScenesTests
   else
     export OURO_HEADER_RENDERING=1 OURO_HEADER_STANDARD_PROFILE=1
     swift test --filter NativeHeaderRenderingTests
