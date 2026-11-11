@@ -163,11 +163,12 @@ export function posterHtml(poster, palettes, scenePaths) {
   const u = h / 1646;
   const caption = Boolean(poster.headline);
   const n = scenePaths.length;
-  const [from, to] = caption ? [0.42 * w, 0.97 * w] : [0.08 * w, 0.92 * w];
-  const width = Math.min((to - from) * (n === 1 ? 1 : 0.62), h * 0.82 * 1.6);
+  const [from, to] = [0.08 * w, 0.92 * w];
+  // Beside a caption the windows are large and run off the right and bottom edges, so the art has no empty corner.
+  const width = caption ? w * 0.62 : Math.min((to - from) * (n === 1 ? 1 : 0.62), h * 0.82 * 1.6);
   const windows = scenePaths.map((path, i) => {
-    const x = n === 1 ? (from + to - width) / 2 : from + i * ((to - from - width) / (n - 1));
-    const y = h * 0.12 + i * h * (caption ? 0.12 : 0.08);
+    const x = caption ? w * (0.43 + i * 0.08) : n === 1 ? (from + to - width) / 2 : from + i * ((to - from - width) / (n - 1));
+    const y = caption ? h * (0.14 + i * 0.3) : h * 0.12 + i * h * 0.08;
     return `<div class="win" style="left:${x}px;top:${y}px;width:${width}px;z-index:${i + 2}"><img src="${pathToFileURL(path).href}"></div>`;
   });
   return `<!doctype html><html><head><meta charset="utf-8"><style>
