@@ -73,7 +73,25 @@ Apple-side assets needed before the first upload:
   capabilities. The current App Store entitlements are in
   `config/app-store-entitlements.plist`.
 
-## Build package
+## Upload from CI
+
+Actions → **App Store upload** → Run workflow, on `main`. It runs `scripts/package-app-store.sh` on the
+`xcode-27` runner: `--validate` by default, `--upload` when the `upload` box is ticked. It doesn't submit
+for review. Uploading the same version twice fails at Apple, so bump the version first.
+
+It reads these repository secrets:
+
+| Secret | Holds |
+|---|---|
+| `MAC_APP_STORE_APP_CERTIFICATE_P12_BASE64`, `MAC_APP_STORE_APP_CERTIFICATE_PASSWORD` | the Mac App Distribution identity (`3rd Party Mac Developer Application`) |
+| `MAC_INSTALLER_CERTIFICATE_P12_BASE64`, `MAC_INSTALLER_CERTIFICATE_PASSWORD` | the Mac Installer Distribution identity |
+| `MAC_APP_STORE_PROVISIONING_PROFILE_BASE64` | the `bot.ouro.md` Mac App Store profile |
+| `ASC_API_KEY_ID`, `ASC_API_ISSUER_ID`, `ASC_API_KEY_P8_BASE64` | the App Store Connect API key |
+
+The certificates and profile expire on 2027-07-03. The API key has its own names so the Developer ID
+release workflow doesn't pick it up.
+
+## Build package locally
 
 Set the signing identities exposed by Keychain:
 
