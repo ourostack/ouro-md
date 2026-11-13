@@ -1,12 +1,14 @@
 # Ouro MD's MCP door
 
+> The tools, intents and menu commands are generated from `actions/document.actions.mts` (Ouro UI actions, vendored in `tools/ouro-actions/`). Edit the declaration, then run `scripts/ouro-actions.sh generate`; `scripts/ouro-actions.sh check` runs in CI.
+
 `ouro-md --mcp --root <folder>` serves the Model Context Protocol on stdin and stdout, so an agent can list, read, add
 to and replace the Markdown documents under the folders it is given. It is the app's own binary
 (`Ouro MD.app/Contents/MacOS/ouro-md`), so there is nothing extra to install.
 
 ## Decisions
 
-- **One implementation, two doors.** The four tools call `DocumentActions`, the same code the App Intents run, so Siri
+- **One implementation, two doors.** The five tools call `DocumentActions`, the same code the App Intents run, so Siri
   and an agent get the same outcomes, errors and confirmation rule. The MCP door brings its own workspace,
   `FolderMarkdownWorkspace`, which reaches only files under `--root`; the closed-document write
   (`DocumentIntentsFileText.write`, which keeps CRLF and refuses non-UTF-8 files) is shared with the app.
@@ -32,7 +34,7 @@ to and replace the Markdown documents under the folders it is given. It is the a
 |---|---|---|
 | [Ouro AX for web, `ax-mcp`](https://github.com/ourostack/ouro-ui/blob/main/docs/ax/ax-mcp.md) | Adopt | Our MCP contract and claims. Its X-ray (`node registry/ouro/ax/xray.ts --mcp`) checks this server: it conforms, 5 of 5 claims holding. |
 | [MCP specification 2025-06-18](https://modelcontextprotocol.io/specification/2025-06-18) | Adopt | The protocol itself. |
-| [Cocoanetics/SwiftMCP](https://github.com/Cocoanetics/SwiftMCP) | Borrow | Its `@MCPAppIntentTool` idea, App Intents as MCP tools from one definition, is the same "one implementation, two doors" shape. Not adopted: it brings swift-nio, swift-syntax, swift-crypto and swift-certificates for a four-tool stdio server. |
+| [Cocoanetics/SwiftMCP](https://github.com/Cocoanetics/SwiftMCP) | Borrow | Its `@MCPAppIntentTool` idea, App Intents as MCP tools from one definition, is the same "one implementation, two doors" shape. Not adopted: it brings swift-nio, swift-syntax, swift-crypto and swift-certificates for a five-tool stdio server. |
 | [modelcontextprotocol/swift-sdk](https://github.com/modelcontextprotocol/swift-sdk) | Watch | The official Swift SDK, still before 1.0 (0.12), with swift-nio, swift-log and swift-system. Worth moving to if we need HTTP transport, resources or prompts. |
 | Apple's App Intents | Watch | The macOS 27.2 SDK's AppIntents interface has no MCP symbol. If Apple exposes intents to agents directly, this door could come from the system. |
 

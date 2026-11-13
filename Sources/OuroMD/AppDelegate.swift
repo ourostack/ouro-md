@@ -74,6 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     func applicationDidFinishLaunching(_ notification: Notification) {
         installUndoRedoShortcutMonitor()
         DocumentIntentsWorkspace.current = self
+        DocumentActionHandlers.install()
         if isSelfTest {
             let controller = DocumentWindowController(filePath: initialFilePath, selfTest: true, useAutosave: true)
             track(controller)
@@ -456,6 +457,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         }
     }
 
+    @objc func runDocumentActionCommand(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let command = DocumentActionCommands.Command(rawValue: raw) else { return }
+        Task { await DocumentActionCommands.run(command, in: self) }
+    }
     @objc func newDocument(_ sender: Any?) { model.newDocument() }
     @objc func openDocument(_ sender: Any?) { model.openPanel() }
     @objc func openFolder(_ sender: Any?) { model.openFolderPanel() }
@@ -559,7 +564,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             return menuItem.representedObject is URL
         case #selector(clearRecentDocuments(_:)):
             return !recentDocumentURLsProvider().isEmpty
-        case #selector(renameDocument(_:)):
+        case #selector(renameDocument(_:)),
+             #selector(runDocumentActionCommand(_:)):
             return hasEditor && model.currentURL != nil
         case #selector(revealDocumentInFinder(_:)),
              #selector(copyDocumentPath(_:)):

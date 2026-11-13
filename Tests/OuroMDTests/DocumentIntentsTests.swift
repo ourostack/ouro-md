@@ -1,3 +1,4 @@
+import AppKit
 import XCTest
 import OuroAX
 @testable import OuroMD
@@ -52,18 +53,22 @@ final class DocumentIntentsTests: XCTestCase {
     override func setUp() async throws {
         workspace = FakeWorkspace([("Plan.md", "# Plan\n\nShip it.\n"), ("Notes.md", "notes")])
         DocumentIntentsWorkspace.current = workspace
+        DocumentActionHandlers.install()
     }
 
     override func tearDown() async throws {
         DocumentIntentsWorkspace.current = nil
-        ReplaceMarkdownDocumentIntent.confirm = ReplaceMarkdownDocumentIntent.askThePerson
+        DocumentActionCommands.askMarkdown = DocumentActionCommands.defaultAskMarkdown
+        DocumentActionCommands.confirm = DocumentActionCommands.defaultConfirm
+        DocumentActionCommands.show = DocumentActionCommands.defaultShow
+        DocumentActionCommands.clipboard = DocumentActionCommands.defaultClipboard
         workspace = nil
     }
 
     func testAppendingStartsANewParagraph() {
-        XCTAssertEqual(AppendToMarkdownDocumentIntent.appending("- next", to: "# Plan\n\nShip it.\n\n\n"), "# Plan\n\nShip it.\n\n- next\n")
-        XCTAssertEqual(AppendToMarkdownDocumentIntent.appending("  hello \n", to: ""), "hello\n")
-        XCTAssertEqual(AppendToMarkdownDocumentIntent.appending("   ", to: "keep"), "keep")
+        XCTAssertEqual(DocumentActions.appending("- next", to: "# Plan\n\nShip it.\n\n\n"), "# Plan\n\nShip it.\n\n- next\n")
+        XCTAssertEqual(DocumentActions.appending("  hello \n", to: ""), "hello\n")
+        XCTAssertEqual(DocumentActions.appending("   ", to: "keep"), "keep")
     }
 
     func testQuerySuggestsKnownDocumentsOnceAndMatchesByName() async throws {
@@ -76,15 +81,16 @@ final class DocumentIntentsTests: XCTestCase {
         XCTAssertEqual(byID.map(\.name), ["Notes"])
     }
 
+    // MARK: - The generated App Intents call the one handler
+
     func testGetUsesTheDocumentOnScreenByDefault() async throws {
-        let intent = GetMarkdownDocumentIntent()
-        let result = try await intent.perform()
-        XCTAssertEqual(result.value, "# Plan\n\nShip it.\n")
+        let result = try await ReadDocumentIntent().perform()
+        XCTAssertEqual(result.value, "# Plan\n\nShip it.\n", "Shortcuts gets the whole Markdown, not an agent's page")
     }
 
     func testAppendWritesOneReplacementToTheNamedDocument() async throws {
-        var intent = AppendToMarkdownDocumentIntent()
-        intent.text = "More notes."
+        var intent = AppendToDocumentIntent()
+        intent.markdown = "More notes."
         intent.document = MarkdownDocumentEntity(url: workspace.order[1])
         _ = try await intent.perform()
         XCTAssertEqual(workspace.replacements.count, 1)
@@ -92,25 +98,35 @@ final class DocumentIntentsTests: XCTestCase {
         XCTAssertEqual(workspace.documents[workspace.order[1]], "notes\n\nMore notes.\n")
     }
 
-    func testReplaceAndOpen() async throws {
-        var asked: [String] = []
-        ReplaceMarkdownDocumentIntent.confirm = { _, prompt in asked.append(prompt) }
-        var replace = ReplaceMarkdownDocumentIntent()
-        replace.markdown = "# New\n"
-        _ = try await replace.perform()
-        XCTAssertEqual(workspace.documents[workspace.order[0]], "# New\n")
-        XCTAssertEqual(asked, ["Replace all of Plan with the new Markdown?"])
-
-        var open = OpenMarkdownDocumentIntent()
+    func testOpenOpensTheNamedDocument() async throws {
+        var open = OpenDocumentIntent()
         open.document = MarkdownDocumentEntity(url: workspace.order[1])
         _ = try await open.perform()
         XCTAssertEqual(workspace.opened, [workspace.order[1]])
+        XCTAssertTrue(OpenDocumentIntent.openAppWhenRun)
+    }
+
+    func testListNamesTheKnownDocuments() async throws {
+        var list = ListDocumentsIntent()
+        list.query = "note"
+        let result = try await list.perform()
+        XCTAssertEqual(result.value, "Notes  /tmp/ouro-md-intents/Notes.md")
+    }
+
+    func testReplaceGoesToTheDocumentNamedEvenIfAnotherWindowComesForward() async throws {
+        // The intent's document is required: the person confirms that document, not whichever is in front by then.
+        let plan = workspace.order[0], notes = workspace.order[1]
+        workspace.front = notes
+        let output = try await ReplaceDocumentAction.run(.init(markdown: "# New plan\n", document: plan.path))
+        XCTAssertEqual(output.state, "done")
+        XCTAssertEqual(workspace.replacements.map(\.0), [plan])
+        XCTAssertEqual(workspace.documents[notes], "notes")
     }
 
     func testWithoutAFrontDocumentTheIntentExplainsItself() async {
         workspace.front = nil
         do {
-            _ = try await GetMarkdownDocumentIntent().perform()
+            _ = try await ReadDocumentIntent().perform()
             XCTFail("expected noDocument")
         } catch let problem as OuroAX.Problem {
             XCTAssertEqual(problem.code, "no-document")
@@ -120,53 +136,67 @@ final class DocumentIntentsTests: XCTestCase {
         }
     }
 
-    func testReplaceWritesNothingWhenThePersonDeclines() async {
-        struct Declined: Error {}
-        ReplaceMarkdownDocumentIntent.confirm = { _, _ in throw Declined() }
-        var replace = ReplaceMarkdownDocumentIntent()
-        replace.markdown = "# Gone\n"
-        do {
-            _ = try await replace.perform()
-            XCTFail("expected the decline to stop the intent")
-        } catch is Declined {
-        } catch {
-            XCTFail("unexpected \(error)")
-        }
-        XCTAssertTrue(workspace.replacements.isEmpty)
-    }
-
-    func testConfirmedReplaceGoesToTheDocumentThePersonWasAskedAbout() async throws {
-        let plan = workspace.order[0]
-        let notes = workspace.order[1]
-        ReplaceMarkdownDocumentIntent.confirm = { [workspace] _, prompt in
-            XCTAssertTrue(prompt.contains("Plan"), prompt)
-            workspace!.front = notes // another window comes forward while the person answers
-        }
-        var replace = ReplaceMarkdownDocumentIntent()
-        replace.markdown = "# New plan\n"
-        _ = try await replace.perform()
-        XCTAssertEqual(workspace.replacements.map(\.0), [plan])
-        XCTAssertEqual(workspace.documents[notes], "notes")
-    }
-
-    func testReplaceRefusesBeforeAskingWhenTheDocumentCantBeRead() async {
+    func testReplaceRefusesWhenTheDocumentCantBeRead() async {
         workspace.front = URL(fileURLWithPath: "/tmp/ouro-md-intents/Gone.md")
-        var asked = false
-        ReplaceMarkdownDocumentIntent.confirm = { _, _ in asked = true }
         let outcome = await DocumentActions.replace(with: "x", in: nil, confirmed: false, in: workspace)
         XCTAssertEqual(outcome.state, .refused)
         XCTAssertEqual(outcome.error?.code, "unreadable")
-        var replace = ReplaceMarkdownDocumentIntent()
-        replace.markdown = "x"
         do {
-            _ = try await replace.perform()
+            _ = try await ReplaceDocumentAction.run(.init(markdown: "x", document: "/tmp/ouro-md-intents/Gone.md"))
             XCTFail("expected a refusal")
         } catch let problem as OuroAX.Problem {
             XCTAssertEqual(problem.code, "unreadable")
         } catch {
             XCTFail("unexpected \(error)")
         }
-        XCTAssertFalse(asked)
+    }
+
+    // MARK: - The menu commands call the same handlers
+
+    func testMenuCommandsAreWordedByTheirDeclarations() {
+        XCTAssertEqual(DocumentActionCommands.Command.addToDocument.menuTitle, "Add to Markdown Document…")
+        XCTAssertEqual(DocumentActionCommands.Command.replaceFromClipboard.menuTitle, "Replace Markdown Document…")
+        XCTAssertEqual(String(localized: AppendToDocumentIntent.title) + "…", DocumentActionCommands.Command.addToDocument.menuTitle)
+        // Each command is a menu item, and the menu carries nothing a declaration doesn't word.
+        let app = NSApplication.shared
+        MenuBuilder.install(into: app, target: AppDelegate())
+        let items = (app.mainMenu?.items ?? []).flatMap { $0.submenu?.items ?? [] }.filter { $0.action == #selector(AppDelegate.runDocumentActionCommand(_:)) }
+        XCTAssertEqual(items.map(\.title), DocumentActionCommands.Command.allCases.map(\.menuTitle))
+    }
+
+    func testAddToDocumentCommandAppendsThroughTheAction() async {
+        DocumentActionCommands.askMarkdown = { _, _ in "- [ ] From the menu" }
+        let summary = await DocumentActionCommands.run(.addToDocument, in: workspace)
+        XCTAssertEqual(summary, "Added to Plan.")
+        XCTAssertEqual(workspace.documents[workspace.order[0]], "# Plan\n\nShip it.\n\n- [ ] From the menu\n")
+        XCTAssertEqual(workspace.replacements.count, 1, "one undoable edit, the same one the intent makes")
+    }
+
+    func testReplaceCommandAsksThenReplacesWithTheClipboard() async {
+        var asked: [String] = []
+        DocumentActionCommands.clipboard = { "# From the clipboard\n" }
+        DocumentActionCommands.confirm = { _, message, _ in asked.append(message); return true }
+        let summary = await DocumentActionCommands.run(.replaceFromClipboard, in: workspace)
+        XCTAssertEqual(summary, "Replaced Plan.")
+        XCTAssertEqual(asked, ["Replace all of Plan with the Markdown on the clipboard? You can undo it."])
+        XCTAssertEqual(workspace.documents[workspace.order[0]], "# From the clipboard\n")
+    }
+
+    func testReplaceCommandChangesNothingWhenThePersonDeclines() async {
+        DocumentActionCommands.clipboard = { "# Gone\n" }
+        DocumentActionCommands.confirm = { _, _, _ in false }
+        let summary = await DocumentActionCommands.run(.replaceFromClipboard, in: workspace)
+        XCTAssertNil(summary)
+        XCTAssertTrue(workspace.replacements.isEmpty)
+    }
+
+    func testCommandsExplainThemselvesWithoutADocument() async {
+        workspace.front = nil
+        var shown: [OuroAX.Problem] = []
+        DocumentActionCommands.show = { shown.append($0) }
+        let summary = await DocumentActionCommands.run(.addToDocument, in: workspace)
+        XCTAssertNil(summary)
+        XCTAssertEqual(shown.map(\.code), ["no-document"])
     }
 
     func testEveryErrorSaysWhatToDoNext() {

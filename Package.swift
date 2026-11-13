@@ -13,7 +13,7 @@ let package = Package(
         .package(url: "https://github.com/ourostack/ouro-native-apple-app-shell.git", branch: "main"),
         .package(url: "https://github.com/apple/swift-markdown.git", revision: "4661b550c55abde97d14e35b89e094084669f40a"),
         // Ouro AX for Apple: outcomes, problems and entity matching for the App Intents and the MCP door.
-        .package(url: "https://github.com/ourostack/ouro-ui-apple.git", .upToNextMinor(from: "0.2.1"))
+        .package(url: "https://github.com/ourostack/ouro-ui-apple.git", .upToNextMinor(from: "0.4.1"))
     ],
     targets: [
         .target(
@@ -41,8 +41,19 @@ let package = Package(
                 .product(name: "OuroAX", package: "ouro-ui-apple"),
                 .product(name: "OuroHX", package: "ouro-ui-apple")
             ],
+            // Generated/ is written by scripts/ouro-actions.sh from actions/document.actions.mts. The app takes the App
+            // Intents (OuroActions.swift) and serves the MCP tools from mcp.json; the other projections are for doors
+            // Ouro MD doesn't have, and stay beside them so `check` can fail when any of them drifts.
+            exclude: [
+                "Generated/actions.json",
+                "Generated/commands.json",
+                "Generated/webmcp.json",
+                "Generated/web.ts",
+                "Generated/OuroActionsReins.swift"
+            ],
             resources: [
-                .copy("web")
+                .copy("web"),
+                .copy("Generated/mcp.json")
             ],
             swiftSettings: [
                 .swiftLanguageMode(.v5)

@@ -46,7 +46,7 @@ echo "binary SDK stamp ok: $binary_sdk"
 # carries compiled App Intents metadata (make-app.sh generates it).
 intents="$app/Contents/Resources/Metadata.appintents/extract.actionsdata"
 [[ -f "$intents" ]] || fail "missing App Intents metadata: $intents"
-for action in OpenMarkdownDocumentIntent GetMarkdownDocumentIntent AppendToMarkdownDocumentIntent ReplaceMarkdownDocumentIntent; do
+for action in OpenDocumentIntent ReadDocumentIntent AppendToDocumentIntent ReplaceDocumentIntent ListDocumentsIntent; do
   grep -q "\"$action\"" "$intents" || fail "App Intents metadata does not list $action"
 done
 /usr/libexec/PlistBuddy -c "Print :NSUserActivityTypes" "$info" | grep -q "bot.ouro.md.document" \

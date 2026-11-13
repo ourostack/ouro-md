@@ -22,6 +22,29 @@ protocol MarkdownDocumentWorkspace: AnyObject {
     /// written to disk.
     func replaceMarkdown(_ markdown: String, in url: URL) async throws
     func open(_ url: URL)
+    /// The document a person or an agent named: a name or a path. The default finds it among the known documents.
+    func locate(_ reference: String) -> Result<URL, OuroAX.Problem>
+}
+
+extension MarkdownDocumentWorkspace {
+    func locate(_ reference: String) -> Result<URL, OuroAX.Problem> {
+        let trimmed = reference.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.hasPrefix("/") {
+            let url = URL(fileURLWithPath: trimmed).standardizedFileURL
+            return isReadable(url) ? .success(url) : .failure(DocumentIntentError.unreadable(url.lastPathComponent).problem)
+        }
+        let known = DocumentActions.find(nil, in: self)
+        let exact = known.filter { $0.name.compare(trimmed, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame }
+        if exact.count == 1 { return .success(exact[0].url) }
+        if exact.count > 1 {
+            return .failure(.init(code: "ambiguous", exit: 2, thing: trimmed, problem: "\(exact.count) documents have that name",
+                                  fix: "name it by path: \(exact.map(\.id).joined(separator: " or "))"))
+        }
+        let near = known.compactMap { entity in OuroAX.EntityMatch.score(trimmed, in: [entity.name, entity.folder]).map { ($0, entity.name) } }
+            .sorted { $0.0 < $1.0 }.prefix(3).map(\.1)
+        return .failure(.notFound(kind: "document", id: trimmed,
+                                  fix: near.isEmpty ? "call list_documents to see the documents" : "one of \(near.joined(separator: ", ")), or call list_documents"))
+    }
 }
 
 @MainActor
@@ -61,29 +84,32 @@ enum DocumentIntentError: Error, Equatable, CustomLocalizedStringResourceConvert
 /// A Markdown document Ouro MD can open, read and edit, identified by its file
 /// path. It transfers as its Markdown text, so Siri and other apps can read the
 /// document itself rather than pixels of the editor.
-struct MarkdownDocumentEntity: AppEntity, Transferable {
-    static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Markdown Document")
-    static var defaultQuery = MarkdownDocumentQuery()
+public struct MarkdownDocumentEntity: AppEntity, Transferable {
+    public static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Markdown Document")
+    public static var defaultQuery = MarkdownDocumentQuery()
 
-    let id: String
+    public let id: String
     var url: URL { URL(fileURLWithPath: id) }
 
     // What a person asks about a document. Descriptions need the Siri AI SDK (27.3); see README, "Siri AI".
     #if OURO_SIRI_AI_SDK || canImport(AppIntents, _version: 301.2)
     @Property(title: "Name", description: "The document's file name, without the .md extension.")
-    var name: String
+    public var name: String
     @Property(title: "Folder", description: "The name of the folder the document is in.")
-    var folder: String
+    public var folder: String
     @Property(title: "Modified", description: "When the file was last saved.")
-    var modified: Date?
+    public var modified: Date?
     #else
     @Property(title: "Name")
-    var name: String
+    public var name: String
     @Property(title: "Folder")
-    var folder: String
+    public var folder: String
     @Property(title: "Modified")
-    var modified: Date?
+    public var modified: Date?
     #endif
+
+    /// The entity for the document at this path, which is what Input, MCP and the CLI call its id.
+    public init(id: String) { self.init(url: URL(fileURLWithPath: id)) }
 
     init(url: URL) {
         let url = url.standardizedFileURL
@@ -94,7 +120,7 @@ struct MarkdownDocumentEntity: AppEntity, Transferable {
         modified = DocumentAccess.withAccess(to: url) { (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate }
     }
 
-    var displayRepresentation: DisplayRepresentation {
+    public var displayRepresentation: DisplayRepresentation {
         DisplayRepresentation(
             title: "\(name)",
             subtitle: "\(folder)",
@@ -102,7 +128,7 @@ struct MarkdownDocumentEntity: AppEntity, Transferable {
         )
     }
 
-    static var transferRepresentation: some TransferRepresentation {
+    public static var transferRepresentation: some TransferRepresentation {
         // Spelled inline: the App Intents metadata processor only resolves literal UTTypes.
         DataRepresentation(exportedContentType: UTType(importedAs: "net.daringfireball.markdown")) { entity in
             Data(try await entity.markdown().utf8)
@@ -120,21 +146,23 @@ struct MarkdownDocumentEntity: AppEntity, Transferable {
     }
 }
 
-struct MarkdownDocumentQuery: EntityStringQuery {
+public struct MarkdownDocumentQuery: EntityStringQuery {
+    public init() {}
+
     @MainActor
-    func entities(for identifiers: [MarkdownDocumentEntity.ID]) async throws -> [MarkdownDocumentEntity] {
+    public func entities(for identifiers: [MarkdownDocumentEntity.ID]) async throws -> [MarkdownDocumentEntity] {
         guard let workspace = DocumentIntentsWorkspace.current else { return [] }
         return identifiers.map { URL(fileURLWithPath: $0) }.filter(workspace.isReadable).map(MarkdownDocumentEntity.init(url:))
     }
 
     @MainActor
-    func entities(matching string: String) async throws -> [MarkdownDocumentEntity] {
+    public func entities(matching string: String) async throws -> [MarkdownDocumentEntity] {
         guard let workspace = DocumentIntentsWorkspace.current else { return [] }
         return DocumentActions.find(string, in: workspace)
     }
 
     @MainActor
-    func suggestedEntities() async throws -> [MarkdownDocumentEntity] {
+    public func suggestedEntities() async throws -> [MarkdownDocumentEntity] {
         guard let workspace = DocumentIntentsWorkspace.current else { return [] }
         return DocumentActions.find(nil, in: workspace)
     }
@@ -143,127 +171,35 @@ struct MarkdownDocumentQuery: EntityStringQuery {
 @available(macOS 15, *)
 extension MarkdownDocumentEntity: IndexedEntity {}
 
-/// The live workspace, or the problem that says the app isn't ready.
-@MainActor
-private func liveWorkspace() throws -> MarkdownDocumentWorkspace {
-    guard let workspace = DocumentIntentsWorkspace.current else { throw DocumentIntentError.appNotReady.problem }
-    return workspace
-}
-
-/// Turns a refused or failed outcome into the problem Siri and Shortcuts show.
-private func check(_ outcome: OuroAX.Outcome) throws -> OuroAX.Outcome {
-    if outcome.state == .refused || outcome.state == .failed, let error = outcome.error { throw error }
-    return outcome
-}
-
-struct OpenMarkdownDocumentIntent: AppIntent {
-    static var title: LocalizedStringResource = "Open Markdown Document"
-    static var description = IntentDescription("Opens a Markdown document in Ouro MD.")
-    static var openAppWhenRun = true
-
-    @Parameter(title: "Document", description: "The Markdown document to open, by name.")
-    var document: MarkdownDocumentEntity
-
-    @MainActor
-    func perform() async throws -> some IntentResult {
-        try liveWorkspace().open(document.url)
-        return .result()
-    }
-}
-
-struct GetMarkdownDocumentIntent: AppIntent {
-    static var title: LocalizedStringResource = "Get Markdown Document"
-    static var description = IntentDescription("Returns the Markdown of a document in Ouro MD, including unsaved edits. Without a document, uses the one on screen.")
-
-    @Parameter(title: "Document", description: "The Markdown document to read. Leave it empty for the document on screen.")
-    var document: MarkdownDocumentEntity?
-
-    @MainActor
-    func perform() async throws -> some IntentResult & ReturnsValue<String> {
-        let (text, outcome) = await DocumentActions.read(document?.url, in: try liveWorkspace())
-        _ = try check(outcome)
-        return .result(value: text ?? "")
-    }
-}
-
-struct AppendToMarkdownDocumentIntent: AppIntent {
-    static var title: LocalizedStringResource = "Add to Markdown Document"
-    static var description = IntentDescription("Adds Markdown to the end of a document in Ouro MD as one undoable edit. Without a document, uses the one on screen.")
-
-    @Parameter(title: "Markdown", description: "The Markdown to add as a new paragraph at the end.", inputOptions: String.IntentInputOptions(multiline: true))
-    var text: String
-
-    @Parameter(title: "Document", description: "The Markdown document to add to. Leave it empty for the document on screen.")
-    var document: MarkdownDocumentEntity?
-
-    @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog {
-        let outcome = try check(await DocumentActions.append(text, to: document?.url, in: try liveWorkspace()))
-        return .result(dialog: outcome.dialog)
-    }
-
-    /// Joins with one blank line, as a new paragraph, and ends with a newline.
-    static func appending(_ addition: String, to markdown: String) -> String {
-        DocumentActions.appending(addition, to: markdown)
-    }
-}
-
-struct ReplaceMarkdownDocumentIntent: AppIntent {
-    static var title: LocalizedStringResource = "Replace Markdown Document"
-    static var description = IntentDescription("Replaces the Markdown of a document in Ouro MD as one undoable edit, after you confirm. Without a document, uses the one on screen.")
-
-    @Parameter(title: "Markdown", description: "The Markdown that becomes the document's whole text.", inputOptions: String.IntentInputOptions(multiline: true))
-    var markdown: String
-
-    @Parameter(title: "Document", description: "The Markdown document to replace. Leave it empty for the document on screen.")
-    var document: MarkdownDocumentEntity?
-
-    /// Asks the person before the document's text is replaced; throwing stops the intent. Tests swap it.
-    @MainActor static var confirm: (ReplaceMarkdownDocumentIntent, String) async throws -> Void = askThePerson
-    @MainActor static let askThePerson: (ReplaceMarkdownDocumentIntent, String) async throws -> Void = { intent, prompt in
-        try await intent.requestConfirmation(dialog: IntentDialog(stringLiteral: prompt))
-    }
-
-    @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog {
-        let workspace = try liveWorkspace()
-        // The same rule as every door: Replace asks the person first. The confirmed edit goes to the document the
-        // person was asked about, even if another window comes to the front while they answer.
-        let asking = try check(await DocumentActions.replace(with: markdown, in: document?.url, confirmed: false, in: workspace))
-        guard asking.state == .needsHuman, let target = asking.target else {
-            throw OuroAX.Problem(code: "not-confirmed", exit: 1, thing: "Replace", problem: "Ouro MD couldn't ask before replacing, so nothing was changed", fix: "Try again")
-        }
-        try await Self.confirm(self, "Replace all of \(target.name ?? target.id) with the new Markdown?")
-        let outcome = try check(await DocumentActions.replace(with: markdown, in: URL(fileURLWithPath: target.id), confirmed: true, in: workspace))
-        return .result(dialog: outcome.dialog)
-    }
-}
-
+// The App Intents themselves are generated from actions/document.actions.mts (Generated/OuroActions.swift); what is
+// written here is what a declaration can't say: the entity, the shortcut phrases and the Siri AI conformances.
+//
 // Siri AI Developer Preview: the intents become tools Siri can call. `ToolIntent` exists only in the 27.3 beta SDK
 // (AppIntents newer than 301.1), so this compiles to nothing with Xcode 27.2; see README, "Siri AI".
 #if OURO_SIRI_AI_SDK || canImport(AppIntents, _version: 301.2)
-@available(macOS 27.3, *) extension OpenMarkdownDocumentIntent: ToolIntent {}
-@available(macOS 27.3, *) extension GetMarkdownDocumentIntent: ToolIntent {}
-@available(macOS 27.3, *) extension AppendToMarkdownDocumentIntent: ToolIntent {}
-@available(macOS 27.3, *) extension ReplaceMarkdownDocumentIntent: ToolIntent {}
+@available(macOS 27.3, *) extension OpenDocumentIntent: ToolIntent {}
+@available(macOS 27.3, *) extension ReadDocumentIntent: ToolIntent {}
+@available(macOS 27.3, *) extension AppendToDocumentIntent: ToolIntent {}
+@available(macOS 27.3, *) extension ReplaceDocumentIntent: ToolIntent {}
+@available(macOS 27.3, *) extension ListDocumentsIntent: ToolIntent {}
 #endif
 
 struct OuroMDShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
-            intent: OpenMarkdownDocumentIntent(),
+            intent: OpenDocumentIntent(),
             phrases: ["Open a document in \(.applicationName)", "Open \(\.$document) in \(.applicationName)"],
             shortTitle: "Open Document",
             systemImageName: "doc.richtext"
         )
         AppShortcut(
-            intent: GetMarkdownDocumentIntent(),
+            intent: ReadDocumentIntent(),
             phrases: ["Read my document in \(.applicationName)", "Get the Markdown from \(.applicationName)"],
             shortTitle: "Get Markdown",
             systemImageName: "doc.plaintext"
         )
         AppShortcut(
-            intent: AppendToMarkdownDocumentIntent(),
+            intent: AppendToDocumentIntent(),
             phrases: ["Add to my document in \(.applicationName)", "Append to my document in \(.applicationName)"],
             shortTitle: "Add to Document",
             systemImageName: "text.append"

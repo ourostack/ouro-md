@@ -39,4 +39,9 @@ enum OuroResources {
     static func web(_ resource: String, _ ext: String) -> URL? {
         bundle.url(forResource: resource, withExtension: ext, subdirectory: "web")
     }
+
+    /// URL of a generated action file (`Generated/mcp.json`), which sits at the bundle's root.
+    static func actions(_ resource: String, _ ext: String = "json") -> URL? {
+        bundle.url(forResource: resource, withExtension: ext)
+    }
 }

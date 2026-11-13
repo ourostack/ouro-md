@@ -129,6 +129,11 @@ jobs:
           ref: ${{ steps.pin.outputs.revision }}
           path: .ci/ouro-ui-apple
           persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.18"
+      - name: Check the actions have not drifted from their declaration
+        run: scripts/ouro-actions.sh check
       - name: Show the toolchain (the free image's default Xcode)
         run: |
           xcodebuild -version
@@ -142,6 +147,9 @@ jobs:
           OURO_MD_ALLOW_UNCONFIGURED_TELEMETRY: "1"
           OURO_MD_RENDERED_TEXT_AUDIT_ELSEWHERE: "1"
         run: ./scripts/verify-packaged-app.sh OuroMD.app
+      - name: Check the MCP door lists exactly the declared tools
+        if: (success() || failure()) && steps.build.outcome == 'success'
+        run: scripts/ouro-actions.sh compare-mcp OuroMD.app
       - name: Check the X-ray checker
         if: (success() || failure()) && steps.build.outcome == 'success'
         run: python3 -I scripts/check-xray.py --selftest
