@@ -3,7 +3,7 @@
   "set": "document",
   "tools": [
     {
-      "name": "list_documents",
+      "name": "list_documents_renamed",
       "title": "List Documents",
       "description": "Lists the Markdown documents in the folders Ouro MD serves, with name, folder, path and when each was modified. Changes nothing.",
       "inputSchema": {
