@@ -13,7 +13,7 @@ let package = Package(
         .package(url: "https://github.com/ourostack/ouro-native-apple-app-shell.git", branch: "main"),
         .package(url: "https://github.com/apple/swift-markdown.git", revision: "4661b550c55abde97d14e35b89e094084669f40a"),
         // Ouro AX for Apple: outcomes, problems and entity matching for the App Intents and the MCP door.
-        .package(url: "https://github.com/ourostack/ouro-ui-apple.git", .upToNextMinor(from: "0.2.1"))
+        .package(url: "https://github.com/ourostack/ouro-ui-apple.git", .upToNextMinor(from: "0.4.1"))
     ],
     targets: [
         .target(
