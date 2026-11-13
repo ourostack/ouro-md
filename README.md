@@ -23,7 +23,7 @@ place — switch themes live, and read the same document four different ways.
 
 **Agents:** `"/Applications/Ouro MD.app/Contents/MacOS/ouro-md" --mcp --root <folder>` serves a folder of Markdown to an agent over MCP ([how](#siri-shortcuts-and-agents)).
 
-> **Status:** v0.9.113. Reads and edits Markdown today, signed and notarized for Mac. See [Install](#install).
+> **Status:** v0.9.114. Reads and edits Markdown today, signed and notarized for Mac. See [Install](#install).
 
 ---
 
@@ -302,9 +302,11 @@ and replace your Markdown documents. They follow [Ouro AX for Apple](https://git
 
 ### Agents over MCP
 
-`ouro-md --mcp --root <folder>` serves the Markdown documents under a folder to an agent over MCP (stdio), with four
-tools: `list_documents`, `read_document`, `append_to_document` and `replace_document`. They run the same code as the
-intents, and `replace_document` changes nothing until the agent sends `confirmed: true` after you've said yes. Nothing
+`ouro-md --mcp --root <folder>` serves the Markdown documents under a folder to an agent over MCP (stdio), with five
+tools: `list_documents`, `read_document`, `append_to_document`, `replace_document` and `open_document`. They are declared
+once in [actions/document.actions.mts](actions/document.actions.mts); Ouro UI's generator writes the App Intents, the
+tool list and the menu wording from it, and CI fails if a generated file drifts. `replace_document` changes nothing until the
+agent sends `confirmed: true` after you've said yes. Nothing
 outside the `--root` folders is listed, read or written. For Claude Code:
 
 ```sh

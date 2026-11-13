@@ -1,0 +1,22 @@
+{
+  "coreTag": "v0.6.1",
+  "files": {
+    "dist/actions/ouro-actions.mts": "f39954170b718e64e418b4a03b7ce687d8a9222e2179afd2a0266f2bbff6238d",
+    "dist/apple/OuroTokens.swift": "8b969f56cb11053ba7630f8c2f20820af11cc2be57bbd93a04f03a099156db20",
+    "dist/ax/actions.claims.json": "944f48be5f9409dd70e0774dfe4976fef9cc3ba3f4ab4b9231df428700523f1a",
+    "dist/ax/apple.claims.json": "4216bfdce2983fb95a722b208cdb944315e87d5b8b5b7d0056b8edcb2208254d",
+    "dist/feel/feel.spec.json": "83b434d8f1628bd39e27f6325ad563c5e129ebd2bbbdee44ebb18f82e46781ef",
+    "dist/hx/components.claims.json": "0da8e34c5044add8e120d4e1265e6bfac0b53941ad9b8a9b5c5bcb4a19e1d31e",
+    "dist/swatches.html": "547412058d3eea437e8d4deea3f0109fef8bcf3ff193d869b7b8d1ca95586c26",
+    "dist/web/ouro-base.css": "fb7e06b6c464c42a4ea67e63ce4cec107c2d73e0f5eb5818846069121c82e12b",
+    "dist/web/ouro-theme.css": "e9d9560c2a8c03735c92be8c76d9bdeb4f7e19780a1f134b5e1618fecfcd804b",
+    "dist/web/plain/ouro-base.css": "911cbad3e71ac2f8147d9a5698a808b8cbe2b9e58c708c371cc54ce2480b6633",
+    "dist/web/plain/ouro-theme.css": "13e1be9a810ed48f9691688c7c98ab6d704b74af469d413e0164470f19c8ed19",
+    "dist/web/themes/abyss.css": "93c804e4abc66633416a641b798566ff4a538c14b68f3ad77bf134cb95566e4c",
+    "dist/web/themes/brass.css": "d55fd548c45bc49abb72f9bc96c2816a53c09706ded2e824c4e2ff8df8c8e75c",
+    "dist/web/themes/chart.css": "0268a59afd133f258c8da7a44b10bca10c219e80bf44ccca97d93216821cf7ca",
+    "dist/web/themes/cookbook.css": "d52a1964870242bffb808c2da73cea3ab9add2ae0a82753c20f32886c07ed890",
+    "dist/web/themes/coral.css": "aeba81da6c7d96edabcf77bc82d9812f15ec5b6bbcdd26d54d649a4036f6ba41",
+    "dist/web/themes/pearl.css": "6a4ea3c7df4101f0beadf8fc4a3018311c9dbf4d8c6995246cfc9529fccb4916"
+  }
+}

@@ -1,0 +1,255 @@
+{
+  "generator": "ouro-actions 0.6.1",
+  "set": "document",
+  "tools": [
+    {
+      "name": "list_documents",
+      "title": "List Documents",
+      "description": "Lists the Markdown documents in the folders Ouro MD serves, with name, folder, path and when each was modified. Changes nothing.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Words to match against names and folders; leave it out to list everything."
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "documents": {
+            "type": "string",
+            "description": "One line per document: its name, two spaces, then its path. Empty when none match."
+          },
+          "count": {
+            "type": "integer",
+            "description": "How many documents match.",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "documents",
+          "count"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "read_document",
+      "title": "Get Markdown Document",
+      "description": "Returns a document's Markdown as saved, 20000 characters at a time; a longer document says where the next page starts. Changes nothing.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "document": {
+            "type": "string",
+            "description": "The document: its name as list_documents shows it (\"Plan\"), or its path, absolute or relative to a served folder. Leave it out for the document on screen."
+          },
+          "from": {
+            "type": "integer",
+            "description": "The character (counted as a person sees letters) to start at, for the next page of a long document; 0 when left out.",
+            "minimum": 0
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "markdown": {
+            "type": "string",
+            "description": "The document's Markdown, or the page that starts at from."
+          },
+          "name": {
+            "type": "string",
+            "description": "The document's name."
+          },
+          "path": {
+            "type": "string",
+            "description": "The document's path."
+          },
+          "length": {
+            "type": "integer",
+            "description": "The whole document's length in characters.",
+            "minimum": 0
+          },
+          "next": {
+            "type": "integer",
+            "description": "Where the next page starts; absent when this page is the end.",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "markdown",
+          "name",
+          "path",
+          "length"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "append_to_document",
+      "title": "Add to Markdown Document",
+      "description": "Adds Markdown to the end of a document as a new paragraph and saves it; an open Ouro MD window picks up the change. It changes only this file. Returns the outcome, checked by reading the document back.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "markdown": {
+            "type": "string",
+            "description": "The Markdown to add, such as \"- [ ] Call the harbor master\"."
+          },
+          "document": {
+            "type": "string",
+            "description": "The document: its name as list_documents shows it, or its path. Leave it out for the document on screen."
+          }
+        },
+        "required": [
+          "markdown"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "description": "done, or uncertain when the text read back differs beyond Markdown formatting."
+          },
+          "summary": {
+            "type": "string",
+            "description": "What happened, in a sentence."
+          },
+          "checked": {
+            "type": "string",
+            "description": "How the result was checked: the document was read back after the edit."
+          },
+          "next": {
+            "type": "string",
+            "description": "The call to make next, when the outcome is uncertain."
+          }
+        },
+        "required": [
+          "state",
+          "summary",
+          "checked"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "replace_document",
+      "title": "Replace Markdown Document",
+      "description": "Replaces a document's whole Markdown. It overwrites every line, so it asks first: without confirmed: true it changes nothing and says what to ask the person. Send confirmed: true only after the person has said yes.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "markdown": {
+            "type": "string",
+            "description": "The Markdown that becomes the document's whole text."
+          },
+          "document": {
+            "type": "string",
+            "description": "The document: its name as list_documents shows it (\"Plan\"), or its path, absolute or relative to a served folder."
+          },
+          "confirmed": {
+            "type": "boolean",
+            "description": "true once the person has confirmed replacing this document; leave it out to ask."
+          }
+        },
+        "required": [
+          "markdown",
+          "document"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": true
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "description": "done, uncertain when the text read back differs beyond Markdown formatting, or needs-human until the person confirms."
+          },
+          "summary": {
+            "type": "string",
+            "description": "What happened, or what to ask the person, in a sentence."
+          },
+          "checked": {
+            "type": "string",
+            "description": "How the result was checked."
+          },
+          "next": {
+            "type": "string",
+            "description": "The call to make once the person has said yes, or after an uncertain edit."
+          }
+        },
+        "required": [
+          "state",
+          "summary"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "open_document",
+      "title": "Open Markdown Document",
+      "description": "Opens a Markdown document in Ouro MD, so the person sees it. Changes no text.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "document": {
+            "type": "string",
+            "description": "The Markdown document to open, by name or path."
+          }
+        },
+        "required": [
+          "document"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string",
+            "description": "What happened, in a sentence."
+          }
+        },
+        "required": [
+          "summary"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "refusals": {}
+}

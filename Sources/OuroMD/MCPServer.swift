@@ -131,7 +131,7 @@ final class OuroMDMCPServer {
         case "ping":
             return ok([:])
         case "tools/list":
-            return ok(["tools": Self.tools.map(\.json)])
+            return ok(["tools": Self.tools])
         case "tools/call":
             return ok(await call(params["name"] as? String ?? "", params["arguments"] as? [String: Any] ?? [:]))
         default:
@@ -141,157 +141,142 @@ final class OuroMDMCPServer {
 
     // MARK: - Tools
 
-    struct Argument {
-        let name: String
-        let type: String
-        let description: String
-        let required: Bool
-    }
-
-    struct Tool {
-        let name: String
-        let title: String
-        let description: String
-        let arguments: [Argument]
-        let readOnly: Bool
-        let destructive: Bool
-
-        var json: [String: Any] {
-            var properties: [String: Any] = [:]
-            for a in arguments { properties[a.name] = ["type": a.type, "description": a.description] }
-            return [
-                "name": name, "title": title, "description": description,
-                "inputSchema": ["type": "object", "properties": properties, "required": arguments.filter(\.required).map(\.name), "additionalProperties": false],
-                "annotations": ["title": title, "readOnlyHint": readOnly, "destructiveHint": destructive, "openWorldHint": false],
-            ]
+    /// The tools, exactly as `actions/document.actions.mts` declares them: `Generated/mcp.json` is the one MCP door, so
+    /// what `tools/list` says can't drift from the App Intents, and CI compares the running server to the declarations.
+    static let tools: [[String: Any]] = {
+        guard let url = OuroResources.actions("mcp"), let data = try? Data(contentsOf: url),
+              let file = try? JSONSerialization.jsonObject(with: data) as? [String: Any], let tools = file["tools"] as? [[String: Any]] else {
+            preconditionFailure("Generated/mcp.json is missing from the resource bundle. Fix: run scripts/ouro-actions.sh generate and rebuild.")
         }
-    }
+        return tools
+    }()
 
-    static let documentArgument = Argument(name: "document", type: "string", description: "The document: its name as list_documents shows it (\"Plan\"), or its path, absolute or relative to a served folder.", required: true)
-
-    static let tools: [Tool] = [
-        Tool(name: "list_documents", title: "List Markdown documents",
-             description: "Lists the Markdown documents in the folders Ouro MD serves, with name, folder, path and when each was modified. Changes nothing.",
-             arguments: [Argument(name: "query", type: "string", description: "Words to match against names and folders; leave it out to list everything.", required: false)],
-             readOnly: true, destructive: false),
-        Tool(name: "read_document", title: "Read a Markdown document",
-             description: "Returns a document's Markdown as saved, \(pageSize) characters at a time; a longer document says where the next page starts. Changes nothing.",
-             arguments: [documentArgument, Argument(name: "from", type: "integer", description: "The character (counted as a person sees letters) to start at, for the next page of a long document; 0 when left out.", required: false)],
-             readOnly: true, destructive: false),
-        Tool(name: "append_to_document", title: "Add to a Markdown document",
-             description: "Adds Markdown to the end of a document as a new paragraph and saves it; an open Ouro MD window picks up the change. It changes only this file. Returns the outcome, checked by reading the document back.",
-             arguments: [documentArgument, Argument(name: "markdown", type: "string", description: "The Markdown to add, such as \"- [ ] Call the harbor master\".", required: true)],
-             readOnly: false, destructive: false),
-        Tool(name: "replace_document", title: "Replace a Markdown document",
-             description: "Replaces a document's whole Markdown. It overwrites every line, so it asks first: without confirmed: true it changes nothing and says what to ask the person. Send confirmed: true only after the person has said yes.",
-             arguments: [documentArgument,
-                         Argument(name: "markdown", type: "string", description: "The Markdown that becomes the whole document.", required: true),
-                         Argument(name: "confirmed", type: "boolean", description: "true once the person has confirmed replacing this document; leave it out to ask.", required: false)],
-             readOnly: false, destructive: true),
-    ]
+    static func tool(named name: String) -> [String: Any]? { tools.first { $0["name"] as? String == name } }
 
     private func call(_ name: String, _ arguments: [String: Any]) async -> [String: Any] {
-        guard let tool = Self.tools.first(where: { $0.name == name }) else {
-            let names = Self.tools.map(\.name)
+        guard let tool = Self.tool(named: name) else {
+            let names = Self.tools.compactMap { $0["name"] as? String }
             return Self.toolError(.init(code: "unknown-tool", exit: 2, thing: name.isEmpty ? "tools/call" : name, problem: "there is no tool \"\(name)\"",
                                         fix: Self.nearest(name, in: names) ?? names.joined(separator: ", ")))
         }
         if let problem = Self.check(arguments, against: tool) { return Self.toolError(problem) }
-        switch tool.name {
-        case "list_documents":
-            return list(arguments["query"] as? String)
-        case "read_document":
-            return await read(arguments)
-        case "append_to_document":
-            return await edit(arguments) { url in await DocumentActions.append(arguments["markdown"] as! String, to: url, in: self.workspace) }
-        default:
-            let confirmed = arguments["confirmed"] as? Bool ?? false
-            return await edit(arguments) { url in await DocumentActions.replace(with: arguments["markdown"] as! String, in: url, confirmed: confirmed, in: self.workspace) }
+        // Every door runs the handlers the declarations bind; this server's workspace is the one they act on.
+        DocumentActionHandlers.install()
+        DocumentIntentsWorkspace.current = workspace
+        do {
+            switch name {
+            case "list_documents": return try await list(arguments["query"] as? String)
+            case "read_document": return try await read(arguments)
+            case "append_to_document":
+                let output = try await AppendToDocumentAction.run(.init(markdown: arguments["markdown"] as! String, document: arguments["document"] as? String))
+                return Self.outcomeResult(state: output.state, summary: output.summary, checked: output.checked, next: output.next, fields: output)
+            case "replace_document": return try await replace(arguments)
+            default:
+                let output = try await OpenDocumentAction.run(.init(document: arguments["document"] as! String))
+                return Self.outcomeResult(state: "done", summary: output.summary, checked: nil, next: nil, fields: output)
+            }
+        } catch let problem as OuroAX.Problem {
+            return Self.toolError(problem)
+        } catch let error as OuroActionNotBound {
+            return Self.toolError(.init(code: "not-ready", exit: 1, thing: error.action, problem: "it isn't ready yet", fix: "Try again in a moment"))
+        } catch {
+            return Self.toolError(.init(code: "failed", exit: 1, thing: name, problem: error.localizedDescription, fix: "Try again"))
         }
     }
 
-    /// The first argument problem, checked before anything runs.
-    static func check(_ arguments: [String: Any], against tool: Tool) -> OuroAX.Problem? {
-        for argument in tool.arguments where argument.required && arguments[argument.name] == nil {
-            return .init(code: "missing-arg", exit: 2, thing: "\(tool.name) \(argument.name)", problem: "it is required: \(argument.description)",
-                         fix: "send \(argument.name) as a \(argument.type)")
+    /// The first argument problem, checked before anything runs, against the tool's input schema.
+    static func check(_ arguments: [String: Any], against tool: [String: Any]) -> OuroAX.Problem? {
+        let name = tool["name"] as? String ?? ""
+        let schema = tool["inputSchema"] as? [String: Any] ?? [:]
+        let properties = schema["properties"] as? [String: [String: Any]] ?? [:]
+        for required in schema["required"] as? [String] ?? [] where arguments[required] == nil {
+            return .init(code: "missing-arg", exit: 2, thing: "\(name) \(required)", problem: "it is required: \(properties[required]?["description"] as? String ?? required)",
+                         fix: "send \(required) as a \(properties[required]?["type"] as? String ?? "value")")
         }
-        let known = Set(tool.arguments.map(\.name))
         for (key, value) in arguments {
-            guard let argument = tool.arguments.first(where: { $0.name == key }) else {
-                return .init(code: "unknown-arg", exit: 2, thing: "\(tool.name) \(key)", problem: "\(tool.name) takes no \(key)",
-                             fix: Self.nearest(key, in: Array(known)) ?? known.sorted().joined(separator: ", "))
+            guard let property = properties[key] else {
+                return .init(code: "unknown-arg", exit: 2, thing: "\(name) \(key)", problem: "\(name) takes no \(key)",
+                             fix: Self.nearest(key, in: Array(properties.keys)) ?? properties.keys.sorted().joined(separator: ", "))
             }
+            let type = property["type"] as? String ?? "string"
             let fits: Bool
-            switch argument.type {
+            switch type {
             case "string": fits = value is String
             case "boolean": fits = (value as? NSNumber).map { CFGetTypeID($0) == CFBooleanGetTypeID() } ?? false
-            default: fits = (value as? NSNumber).map { CFGetTypeID($0) != CFBooleanGetTypeID() && $0.doubleValue == $0.doubleValue.rounded() && $0.intValue >= 0 } ?? false
+            case "integer": fits = (value as? NSNumber).map { CFGetTypeID($0) != CFBooleanGetTypeID() && $0.doubleValue == $0.doubleValue.rounded() && $0.intValue >= 0 } ?? false
+            default: fits = (value as? NSNumber).map { CFGetTypeID($0) != CFBooleanGetTypeID() } ?? false
             }
             if !fits {
-                return .init(code: "bad-arg", exit: 2, thing: "\(tool.name) \(key)", problem: "it must be \(argument.type == "integer" ? "a whole number, 0 or more" : "a \(argument.type)")",
-                             fix: "send \(key) as a \(argument.type)")
+                return .init(code: "bad-arg", exit: 2, thing: "\(name) \(key)", problem: "it must be \(type == "integer" ? "a whole number, 0 or more" : "a \(type)")",
+                             fix: "send \(key) as a \(type)")
             }
         }
         return nil
     }
 
-    private func list(_ query: String?) -> [String: Any] {
-        let documents = DocumentActions.find(query, in: workspace).map { entity -> [String: Any] in
-            var item: [String: Any] = ["name": entity.name, "folder": entity.folder, "path": entity.id]
-            if let modified = entity.modified { item["modified"] = modified.formatted(.iso8601) }
-            return item
-        }
-        let lines = documents.map { "\($0["name"]!)  \($0["path"]!)" }
-        let text = documents.isEmpty
+    private func list(_ query: String?) async throws -> [String: Any] {
+        let output = try await ListDocumentsAction.run(.init(query: query))
+        let text = output.count == 0
             ? "No Markdown documents\(query.map { " match \"\($0)\"" } ?? "") under \(roots.map(\.path).joined(separator: ", "))."
-            : lines.joined(separator: "\n")
+            : output.documents
+        let structured = Self.structured(output)
         guard text.count > Self.pageSize else {
-            return ["content": [["type": "text", "text": text]], "structuredContent": ["documents": documents], "isError": false]
+            return ["content": [["type": "text", "text": text]], "structuredContent": structured, "isError": false]
         }
         // Too many to show whole: the first page of names, and how to ask for fewer.
         let cut = String(text.prefix(Self.pageSize))
         let shown = cut[..<(cut.lastIndex(of: "\n") ?? cut.endIndex)]
-        return ["content": [["type": "text", "text": String(shown) + "\n\n[\(documents.count) documents; not all are shown. Narrow it: list_documents {\"query\": \"<words in the name or folder>\"}]"]], "isError": false]
+        let lines = shown.split(separator: "\n", omittingEmptySubsequences: false).count
+        return ["content": [["type": "text", "text": String(shown) + "\n\n[\(output.count) documents; \(lines) shown. Narrow it: list_documents {\"query\": \"<words in the name or folder>\"}]"]],
+                "structuredContent": ["documents": String(shown), "count": output.count], "isError": false]
     }
 
-    private func read(_ arguments: [String: Any]) async -> [String: Any] {
-        let url: URL
-        switch workspace.locate(arguments["document"] as! String) {
-        case .failure(let problem): return Self.toolError(problem)
-        case .success(let found): url = found
-        }
-        let (text, outcome) = await DocumentActions.read(url, in: workspace)
-        guard let text else { return Self.outcomeResult(outcome) }
+    private func read(_ arguments: [String: Any]) async throws -> [String: Any] {
+        let whole = try await ReadDocumentAction.run(.init(document: arguments["document"] as? String, from: nil))
+        // The handler returns the whole text, which Shortcuts wants; an agent gets it a page at a time.
+        let text = whole.markdown
         let asked = (arguments["from"] as? NSNumber)?.doubleValue ?? 0
         let from = asked >= Double(text.count) ? text.count : Int(asked)
         let start = text.index(text.startIndex, offsetBy: from)
         let end = text.index(start, offsetBy: Self.pageSize, limitedBy: text.endIndex) ?? text.endIndex
         let page = String(text[start..<end])
-        var structured: [String: Any] = ["document": ["name": DocumentActions.name(of: url), "path": url.path], "markdown": page, "length": text.count]
+        var output = ReadDocumentOutput(markdown: page, name: whole.name, path: whole.path, length: text.count, next: nil)
         var shown = page
         if end < text.endIndex {
             let next = from + page.count
-            structured["next"] = next
-            shown += "\n\n[\(text.count - next) more characters. Next: read_document {\"document\": \(Self.json(url.path)), \"from\": \(next)}]"
+            output.next = next
+            shown += "\n\n[\(text.count - next) more characters. Next: read_document {\"document\": \(Self.json(whole.path)), \"from\": \(next)}]"
         }
-        return ["content": [["type": "text", "text": shown]], "structuredContent": structured, "isError": false]
+        return ["content": [["type": "text", "text": shown]], "structuredContent": Self.structured(output), "isError": false]
     }
 
-    private func edit(_ arguments: [String: Any], _ action: (URL) async -> OuroAX.Outcome) async -> [String: Any] {
-        switch workspace.locate(arguments["document"] as! String) {
-        case .failure(let problem): return Self.toolError(problem)
-        case .success(let url): return Self.outcomeResult(await action(url))
+    /// Replace overwrites every line, so an agent only prepares it: until `confirmed` is true, nothing changes and the
+    /// answer says what to ask the person.
+    private func replace(_ arguments: [String: Any]) async throws -> [String: Any] {
+        let markdown = arguments["markdown"] as! String
+        let reference = arguments["document"] as! String
+        guard arguments["confirmed"] as? Bool == true else {
+            let url = try DocumentActionHandlers.locate(reference, in: workspace)
+            let asking = await DocumentActions.replace(with: markdown, in: url, confirmed: false, in: workspace)
+            if asking.state == .refused || asking.state == .failed { throw asking.error ?? OuroAX.Problem(code: "failed", exit: 1, thing: "replace_document", problem: asking.summary, fix: "Try again") }
+            let output = ReplaceDocumentOutput(state: asking.state.rawValue, summary: asking.summary, checked: nil, next: asking.human?.resume.command)
+            return Self.outcomeResult(state: output.state, summary: output.summary, checked: nil, next: output.next, fields: output, why: asking.human?.reason)
         }
+        let output = try await ReplaceDocumentAction.run(.init(markdown: markdown, document: reference, confirmed: true))
+        return Self.outcomeResult(state: output.state, summary: output.summary, checked: output.checked, next: output.next, fields: output)
     }
 
-    static func outcomeResult(_ outcome: OuroAX.Outcome) -> [String: Any] {
-        let structured = (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(outcome))) as? [String: Any] ?? [:]
-        return [
-            "content": [["type": "text", "text": outcome.text(tool: "ouro-md")]],
-            "structuredContent": structured,
-            "isError": outcome.state == .refused || outcome.state == .failed,
-        ]
+    static func structured<Output: Encodable>(_ output: Output) -> [String: Any] {
+        (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(output))) as? [String: Any] ?? [:]
+    }
+
+    /// An action's result for an agent: the sentence, how it was checked, and what to call next.
+    static func outcomeResult<Output: Encodable>(state: String, summary: String, checked: String?, next: String?, fields: Output, why: String? = nil) -> [String: Any] {
+        var lines = [summary]
+        if let why { lines.append(why + ".") }
+        if let checked { lines.append("Checked: \(checked).") }
+        if let next { lines.append("Next: \(next)") }
+        return ["content": [["type": "text", "text": lines.joined(separator: "\n")]], "structuredContent": structured(fields), "isError": false]
     }
 
     static func toolError(_ problem: OuroAX.Problem) -> [String: Any] {

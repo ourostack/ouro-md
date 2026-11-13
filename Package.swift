@@ -41,8 +41,19 @@ let package = Package(
                 .product(name: "OuroAX", package: "ouro-ui-apple"),
                 .product(name: "OuroHX", package: "ouro-ui-apple")
             ],
+            // Generated/ is written by scripts/ouro-actions.sh from actions/document.actions.mts. The app takes the App
+            // Intents (OuroActions.swift) and serves the MCP tools from mcp.json; the other projections are for doors
+            // Ouro MD doesn't have, and stay beside them so `check` can fail when any of them drifts.
+            exclude: [
+                "Generated/actions.json",
+                "Generated/commands.json",
+                "Generated/webmcp.json",
+                "Generated/web.ts",
+                "Generated/OuroActionsReins.swift"
+            ],
             resources: [
-                .copy("web")
+                .copy("web"),
+                .copy("Generated/mcp.json")
             ],
             swiftSettings: [
                 .swiftLanguageMode(.v5)

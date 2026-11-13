@@ -1,0 +1,91 @@
+{
+  "generator": "ouro-actions 0.6.1",
+  "set": "document",
+  "tool": "ouro-md",
+  "commands": [
+    {
+      "name": "list",
+      "summary": "Lists the Markdown documents in the folders Ouro MD serves, with name, folder, path and when each was modified. Changes nothing.",
+      "effect": "private",
+      "readOnly": true,
+      "flags": {
+        "query": {
+          "type": "string",
+          "description": "Words to match against names and folders; leave it out to list everything."
+        }
+      },
+      "output": "{ documents, count }"
+    },
+    {
+      "name": "read",
+      "summary": "Returns a document's Markdown as saved, 20000 characters at a time; a longer document says where the next page starts. Changes nothing.",
+      "effect": "private",
+      "readOnly": true,
+      "flags": {
+        "document": {
+          "type": "string",
+          "description": "The document: its name as list_documents shows it (\"Plan\"), or its path, absolute or relative to a served folder. Leave it out for the document on screen."
+        },
+        "from": {
+          "type": "number",
+          "description": "The character (counted as a person sees letters) to start at, for the next page of a long document; 0 when left out.",
+          "min": 0
+        }
+      },
+      "output": "{ markdown, name, path, length, next }"
+    },
+    {
+      "name": "append",
+      "summary": "Adds Markdown to the end of a document as a new paragraph and saves it; an open Ouro MD window picks up the change. It changes only this file. Returns the outcome, checked by reading the document back.",
+      "effect": "private",
+      "flags": {
+        "markdown": {
+          "type": "string",
+          "description": "The Markdown to add, such as \"- [ ] Call the harbor master\".",
+          "required": true
+        },
+        "document": {
+          "type": "string",
+          "description": "The document: its name as list_documents shows it, or its path. Leave it out for the document on screen."
+        }
+      },
+      "output": "{ state, summary, checked, next }"
+    },
+    {
+      "name": "replace",
+      "summary": "Replaces a document's whole Markdown. It overwrites every line, so it asks first: without confirmed: true it changes nothing and says what to ask the person. Send confirmed: true only after the person has said yes.",
+      "effect": "others",
+      "flags": {
+        "markdown": {
+          "type": "string",
+          "description": "The Markdown that becomes the document's whole text.",
+          "required": true
+        },
+        "document": {
+          "type": "string",
+          "description": "The document: its name as list_documents shows it (\"Plan\"), or its path, absolute or relative to a served folder.",
+          "required": true
+        },
+        "confirmed": {
+          "type": "boolean",
+          "description": "true once the person has confirmed replacing this document; leave it out to ask."
+        }
+      },
+      "output": "{ state, summary, checked, next }"
+    },
+    {
+      "name": "open",
+      "summary": "Opens a Markdown document in Ouro MD, so the person sees it. Changes no text.",
+      "effect": "private",
+      "flags": {
+        "document": {
+          "type": "string",
+          "description": "The Markdown document to open, by name or path.",
+          "required": true
+        }
+      },
+      "output": "{ summary }"
+    }
+  ],
+  "personOnly": {}
+}

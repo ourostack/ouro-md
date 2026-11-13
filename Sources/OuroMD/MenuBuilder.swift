@@ -142,6 +142,14 @@ enum MenuBuilder {
         pastePlain.keyEquivalentModifierMask = [.command, .shift]
         standard(menu, "Select All", #selector(NSText.selectAll(_:)), "a")
         menu.addItem(.separator())
+        // The document's declared actions (actions/document.actions.mts), worded as the declaration words them. Each
+        // asks first, then calls the action's one handler, as the App Intent and the MCP tool do.
+        for command in DocumentActionCommands.Command.allCases {
+            let commandItem = menu.addItem(withTitle: command.menuTitle, action: #selector(AppDelegate.runDocumentActionCommand(_:)), keyEquivalent: "")
+            commandItem.target = target
+            commandItem.representedObject = command.rawValue
+        }
+        menu.addItem(.separator())
         let copyAs = menu.addItem(withTitle: "Copy as", action: nil, keyEquivalent: "")
         let copyAsMenu = NSMenu(title: "Copy as")
         copyAs.submenu = copyAsMenu

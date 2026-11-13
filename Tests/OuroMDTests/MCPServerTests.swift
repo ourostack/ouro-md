@@ -85,14 +85,15 @@ final class MCPServerTests: XCTestCase {
         let reply = try await request("tools/list")
         let tools = try XCTUnwrap((reply["result"] as? [String: Any])?["tools"] as? [[String: Any]])
         let byName = Dictionary(uniqueKeysWithValues: tools.map { ($0["name"] as! String, $0) })
-        XCTAssertEqual(Set(byName.keys), ["list_documents", "read_document", "append_to_document", "replace_document"])
+        XCTAssertEqual(Set(byName.keys), ["list_documents", "read_document", "append_to_document", "replace_document", "open_document"])
         for (name, tool) in byName {
             XCTAssertFalse((tool["description"] as? String ?? "").isEmpty, name)
             XCTAssertEqual((tool["inputSchema"] as? [String: Any])?["type"] as? String, "object", name)
             let annotations = try XCTUnwrap(tool["annotations"] as? [String: Any], name)
             XCTAssertNotNil(annotations["readOnlyHint"] as? Bool, name)
             XCTAssertNotNil(annotations["destructiveHint"] as? Bool, name)
-            XCTAssertEqual(annotations["openWorldHint"] as? Bool, false, name)
+            // A consequential action is the one declared open-world; every other tool stays inside the documents.
+            XCTAssertEqual(annotations["openWorldHint"] as? Bool, name == "replace_document", name)
         }
         func hints(_ name: String) -> (Bool, Bool) {
             let a = byName[name]!["annotations"] as! [String: Any]
@@ -103,7 +104,11 @@ final class MCPServerTests: XCTestCase {
         XCTAssertTrue(hints("append_to_document") == (false, false))
         XCTAssertTrue(hints("replace_document") == (false, true))
         let required = (byName["append_to_document"]!["inputSchema"] as! [String: Any])["required"] as? [String]
-        XCTAssertEqual(Set(required ?? []), ["document", "markdown"])
+        XCTAssertEqual(Set(required ?? []), ["markdown"], "the document defaults to the one in front")
+        let served = (reply["result"] as? [String: Any])?["tools"] as? [[String: Any]]
+        let file = try XCTUnwrap(OuroResources.actions("mcp"))
+        let declared = try XCTUnwrap((JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])?["tools"] as? [[String: Any]])
+        XCTAssertEqual(Set(served?.compactMap { $0["name"] as? String } ?? []), Set(declared.compactMap { $0["name"] as? String }), "served tools are the generated tools")
     }
 
     func testAnUnknownToolIsRefusedWithTheNearestName() async throws {
@@ -128,12 +133,12 @@ final class MCPServerTests: XCTestCase {
     func testListFindsMarkdownUnderTheRootsOnly() async throws {
         let result = try await call("list_documents")
         XCTAssertEqual(result["isError"] as? Bool, false)
-        let docs = try XCTUnwrap(structured(result)["documents"] as? [[String: Any]])
-        XCTAssertEqual(docs.compactMap { $0["name"] as? String }, ["Plan", "Harbor"])
-        XCTAssertEqual(docs.first?["folder"] as? String, "notes")
+        let listing = try XCTUnwrap(structured(result)["documents"] as? String)
+        XCTAssertEqual(listing.split(separator: "\n").map { $0.components(separatedBy: "  ")[0] }, ["Plan", "Harbor"])
+        XCTAssertEqual(structured(result)["count"] as? Int, 2)
         XCTAssertFalse(text(result).contains("Private"))
         let matched = try await call("list_documents", ["query": "harb"])
-        XCTAssertEqual((structured(matched)["documents"] as? [[String: Any]])?.compactMap { $0["name"] as? String }, ["Harbor"])
+        XCTAssertEqual((structured(matched)["documents"] as? String)?.components(separatedBy: "  ").first, "Harbor")
     }
 
     func testReadByNameOrPathButNeverOutsideTheRoots() async throws {
@@ -228,8 +233,7 @@ final class MCPServerTests: XCTestCase {
 
     func testTheResumeCallFromNeedsHumanWorksAsSent() async throws {
         let asked = try await call("replace_document", ["document": "Plan", "markdown": "# Kept\n"])
-        let human = try XCTUnwrap(structured(asked)["human"] as? [String: Any])
-        let command = try XCTUnwrap((human["resume"] as? [String: Any])?["command"] as? String)
+        let command = try XCTUnwrap(structured(asked)["next"] as? String)
         XCTAssertTrue(command.hasPrefix("replace_document "), command)
         let arguments = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(command.dropFirst("replace_document ".count).utf8)) as? [String: Any])
         let done = try await call("replace_document", arguments)
@@ -285,6 +289,6 @@ final class MCPServerTests: XCTestCase {
         let listed = try await call("list_documents")
         XCTAssertLessThanOrEqual(text(listed).count, OuroMDMCPServer.pageSize + 200)
         XCTAssertTrue(text(listed).contains("list_documents {\"query\""), String(text(listed).suffix(200)))
-        XCTAssertNil(listed["structuredContent"])
+        XCTAssertEqual(structured(listed)["count"] as? Int, 402)
     }
 }
