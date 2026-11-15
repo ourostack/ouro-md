@@ -14,9 +14,8 @@ Importing a recipe from a messy webpage should take one paste. This plan gets Sp
 
 ```mermaid
 flowchart LR
-  A[Paste a link] --> B[Read the page]
-  B --> C{Recipe found?}
-  C -- yes --> D[Split into steps]
+  A[Paste a link] --> C{Recipe?}
+  C -- yes --> D[Split steps]
   C -- no --> E[Ask Ari]
   D --> F[Ari reviews]
 ```
