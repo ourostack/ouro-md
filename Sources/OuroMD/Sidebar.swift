@@ -293,8 +293,7 @@ private struct SidebarNotice: View {
 
     var body: some View {
         OuroBanner(title, description: description, tone: tone)
-            .padding(.horizontal, 8)
-            .padding(.bottom, 8)
+            .padding(8)
     }
 }
 
