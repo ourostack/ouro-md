@@ -4,11 +4,12 @@ public enum OuroMDRelease {
     public static let appName = "Ouro MD"
     public static let bundleIdentifier = "bot.ouro.md"
     public static let repository = "ourostack/ouro-md"
-    public static let version = "0.9.115"
+    public static let version = "0.9.116"
     public static let userAgent = "OuroMD/\(version)"
-    public static let releaseDate = "2026-11-13"
+    public static let releaseDate = "2026-11-14"
     public static let positioningSubtitle = "Local Markdown workspace for Mac files."
     public static let releaseHighlights = [
+        "The sidebar's empty folder, search notices and search results now use Ouro UI's empty state, button, banner and row.",
         "Add to Markdown Document and Replace Markdown Document are now in the Edit menu, and the same actions run from Shortcuts and from agents, with Open Markdown Document added for agents.",
         "The one-line installer now lives at ouroboros.bot/ouro-md-install.sh, and the download page at ouroboros.bot/ouro-md/download/. The old ouro.bot addresses forward there.",
         "Source mode now shows a scroll indicator on its preview pane, starting below the header.",

@@ -77,6 +77,14 @@ final class UISurfaceTester {
         )
         let truthSize = truthControl.intrinsicContentSize
         let truthWithStatusSize = truthWithStatusControl.intrinsicContentSize
+        let noFolderModel = AppModel()
+        noFolderModel.setSidebarMode(.files)
+        for scheme in [ColorScheme.light, .dark] {
+            let suffix = scheme == .dark ? "dark" : "light"
+            saveDebugSnapshot(SidebarView(model: noFolderModel), name: "sidebar-no-folder-\(suffix)", constrainedTo: NSSize(width: 260, height: 520), scheme: scheme)
+            saveDebugSnapshot(SidebarView(model: searchModel), name: "sidebar-search-results-\(suffix)", constrainedTo: NSSize(width: 260, height: 520), scheme: scheme)
+            saveDebugSnapshot(SidebarView(model: invalidModel), name: "sidebar-search-error-\(suffix)", constrainedTo: NSSize(width: 260, height: 520), scheme: scheme)
+        }
         saveDebugSnapshot(
             EditorPane(model: truthModel),
             name: "document-truth-status-hidden",
@@ -288,16 +296,21 @@ final class UISurfaceTester {
         return recognizeText(in: image)
     }
 
-    private func saveDebugSnapshot<Content: View>(_ view: Content, name: String, constrainedTo size: NSSize) {
+    private func saveDebugSnapshot<Content: View>(_ view: Content, name: String, constrainedTo size: NSSize, scheme: ColorScheme = .light) {
         guard debugSnapshotDirectory != nil else { return }
         let host = NSHostingController(
             rootView: view
-                .background(Color.white)
-                .environment(\.colorScheme, .light)
+                .background(scheme == .dark ? Color(white: 0.12) : Color.white)
+                .environment(\.colorScheme, scheme)
         )
+        host.view.appearance = NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)
         host.view.frame = NSRect(origin: .zero, size: size)
-        let window = HeadlessHarness.offscreenHost(host.view, size: size)
-        RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.2))
+        let window = HeadlessHarness.nonPresentingHost(host.view, size: size)
+        window.setFrameOrigin(NSScreen.main?.visibleFrame.origin ?? .zero)
+        for _ in 0..<60 {
+            RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.1))
+            window.displayIfNeeded()
+        }
         host.view.layoutSubtreeIfNeeded()
         window.displayIfNeeded()
         host.view.displayIfNeeded()

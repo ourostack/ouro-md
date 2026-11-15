@@ -1,3 +1,4 @@
+import OuroHX
 import OuroMDAppSupport
 import SwiftUI
 
@@ -150,14 +151,7 @@ struct FolderBrowserView: View {
             Divider()
 
             if let message = model.folderTruncationMessage {
-                Label(message, systemImage: "exclamationmark.triangle")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .accessibilityLabel("Folder scan limited")
-                    .accessibilityValue(message)
-                Divider()
+                SidebarNotice("Folder scan limited", description: message, tone: .warning)
             }
 
             content
@@ -169,17 +163,19 @@ struct FolderBrowserView: View {
 
     @ViewBuilder private var content: some View {
         if model.mountedFolder == nil {
-            centered("No folder open", action: "Open Folder…") { model.openFolderPanel() }
+            SidebarEmptyState("No folder open", systemImage: "folder", description: "Open a folder to browse and search its Markdown files.") {
+                OuroButton("Open Folder…", variant: .soft, size: .sm) { model.openFolderPanel() }
+            }
         } else if !model.folderFilter.isEmpty {
             if model.filteredFolderFiles.isEmpty {
-                centered("No matching files", action: nil, perform: nil)
+                SidebarEmptyState("No matching files", systemImage: "magnifyingglass", description: "No file name here contains “\(model.folderFilter)”.")
             } else {
                 List(model.filteredFolderFiles) { fileRow($0, showParent: true) }.listStyle(.sidebar)
             }
         } else if model.useTreeView {
             List(model.folderTree, children: \.children) { node in nodeRow(node) }.listStyle(.sidebar)
         } else if model.folderFlat.isEmpty {
-            centered("No markdown files here", action: nil, perform: nil)
+            SidebarEmptyState("No Markdown files here", systemImage: "doc.text", description: "This folder and its subfolders have no Markdown files.")
         } else {
             let duplicateNames = FolderDisplay.duplicateNames(in: model.folderFlat)
             List(model.folderFlat) { fileRow($0, showParent: FolderDisplay.hasDuplicateName($0, duplicateNames: duplicateNames)) }.listStyle(.sidebar)
@@ -255,16 +251,50 @@ struct FolderBrowserView: View {
         .padding(.horizontal, 10).padding(.vertical, 6)
     }
 
-    @ViewBuilder private func centered(_ text: String, action: String?, perform: (() -> Void)?) -> some View {
-        VStack(spacing: 8) {
-            Spacer()
-            Text(text).font(.system(size: 12)).foregroundStyle(.tertiary)
-            if let action, let perform {
-                Button(action, action: perform).buttonStyle(.link).font(.system(size: 12))
-            }
-            Spacer()
-        }
-        .frame(maxWidth: .infinity)
+}
+
+/// Ouro UI's empty state, centred in the sidebar's free height.
+private struct SidebarEmptyState<Action: View>: View {
+    let title: String
+    let systemImage: String
+    let description: String
+    let action: Action
+
+    init(_ title: String, systemImage: String, description: String, @ViewBuilder action: () -> Action) {
+        self.title = title
+        self.systemImage = systemImage
+        self.description = description
+        self.action = action()
+    }
+
+    var body: some View {
+        OuroEmptyState(title, systemImage: systemImage, description: description) { action }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+extension SidebarEmptyState where Action == EmptyView {
+    init(_ title: String, systemImage: String, description: String) {
+        self.init(title, systemImage: systemImage, description: description) { EmptyView() }
+    }
+}
+
+/// Ouro UI's banner, inset from the sidebar's edges, for a notice about the folder or the search.
+private struct SidebarNotice: View {
+    let title: String
+    let description: String?
+    let tone: OuroTone
+
+    init(_ title: String, description: String? = nil, tone: OuroTone) {
+        self.title = title
+        self.description = description
+        self.tone = tone
+    }
+
+    var body: some View {
+        OuroBanner(title, description: description, tone: tone)
+            .padding(.horizontal, 8)
+            .padding(.bottom, 8)
     }
 }
 
@@ -307,46 +337,19 @@ struct SearchPanelView: View {
                     .accessibilityLabel("Search folder")
             }
             .padding(.horizontal, 8).padding(.bottom, 6)
-            Divider()
             if let error = model.searchError {
-                Label(error, systemImage: "exclamationmark.triangle")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(3)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .accessibilityLabel("Search error")
-                    .accessibilityValue(error)
-                Divider()
+                SidebarNotice("Search error", description: error, tone: .destructive)
             }
             if model.searchWasTruncated {
-                Label("Searched first \(FolderScanner.maxFiles) files", systemImage: "exclamationmark.triangle")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .accessibilityLabel("Search limited")
-                Divider()
+                SidebarNotice("Search limited", description: "Searched the first \(FolderScanner.maxFiles) files.", tone: .warning)
             }
             if model.searchWasCancelled {
-                Label("Search cancelled", systemImage: "xmark.circle")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .accessibilityLabel("Search cancelled")
-                Divider()
+                SidebarNotice("Search cancelled", tone: .secondary)
             }
             if let message = model.searchSkippedMessage {
-                Label(message, systemImage: "exclamationmark.triangle")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .accessibilityLabel("Search skipped files")
-                    .accessibilityValue(message)
-                Divider()
+                SidebarNotice("Search skipped files", description: message, tone: .warning)
             }
+            Divider()
             results
         }
         .onAppear { focused = true }
@@ -367,6 +370,14 @@ struct SearchPanelView: View {
             List {
                 ForEach(model.searchResults) { result in
                     Section {
+                        OuroItem(result.name, description: result.parent, size: .sm, onPress: { model.openSearchResult(result) }) {
+                            if result.count > 0 {
+                                Text("\(result.count)")
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(.secondary)
+                                    .accessibilityLabel(result.count == 1 ? "1 match" : "\(result.count) matches")
+                            }
+                        }
                         ForEach(result.snippets) { snippet in
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(highlighted(snippet))
@@ -379,24 +390,6 @@ struct SearchPanelView: View {
                             .accessibilityLabel("Open \(result.name) at line \(snippet.lineNumber)")
                             .accessibilityAction { model.openSearchResult(result, snippet: snippet) }
                         }
-                    } header: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "doc.text").font(.system(size: 10))
-                            VStack(alignment: .leading, spacing: 0) {
-                                Text(result.name).font(.system(size: 11, weight: .semibold)).lineLimit(1)
-                                Text(result.parent).font(.system(size: 10)).foregroundStyle(.tertiary).lineLimit(1)
-                            }
-                            Spacer()
-                            if result.count > 0 {
-                                Text("\(result.count)").font(.system(size: 10)).foregroundStyle(.secondary)
-                            }
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture { model.openSearchResult(result) }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel("\(result.name), \(result.parent)")
-                        .accessibilityAddTraits(.isButton)
-                        .accessibilityAction { model.openSearchResult(result) }
                     }
                 }
             }
