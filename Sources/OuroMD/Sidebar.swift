@@ -518,6 +518,7 @@ struct DocumentStatusBar: View {
 struct CommandPaletteView: View {
     @ObservedObject var model: AppModel
     @FocusState private var focused: Bool
+    @State private var keys: CommandPaletteKeyMonitor?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -529,9 +530,6 @@ struct CommandPaletteView: View {
                     .textFieldStyle(.plain)
                     .focused($focused)
                     .onSubmit { model.performSelectedCommandPaletteItem() }
-                    // The arrow keys move through the commands while the cursor stays in the field, as in Spotlight.
-                    .onKeyPress(.downArrow) { model.moveCommandPaletteSelection(by: 1); return .handled }
-                    .onKeyPress(.upArrow) { model.moveCommandPaletteSelection(by: -1); return .handled }
                     .accessibilityLabel("Command")
                 Button { model.closeCommandPalette() } label: {
                     Image(systemName: "xmark")
@@ -582,7 +580,16 @@ struct CommandPaletteView: View {
         .glassSurface(cornerRadius: SystemDesign.usesGlass ? 18 : 8, elevated: true)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Command palette")
-        .onAppear { focused = true }
+        .onAppear {
+            focused = true
+            let monitor = CommandPaletteKeyMonitor { [model] offset in model.moveCommandPaletteSelection(by: offset) }
+            monitor.install()
+            keys = monitor
+        }
+        .onDisappear {
+            keys?.invalidate()
+            keys = nil
+        }
         .onExitCommand { model.closeCommandPalette() }
     }
 
