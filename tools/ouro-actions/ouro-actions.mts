@@ -12,11 +12,11 @@
 //   node ouro-actions.mts check <actions.mts> <dir>         fail when <dir> differs from what generate writes
 //   node ouro-actions.mts compare-mcp <actions.mts> <tools.json>  fail when a live MCP tools/list differs
 import { readdir, readFile, mkdir, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 /** The generator's version, written into every generated file; it is core's version. */
-export const ACTIONS_VERSION = "0.15.0";
+export const ACTIONS_VERSION = "0.16.0";
 const GENERATOR = `ouro-actions ${ACTIONS_VERSION}`;
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -957,6 +957,95 @@ export function compareMcp(set: ActionSet, tools: unknown, options: { undeclared
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+// The report: what `check --report` writes, in the shape of the Ouro AX X-ray's report.json
+// ---------------------------------------------------------------------------------------------------------------
+
+/** One claim of the action claim set (standard/ax/actions.claims.json), as the report needs it. */
+export interface ReportClaim {
+  id: string;
+  tier: "must" | "should";
+  rule: string;
+}
+
+export interface ActionsReport {
+  tool: "ouro-actions";
+  checker: { version: string };
+  at: string;
+  claimSet: { name: "actions"; version: string };
+  target: { app: { name: string }; set: string; commit: string | null };
+  summary: { claims: number; holding: number; must: number; mustHolding: number; checks: number };
+  claims: { id: string; tier: "must" | "should"; holds: boolean; problems: string[] }[];
+}
+
+const parseJson = (text: string | undefined): Record<string, unknown> | null => {
+  if (text === undefined) return null;
+  try {
+    const value: unknown = JSON.parse(text);
+    return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+};
+const toolsOf = (doc: Record<string, unknown> | null): Record<string, unknown>[] => (Array.isArray(doc?.["tools"]) ? (doc!["tools"] as Record<string, unknown>[]) : []);
+const hintsOf = (doc: Record<string, unknown> | null, name: string): Record<string, unknown> | null => {
+  const tool = toolsOf(doc).find((t) => t["name"] === name);
+  return tool && typeof tool["annotations"] === "object" ? (tool["annotations"] as Record<string, unknown>) : null;
+};
+const has = (doc: Record<string, unknown> | null, key: string, name: string) => Boolean(doc && typeof doc[key] === "object" && doc[key] !== null && name in (doc[key] as object));
+
+/**
+ * Proves the action claim set's claims on a set's committed projections (the folder `generate` wrote), each from what
+ * the files say: projections that equal their declaration; person-only actions offered on no agent door and refused on
+ * each; consequential actions marked so on every door, and confirmed in the App Intent. The result is shaped like the
+ * Ouro AX X-ray's report.json, so CI uploads it beside an X-ray report and the adoption ledger reads both.
+ */
+export function actionsReport(set: ActionSet, found: ReadonlyMap<string, string>, claims: readonly ReportClaim[], options: { claimSetVersion: string; app?: string; commit?: string | null; now?: () => Date }): ActionsReport {
+  const mcp = parseJson(found.get("mcp.json"));
+  const webmcp = parseJson(found.get("webmcp.json"));
+  const commands = parseJson(found.get("commands.json"));
+  const swift = found.get("OuroActions.swift");
+  const commandOf = (a: Action) => (Array.isArray(commands?.["commands"]) ? (commands!["commands"] as Record<string, unknown>[]) : []).find((c) => c["name"] === a.cliWords);
+  const proofs: Record<string, () => string[]> = {
+    "action.projections-match": () => checkGenerated(set, found),
+    "action.one-declaration": () => checkGenerated(set, found).length ? [`the committed projections are not all generated from ${set.name}'s declarations. Fix: run generate.`] : [],
+    "action.person-only-refuses": () =>
+      set.actions.filter((a) => a.consent === "person-only").flatMap((a) => [
+        ...(toolsOf(mcp).some((t) => t["name"] === a.id) ? [`${a.id}: mcp.json offers it as a tool. Fix: run generate.`] : []),
+        ...(toolsOf(webmcp).some((t) => t["name"] === a.id) ? [`${a.id}: webmcp.json offers it as a tool. Fix: run generate.`] : []),
+        ...(has(mcp, "refusals", a.id) ? [] : [`${a.id}: mcp.json does not refuse it. Fix: run generate.`]),
+        ...(has(webmcp, "refusals", a.id) ? [] : [`${a.id}: webmcp.json does not refuse it. Fix: run generate.`]),
+        ...(has(commands, "personOnly", a.cliWords) && !commandOf(a) ? [] : [`${a.id}: commands.json does not refuse "${a.cliWords}". Fix: run generate.`]),
+        ...(swift !== undefined && swift.includes(`struct ${a.names.pascal}Intent:`) ? [`${a.id}: OuroActions.swift has an App Intent for it. Fix: run generate.`] : []),
+      ]),
+    "action.consequential-confirms": () =>
+      set.actions.filter((a) => a.consent === "consequential").flatMap((a) => {
+        const swiftIntent = swift === undefined ? null : swift.slice(swift.indexOf(`struct ${a.names.pascal}Intent:`), swift.indexOf("\n}\n", swift.indexOf(`struct ${a.names.pascal}Intent:`)));
+        return [
+          ...(hintsOf(mcp, a.id)?.["destructiveHint"] === true ? [] : [`${a.id}: mcp.json does not mark it destructive. Fix: run generate.`]),
+          ...(hintsOf(webmcp, a.id)?.["consequentialHint"] === true ? [] : [`${a.id}: webmcp.json does not mark it consequential. Fix: run generate.`]),
+          ...(commandOf(a)?.["effect"] === "others" ? [] : [`${a.id}: commands.json does not give "${a.cliWords}" the effect "others", so the CLI does not ask for --why. Fix: run generate.`]),
+          ...(swiftIntent === null || swiftIntent.includes("requestConfirmation()") ? [] : [`${a.id}: its App Intent does not call requestConfirmation. Fix: run generate.`]),
+        ];
+      }),
+    "action.agent-description": () => set.actions.filter((a) => !a.agent?.trim()).map((a) => `${a.id}: has no agent description. Fix: write one line for a model in agent.`),
+  };
+  const results = claims.map((c) => {
+    const problems = proofs[c.id]?.() ?? [`no check in ouro-actions ${ACTIONS_VERSION} proves ${c.id}. Fix: use the ouro-actions from the same core release as the claim set.`];
+    return { id: c.id, tier: c.tier, holds: problems.length === 0, problems };
+  });
+  const musts = results.filter((r) => r.tier === "must");
+  return {
+    tool: "ouro-actions",
+    checker: { version: ACTIONS_VERSION },
+    at: (options.now ?? (() => new Date()))().toISOString(),
+    claimSet: { name: "actions", version: options.claimSetVersion },
+    target: { app: { name: options.app ?? set.tool ?? set.name }, set: set.name, commit: options.commit ?? null },
+    summary: { claims: results.length, holding: results.filter((r) => r.holds).length, must: musts.length, mustHolding: musts.filter((r) => r.holds).length, checks: results.length },
+    claims: results,
+  };
+}
+
+// ---------------------------------------------------------------------------------------------------------------
 // The CLI
 // ---------------------------------------------------------------------------------------------------------------
 
@@ -985,12 +1074,26 @@ async function readDir(dir: string): Promise<Map<string, string>> {
   return found;
 }
 
-const USAGE = "usage: node ouro-actions.mts generate|check <actions.mts> <dir> | compare-mcp <actions.mts> <tools.json> [--undeclared <names.json>]";
+const USAGE = "usage: node ouro-actions.mts generate <actions.mts> <dir> | check <actions.mts> <dir> [--report <report.json> [--claims <actions.claims.json>] [--app <name>] [--commit <sha>]] | compare-mcp <actions.mts> <tools.json> [--undeclared <names.json>]";
+
+const REPORT_FLAGS = ["--report", "--claims", "--app", "--commit"];
+
+/** check's options after its two arguments: each of --report, --claims, --app and --commit at most once with a value; null when they are not. */
+function reportOptions(rest: readonly string[]): Record<string, string> | null {
+  const options: Record<string, string> = {};
+  for (let i = 0; i < rest.length; i += 2) {
+    const [flag, value] = [rest[i]!, rest[i + 1]];
+    if (!REPORT_FLAGS.includes(flag) || value === undefined || flag in options) return null;
+    options[flag] = value;
+  }
+  return Object.keys(options).length && !("--report" in options) ? null : options;
+}
 
 /** Runs the CLI; returns the exit code: 0 clean, 1 drift, 2 usage. */
 export async function main(argv: readonly string[], io: { out(s: string): void; err(s: string): void }): Promise<number> {
   const [cmd, declarations, target, flag, flagValue, ...rest] = argv;
-  const flagOk = flag === undefined || (cmd === "compare-mcp" && flag === "--undeclared" && flagValue !== undefined && rest.length === 0);
+  const report = cmd === "check" ? reportOptions(argv.slice(3)) : null;
+  const flagOk = flag === undefined || (cmd === "compare-mcp" && flag === "--undeclared" && flagValue !== undefined && rest.length === 0) || report !== null;
   if (!cmd || !declarations || !target || !["generate", "check", "compare-mcp"].includes(cmd) || !flagOk) {
     io.err(`${USAGE}\n`);
     return 2;
@@ -1003,6 +1106,23 @@ export async function main(argv: readonly string[], io: { out(s: string): void; 
     io.out(`ouro-actions: wrote ${files.size} files for ${count(set.actions.length, "action")} into ${target}.\n`);
     return 0;
   }
+  if (cmd === "check") {
+    const found = await readDir(target);
+    const problems = checkGenerated(set, found);
+    for (const p of problems) io.err(`ouro-actions: ${p}\n`);
+    if (report?.["--report"]) {
+      const claimsPath = report["--claims"] ?? fileURLToPath(new URL("./actions.claims.json", import.meta.url));
+      const claimSet = JSON.parse(await readFile(claimsPath, "utf8")) as { version: string; claims: ReportClaim[] };
+      const written = actionsReport(set, found, claimSet.claims, { claimSetVersion: claimSet.version, app: report["--app"], commit: report["--commit"] ?? null });
+      await mkdir(dirname(resolve(report["--report"])), { recursive: true });
+      await writeFile(report["--report"], `${JSON.stringify(written, null, 2)}\n`);
+      const { must, mustHolding, claims, holding } = written.summary;
+      io.out(`ouro-actions: ${mustHolding} of ${must} must claims and ${holding} of ${claims} claims hold; wrote ${report["--report"]}.\n`);
+    }
+    if (problems.length) return 1;
+    io.out(`ouro-actions: ${count(set.actions.length, "action")}, every projection matches its declaration.\n`);
+    return 0;
+  }
   let undeclared: string[] | undefined;
   if (flagValue !== undefined) {
     const names: unknown = JSON.parse(await readFile(flagValue, "utf8"));
@@ -1012,10 +1132,10 @@ export async function main(argv: readonly string[], io: { out(s: string): void; 
     }
     undeclared = names;
   }
-  const problems = cmd === "check" ? checkGenerated(set, await readDir(target)) : compareMcp(set, JSON.parse(await readFile(target, "utf8")), { undeclared });
+  const problems = compareMcp(set, JSON.parse(await readFile(target, "utf8")), { undeclared });
   for (const p of problems) io.err(`ouro-actions: ${p}\n`);
   if (problems.length) return 1;
-  io.out(`ouro-actions: ${count(set.actions.length, "action")}, ${cmd === "check" ? "every projection matches its declaration" : "the live tools match their declarations"}.\n`);
+  io.out(`ouro-actions: ${count(set.actions.length, "action")}, the live tools match their declarations.\n`);
   return 0;
 }
 

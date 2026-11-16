@@ -148,6 +148,13 @@ jobs:
           node-version: "22.18"
       - name: Check the actions have not drifted from their declaration
         run: scripts/ouro-actions.sh check
+      - name: Write the action claims report
+        run: scripts/ouro-actions.sh report xray/actions/report.json
+      - if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: actions-xray
+          path: xray/actions/report.json
       - name: Show the toolchain (the free image's default Xcode)
         run: |
           xcodebuild -version
