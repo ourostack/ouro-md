@@ -1,0 +1,7 @@
+{
+  "version": [
+    { "path": "Sources/OuroMDCore/OuroMDRelease.swift", "pattern": "static let version = \"([0-9]+\\.[0-9]+\\.[0-9]+)\"" },
+    { "path": "README.md", "pattern": "^> \\*\\*Status:\\*\\* v([0-9]+\\.[0-9]+\\.[0-9]+)" },
+    { "path": "distribution/apple-distribution.json", "pattern": "\"store\": \\{\\s*\"version\": \"([0-9]+\\.[0-9]+\\.[0-9]+)\"" }
+  ]
+}
