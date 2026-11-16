@@ -580,11 +580,18 @@ struct CommandPaletteView: View {
         .glassSurface(cornerRadius: SystemDesign.usesGlass ? 18 : 8, elevated: true)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Command palette")
-        .onAppear {
-            focused = true
-            let monitor = CommandPaletteKeyMonitor { [model] offset in model.moveCommandPaletteSelection(by: offset) }
-            monitor.install()
-            keys = monitor
+        .onAppear { focused = true }
+        // The arrow keys belong to the palette only while its field has focus: click into the document with the
+        // palette still showing and they move the cursor there again.
+        .onChange(of: focused) { _, isFocused in
+            if isFocused {
+                if keys == nil {
+                    keys = CommandPaletteKeyMonitor { [model] offset in model.moveCommandPaletteSelection(by: offset) }
+                }
+                keys?.install()
+            } else {
+                keys?.invalidate()
+            }
         }
         .onDisappear {
             keys?.invalidate()

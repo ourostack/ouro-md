@@ -2,7 +2,7 @@ import AppKit
 
 /// The command palette's arrow keys. The palette's text field keeps the cursor, and a text field takes the up and down
 /// arrows for itself (to the start or end of its line) before SwiftUI's key handlers see them, so the palette reads
-/// them first, here, while it is open: down and up move the selection, as in Spotlight.
+/// them first, here, while its field has focus: down and up move the selection, as in Spotlight.
 @MainActor
 final class CommandPaletteKeyMonitor {
     private var monitor: Any?
