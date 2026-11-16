@@ -128,7 +128,12 @@ final class AppModel: ObservableObject {
     @Published var searchWholeWord = false
     @Published var searchRegexp = false
     @Published var commandPaletteVisible = false
-    @Published var commandPaletteQuery = ""
+    @Published var commandPaletteQuery = "" {
+        // A new query is a new list: the selection starts again at its first command.
+        didSet { if commandPaletteQuery != oldValue { commandPaletteSelection = 0 } }
+    }
+    /// The command the palette's arrow keys have reached, an index into `commandPaletteItems`; Return runs it.
+    @Published private(set) var commandPaletteSelection = 0
     @Published private(set) var documentTruth = DocumentTruthSnapshot(
         state: .untitled,
         absolutePath: nil,
@@ -1400,7 +1405,22 @@ final class AppModel: ObservableObject {
 
     func showCommandPalette() {
         commandPaletteQuery = ""
+        commandPaletteSelection = 0
         commandPaletteVisible = true
+    }
+
+    /// Moves the palette's selection by `offset` commands, stopping at the first and the last.
+    func moveCommandPaletteSelection(by offset: Int) {
+        let count = commandPaletteItems.count
+        guard count > 0 else { return }
+        commandPaletteSelection = min(max(commandPaletteSelection + offset, 0), count - 1)
+    }
+
+    /// Runs the command the selection is on, the first one until the arrow keys move it.
+    func performSelectedCommandPaletteItem() {
+        let items = commandPaletteItems
+        guard !items.isEmpty else { return }
+        performCommandPaletteItem(items[min(commandPaletteSelection, items.count - 1)])
     }
 
     func closeCommandPalette() {

@@ -518,6 +518,7 @@ struct DocumentStatusBar: View {
 struct CommandPaletteView: View {
     @ObservedObject var model: AppModel
     @FocusState private var focused: Bool
+    @State private var keys: CommandPaletteKeyMonitor?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -528,7 +529,7 @@ struct CommandPaletteView: View {
                 TextField("Command", text: Binding(get: { model.commandPaletteQuery }, set: { model.commandPaletteQuery = $0 }))
                     .textFieldStyle(.plain)
                     .focused($focused)
-                    .onSubmit { runFirst() }
+                    .onSubmit { model.performSelectedCommandPaletteItem() }
                     .accessibilityLabel("Command")
                 Button { model.closeCommandPalette() } label: {
                     Image(systemName: "xmark")
@@ -537,31 +538,42 @@ struct CommandPaletteView: View {
                 .accessibilityLabel("Close command palette")
             }
             Divider()
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 2) {
-                    ForEach(model.commandPaletteItems) { item in
-                        Button {
-                            model.performCommandPaletteItem(item)
-                        } label: {
-                            HStack(spacing: 8) {
-                                Text(item.title)
-                                    .font(.system(size: 12, weight: .medium))
-                                    .lineLimit(1)
-                                Spacer()
-                                if let shortcut = item.shortcut {
-                                    ShortcutBadge(text: shortcut)
+            ScrollViewReader { scroller in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 2) {
+                        ForEach(Array(model.commandPaletteItems.enumerated()), id: \.element.id) { index, item in
+                            let selected = index == model.commandPaletteSelection
+                            Button {
+                                model.performCommandPaletteItem(item)
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Text(item.title)
+                                        .font(.system(size: 12, weight: .medium))
+                                        .lineLimit(1)
+                                    Spacer()
+                                    if let shortcut = item.shortcut {
+                                        ShortcutBadge(text: shortcut)
+                                    }
                                 }
+                                .contentShape(Rectangle())
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 5)
+                                .background(selected ? Color.accentColor.opacity(0.18) : Color.clear,
+                                            in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                             }
-                            .contentShape(Rectangle())
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 5)
+                            .buttonStyle(.plain)
+                            .id(item.id)
+                            .accessibilityLabel(item.shortcut.map { "\(item.title), \(spokenShortcut($0))" } ?? item.title)
+                            .accessibilityAddTraits(selected ? .isSelected : [])
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(item.shortcut.map { "\(item.title), \(spokenShortcut($0))" } ?? item.title)
                     }
                 }
+                .frame(maxHeight: 260)
+                .onChange(of: model.commandPaletteSelection) { _, index in
+                    let items = model.commandPaletteItems
+                    if items.indices.contains(index) { scroller.scrollTo(items[index].id) }
+                }
             }
-            .frame(maxHeight: 260)
         }
         .padding(10)
         .frame(maxWidth: .infinity)
@@ -569,13 +581,25 @@ struct CommandPaletteView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Command palette")
         .onAppear { focused = true }
+        // The arrow keys belong to the palette only while its field has focus: click into the document with the
+        // palette still showing and they move the cursor there again.
+        .onChange(of: focused) { _, isFocused in
+            if isFocused {
+                if keys == nil {
+                    keys = CommandPaletteKeyMonitor { [model] offset in model.moveCommandPaletteSelection(by: offset) }
+                }
+                keys?.install()
+            } else {
+                keys?.invalidate()
+            }
+        }
+        .onDisappear {
+            keys?.invalidate()
+            keys = nil
+        }
         .onExitCommand { model.closeCommandPalette() }
     }
 
-    private func runFirst() {
-        guard let first = model.commandPaletteItems.first else { return }
-        model.performCommandPaletteItem(first)
-    }
 }
 
 private struct FindBar: View {
