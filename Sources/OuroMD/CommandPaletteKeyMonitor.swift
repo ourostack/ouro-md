@@ -6,6 +6,8 @@ import AppKit
 @MainActor
 final class CommandPaletteKeyMonitor {
     private var monitor: Any?
+    /// The palette's own window: arrow keys in any other window (another document, an Open panel) are left alone.
+    private weak var window: NSWindow?
     private let move: @MainActor (Int) -> Void
 
     init(move: @escaping @MainActor (Int) -> Void) {
@@ -25,10 +27,13 @@ final class CommandPaletteKeyMonitor {
         }
     }
 
-    func install() {
+    /// Starts reading the arrow keys in `window`, the key window when the palette's field takes focus.
+    func install(in window: NSWindow? = nil) {
         guard monitor == nil else { return }
+        self.window = window ?? NSApp.keyWindow
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard let self, let offset = Self.offset(for: event) else { return event }
+            guard let self, event.window != nil, event.window === MainActor.assumeIsolated({ self.window }),
+                  let offset = Self.offset(for: event) else { return event }
             MainActor.assumeIsolated { self.move(offset) }
             return nil
         }
