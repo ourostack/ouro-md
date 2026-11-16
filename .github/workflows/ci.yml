@@ -94,6 +94,20 @@ jobs:
         run: ./scripts/swift-test-budget.sh
       - name: Test agent-change cue model
         run: node --test scripts/test-change-marks.cjs
+      # Pictures of Add to Markdown Document running its declared action (light and dark, 2x), for Ouro UI's
+      # adoption ledger. One test, on the build "Run tests" already made.
+      - name: Draw Add to Markdown Document
+        env:
+          OURO_ACTION_SHOTS: "1"
+          OURO_ACTION_SHOTS_OUTPUT: .build/action-shots
+        run: swift test --skip-build --filter DocumentIntentsTests/testAddToDocumentPromptShots
+      - name: Upload the Add to Markdown Document pictures
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: action-shots
+          path: .build/action-shots/
+          if-no-files-found: warn
       - name: Check file watcher concurrency
         run: swift test --sanitize=thread --filter FileWatcher
       - name: Upload Swift test timings

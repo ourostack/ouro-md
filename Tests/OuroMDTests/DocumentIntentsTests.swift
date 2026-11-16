@@ -172,6 +172,78 @@ final class DocumentIntentsTests: XCTestCase {
         XCTAssertEqual(workspace.replacements.count, 1, "one undoable edit, the same one the intent makes")
     }
 
+    /// Pictures of Add to Markdown Document at work, for Ouro UI's adoption ledger: the prompt the menu command shows,
+    /// in light and dark at 2x, drawn off screen from `DocumentActionCommands.markdownPrompt`, then the same command
+    /// running the declared action. CI's Swift tests job runs it with OURO_ACTION_SHOTS=1 and uploads the pictures.
+    func testAddToDocumentPromptShots() async throws {
+        let env = ProcessInfo.processInfo.environment
+        try XCTSkipUnless(env["OURO_ACTION_SHOTS"] == "1", "only CI's picture step draws the prompt")
+        let output = URL(fileURLWithPath: env["OURO_ACTION_SHOTS_OUTPUT"] ?? ".build/action-shots").standardizedFileURL
+        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        let typed = "- [ ] Book the harbour hall for Thursday"
+        var shot: [String: Double] = [:]
+        DocumentActionCommands.askMarkdown = { title, message in
+            for (scheme, name) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+                let appearance = NSAppearance(named: name)!
+                let (alert, text) = DocumentActionCommands.markdownPrompt(title: title, message: message)
+                alert.window.appearance = appearance
+                text.string = typed
+                alert.layout()
+                let url = output.appendingPathComponent("add-to-document-\(scheme)@2x.png")
+                do { shot[scheme] = try Self.draw(alert.window, appearance: appearance, to: url) } catch { XCTFail("\(error)") }
+            }
+            return typed
+        }
+        let summary = await DocumentActionCommands.run(.addToDocument, in: workspace)
+        XCTAssertEqual(summary, "Added to Plan.")
+        XCTAssertEqual(workspace.documents[workspace.order[0]], "# Plan\n\nShip it.\n\n\(typed)\n")
+        let light = try XCTUnwrap(shot["light"]), dark = try XCTUnwrap(shot["dark"])
+        XCTAssertGreaterThan(light, dark + 0.3, "the light prompt is drawn light and the dark one dark")
+        try JSONSerialization.data(withJSONObject: [
+            "command": DocumentActionCommands.Command.addToDocument.menuTitle,
+            "action": AppendToDocumentAction.id,
+            "typed": typed, "summary": summary ?? "", "after": workspace.documents[workspace.order[0]] ?? "",
+            "os": ProcessInfo.processInfo.operatingSystemVersionString,
+        ], options: [.prettyPrinted, .sortedKeys]).write(to: output.appendingPathComponent("add-to-document.json"))
+    }
+
+    /// Draws the window's content at twice its size in points over the appearance's window background, writes a PNG,
+    /// and returns the picture's mean brightness (0 to 1). Fails on a picture with almost no distinct colours, which is
+    /// what a view that drew nothing gives.
+    private static func draw(_ window: NSWindow, appearance: NSAppearance, to url: URL) throws -> Double {
+        let view = try XCTUnwrap(window.contentView)
+        view.layoutSubtreeIfNeeded()
+        let size = view.bounds.size
+        let rep = try XCTUnwrap(NSBitmapImageRep(
+            bitmapDataPlanes: nil, pixelsWide: Int(size.width * 2), pixelsHigh: Int(size.height * 2),
+            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0))
+        rep.size = size
+        let context = try XCTUnwrap(NSGraphicsContext(bitmapImageRep: rep))
+        appearance.performAsCurrentDrawingAppearance {
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = context
+            NSColor.windowBackgroundColor.setFill()
+            NSRect(origin: .zero, size: size).fill()
+            NSGraphicsContext.restoreGraphicsState()
+            view.displayIgnoringOpacity(view.bounds, in: context)
+        }
+        context.flushGraphics()
+        try XCTUnwrap(rep.representation(using: .png, properties: [:])).write(to: url)
+        var colours = Set<UInt32>(), total = 0.0, count = 0.0
+        for y in stride(from: 0, to: rep.pixelsHigh, by: 3) {
+            for x in stride(from: 0, to: rep.pixelsWide, by: 3) {
+                guard let c = rep.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else { continue }
+                colours.insert(UInt32(c.redComponent * 31) << 10 | UInt32(c.greenComponent * 31) << 5 | UInt32(c.blueComponent * 31))
+                total += (c.redComponent + c.greenComponent + c.blueComponent) / 3
+                count += 1
+            }
+        }
+        XCTAssertGreaterThan(colours.count, 24, "\(url.lastPathComponent) looks blank: \(colours.count) colours")
+        XCTAssertEqual(rep.pixelsWide, Int(size.width * 2))
+        return total / max(count, 1)
+    }
+
     func testReplaceCommandAsksThenReplacesWithTheClipboard() async {
         var asked: [String] = []
         DocumentActionCommands.clipboard = { "# From the clipboard\n" }

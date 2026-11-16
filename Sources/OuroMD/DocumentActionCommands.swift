@@ -62,7 +62,9 @@ enum DocumentActionCommands {
 
     // MARK: - The alerts
 
-    private static func presentMarkdownPrompt(title: String, message: String) -> String? {
+    /// The prompt Add to Markdown Document shows: the alert, and the text view the person types the Markdown into. The
+    /// screenshot test builds it here too, so its pictures are of this prompt and no copy of it.
+    static func markdownPrompt(title: String, message: String) -> (alert: NSAlert, text: NSTextView) {
         let alert = NSAlert()
         alert.messageText = title
         alert.informativeText = message
@@ -80,6 +82,11 @@ enum DocumentActionCommands {
         scroll.documentView = text
         alert.accessoryView = scroll
         alert.window.initialFirstResponder = text
+        return (alert, text)
+    }
+
+    private static func presentMarkdownPrompt(title: String, message: String) -> String? {
+        let (alert, text) = markdownPrompt(title: title, message: message)
         guard alert.runModal() == .alertFirstButtonReturn else { return nil }
         let markdown = text.string
         return markdown.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : markdown
