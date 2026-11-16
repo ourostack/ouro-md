@@ -5,6 +5,7 @@
 #   scripts/ouro-actions.sh vendor <tag>      take the generator and its claims from that ouro-ui-core release
 #   scripts/ouro-actions.sh generate          write every door from the declaration
 #   scripts/ouro-actions.sh check             the vendored files match the release's hashes, and nothing generated has drifted
+#   scripts/ouro-actions.sh report [file]     the same check, plus the action claims report CI uploads (default xray/actions/report.json)
 #   scripts/ouro-actions.sh compare-mcp <app-or-binary>   a running `ouro-md --mcp` lists exactly the declared tools
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -43,6 +44,10 @@ case "${1:-}" in
     verify_vendored
     node "$GEN" check "$DECLARATIONS" "$OUT"
     ;;
+  report)
+    verify_vendored
+    node "$GEN" check "$DECLARATIONS" "$OUT" --report "${2:-xray/actions/report.json}" --app "Ouro MD" --commit "${GITHUB_SHA:-local}"
+    ;;
   compare-mcp)
     app="${2:?usage: scripts/ouro-actions.sh compare-mcp <OuroMD.app or the ouro-md binary>}"
     [[ -d "$app" ]] && app="$app/Contents/MacOS/ouro-md"
@@ -56,7 +61,7 @@ case "${1:-}" in
     node "$GEN" compare-mcp "$DECLARATIONS" "$scratch/tools.json"
     ;;
   *)
-    sed -n '2,9p' "$0" >&2
+    sed -n '2,10p' "$0" >&2
     exit 2
     ;;
 esac
