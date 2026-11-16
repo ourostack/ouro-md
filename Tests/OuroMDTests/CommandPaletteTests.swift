@@ -51,6 +51,49 @@ final class CommandPaletteTests: XCTestCase {
         XCTAssertTrue(ids.contains("file.copy-git-diff-command"))
     }
 
+    func testArrowKeysMoveThePaletteSelectionAndReturnRunsTheSelectedCommand() {
+        let model = AppModel()
+        let bridge = PaletteBridge()
+        model.bridge = bridge
+        model.showCommandPalette()
+        model.commandPaletteQuery = "theme"
+        let themes = model.commandPaletteItems
+        XCTAssertGreaterThan(themes.count, 2, "the query should list several themes")
+        XCTAssertEqual(model.commandPaletteSelection, 0, "the first command is selected until the arrow keys move")
+
+        model.moveCommandPaletteSelection(by: -1)
+        XCTAssertEqual(model.commandPaletteSelection, 0, "up from the first command stays on it")
+        model.moveCommandPaletteSelection(by: 1)
+        model.moveCommandPaletteSelection(by: 1)
+        XCTAssertEqual(model.commandPaletteSelection, 2)
+        model.moveCommandPaletteSelection(by: themes.count + 5)
+        XCTAssertEqual(model.commandPaletteSelection, themes.count - 1, "down past the last command stays on it")
+        model.moveCommandPaletteSelection(by: -(themes.count - 2))
+        XCTAssertEqual(model.commandPaletteSelection, 1)
+
+        let expected = String(themes[1].id.dropFirst("theme.".count))
+        model.performSelectedCommandPaletteItem()
+        XCTAssertFalse(model.commandPaletteVisible)
+        XCTAssertEqual(model.theme.id, expected, "Return runs the selected command, not the first")
+    }
+
+    func testANewQueryOrAFreshPaletteSelectsTheFirstCommandAgain() {
+        let model = AppModel()
+        model.showCommandPalette()
+        model.commandPaletteQuery = "theme"
+        model.moveCommandPaletteSelection(by: 2)
+        model.commandPaletteQuery = "theme g"
+        XCTAssertEqual(model.commandPaletteSelection, 0)
+        model.moveCommandPaletteSelection(by: 1)
+        model.closeCommandPalette()
+        model.showCommandPalette()
+        XCTAssertEqual(model.commandPaletteSelection, 0)
+        model.commandPaletteQuery = "not-a-command"
+        model.moveCommandPaletteSelection(by: 1)
+        model.performSelectedCommandPaletteItem()
+        XCTAssertTrue(model.commandPaletteVisible, "with nothing listed, Return does nothing")
+    }
+
     func testPaletteVisibilityAndFindCommandsResetQuery() {
         let model = AppModel()
         model.showCommandPalette()
