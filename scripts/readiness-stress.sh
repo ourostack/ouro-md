@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ARTIFACT_DIR="${1:-$ROOT/worker/tasks/2026-06-14-2236-doing-human-use-readiness}"
+ARTIFACT_DIR="${1:-$ROOT/.build/readiness-stress}"
 source "$ROOT/scripts/lib/app-version.sh"
 SOURCE_VERSION="$(ouro_md_source_version "$ROOT")"
 EXPECTED_LIVE_VERSION="${OURO_MD_EXPECTED_LIVE_VERSION:-$SOURCE_VERSION}"

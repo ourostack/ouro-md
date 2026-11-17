@@ -31,5 +31,4 @@ planning artifacts or task bundles.
 
 ## Historical And Task Artifacts
 
-Task planning, audit, and doing artifacts live under `worker/tasks/`. Treat them
-as provenance unless a current task explicitly cites one.
+`worker/tasks/` (old planning and doing notes) was removed on 2026-11-17; Git history keeps it.
