@@ -92,7 +92,7 @@ jobs:
             have_remote_branch=true
           fi
           git checkout -B "$branch"
-          git add Package.resolved README.md Sources/OuroMDCore/OuroMDRelease.swift
+          git add Package.resolved README.md Sources/OuroMDCore/OuroMDRelease.swift distribution/apple-distribution.json
           if git diff --cached --quiet; then
             echo "No refresh diff remains after validation."
             exit 0

@@ -92,24 +92,21 @@ fi
 
 ./scripts/bump-version.sh "$next_version"
 
+# The release's highlights stay: they are the notes for everything still unreleased, and the positioning tests read
+# them. The shell refresh adds its own line at the top (once).
 python3 - <<'PY'
 from pathlib import Path
 import re
 
 path = Path("Sources/OuroMDCore/OuroMDRelease.swift")
 text = path.read_text(encoding="utf-8")
-replacement = '''public static let releaseHighlights = [
-        "Refresh the shared native app shell dependency to latest main.",
-    ]'''
-updated, count = re.subn(
-    r'public static let releaseHighlights = \[\n(?:.|\n)*?\n    \]',
-    replacement,
-    text,
-    count=1,
-)
-if count != 1:
-    raise SystemExit("could not rewrite OuroMDRelease.releaseHighlights")
-path.write_text(updated, encoding="utf-8")
+line = '        "Ouro MD now uses the latest shared Ouro app shell.",'
+opening = "public static let releaseHighlights = [\n"
+if opening not in text:
+    raise SystemExit("could not find OuroMDRelease.releaseHighlights")
+if line not in text:
+    text = text.replace(opening, opening + line + "\n", 1)
+path.write_text(text, encoding="utf-8")
 PY
 
 ./scripts/verify-release-version.sh

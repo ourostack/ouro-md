@@ -1112,6 +1112,8 @@ workflow_needles = [
     "./scripts/check-shell-dependency.sh",
     "./scripts/refresh-shell-dependency.sh",
     "automation/ouro-md-refresh-shell-dependency",
+    # bump-version.sh moves the version in the distribution manifest too; leaving it out fails the release checks.
+    "git add Package.resolved README.md Sources/OuroMDCore/OuroMDRelease.swift distribution/apple-distribution.json",
     "already has the desired tree",
     "no open PR was found; creating one",
     "write_manual_pr_summary",
@@ -1141,6 +1143,9 @@ refresh_needles = [
 for needle in refresh_needles:
     if needle not in refresh:
         raise SystemExit(f"refresh-shell-dependency.sh must contain {needle!r}")
+# Replacing the highlights dropped the unreleased notes the positioning tests read (#183, #196).
+if re.search(r"re\.subn?\(\s*r?['\"]public static let releaseHighlights", refresh):
+    raise SystemExit("refresh-shell-dependency.sh must add its highlight, not replace releaseHighlights")
 PY
 
   local tmp
