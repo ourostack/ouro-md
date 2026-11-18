@@ -1105,9 +1105,15 @@ workflow_needles = [
     "contents: write",
     "pull-requests: write",
     "runs-on: macos-26",
+    "actions/create-github-app-token@v2",
+    "secrets.OURO_CURRENT_PRIVATE_KEY",
+    "token: ${{ steps.app-token.outputs.token }}",
+    "GH_TOKEN: ${{ steps.app-token.outputs.token }}",
     "./scripts/check-shell-dependency.sh",
     "./scripts/refresh-shell-dependency.sh",
     "automation/ouro-md-refresh-shell-dependency",
+    # bump-version.sh moves the version in the distribution manifest too; leaving it out fails the release checks.
+    "git add Package.resolved README.md Sources/OuroMDCore/OuroMDRelease.swift distribution/apple-distribution.json",
     "already has the desired tree",
     "no open PR was found; creating one",
     "write_manual_pr_summary",
@@ -1137,6 +1143,9 @@ refresh_needles = [
 for needle in refresh_needles:
     if needle not in refresh:
         raise SystemExit(f"refresh-shell-dependency.sh must contain {needle!r}")
+# Replacing the highlights dropped the unreleased notes the positioning tests read (#183, #196).
+if re.search(r"re\.subn?\(\s*r?['\"]public static let releaseHighlights", refresh):
+    raise SystemExit("refresh-shell-dependency.sh must add its highlight, not replace releaseHighlights")
 PY
 
   local tmp
@@ -1184,7 +1193,9 @@ SH
     PATH="$tmp:$PATH" \
       GITHUB_REPOSITORY="ourostack/ouro-md" \
       GITHUB_STEP_SUMMARY="$tmp/summary.md" \
-      bash "$tmp/run-fallback.sh" "$tmp/pr-fallback.sh" "$tmp/body.md"
+      bash "$tmp/run-fallback.sh" "$tmp/pr-fallback.sh" "$tmp/body.md" > "$tmp/fallback.log" 2>&1
+    # The fake refusal stays in this file, so a reader of the CI log does not take it for a real one.
+    grep -Fq "createPullRequest" "$tmp/fallback.log"
     grep -Fq "Shell dependency refresh needs a PR" "$tmp/summary.md"
     grep -Fq "automation/ouro-md-refresh-shell-dependency" "$tmp/summary.md"
     grep -Fq "https://github.com/ourostack/ouro-md/compare/main...automation/ouro-md-refresh-shell-dependency" "$tmp/summary.md"

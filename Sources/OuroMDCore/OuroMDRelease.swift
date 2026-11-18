@@ -4,11 +4,12 @@ public enum OuroMDRelease {
     public static let appName = "Ouro MD"
     public static let bundleIdentifier = "bot.ouro.md"
     public static let repository = "ourostack/ouro-md"
-    public static let version = "0.9.122"
+    public static let version = "0.9.123"
     public static let userAgent = "OuroMD/\(version)"
-    public static let releaseDate = "2026-11-16"
+    public static let releaseDate = "2026-11-18"
     public static let positioningSubtitle = "Local Markdown workspace for Mac files."
     public static let releaseHighlights = [
+        "Ouro MD now uses the latest shared Ouro app shell.",
         "In the command palette, the arrow keys now move through the commands, the selected one is highlighted and read by VoiceOver, and Return runs it.",
         "Ouro MD's shell checks now pass again: its control deck and pre-flight script meet ouro-native-apple-app-shell's adoption rules.",
         "The sidebar's empty folder, search notices and search results now use Ouro UI's empty state, button, banner and row.",
