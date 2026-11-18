@@ -23,7 +23,7 @@ place — switch themes live, and read the same document four different ways.
 
 **Agents:** `"/Applications/Ouro MD.app/Contents/MacOS/ouro-md" --mcp --root <folder>` serves a folder of Markdown to an agent over MCP ([how](#siri-shortcuts-and-agents)).
 
-> **Status:** v0.9.122. Reads and edits Markdown today, signed and notarized for Mac. See [Install](#install).
+> **Status:** v0.9.123. Reads and edits Markdown today, signed and notarized for Mac. See [Install](#install).
 
 ---
 
