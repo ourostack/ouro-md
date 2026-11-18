@@ -22,9 +22,19 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 20
     steps:
+      # The refresh branch and its pull request are written as the Ouro Current app, not as GitHub Actions: a pull
+      # request GitHub Actions opens starts no checks, and the repository may not let GitHub Actions open one at all.
+      - name: Sign in as the Ouro Current app
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.OURO_CURRENT_APP_ID }}
+          private-key: ${{ secrets.OURO_CURRENT_PRIVATE_KEY }}
+
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Show the toolchain (the free image's default Xcode)
         run: |
@@ -68,7 +78,7 @@ jobs:
       - name: Open or update refresh PR
         if: steps.freshness.outputs.stale == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           branch="automation/ouro-md-refresh-shell-dependency"
           title="Refresh shared shell dependency"

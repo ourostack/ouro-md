@@ -1105,6 +1105,10 @@ workflow_needles = [
     "contents: write",
     "pull-requests: write",
     "runs-on: macos-26",
+    "actions/create-github-app-token@v2",
+    "secrets.OURO_CURRENT_PRIVATE_KEY",
+    "token: ${{ steps.app-token.outputs.token }}",
+    "GH_TOKEN: ${{ steps.app-token.outputs.token }}",
     "./scripts/check-shell-dependency.sh",
     "./scripts/refresh-shell-dependency.sh",
     "automation/ouro-md-refresh-shell-dependency",
@@ -1184,7 +1188,9 @@ SH
     PATH="$tmp:$PATH" \
       GITHUB_REPOSITORY="ourostack/ouro-md" \
       GITHUB_STEP_SUMMARY="$tmp/summary.md" \
-      bash "$tmp/run-fallback.sh" "$tmp/pr-fallback.sh" "$tmp/body.md"
+      bash "$tmp/run-fallback.sh" "$tmp/pr-fallback.sh" "$tmp/body.md" > "$tmp/fallback.log" 2>&1
+    # The fake refusal stays in this file, so a reader of the CI log does not take it for a real one.
+    grep -Fq "createPullRequest" "$tmp/fallback.log"
     grep -Fq "Shell dependency refresh needs a PR" "$tmp/summary.md"
     grep -Fq "automation/ouro-md-refresh-shell-dependency" "$tmp/summary.md"
     grep -Fq "https://github.com/ourostack/ouro-md/compare/main...automation/ouro-md-refresh-shell-dependency" "$tmp/summary.md"
