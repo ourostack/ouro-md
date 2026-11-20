@@ -193,7 +193,7 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
             switch attempt {
             case 0: try await scroll()
             case 1:
-                let raf = try await web.callAsyncJavaScript("await new Promise(r => requestAnimationFrame(r)); return 'raf'", contentWorld: .page)
+                let raf = try await web.callAsyncJavaScript("return await Promise.race([new Promise(r => requestAnimationFrame(() => r('raf'))), new Promise(r => setTimeout(() => r('no-raf'), 500))])", contentWorld: .page)
                 print("PROBE raf \(raf as Any)")
             case 2: web.window?.setFrameOrigin(NSPoint(x: 0, y: 0))
             case 3: web.window?.alphaValue = 0.01
