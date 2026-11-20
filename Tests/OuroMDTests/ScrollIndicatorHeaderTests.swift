@@ -60,9 +60,12 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
         window.alphaValue = 0
         window.ignoresMouseEvents = true
         window.contentView = host
-        // WebKit only commits a hidden page's new frames now and then, so a capture after a scroll
-        // could read a stale or empty layer tree. An ordered-in window, still transparent, off screen
-        // and inert, is a visible page to it and commits every frame (ourostack/ouro-md#169).
+        // A window outside every screen is occluded, so WebKit calls the page hidden, runs no
+        // rendering updates and leaves `cacheDisplay` an empty layer tree after a scroll. On a
+        // screen, still transparent and inert, the page is visible and paints (ourostack/ouro-md#169).
+        if let screen = NSScreen.main {
+            window.setFrameOrigin(NSPoint(x: screen.visibleFrame.minX + 10, y: screen.visibleFrame.minY + 10))
+        }
         window.orderFront(nil)
         defer { window.close() }
         func editor(in view: NSView) -> WKWebView? {
@@ -178,36 +181,17 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
     private func drawnSnapshot(of web: WKWebView, scrolling scroll: () async throws -> Void) async throws -> NSBitmapImageRep {
         let budget: Duration = drewOnce || captureCount == 0 ? .seconds(5) : .milliseconds(500)
         let deadline = ContinuousClock.now + budget
-        var attempt = 0
         while true {
+            try await scroll()
             try await Task.sleep(for: .milliseconds(250))
             let bitmap = try await snapshot(of: web)
             let scale = Double(bitmap.pixelsWide) / Double(web.bounds.width)
             let hasContent = contentSamples(in: bitmap) > 0
             if hasContent { drewOnce = true }
-            print("PROBE capture \(captureCount) attempt \(attempt) content \(hasContent) indicator \(indicatorTop(in: bitmap, scale: scale) as Any)")
             if ContinuousClock.now >= deadline || (hasContent && indicatorTop(in: bitmap, scale: scale) != nil) {
                 return bitmap
             }
-            try await diagnose(web, attempt: attempt)
-            switch attempt {
-            case 0: try await scroll()
-            case 1:
-                if let w = web.window, let screen = NSScreen.main { w.setFrameOrigin(NSPoint(x: screen.visibleFrame.minX + 10, y: screen.visibleFrame.minY + 10)) }
-            case 2: web.window?.alphaValue = 0.01
-            case 3: web.window?.orderFrontRegardless()
-            case 4: web.window?.alphaValue = 0
-            default: try await scroll()
-            }
-            attempt += 1
         }
-    }
-
-    private func diagnose(_ web: WKWebView, attempt: Int = 0) async throws {
-        let js = try await web.evaluateJavaScript("""
-        (() => { const p = document.querySelector('.vditor-preview'); return JSON.stringify({ top: p && p.scrollTop, h: p && p.scrollHeight, text: p && p.innerText.length, vis: document.visibilityState, y: window.scrollY }); })()
-        """)
-        print("PROBE diag a\(attempt) c\(captureCount) \(js as Any) screens \(NSScreen.screens.count) occl \(String(describing: web.window?.occlusionState.rawValue)) visible \(String(describing: web.window?.isVisible)) frame \(String(describing: web.window?.frame))")
     }
 
     private func snapshot(of web: WKWebView) async throws -> NSBitmapImageRep {
