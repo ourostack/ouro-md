@@ -24,18 +24,26 @@ final class DocumentWindowControllerTests: XCTestCase {
             EditorZoom.apply(zoom, to: web)
             let expected = web.bounds.height / zoom
             var result: [String: Double]?
-            waitUntil(timeout: 5) {
-                web.evaluateJavaScript("""
-                (() => {
-                  const first = document.createElement("div");
-                  first.style.cssText = "position:fixed;top:0;left:0;width:10px;height:10px";
-                  document.documentElement.appendChild(first);
-                  const result = {top:first.getBoundingClientRect().top, height:innerHeight, offset:visualViewport.offsetTop};
-                  first.remove();
-                  return result;
-                })()
-                """) { value, _ in
-                    result = value as? [String: Double]
+            // One probe in flight at a time: a cold web content process on a
+            // loaded runner can take many seconds to answer its first one,
+            // and stacking a probe per tick only deepens the queue.
+            var inFlight = false
+            waitUntil(timeout: 30) {
+                if !inFlight {
+                    inFlight = true
+                    web.evaluateJavaScript("""
+                    (() => {
+                      const first = document.createElement("div");
+                      first.style.cssText = "position:fixed;top:0;left:0;width:10px;height:10px";
+                      document.documentElement.appendChild(first);
+                      const result = {top:first.getBoundingClientRect().top, height:innerHeight, offset:visualViewport.offsetTop};
+                      first.remove();
+                      return result;
+                    })()
+                    """) { value, _ in
+                        result = value as? [String: Double]
+                        inFlight = false
+                    }
                 }
                 return result?["top"] != nil && abs((result?["height"] ?? 0) - expected) <= 1
             }
