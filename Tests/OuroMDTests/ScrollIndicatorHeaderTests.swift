@@ -19,6 +19,7 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
     private let headerInset = 52.0
     private var blankCaptures: [String] = []
     private var captureCount = 0
+    private var drewOnce = false
 
     func testScrollIndicatorStartsBelowTheHeaderAtTopAndMidScroll() async throws {
         try XCTSkipUnless(SystemDesign.usesGlass)
@@ -59,6 +60,13 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
         window.alphaValue = 0
         window.ignoresMouseEvents = true
         window.contentView = host
+        // A window outside every screen is occluded, so WebKit calls the page hidden, runs no
+        // rendering updates and leaves `cacheDisplay` an empty layer tree after a scroll. On a
+        // screen, still transparent and inert, the page is visible and paints (ourostack/ouro-md#169).
+        if let screen = NSScreen.main {
+            window.setFrameOrigin(NSPoint(x: screen.visibleFrame.minX + 10, y: screen.visibleFrame.minY + 10))
+        }
+        window.orderFront(nil)
         defer { window.close() }
         func editor(in view: NSView) -> WKWebView? {
             if let web = view as? WKWebView { return web }
@@ -71,8 +79,8 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
         }
         XCTAssertTrue(model.isReady)
         let web = try XCTUnwrap(editor(in: host))
-        // The host window is never shown, so WebKit treats the page as hidden and drops
-        // what it painted a few hundred milliseconds later; keep it painting.
+        // Occlusion detection would still call an off-screen window hidden and have WebKit
+        // drop what it painted a few hundred milliseconds later; keep it painting.
         let keepPainting = NSSelectorFromString("_setWindowOcclusionDetectionEnabled:")
         if web.responds(to: keepPainting) { web.setValue(false, forKey: "windowOcclusionDetectionEnabled") }
         XCTAssertEqual(web.obscuredContentInsets.top, 0, "the native inset would make the header glass opaque")
@@ -88,16 +96,19 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
         for scrollTo in [0.0, 1200.0] {
             // Nudge first so the page reports a scroll even when it is already at the target.
             // The nudge has to land before the move back, or WebKit sees no change and fires no scroll.
-            _ = try await web.callAsyncJavaScript("""
-            const s = \(scroller);
-            s.scrollTo(0, 10);
-            await new Promise(resolve => setTimeout(resolve, 50));
-            s.scrollTo(0, \(scrollTo));
-            return true;
-            """, contentWorld: .page)
+            func scroll() async throws {
+                _ = try await web.callAsyncJavaScript("""
+                const s = \(scroller);
+                s.scrollTo(0, 10);
+                await new Promise(resolve => setTimeout(resolve, 50));
+                s.scrollTo(0, \(scrollTo));
+                return true;
+                """, contentWorld: .page)
+            }
+            try await scroll()
             try await Task.sleep(for: .milliseconds(300))
             try await verifyIndicatorStyles(in: web, mode: mode, label: "\(theme)-\(mode) at \(scrollTo)")
-            let bitmap = try await snapshot(of: web)
+            let bitmap = try await drawnSnapshot(of: web, scrolling: scroll)
             let scale = Double(bitmap.pixelsWide) / Double(web.bounds.width)
             captureCount += 1
             guard try await captured(bitmap, of: web) else {
@@ -158,6 +169,31 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
             where zip(rgb(bitmap, x: x, y: y), background).contains(where: { abs($0 - $1) > 24 }) { count += 1 }
         }
         return count
+    }
+
+    /// The page shows its indicator for one second after the last scroll, and `cacheDisplay`
+    /// reads whatever the window has composited so far. Under coverage instrumentation a
+    /// capture can land after the indicator faded or before the frame was composited
+    /// (ourostack/ouro-md#169). Scroll again and capture again until a frame holds both the
+    /// page and its indicator, instead of trusting one fixed sleep. A host that has drawn
+    /// nothing yet gets a short budget, so one that never composites WebKit (macOS 27) is
+    /// not slowed ten times over.
+    private func drawnSnapshot(of web: WKWebView, scrolling scroll: () async throws -> Void) async throws -> NSBitmapImageRep {
+        let budget: Duration = drewOnce || captureCount == 0 ? .seconds(5) : .milliseconds(500)
+        let deadline = ContinuousClock.now + budget
+        while true {
+            try await scroll()
+            try await Task.sleep(for: .milliseconds(250))
+            let bitmap = try await snapshot(of: web)
+            let scale = Double(bitmap.pixelsWide) / Double(web.bounds.width)
+            let hasContent = contentSamples(in: bitmap) > 0
+            if hasContent { drewOnce = true }
+            let js = try await web.evaluateJavaScript("(() => { const p = document.querySelector('.vditor-preview'); return JSON.stringify({ top: p && p.scrollTop, cls: document.documentElement.className, vis: document.visibilityState, w: p && p.clientWidth }); })()")
+            print("PROBE c\(captureCount) content \(hasContent) ind \(indicatorTop(in: bitmap, scale: scale) as Any) \(js as Any) occl \(String(describing: web.window?.occlusionState.rawValue))")
+            if ContinuousClock.now >= deadline || (hasContent && indicatorTop(in: bitmap, scale: scale) != nil) {
+                return bitmap
+            }
+        }
     }
 
     private func snapshot(of web: WKWebView) async throws -> NSBitmapImageRep {
