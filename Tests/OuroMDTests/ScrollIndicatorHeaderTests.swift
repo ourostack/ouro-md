@@ -23,17 +23,22 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
     private var neverVisible = false
     private var lastState = ""
 
-    func testScrollIndicatorStartsBelowTheHeaderAtTopAndMidScroll() async throws {
+    // One case per theme and mode: each has its own time budget, and a loaded runner
+    // that slows the five checks together no longer fails one test over its limit.
+    func testQuartzIRIndicatorStartsBelowTheHeaderAtTopAndMidScroll() async throws { try await check("quartz", "ir") }
+    func testGraphiteIRIndicatorStartsBelowTheHeaderAtTopAndMidScroll() async throws { try await check("graphite", "ir") }
+    func testManuscriptIRIndicatorStartsBelowTheHeaderAtTopAndMidScroll() async throws { try await check("manuscript", "ir") }
+    func testQuartzSVIndicatorStartsBelowTheHeaderAtTopAndMidScroll() async throws { try await check("quartz", "sv") }
+    func testGraphiteSVIndicatorStartsBelowTheHeaderAtTopAndMidScroll() async throws { try await check("graphite", "sv") }
+
+    private func check(_ theme: String, _ mode: String) async throws {
         try XCTSkipUnless(SystemDesign.usesGlass)
         guard #available(macOS 26, *) else { return }
         let app = NSApplication.shared
         let previousPolicy = app.activationPolicy()
         app.setActivationPolicy(.prohibited)
         defer { app.setActivationPolicy(previousPolicy) }
-        for (theme, mode) in [("quartz", "ir"), ("graphite", "ir"), ("manuscript", "ir"),
-                              ("quartz", "sv"), ("graphite", "sv")] {
-            try await verifyIndicator(theme: theme, mode: mode)
-        }
+        try await verifyIndicator(theme: theme, mode: mode)
         if !blankCaptures.isEmpty {
             if neverVisible {
                 throw XCTSkip("""
