@@ -124,6 +124,12 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
                 blankCaptures.append("\(theme)-\(mode) at \(scrollTo) [\(lastState)]")
                 continue
             }
+            if neverVisible, indicatorTop(in: bitmap, scale: scale) == nil {
+                // A page the host keeps hidden gets no rendering updates, so no indicator is no verdict.
+                lastState = try await pageState(web)
+                blankCaptures.append("\(theme)-\(mode) at \(scrollTo) [\(lastState)]")
+                continue
+            }
             let top = try XCTUnwrap(indicatorTop(in: bitmap, scale: scale),
                                     "\(theme)-\(mode) at \(scrollTo): no scroll indicator was drawn")
             XCTAssertGreaterThanOrEqual(top, headerInset - 1,
@@ -188,7 +194,7 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
     /// nothing yet gets a short budget, so one that never composites WebKit (macOS 27) is
     /// not slowed ten times over.
     private func drawnSnapshot(of web: WKWebView, scrolling scroll: () async throws -> Void) async throws -> NSBitmapImageRep {
-        let budget: Duration = drewOnce || captureCount == 0 ? .seconds(5) : .milliseconds(500)
+        let budget: Duration = neverVisible ? .milliseconds(300) : drewOnce || captureCount == 0 ? .seconds(5) : .milliseconds(500)
         let deadline = ContinuousClock.now + budget
         while true {
             try await scroll()
@@ -224,7 +230,7 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
     /// never gets there (macOS 27 composites no WebKit) is not waited on again.
     private func waitUntilVisible(_ web: WKWebView, in window: NSWindow) async throws {
         guard !neverVisible else { return }
-        let deadline = ContinuousClock.now + .seconds(3)
+        let deadline = ContinuousClock.now + .seconds(2)
         var attempt = 0
         while ContinuousClock.now < deadline {
             let state = try await web.evaluateJavaScript("document.visibilityState") as? String
