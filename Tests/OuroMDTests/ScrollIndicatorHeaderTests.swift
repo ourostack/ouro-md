@@ -20,6 +20,7 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
     private var blankCaptures: [String] = []
     private var captureCount = 0
     private var drewOnce = false
+    private var neverVisible = false
 
     func testScrollIndicatorStartsBelowTheHeaderAtTopAndMidScroll() async throws {
         try XCTSkipUnless(SystemDesign.usesGlass)
@@ -66,8 +67,8 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
         if let screen = NSScreen.main {
             window.setFrameOrigin(NSPoint(x: screen.visibleFrame.minX + 10, y: screen.visibleFrame.minY + 10))
         }
-        window.orderFront(nil)
         defer { window.close() }
+        window.orderFront(nil)
         func editor(in view: NSView) -> WKWebView? {
             if let web = view as? WKWebView { return web }
             return view.subviews.lazy.compactMap { editor(in: $0) }.first
@@ -79,6 +80,7 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
         }
         XCTAssertTrue(model.isReady)
         let web = try XCTUnwrap(editor(in: host))
+        try await waitUntilVisible(web, in: window)
         // Occlusion detection would still call an off-screen window hidden and have WebKit
         // drop what it painted a few hundred milliseconds later; keep it painting.
         let keepPainting = NSSelectorFromString("_setWindowOcclusionDetectionEnabled:")
@@ -106,7 +108,7 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
                 """, contentWorld: .page)
             }
             try await scroll()
-            try await Task.sleep(for: .milliseconds(300))
+            try await Task.sleep(for: .milliseconds(100))
             try await verifyIndicatorStyles(in: web, mode: mode, label: "\(theme)-\(mode) at \(scrollTo)")
             let bitmap = try await drawnSnapshot(of: web, scrolling: scroll)
             let scale = Double(bitmap.pixelsWide) / Double(web.bounds.width)
@@ -183,7 +185,7 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
         let deadline = ContinuousClock.now + budget
         while true {
             try await scroll()
-            try await Task.sleep(for: .milliseconds(250))
+            try await Task.sleep(for: .milliseconds(150))
             let bitmap = try await snapshot(of: web)
             let scale = Double(bitmap.pixelsWide) / Double(web.bounds.width)
             let hasContent = contentSamples(in: bitmap) > 0
@@ -194,6 +196,25 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
                 return bitmap
             }
         }
+    }
+
+    /// The window server reports a new window's occlusion a moment late, and until it says
+    /// "visible" the page is hidden: no rendering updates run and a capture can come back
+    /// empty. Order the window in again until the page itself reports visible. A host that
+    /// never gets there (macOS 27 composites no WebKit) is not waited on again.
+    private func waitUntilVisible(_ web: WKWebView, in window: NSWindow) async throws {
+        guard !neverVisible else { return }
+        let deadline = ContinuousClock.now + .seconds(2)
+        while ContinuousClock.now < deadline {
+            let state = try await web.evaluateJavaScript("document.visibilityState") as? String
+            if state == "visible" { return }
+            if let screen = NSScreen.main {
+                window.setFrameOrigin(NSPoint(x: screen.visibleFrame.minX + 10, y: screen.visibleFrame.minY + 10))
+            }
+            window.orderFrontRegardless()
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        neverVisible = true
     }
 
     private func snapshot(of web: WKWebView) async throws -> NSBitmapImageRep {
