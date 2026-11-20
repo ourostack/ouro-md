@@ -190,8 +190,6 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
             let scale = Double(bitmap.pixelsWide) / Double(web.bounds.width)
             let hasContent = contentSamples(in: bitmap) > 0
             if hasContent { drewOnce = true }
-            let js = try await web.evaluateJavaScript("(() => { const p = document.querySelector('.vditor-preview'); return JSON.stringify({ top: p && p.scrollTop, cls: document.documentElement.className, vis: document.visibilityState, w: p && p.clientWidth }); })()")
-            print("PROBE c\(captureCount) content \(hasContent) ind \(indicatorTop(in: bitmap, scale: scale) as Any) \(js as Any) occl \(String(describing: web.window?.occlusionState.rawValue))")
             if ContinuousClock.now >= deadline || (hasContent && indicatorTop(in: bitmap, scale: scale) != nil) {
                 return bitmap
             }
