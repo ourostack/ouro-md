@@ -74,8 +74,7 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
         let web = try XCTUnwrap(editor(in: host))
         // The host window is never shown, so WebKit treats the page as hidden and drops
         // what it painted a few hundred milliseconds later; keep it painting.
-        let keepPainting = NSSelectorFromString("_setWindowOcclusionDetectionEnabled:")
-        if web.responds(to: keepPainting) { web.setValue(false, forKey: "windowOcclusionDetectionEnabled") }
+        keepPainting(web)
         XCTAssertEqual(web.obscuredContentInsets.top, 0, "the native inset would make the header glass opaque")
         model.bridge?.setMarkdown((1...120).map { "Paragraph \($0) of the scroll indicator fixture." }.joined(separator: "\n\n"))
         // Source mode scrolls its preview pane; the page itself does not scroll.
@@ -187,7 +186,18 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
         }
     }
 
+    /// Asks WebKit to paint the page the way a visible one would: it drops tiles it painted
+    /// for a hidden page, so a capture can find none even though the page has content.
+    private func keepPainting(_ web: WKWebView) {
+        let setter = NSSelectorFromString("_setWindowOcclusionDetectionEnabled:")
+        if web.responds(to: setter) { web.setValue(false, forKey: "windowOcclusionDetectionEnabled") }
+    }
+
     private func snapshot(of web: WKWebView) async throws -> NSBitmapImageRep {
+        keepPainting(web)
+        // A web-process snapshot makes WebKit paint the page's current tiles before the read below.
+        _ = try await web.takeSnapshot(configuration: WKSnapshotConfiguration())
+        web.window?.displayIfNeeded()
         let bitmap = try XCTUnwrap(web.bitmapImageRepForCachingDisplay(in: web.bounds))
         web.cacheDisplay(in: web.bounds, to: bitmap)
         return bitmap
