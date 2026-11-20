@@ -178,16 +178,25 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
     private func drawnSnapshot(of web: WKWebView, scrolling scroll: () async throws -> Void) async throws -> NSBitmapImageRep {
         let budget: Duration = drewOnce || captureCount == 0 ? .seconds(5) : .milliseconds(500)
         let deadline = ContinuousClock.now + budget
+        var attempt = 0
         while true {
             try await Task.sleep(for: .milliseconds(250))
             let bitmap = try await snapshot(of: web)
             let scale = Double(bitmap.pixelsWide) / Double(web.bounds.width)
             let hasContent = contentSamples(in: bitmap) > 0
             if hasContent { drewOnce = true }
+            print("PROBE capture \(captureCount) attempt \(attempt) content \(hasContent) indicator \(indicatorTop(in: bitmap, scale: scale) as Any)")
             if ContinuousClock.now >= deadline || (hasContent && indicatorTop(in: bitmap, scale: scale) != nil) {
                 return bitmap
             }
-            try await scroll()
+            switch attempt % 5 {
+            case 0: try await scroll()
+            case 1: _ = try await web.takeSnapshot(configuration: WKSnapshotConfiguration())
+            case 2: web.display()
+            case 3: web.window?.contentView?.needsDisplay = true; web.window?.displayIfNeeded()
+            default: web.setNeedsDisplay(web.bounds); web.layoutSubtreeIfNeeded()
+            }
+            attempt += 1
         }
     }
 
