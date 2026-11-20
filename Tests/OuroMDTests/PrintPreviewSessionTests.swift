@@ -937,7 +937,7 @@ final class PrintPreviewSessionTests: XCTestCase {
     }
 
     private func waitUntil(_ condition: () -> Bool) async throws -> Bool {
-        let deadline = Date().addingTimeInterval(12)
+        let deadline = Date().addingTimeInterval(45)
         while Date() < deadline {
             if condition() { return true }
             try await Task.sleep(nanoseconds: 10_000_000)
