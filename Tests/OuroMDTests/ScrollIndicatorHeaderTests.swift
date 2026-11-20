@@ -21,6 +21,7 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
     private var captureCount = 0
     private var drewOnce = false
     private var neverVisible = false
+    private var lastState = ""
 
     func testScrollIndicatorStartsBelowTheHeaderAtTopAndMidScroll() async throws {
         try XCTSkipUnless(SystemDesign.usesGlass)
@@ -114,7 +115,7 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
             let scale = Double(bitmap.pixelsWide) / Double(web.bounds.width)
             captureCount += 1
             guard try await captured(bitmap, of: web) else {
-                blankCaptures.append("\(theme)-\(mode) at \(scrollTo)")
+                blankCaptures.append("\(theme)-\(mode) at \(scrollTo) [\(lastState)]")
                 continue
             }
             let top = try XCTUnwrap(indicatorTop(in: bitmap, scale: scale),
@@ -191,9 +192,24 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
             let hasContent = contentSamples(in: bitmap) > 0
             if hasContent { drewOnce = true }
             if ContinuousClock.now >= deadline || (hasContent && indicatorTop(in: bitmap, scale: scale) != nil) {
+                if !hasContent { lastState = try await pageState(web) }
                 return bitmap
             }
+            if let window = web.window {
+                if let screen = NSScreen.main {
+                    window.setFrameOrigin(NSPoint(x: screen.visibleFrame.minX + 10, y: screen.visibleFrame.minY + 10))
+                }
+                window.orderFrontRegardless()
+                web.setNeedsDisplay(web.bounds)
+                window.displayIfNeeded()
+            }
         }
+    }
+
+    private func pageState(_ web: WKWebView) async throws -> String {
+        let visibility = try await web.evaluateJavaScript("document.visibilityState") as? String ?? "?"
+        let occlusion = web.window?.occlusionState.rawValue ?? 0
+        return "page \(visibility), occlusion \(occlusion), frame \(web.window?.frame ?? .zero), never visible \(neverVisible)"
     }
 
     /// The window server reports a new window's occlusion a moment late, and until it says
