@@ -89,16 +89,19 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
         for scrollTo in [0.0, 1200.0] {
             // Nudge first so the page reports a scroll even when it is already at the target.
             // The nudge has to land before the move back, or WebKit sees no change and fires no scroll.
-            _ = try await web.callAsyncJavaScript("""
-            const s = \(scroller);
-            s.scrollTo(0, 10);
-            await new Promise(resolve => setTimeout(resolve, 50));
-            s.scrollTo(0, \(scrollTo));
-            return true;
-            """, contentWorld: .page)
+            func scroll() async throws {
+                _ = try await web.callAsyncJavaScript("""
+                const s = \(scroller);
+                s.scrollTo(0, 10);
+                await new Promise(resolve => setTimeout(resolve, 50));
+                s.scrollTo(0, \(scrollTo));
+                return true;
+                """, contentWorld: .page)
+            }
+            try await scroll()
             try await Task.sleep(for: .milliseconds(300))
             try await verifyIndicatorStyles(in: web, mode: mode, label: "\(theme)-\(mode) at \(scrollTo)")
-            let bitmap = try await drawnSnapshot(of: web)
+            let bitmap = try await drawnSnapshot(of: web, scrolling: scroll)
             let scale = Double(bitmap.pixelsWide) / Double(web.bounds.width)
             captureCount += 1
             guard try await captured(bitmap, of: web) else {
@@ -161,21 +164,27 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
         return count
     }
 
-    /// `cacheDisplay` reads whatever the window has composited so far, and under coverage
-    /// instrumentation a frame can lag the scroll by seconds (ourostack/ouro-md#169). Capture
-    /// again until the page's content is really in the bitmap instead of trusting a fixed
-    /// sleep. A host that has drawn nothing yet gets a short budget, so one that never
-    /// composites WebKit (macOS 27) is not slowed ten times over.
-    private func drawnSnapshot(of web: WKWebView) async throws -> NSBitmapImageRep {
+    /// The page shows its indicator for one second after the last scroll, and `cacheDisplay`
+    /// reads whatever the window has composited so far. Under coverage instrumentation a
+    /// capture can land after the indicator faded or before the frame was composited
+    /// (ourostack/ouro-md#169). Scroll again and capture again until a frame holds both the
+    /// page and its indicator, instead of trusting one fixed sleep. A host that has drawn
+    /// nothing yet gets a short budget, so one that never composites WebKit (macOS 27) is
+    /// not slowed ten times over.
+    private func drawnSnapshot(of web: WKWebView, scrolling scroll: () async throws -> Void) async throws -> NSBitmapImageRep {
         let budget: Duration = drewOnce || captureCount == 0 ? .seconds(15) : .milliseconds(500)
         let deadline = ContinuousClock.now + budget
-        var bitmap = try await snapshot(of: web)
-        while contentSamples(in: bitmap) == 0, ContinuousClock.now < deadline {
-            try await Task.sleep(for: .milliseconds(100))
-            bitmap = try await snapshot(of: web)
+        while true {
+            try await Task.sleep(for: .milliseconds(250))
+            let bitmap = try await snapshot(of: web)
+            let scale = Double(bitmap.pixelsWide) / Double(web.bounds.width)
+            let hasContent = contentSamples(in: bitmap) > 0
+            if hasContent { drewOnce = true }
+            if ContinuousClock.now >= deadline || (hasContent && indicatorTop(in: bitmap, scale: scale) != nil) {
+                return bitmap
+            }
+            try await scroll()
         }
-        if contentSamples(in: bitmap) > 0 { drewOnce = true }
-        return bitmap
     }
 
     private func snapshot(of web: WKWebView) async throws -> NSBitmapImageRep {
