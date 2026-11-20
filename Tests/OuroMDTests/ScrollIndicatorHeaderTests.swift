@@ -32,7 +32,9 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
         defer { app.setActivationPolicy(previousPolicy) }
         for (theme, mode) in [("quartz", "ir"), ("graphite", "ir"), ("manuscript", "ir"),
                               ("quartz", "sv"), ("graphite", "sv")] {
+            let began = ContinuousClock.now
             try await verifyIndicator(theme: theme, mode: mode)
+            print("scroll-timing \(theme)-\(mode) \(ContinuousClock.now - began) never-visible \(neverVisible) drew \(drewOnce)")
         }
         if !blankCaptures.isEmpty {
             if neverVisible {
@@ -87,7 +89,9 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
         }
         XCTAssertTrue(model.isReady)
         let web = try XCTUnwrap(editor(in: host))
+        let visibleStart = ContinuousClock.now
         try await waitUntilVisible(web, in: window)
+        print("scroll-timing visible-wait \(ContinuousClock.now - visibleStart)")
         // Occlusion detection would still call an off-screen window hidden and have WebKit
         // drop what it painted a few hundred milliseconds later; keep it painting.
         let keepPainting = NSSelectorFromString("_setWindowOcclusionDetectionEnabled:")
@@ -117,7 +121,9 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
             try await scroll()
             try await Task.sleep(for: .milliseconds(100))
             try await verifyIndicatorStyles(in: web, mode: mode, label: "\(theme)-\(mode) at \(scrollTo)")
+            let drawStart = ContinuousClock.now
             let bitmap = try await drawnSnapshot(of: web, scrolling: scroll)
+            print("scroll-timing draw \(scrollTo) \(ContinuousClock.now - drawStart)")
             let scale = Double(bitmap.pixelsWide) / Double(web.bounds.width)
             captureCount += 1
             guard try await captured(bitmap, of: web) else {
