@@ -1,9 +1,10 @@
 {
-  "generator": "ouro-actions 0.16.0",
+  "generator": "ouro-actions 1.6.0",
   "set": "document",
   "tools": [
     {
       "name": "list_documents",
+      "title": "List Documents",
       "description": "Lists the Markdown documents in the folders Ouro MD serves, with name, folder, path and when each was modified. Changes nothing.",
       "inputSchema": {
         "type": "object",
@@ -23,6 +24,7 @@
     },
     {
       "name": "read_document",
+      "title": "Get Markdown Document",
       "description": "Returns a document's Markdown as saved, 20000 characters at a time; a longer document says where the next page starts. Changes nothing.",
       "inputSchema": {
         "type": "object",
@@ -47,6 +49,7 @@
     },
     {
       "name": "append_to_document",
+      "title": "Add to Markdown Document",
       "description": "Adds Markdown to the end of a document as a new paragraph and saves it; an open Ouro MD window picks up the change. It changes only this file. Returns the outcome, checked by reading the document back.",
       "inputSchema": {
         "type": "object",
@@ -72,6 +75,7 @@
     },
     {
       "name": "replace_document",
+      "title": "Replace Markdown Document",
       "description": "Replaces a document's whole Markdown. It overwrites every line, so it asks first: without confirmed: true it changes nothing and says what to ask the person. Send confirmed: true only after the person has said yes.",
       "inputSchema": {
         "type": "object",
@@ -98,10 +102,14 @@
       "annotations": {
         "readOnlyHint": false,
         "consequentialHint": true
+      },
+      "_meta": {
+        "ouro.bot/confirm": "Replace a document's whole Markdown, as one undoable edit, after you confirm."
       }
     },
     {
       "name": "open_document",
+      "title": "Open Markdown Document",
       "description": "Opens a Markdown document in Ouro MD, so the person sees it. Changes no text.",
       "inputSchema": {
         "type": "object",
