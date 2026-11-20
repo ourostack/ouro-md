@@ -189,26 +189,25 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
             if ContinuousClock.now >= deadline || (hasContent && indicatorTop(in: bitmap, scale: scale) != nil) {
                 return bitmap
             }
-            if attempt == 0 { try await diagnose(web) }
+            try await diagnose(web, attempt: attempt)
             switch attempt {
             case 0: try await scroll()
             case 1:
-                let raf = try await web.callAsyncJavaScript("return await Promise.race([new Promise(r => requestAnimationFrame(() => r('raf'))), new Promise(r => setTimeout(() => r('no-raf'), 500))])", contentWorld: .page)
-                print("PROBE raf \(raf as Any)")
-            case 2: web.window?.setFrameOrigin(NSPoint(x: 0, y: 0))
-            case 3: web.window?.alphaValue = 0.01
-            case 4: web.window?.orderFrontRegardless()
-            default: if let w = web.window { w.setContentSize(NSSize(width: w.frame.width + 1, height: w.frame.height)) }
+                if let w = web.window, let screen = NSScreen.main { w.setFrameOrigin(NSPoint(x: screen.visibleFrame.minX + 10, y: screen.visibleFrame.minY + 10)) }
+            case 2: web.window?.alphaValue = 0.01
+            case 3: web.window?.orderFrontRegardless()
+            case 4: web.window?.alphaValue = 0
+            default: try await scroll()
             }
             attempt += 1
         }
     }
 
-    private func diagnose(_ web: WKWebView) async throws {
+    private func diagnose(_ web: WKWebView, attempt: Int = 0) async throws {
         let js = try await web.evaluateJavaScript("""
         (() => { const p = document.querySelector('.vditor-preview'); return JSON.stringify({ top: p && p.scrollTop, h: p && p.scrollHeight, text: p && p.innerText.length, vis: document.visibilityState, y: window.scrollY }); })()
         """)
-        print("PROBE diag \(js as Any) occl \(String(describing: web.window?.occlusionState.rawValue)) visible \(String(describing: web.window?.isVisible)) frame \(String(describing: web.window?.frame))")
+        print("PROBE diag a\(attempt) c\(captureCount) \(js as Any) screens \(NSScreen.screens.count) occl \(String(describing: web.window?.occlusionState.rawValue)) visible \(String(describing: web.window?.isVisible)) frame \(String(describing: web.window?.frame))")
     }
 
     private func snapshot(of web: WKWebView) async throws -> NSBitmapImageRep {
