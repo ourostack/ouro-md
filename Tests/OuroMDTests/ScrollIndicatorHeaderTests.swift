@@ -19,6 +19,7 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
     private let headerInset = 52.0
     private var blankCaptures: [String] = []
     private var captureCount = 0
+    private var drewOnce = false
 
     func testScrollIndicatorStartsBelowTheHeaderAtTopAndMidScroll() async throws {
         try XCTSkipUnless(SystemDesign.usesGlass)
@@ -97,7 +98,7 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
             """, contentWorld: .page)
             try await Task.sleep(for: .milliseconds(300))
             try await verifyIndicatorStyles(in: web, mode: mode, label: "\(theme)-\(mode) at \(scrollTo)")
-            let bitmap = try await snapshot(of: web)
+            let bitmap = try await drawnSnapshot(of: web)
             let scale = Double(bitmap.pixelsWide) / Double(web.bounds.width)
             captureCount += 1
             guard try await captured(bitmap, of: web) else {
@@ -158,6 +159,23 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
             where zip(rgb(bitmap, x: x, y: y), background).contains(where: { abs($0 - $1) > 24 }) { count += 1 }
         }
         return count
+    }
+
+    /// `cacheDisplay` reads whatever the window has composited so far, and under coverage
+    /// instrumentation a frame can lag the scroll by seconds (ourostack/ouro-md#169). Capture
+    /// again until the page's content is really in the bitmap instead of trusting a fixed
+    /// sleep. A host that has drawn nothing yet gets a short budget, so one that never
+    /// composites WebKit (macOS 27) is not slowed ten times over.
+    private func drawnSnapshot(of web: WKWebView) async throws -> NSBitmapImageRep {
+        let budget: Duration = drewOnce || captureCount == 0 ? .seconds(15) : .milliseconds(500)
+        let deadline = ContinuousClock.now + budget
+        var bitmap = try await snapshot(of: web)
+        while contentSamples(in: bitmap) == 0, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(100))
+            bitmap = try await snapshot(of: web)
+        }
+        if contentSamples(in: bitmap) > 0 { drewOnce = true }
+        return bitmap
     }
 
     private func snapshot(of web: WKWebView) async throws -> NSBitmapImageRep {
