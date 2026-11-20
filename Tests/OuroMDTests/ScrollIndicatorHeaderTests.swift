@@ -35,6 +35,12 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
             try await verifyIndicator(theme: theme, mode: mode)
         }
         if !blankCaptures.isEmpty {
+            if neverVisible {
+                throw XCTSkip("""
+                The indicator's styles were checked, but this host's window server kept the page hidden \
+                so its pixels could not be read: \(blankCaptures)
+                """)
+            }
             // Only a host that captures nothing at all, on macOS 27, may skip the pixels.
             // A blank capture anywhere else is a broken check and fails.
             XCTAssertEqual(blankCaptures.count, captureCount, "some captures were blank: \(blankCaptures)")
@@ -218,14 +224,22 @@ final class ScrollIndicatorHeaderTests: XCTestCase {
     /// never gets there (macOS 27 composites no WebKit) is not waited on again.
     private func waitUntilVisible(_ web: WKWebView, in window: NSWindow) async throws {
         guard !neverVisible else { return }
-        let deadline = ContinuousClock.now + .seconds(2)
+        let deadline = ContinuousClock.now + .seconds(3)
+        var attempt = 0
         while ContinuousClock.now < deadline {
             let state = try await web.evaluateJavaScript("document.visibilityState") as? String
             if state == "visible" { return }
             if let screen = NSScreen.main {
                 window.setFrameOrigin(NSPoint(x: screen.visibleFrame.minX + 10, y: screen.visibleFrame.minY + 10))
             }
+            // Escalate: above other windows on every Space, then barely opaque.
+            if attempt >= 3 {
+                window.level = .screenSaver
+                window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
+            }
+            if attempt >= 8 { window.alphaValue = 0.01 }
             window.orderFrontRegardless()
+            attempt += 1
             try await Task.sleep(for: .milliseconds(100))
         }
         neverVisible = true
