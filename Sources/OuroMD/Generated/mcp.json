@@ -1,5 +1,5 @@
 {
-  "generator": "ouro-actions 0.16.0",
+  "generator": "ouro-actions 1.6.0",
   "set": "document",
   "tools": [
     {
@@ -186,6 +186,9 @@
         "readOnlyHint": false,
         "destructiveHint": true,
         "openWorldHint": true
+      },
+      "_meta": {
+        "ouro.bot/confirm": "Replace a document's whole Markdown, as one undoable edit, after you confirm."
       },
       "outputSchema": {
         "type": "object",
