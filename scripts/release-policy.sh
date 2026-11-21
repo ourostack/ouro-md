@@ -1340,6 +1340,17 @@ if errors:
 PY
 }
 
+# A just-probed app can leave the volume busy for a moment; retry, then force.
+detach_dmg() {
+  local mount="$1"
+  local attempt
+  for attempt in 1 2 3 4 5; do
+    hdiutil detach "$mount" -quiet >/dev/null 2>&1 && return 0
+    sleep "$attempt"
+  done
+  hdiutil detach "$mount" -force -quiet
+}
+
 verify_dmg_contents() {
   local dmg="$1"
   local sha="$2"
@@ -1371,7 +1382,7 @@ verify_dmg_contents() {
   ditto "$app" "$installed"
   OURO_MD_EXPECT_GIT_SHA="$sha" ./scripts/verify-packaged-app.sh "$installed"
 
-  hdiutil detach "$mount" -quiet
+  detach_dmg "$mount" || fail "could not detach DMG mount $mount"
   attached=0
   rm -rf "$tmp"
   trap - RETURN
