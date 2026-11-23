@@ -1340,15 +1340,31 @@ if errors:
 PY
 }
 
-# A just-probed app can leave the volume busy for a moment; retry, then force.
+# Something outside the probe (Spotlight, Gatekeeper scans, a lingering helper)
+# can hold a just-copied-from volume open. Retry, stop whatever still holds it,
+# then force. Failure is the caller's call.
+dmg_holder_pids() {
+  lsof -t +f -- "$1" 2>/dev/null | grep -vx "$$" || true
+}
+
 detach_dmg() {
   local mount="$1"
-  local attempt
-  for attempt in 1 2 3 4 5; do
+  local attempt pid
+  sync
+  mdutil -i off "$mount" >/dev/null 2>&1 || true
+  cd /
+  for attempt in 1 2 3 4 5 6; do
     hdiutil detach "$mount" -quiet >/dev/null 2>&1 && return 0
+    if (( attempt >= 3 )); then
+      for pid in $(dmg_holder_pids "$mount"); do
+        echo "stopping pid $pid holding $mount: $(ps -o command= -p "$pid" 2>/dev/null)" >&2
+        kill "$pid" 2>/dev/null || true
+      done
+    fi
     sleep "$attempt"
   done
-  hdiutil detach "$mount" -force -quiet
+  hdiutil detach "$mount" -force -quiet 2>/dev/null && return 0
+  diskutil unmount force "$mount" >/dev/null 2>&1
 }
 
 dmg_busy_diagnostics() {
