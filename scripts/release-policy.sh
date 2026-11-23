@@ -1351,6 +1351,14 @@ detach_dmg() {
   hdiutil detach "$mount" -force -quiet
 }
 
+dmg_busy_diagnostics() {
+  local mount="$1"
+  echo "--- DMG still busy: $mount" >&2
+  hdiutil info >&2 || true
+  lsof +f -- "$mount" >&2 || true
+  ps -axo pid,ppid,etime,command >&2 || true
+}
+
 verify_dmg_contents() {
   local dmg="$1"
   local sha="$2"
@@ -1382,7 +1390,7 @@ verify_dmg_contents() {
   ditto "$app" "$installed"
   OURO_MD_EXPECT_GIT_SHA="$sha" ./scripts/verify-packaged-app.sh "$installed"
 
-  detach_dmg "$mount" || fail "could not detach DMG mount $mount"
+  detach_dmg "$mount" || { dmg_busy_diagnostics "$mount"; fail "could not detach DMG mount $mount"; }
   attached=0
   rm -rf "$tmp"
   trap - RETURN
