@@ -1347,6 +1347,15 @@ dmg_holder_pids() {
   lsof -t +f -- "$1" 2>/dev/null | grep -vx "$$" || true
 }
 
+# hdiutil can report a failed detach for a volume that is already unmounted
+# (run 45172651469: no image listed, lsof "not a file system"), so judge by the
+# mount table, not the exit status.
+dmg_is_mounted() {
+  local real
+  real="$(cd "$(dirname "$1")" && pwd -P)/$(basename "$1")"
+  mount | grep -qF " on $real ("
+}
+
 detach_dmg() {
   local mount="$1"
   local attempt pid
@@ -1354,6 +1363,7 @@ detach_dmg() {
   mdutil -i off "$mount" >/dev/null 2>&1 || true
   for attempt in 1 2 3 4 5 6; do
     hdiutil detach "$mount" -quiet >/dev/null 2>&1 && return 0
+    dmg_is_mounted "$mount" || return 0
     if (( attempt >= 3 )); then
       for pid in $(dmg_holder_pids "$mount"); do
         echo "stopping pid $pid holding $mount: $(ps -o command= -p "$pid" 2>/dev/null)" >&2
@@ -1363,7 +1373,7 @@ detach_dmg() {
     sleep "$attempt"
   done
   hdiutil detach "$mount" -force -quiet 2>/dev/null && return 0
-  diskutil unmount force "$mount" >/dev/null 2>&1
+  diskutil unmount force "$mount" >/dev/null 2>&1 || ! dmg_is_mounted "$mount"
 }
 
 dmg_busy_diagnostics() {
